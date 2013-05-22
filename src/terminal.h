@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 void
-terminal_clear();
+terminal_clear(void);
 void
 terminal_write(char* str);
 void

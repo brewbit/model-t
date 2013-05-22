@@ -88,8 +88,8 @@
 /*
  * Port A setup.
  * All input with pull-up except:
- * PA0  - WiFi Serial - UART4 TX      (alternate 7)
- * PA1  - WiFi Serial - UART4 RX      (alternate 7)
+ * PA0  - WiFi Serial - UART4 TX      (alternate 8)
+ * PA1  - WiFi Serial - UART4 RX      (alternate 8)
  * PA2  - Onewire-2   - USART2 TX     (alternate 7)
  * PA3  - Backlight Control           (PP Output)
  * PA4  - X+                          (PP Output)
@@ -108,17 +108,16 @@
 #define VAL_GPIOA_MODER             (PIN_MODE_ALTERNATE(0)   | \
                                      PIN_MODE_ALTERNATE(1)   | \
                                      PIN_MODE_ALTERNATE(2)   | \
-		                             PIN_MODE_OUTPUT(3)      | \
-		                             PIN_MODE_OUTPUT(4)      | \
-		                             PIN_MODE_OUTPUT(5)      | \
-		                             PIN_MODE_OUTPUT(6)      | \
-		                             PIN_MODE_OUTPUT(7)      | \
-		                             PIN_MODE_OUTPUT(8)      | \
-		                             PIN_MODE_OUTPUT(9)      | \
-		                             PIN_MODE_OUTPUT(10)     | \
-		                             PIN_MODE_OUTPUT(11)     | \
-		                             PIN_MODE_OUTPUT(12)     | \
-		                             PIN_MODE_OUTPUT(13)     | \
+                                     PIN_MODE_OUTPUT(3)      | \
+                                     PIN_MODE_OUTPUT(4)      | \
+                                     PIN_MODE_OUTPUT(5)      | \
+                                     PIN_MODE_OUTPUT(6)      | \
+                                     PIN_MODE_OUTPUT(7)      | \
+                                     PIN_MODE_OUTPUT(8)      | \
+                                     PIN_MODE_OUTPUT(9)      | \
+                                     PIN_MODE_OUTPUT(10)     | \
+                                     PIN_MODE_OUTPUT(11)     | \
+                                     PIN_MODE_OUTPUT(12)     | \
                                      PIN_MODE_ALTERNATE(13)  | \
                                      PIN_MODE_ALTERNATE(14)  | \
                                      PIN_MODE_ALTERNATE(15))
@@ -126,10 +125,10 @@
 #define VAL_GPIOA_OSPEEDR           0xFFFFFFFF // all 100 MHz
 #define VAL_GPIOA_PUPDR             0x00000000 // all floating
 #define VAL_GPIOA_ODR               0xFFFFFFFF // all high by default
-#define VAL_GPIOA_AFRL				(PIN_AFIO_AF(7, 0)       | \
-                                     PIN_AFIO_AF(7, 1)       | \
-                                     PIN_AFIO_AF(7, 2))
-#define VAL_GPIOA_AFRH				0x00000000
+#define VAL_GPIOA_AFRL              (PIN_AFIO_AF(0, 8)       | \
+                                     PIN_AFIO_AF(1, 8)       | \
+                                     PIN_AFIO_AF(2, 7))
+#define VAL_GPIOA_AFRH              0x00000000
 
 /*
  * Port B setup.
@@ -168,12 +167,12 @@
 #define VAL_GPIOB_OSPEEDR           0xFFFFFFFF // all 100 MHz
 #define VAL_GPIOB_PUPDR             0xFFFFFFFF // all pulled-up
 #define VAL_GPIOB_ODR               0x00000000 // all low by default
-#define VAL_GPIOB_AFRL				(PIN_AFIO_AF(7, 6))
-#define VAL_GPIOB_AFRH				(PIN_AFIO_AF(7, 10)       | \
-                                     PIN_AFIO_AF(7, 11)       | \
-                                     PIN_AFIO_AF(5, 13)       | \
-                                     PIN_AFIO_AF(5, 14)       | \
-                                     PIN_AFIO_AF(5, 15))
+#define VAL_GPIOB_AFRL              (PIN_AFIO_AF(6, 7))
+#define VAL_GPIOB_AFRH              (PIN_AFIO_AF(10, 7)       | \
+                                     PIN_AFIO_AF(11, 7)       | \
+                                     PIN_AFIO_AF(13, 5)       | \
+                                     PIN_AFIO_AF(14, 5)       | \
+                                     PIN_AFIO_AF(15, 5))
 
 /*
  * Port C setup.

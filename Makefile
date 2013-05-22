@@ -85,11 +85,14 @@ CSRC = $(PORTSRC) \
        $(CHIBIOS)/os/various/syscalls.c \
        $(AUTOGEN_DIR)/image_resources.c \
        $(AUTOGEN_DIR)/font_resources.c \
-       src/main.c \
-       src/lcd.c \
+       src/datastream.c \
        src/font.c \
        src/image.c \
-       src/terminal.c
+       src/lcd.c \
+       src/main.c \
+       src/terminal.c \
+       src/wlan.c \
+       src/wspr_parser.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
