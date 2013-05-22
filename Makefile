@@ -57,6 +57,10 @@ endif
 # Define project name here
 PROJECT = ch
 
+
+BUILD_DIR   = build
+AUTOGEN_DIR = $(BUILD_DIR)/autogen
+
 # Imported source files and paths
 CHIBIOS = ../ChibiOS
 include board/board.mk
@@ -79,8 +83,12 @@ CSRC = $(PORTSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/evtimer.c \
        $(CHIBIOS)/os/various/syscalls.c \
+       $(AUTOGEN_DIR)/image_resources.c \
+       $(AUTOGEN_DIR)/font_resources.c \
        src/main.c \
-       src/lcd.c
+       src/lcd.c \
+       src/font.c \
+       src/image.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -188,7 +196,7 @@ UDEFS =
 UADEFS =
 
 # List all user directories here
-UINCDIR = src
+UINCDIR = src $(AUTOGEN_DIR)
 
 # List the user directory to look for the libraries here
 ULIBDIR =
@@ -209,7 +217,16 @@ endif
 
 include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
 
-download: build/ch.elf
+$(AUTOGEN_DIR):
+	mkdir $@
+
+$(AUTOGEN_DIR)/font_resources.c $(AUTOGEN_DIR)/font_resources.h: $(AUTOGEN_DIR)
+	python scripts/fontconv fonts/*.bmfc
+
+$(AUTOGEN_DIR)/image_resources.c $(AUTOGEN_DIR)/image_resources.h: $(AUTOGEN_DIR)
+	python scripts/imgconv images/*.png
+
+download: $(BUILD_DIR)/ch.elf
 	@openocd \
 	-f interface/$(JTAG).cfg \
 	-f target/stm32f2x.cfg \

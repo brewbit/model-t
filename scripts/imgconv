@@ -1,0 +1,86 @@
+import os
+import sys
+import glob
+import Image
+
+h_prologue = """
+#ifndef __IMAGE_RESOURCES_H__
+#define __IMAGE_RESOURCES_H__
+
+#include "stdint.h"
+
+typedef struct {
+	const uint16_t width;
+	const uint16_t height;
+	const uint16_t* data;
+} Image_t;
+
+"""
+
+h_epilogue = """
+#endif
+"""
+
+image_proto = """extern const Image_t* img_##IMAGE_NAME##;
+"""
+
+c_prologue = """
+#include "image_resources.h"
+
+"""
+
+image_def_prologue = """static const uint16_t img_##IMAGE_NAME##_data[] = {
+  """
+
+image_def_epilogue = """
+};
+
+const Image_t _img_##IMAGE_NAME## = {
+  .width = ##IMAGE_WIDTH##,
+  .height = ##IMAGE_HEIGHT##,
+  .data = img_##IMAGE_NAME##_data
+};
+const Image_t* img_##IMAGE_NAME## = &_img_##IMAGE_NAME##;
+
+"""
+
+def rescale(p, bits):
+	return ((p >> (8-bits)) & ((2**bits)-1))
+
+def convert_image(in_file, out_h, out_c):
+	in_file_base = os.path.splitext(os.path.basename(in_file))[0]
+	
+	out_base = os.path.splitext(in_file)[0]
+
+	
+	im = Image.open(in_file)
+	imdata = im.getdata()
+	
+	out_h.write(image_proto
+				.replace('##IMAGE_NAME##', in_file_base))
+	
+	out_c.write(image_def_prologue
+				.replace('##IMAGE_NAME##', in_file_base))
+	
+	for p in imdata:
+		ps = (rescale(p[0], 5) << 11) + (rescale(p[1], 6) << 5) + rescale(p[2], 5)
+		out_c.write('0x%04x, ' % ps)
+	
+	out_c.write(image_def_epilogue
+				.replace('##IMAGE_NAME##', in_file_base)
+				.replace('##IMAGE_WIDTH##', str(im.size[0]))
+				.replace('##IMAGE_HEIGHT##', str(im.size[1])))
+
+if __name__ == "__main__":
+	out_h = open('build/autogen/image_resources.h', 'w')
+	out_c = open('build/autogen/image_resources.c', 'w')
+	
+	out_h.write(h_prologue)
+	out_c.write(c_prologue)
+	
+	for arg in sys.argv[1:]:
+		for f in glob.glob(arg):
+			convert_image(f, out_h, out_c)
+		
+	out_h.write(h_epilogue)
+	
