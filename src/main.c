@@ -32,6 +32,7 @@
 #include "chprintf.h"
 
 #include "lcd.h"
+#include "terminal.h"
 
 
 /*
@@ -63,7 +64,18 @@ int main(void)
   lcd_init();
   clrScr();
   setColor(COLOR(0, 255, 0));
-  fillCircle(100, 100, 25);
+
+  uint32_t start = chTimeNow();
+  int i;
+  for (i = 0; i < 10; ++i) {
+    terminal_clear();
+  }
+  uint32_t end = chTimeNow();
+
+  terminal_clear();
+  terminal_write("that took ");
+  terminal_write_int(end - start);
+  terminal_write(" ms");
 
   chSysUnlock();
 

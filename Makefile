@@ -88,7 +88,8 @@ CSRC = $(PORTSRC) \
        src/main.c \
        src/lcd.c \
        src/font.c \
-       src/image.c
+       src/image.c \
+       src/terminal.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
