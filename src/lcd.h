@@ -2,8 +2,8 @@
 #define UTFT_h
 
 #include <stdint.h>
-//#include "font.h"
-//#include "image.h"
+#include "font.h"
+#include "image.h"
 
 #define COLOR(r, g, b) (uint16_t)(((r & 0x1F)<<11) + ((g & 0x3F)<<5) + (b & 0x1F))
 
@@ -38,21 +38,21 @@ void
 fillCircle(int x, int y, int radius);
 void
 setColor(uint16_t color);
-//void
-//print(char *st, int x, int y, int deg);
-//void
-//printChar(const Glyph_t* g, int x, int y);
-//void
-//printNumI(long num, int x, int y, int length, char filler);
-//void
-//printNumF(double num, uint8_t dec, int x, int y, char divider, int length,
-//    char filler);
-//void
-//setFont(const Font_t* font);
-//void
-//drawBitmap(int x, int y, const Image_t* img);
-//void
-//tile_bitmap(const Image_t* img, int x, int y, int w, int h);
+void
+print(char *st, int x, int y, int deg);
+void
+printChar(const Glyph_t* g, int x, int y);
+void
+printNumI(long num, int x, int y, int length, char filler);
+void
+printNumF(double num, uint8_t dec, int x, int y, char divider, int length,
+    char filler);
+void
+setFont(const Font_t* font);
+void
+drawBitmap(int x, int y, const Image_t* img);
+void
+tile_bitmap(const Image_t* img, int x, int y, int w, int h);
 int
 display_width(void);
 int

@@ -1,14 +1,14 @@
-#include "lcd.h"
-#include <math.h>
-#include "stdlib.h"
-#include <string.h>
-#include "time.h"
-#include "common.h"
 
 #include "ch.h"
 #include "hal.h"
-//#include <libopencm3/stm32/f2/rcc.h>
-//#include <libopencm3/stm32/f2/gpio.h>
+
+#include "lcd.h"
+#include "time.h"
+#include "common.h"
+
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #define PORTRAIT 0
 #define LANDSCAPE 1
@@ -80,18 +80,17 @@ void
 setXY(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2);
 void
 clrXY(void);
-//static uint16_t
-//get_tile_color(const Image_t* img, int x, int y);
+static uint16_t
+get_tile_color(const Image_t* img, int x, int y);
 
 uint16_t fcolor;
-//const Font_t* cfont;
+const Font_t* cfont;
 
 uint16_t last_val = 0xFF;
 void
 LCD_Write_Bus(uint16_t val)
 {
-	palWritePort(GPIOC, val);
-//  GPIO_ODR(GPIOC) = val;
+  palWritePort(GPIOC, val);
 
   // command the LCD to read the latched value
   wr_low();
@@ -104,24 +103,6 @@ LCD_Write_Bus(uint16_t val)
 void
 utft_init()
 {
-//  rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPAEN);
-//  rcc_peripheral_enable_clock(&RCC_AHB1ENR, RCC_AHB1ENR_IOPCEN);
-//
-//  // Setup LCD data pins
-//  gpio_mode_setup(GPIOC, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE, 0xFFFF);
-//  gpio_set_output_options(GPIOC, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ, 0xFFFF);
-//
-//  // Setup LCD control pins
-//  gpio_mode_setup(GPIOA, GPIO_MODE_OUTPUT, GPIO_PUPD_NONE,
-//      WR_BIT | RD_BIT | CS_BIT | RS_BIT | RST_BIT);
-//  gpio_set_output_options(GPIOA, GPIO_OTYPE_PP, GPIO_OSPEED_100MHZ,
-//      WR_BIT | RD_BIT | CS_BIT | RS_BIT | RST_BIT);
-
-  rd_high();
-  rs_high();
-  wr_high();
-  cs_high();
-  rst_high();
 }
 
 void
@@ -148,6 +129,12 @@ LCD_Write_COM_DATA(char com1, uint16_t dat1)
 void
 InitLCD()
 {
+  /* Initialize control pins to known state. */
+  rd_high();
+  rs_high();
+  wr_high();
+  cs_high();
+
   rst_high();
   chThdSleepMilliseconds(5);
   rst_low();
@@ -569,241 +556,241 @@ drawVLine(int x, int y, int l)
   clrXY();
 }
 
-//void
-//printChar(const Glyph_t* g, int x, int y)
-//{
-//  uint16_t j;
-//
-//  cs_low();
-//
-//  setXY(x, y, x + g->width - 1, y + g->height - 1);
-//
-//  for (j = 0; j < (g->width * g->height); j++) {
-//    uint8_t alpha = g->data[j];
-//    if (alpha == 255) {
-//      setPixel(fcolor);
-//    }
-//    else {
-//      uint16_t by = y + (j / g->width);
-//      uint16_t bx = x + (j % g->width);
-//      uint16_t bcolor = get_tile_color(img_background, bx, by);
-//
-//      if (alpha == 0) {
-//        setPixel(bcolor);
-//      }
-//      else {
-//        setPixel(BLENDED_COLOR(fcolor, bcolor, alpha));
-//      }
-//    }
-//  }
-//
-//  cs_high();
-//  clrXY();
-//}
-//
-//void
-//print(char *st, int x, int y, int deg)
-//{
-//  int xoff = 0;
-//
-//  while (*st) {
-//    const Glyph_t* g = font_find_glyph(cfont, *st++);
-//    xoff += g->xoffset;
-//    printChar(g, x + xoff, y + g->yoffset);
-//    xoff += g->advance;
-//  }
-//}
-//
-//void
-//printNumI(long num, int x, int y, int length, char filler)
-//{
-//  int i;
-//  char buf[25];
-//  char st[27];
-//  int neg = 0;
-//  int c = 0, f = 0;
-//
-//  if (num == 0) {
-//    if (length != 0) {
-//      for (c = 0; c < (length - 1); c++)
-//        st[c] = filler;
-//      st[c] = 48;
-//      st[c + 1] = 0;
-//    }
-//    else {
-//      st[0] = 48;
-//      st[1] = 0;
-//    }
-//  }
-//  else {
-//    if (num < 0) {
-//      neg = 1;
-//      num = -num;
-//    }
-//
-//    while (num > 0) {
-//      buf[c] = 48 + (num % 10);
-//      c++;
-//      num = (num - (num % 10)) / 10;
-//    }
-//    buf[c] = 0;
-//
-//    if (neg) {
-//      st[0] = 45;
-//    }
-//
-//    if (length > (c + neg)) {
-//      for (i = 0; i < (length - c - neg); i++) {
-//        st[i + neg] = filler;
-//        f++;
-//      }
-//    }
-//
-//    for (i = 0; i < c; i++) {
-//      st[i + neg + f] = buf[c - i - 1];
-//    }
-//    st[c + neg + f] = 0;
-//
-//  }
-//
-//  print(st, x, y, 0);
-//}
-//
-//void
-//printNumF(double num, uint8_t dec, int x, int y, char divider, int length,
-//    char filler)
-//{
-//  char buf[25];
-//  char st[27];
-//  int neg = 0;
-//  int c = 0, f = 0;
-//  int c2, mult;
-//  unsigned long inum;
-//  int i;
-//
-//  if (dec < 1)
-//    dec = 1;
-//  if (dec > 5)
-//    dec = 5;
-//
-//  if (num == 0) {
-//    if (length != 0) {
-//      for (c = 0; c < (length - 2 - dec); c++)
-//        st[c] = filler;
-//      st[c] = 48;
-//      st[c + 1] = divider;
-//      for (i = 0; i < dec; i++)
-//        st[c + 2 + i] = 48;
-//      st[c + 2 + dec] = 0;
-//    }
-//    else {
-//      st[0] = 48;
-//      st[1] = divider;
-//      for (i = 0; i < dec; i++)
-//        st[2 + i] = 48;
-//      st[2 + dec] = 0;
-//    }
-//  }
-//  else {
-//    int j;
-//    if (num < 0) {
-//      neg = 1;
-//      num = -num;
-//    }
-//
-//    mult = 1;
-//    for (j = 0; j < dec; j++)
-//      mult = mult * 10;
-//    inum = (long) (num * mult + 0.5);
-//
-//    while (inum > 0) {
-//      buf[c] = 48 + (inum % 10);
-//      c++;
-//      inum = (inum - (inum % 10)) / 10;
-//    }
-//    if ((num < 1) && (num > 0)) {
-//      buf[c] = 48;
-//      c++;
-//    }
-//    while (c < (dec + 1)) {
-//      buf[c] = 48;
-//      c++;
-//    }
-//    buf[c] = 0;
-//
-//    if (neg) {
-//      st[0] = 45;
-//    }
-//
-//    if (length > (c + neg - 1)) {
-//      for (i = 0; i < (length - c - neg - 1); i++) {
-//        st[i + neg] = filler;
-//        f++;
-//      }
-//    }
-//
-//    c2 = neg;
-//    for (i = 0; i < c; i++) {
-//      st[c2 + f] = buf[c - i - 1];
-//      c2++;
-//      if ((c - (c2 - neg)) == dec) {
-//        st[c2 + f] = divider;
-//        c2++;
-//      }
-//    }
-//    st[c2 + f] = 0;
-//  }
-//
-//  print(st, x, y, 0);
-//}
-//
-//void
-//setFont(const Font_t* font)
-//{
-//  cfont = font;
-//}
-//
-//void
-//drawBitmap(int x, int y, const Image_t* img)
-//{
-//  unsigned int col;
-//
-//  int tc;
-//  cs_low();
-//  setXY(x, y, x + img->width - 1, y + img->height - 1);
-//  for (tc = 0; tc < (img->width * img->height); tc++) {
-//    col = img->data[tc];
-//    LCD_Write_DATA(col);
-//  }
-//  cs_high();
-//
-//  clrXY();
-//}
-//
-//static uint16_t
-//get_tile_color(const Image_t* img, int x, int y)
-//{
-//  uint16_t imx = x % img->width;
-//  uint16_t imy = y % img->height;
-//  uint16_t col = img->data[imx + (imy * img->width)];
-//  return col;
-//}
-//
-//void
-//tile_bitmap(const Image_t* img, int x, int y, int w, int h)
-//{
-//  int i, j;
-//
-//  cs_low();
-//  setXY(x, y, x + w - 1, y + h - 1);
-//  for (i = 0; i < h; ++i) {
-//    for (j = 0; j < w; ++j) {
-//      setPixel(get_tile_color(img, j, i));
-//    }
-//  }
-//  cs_high();
-//  clrXY();
-//}
+void
+printChar(const Glyph_t* g, int x, int y)
+{
+  uint16_t j;
+
+  cs_low();
+
+  setXY(x, y, x + g->width - 1, y + g->height - 1);
+
+  for (j = 0; j < (g->width * g->height); j++) {
+    uint8_t alpha = g->data[j];
+    if (alpha == 255) {
+      setPixel(fcolor);
+    }
+    else {
+      uint16_t by = y + (j / g->width);
+      uint16_t bx = x + (j % g->width);
+      uint16_t bcolor = get_tile_color(img_background, bx, by);
+
+      if (alpha == 0) {
+        setPixel(bcolor);
+      }
+      else {
+        setPixel(BLENDED_COLOR(fcolor, bcolor, alpha));
+      }
+    }
+  }
+
+  cs_high();
+  clrXY();
+}
+
+void
+print(char *st, int x, int y, int deg)
+{
+  int xoff = 0;
+
+  while (*st) {
+    const Glyph_t* g = font_find_glyph(cfont, *st++);
+    xoff += g->xoffset;
+    printChar(g, x + xoff, y + g->yoffset);
+    xoff += g->advance;
+  }
+}
+
+void
+printNumI(long num, int x, int y, int length, char filler)
+{
+  int i;
+  char buf[25];
+  char st[27];
+  int neg = 0;
+  int c = 0, f = 0;
+
+  if (num == 0) {
+    if (length != 0) {
+      for (c = 0; c < (length - 1); c++)
+        st[c] = filler;
+      st[c] = 48;
+      st[c + 1] = 0;
+    }
+    else {
+      st[0] = 48;
+      st[1] = 0;
+    }
+  }
+  else {
+    if (num < 0) {
+      neg = 1;
+      num = -num;
+    }
+
+    while (num > 0) {
+      buf[c] = 48 + (num % 10);
+      c++;
+      num = (num - (num % 10)) / 10;
+    }
+    buf[c] = 0;
+
+    if (neg) {
+      st[0] = 45;
+    }
+
+    if (length > (c + neg)) {
+      for (i = 0; i < (length - c - neg); i++) {
+        st[i + neg] = filler;
+        f++;
+      }
+    }
+
+    for (i = 0; i < c; i++) {
+      st[i + neg + f] = buf[c - i - 1];
+    }
+    st[c + neg + f] = 0;
+
+  }
+
+  print(st, x, y, 0);
+}
+
+void
+printNumF(double num, uint8_t dec, int x, int y, char divider, int length,
+    char filler)
+{
+  char buf[25];
+  char st[27];
+  int neg = 0;
+  int c = 0, f = 0;
+  int c2, mult;
+  unsigned long inum;
+  int i;
+
+  if (dec < 1)
+    dec = 1;
+  if (dec > 5)
+    dec = 5;
+
+  if (num == 0) {
+    if (length != 0) {
+      for (c = 0; c < (length - 2 - dec); c++)
+        st[c] = filler;
+      st[c] = 48;
+      st[c + 1] = divider;
+      for (i = 0; i < dec; i++)
+        st[c + 2 + i] = 48;
+      st[c + 2 + dec] = 0;
+    }
+    else {
+      st[0] = 48;
+      st[1] = divider;
+      for (i = 0; i < dec; i++)
+        st[2 + i] = 48;
+      st[2 + dec] = 0;
+    }
+  }
+  else {
+    int j;
+    if (num < 0) {
+      neg = 1;
+      num = -num;
+    }
+
+    mult = 1;
+    for (j = 0; j < dec; j++)
+      mult = mult * 10;
+    inum = (long) (num * mult + 0.5);
+
+    while (inum > 0) {
+      buf[c] = 48 + (inum % 10);
+      c++;
+      inum = (inum - (inum % 10)) / 10;
+    }
+    if ((num < 1) && (num > 0)) {
+      buf[c] = 48;
+      c++;
+    }
+    while (c < (dec + 1)) {
+      buf[c] = 48;
+      c++;
+    }
+    buf[c] = 0;
+
+    if (neg) {
+      st[0] = 45;
+    }
+
+    if (length > (c + neg - 1)) {
+      for (i = 0; i < (length - c - neg - 1); i++) {
+        st[i + neg] = filler;
+        f++;
+      }
+    }
+
+    c2 = neg;
+    for (i = 0; i < c; i++) {
+      st[c2 + f] = buf[c - i - 1];
+      c2++;
+      if ((c - (c2 - neg)) == dec) {
+        st[c2 + f] = divider;
+        c2++;
+      }
+    }
+    st[c2 + f] = 0;
+  }
+
+  print(st, x, y, 0);
+}
+
+void
+setFont(const Font_t* font)
+{
+  cfont = font;
+}
+
+void
+drawBitmap(int x, int y, const Image_t* img)
+{
+  unsigned int col;
+
+  int tc;
+  cs_low();
+  setXY(x, y, x + img->width - 1, y + img->height - 1);
+  for (tc = 0; tc < (img->width * img->height); tc++) {
+    col = img->data[tc];
+    LCD_Write_DATA(col);
+  }
+  cs_high();
+
+  clrXY();
+}
+
+static uint16_t
+get_tile_color(const Image_t* img, int x, int y)
+{
+  uint16_t imx = x % img->width;
+  uint16_t imy = y % img->height;
+  uint16_t col = img->data[imx + (imy * img->width)];
+  return col;
+}
+
+void
+tile_bitmap(const Image_t* img, int x, int y, int w, int h)
+{
+  int i, j;
+
+  cs_low();
+  setXY(x, y, x + w - 1, y + h - 1);
+  for (i = 0; i < h; ++i) {
+    for (j = 0; j < w; ++j) {
+      setPixel(get_tile_color(img, j, i));
+    }
+  }
+  cs_high();
+  clrXY();
+}
 
 int
 display_width()
