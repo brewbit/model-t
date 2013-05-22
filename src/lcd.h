@@ -13,9 +13,7 @@
 #define BLUE  COLOR(0, 0, 255)
 
 void
-utft_init(void);
-void
-InitLCD(void);
+lcd_init(void);
 void
 clrScr(void);
 void
@@ -39,7 +37,7 @@ fillCircle(int x, int y, int radius);
 void
 setColor(uint16_t color);
 void
-print(char *st, int x, int y, int deg);
+print(char *st, int x, int y);
 void
 printChar(const Glyph_t* g, int x, int y);
 void

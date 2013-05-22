@@ -60,8 +60,7 @@ int main(void)
 
   chSysLock();
 
-  utft_init();
-  InitLCD();
+  lcd_init();
   clrScr();
   setColor(COLOR(0, 255, 0));
   fillCircle(100, 100, 25);

@@ -101,11 +101,6 @@ LCD_Write_Bus(uint16_t val)
 }
 
 void
-utft_init()
-{
-}
-
-void
 LCD_Write_COM(char VL)
 {
   rs_low();
@@ -127,7 +122,7 @@ LCD_Write_COM_DATA(char com1, uint16_t dat1)
 }
 
 void
-InitLCD()
+lcd_init()
 {
   /* Initialize control pins to known state. */
   rd_high();
@@ -589,7 +584,7 @@ printChar(const Glyph_t* g, int x, int y)
 }
 
 void
-print(char *st, int x, int y, int deg)
+print(char *st, int x, int y)
 {
   int xoff = 0;
 
@@ -653,7 +648,7 @@ printNumI(long num, int x, int y, int length, char filler)
 
   }
 
-  print(st, x, y, 0);
+  print(st, x, y);
 }
 
 void
@@ -741,7 +736,7 @@ printNumF(double num, uint8_t dec, int x, int y, char divider, int length,
     st[c2 + f] = 0;
   }
 
-  print(st, x, y, 0);
+  print(st, x, y);
 }
 
 void
