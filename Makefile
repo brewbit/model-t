@@ -92,8 +92,10 @@ CSRC = $(PORTSRC) \
        src/main.c \
        src/terminal.c \
        src/web_api.c \
-       src/wlan.c \
+       src/wspr.c \
+       src/wspr_http.c \
        src/wspr_parser.c \
+       src/wspr_tcp.c \
        src/util/json/cJSON.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
