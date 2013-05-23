@@ -136,7 +136,7 @@ ds_read_str(datastream_t* ds)
   CHECK_SIZE(len);
 
   char* str = malloc(len + 1);
-  memcpy(str, ds->buf, len);
+  memcpy(str, &ds->buf[ds->idx], len);
   str[len] = 0;
 
   ds->idx += len;
@@ -220,13 +220,10 @@ ds_write_str(datastream_t* ds, char* str)
 void
 ds_write_buf(datastream_t* ds, uint8_t* data, uint16_t len)
 {
-  int i;
-
   CHECK_SIZE_VOID(2 + len);
 
   ds_write_u16(ds, len);
-  for (i = 0; i < len; ++i) {
-    ds_write_u8(ds, data[i]);
-  }
+  memcpy(&ds->buf[ds->idx], data, len);
+  ds->len += len;
 }
 

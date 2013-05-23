@@ -91,8 +91,10 @@ CSRC = $(PORTSRC) \
        src/lcd.c \
        src/main.c \
        src/terminal.c \
+       src/web_api.c \
        src/wlan.c \
-       src/wspr_parser.c
+       src/wspr_parser.c \
+       src/util/json/cJSON.c
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -200,7 +202,7 @@ UDEFS =
 UADEFS =
 
 # List all user directories here
-UINCDIR = src $(AUTOGEN_DIR)
+UINCDIR = src src/util/json $(AUTOGEN_DIR)
 
 # List the user directory to look for the libraries here
 ULIBDIR =
