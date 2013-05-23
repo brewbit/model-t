@@ -224,6 +224,6 @@ ds_write_buf(datastream_t* ds, uint8_t* data, uint16_t len)
 
   ds_write_u16(ds, len);
   memcpy(&ds->buf[ds->idx], data, len);
-  ds->len += len;
+  ds->idx += len;
 }
 
