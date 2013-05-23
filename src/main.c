@@ -6,6 +6,7 @@
 #include "lcd.h"
 #include "terminal.h"
 #include "wlan.h"
+#include "image.h"
 
 
 static WORKING_AREA(wa_thread_blinker, 128);
@@ -29,9 +30,9 @@ int main(void)
   halInit();
   chSysInit();
 
+  set_bg_img(img_background);
+
   lcd_init();
-  setColor(0);
-  terminal_clear();
 
   wlan_init();
 

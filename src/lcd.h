@@ -11,6 +11,7 @@
 #define WHITE COLOR(255, 255, 255)
 #define RED   COLOR(255, 0, 0)
 #define BLUE  COLOR(0, 0, 255)
+#define GREEN COLOR(0, 255, 0)
 
 void
 lcd_init(void);
@@ -36,6 +37,10 @@ void
 fillCircle(int x, int y, int radius);
 void
 setColor(uint16_t color);
+void
+set_bg_color(uint16_t color);
+void
+set_bg_img(const Image_t* img);
 void
 print(char *st, int x, int y);
 void

@@ -73,6 +73,14 @@ recv_wspr_pkt(void* arg, wspr_msg_t req, uint8_t* data, uint16_t data_len)
   (void)data_len;
 
   switch (req) {
+  case WSPR_OUT_VERSION:
+    terminal_write("WSPR version: ");
+    terminal_write_int(data[0]);
+    terminal_write(".");
+    terminal_write_int(data[1]);
+    terminal_write(".");
+    terminal_write_int(data[2]);
+    break;
   default:
     break;
   }

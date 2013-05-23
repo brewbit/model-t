@@ -18,7 +18,7 @@ terminal_clear()
   cur_row = 0;
   cur_col = 0;
 
-  tile_bitmap(img_background, 0, 0, display_width(), display_height());
+  clrScr();
 }
 
 void
@@ -76,7 +76,7 @@ void
 terminal_write_int(uint32_t num)
 {
   int i;
-  char buf[16];
+  char buf[16] = {'0', 0};
   int idx = 0;
   int div = 1000000000;
   int leading = 1;
@@ -91,7 +91,8 @@ terminal_write_int(uint32_t num)
     num -= q * div;
     div /= 10;
   }
-  buf[idx] = 0;
+  if (idx > 0)
+    buf[idx] = 0;
 
   terminal_write(buf);
 }

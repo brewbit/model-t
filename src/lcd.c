@@ -62,6 +62,11 @@
 
 #define swap(type, a, b) { type SWAP_tmp = a; a = b; b = SWAP_tmp; }
 
+typedef enum {
+  BG_IMAGE,
+  BG_COLOR
+} BackgroundType;
+
 void
 LCD_Write_Bus(uint16_t V);
 void
@@ -82,8 +87,14 @@ void
 clrXY(void);
 static uint16_t
 get_tile_color(const Image_t* img, int x, int y);
+static uint16_t
+get_bg_color(int x, int y);
 
-uint16_t fcolor;
+uint16_t fcolor = GREEN;
+uint16_t bcolor = BLACK;
+
+BackgroundType bg_type = BG_COLOR;
+const Image_t* bg_img = NULL;
 const Font_t* cfont;
 
 uint16_t last_val = 0xFF;
@@ -210,7 +221,7 @@ lcd_init()
 
   cs_high();
 
-  setColor(COLOR(255, 255, 255));
+  clrScr();
 }
 
 void
@@ -402,15 +413,20 @@ fillCircle(int x, int y, int radius)
 void
 clrScr()
 {
-  long i;
-
-  cs_low();
-  clrXY();
-  rs_high();
-  for (i = 0; i < (DISP_WIDTH * DISP_HEIGHT); i++) {
-    LCD_Write_Bus(0);
+  if (bg_type == BG_IMAGE) {
+    tile_bitmap(img_background, 0, 0, display_width(), display_height());
   }
-  cs_high();
+  else {
+    long i;
+
+    cs_low();
+    clrXY();
+    rs_high();
+    for (i = 0; i < (DISP_WIDTH * DISP_HEIGHT); i++) {
+      LCD_Write_Bus(0);
+    }
+    cs_high();
+  }
 }
 
 void
@@ -431,6 +447,20 @@ void
 setColor(uint16_t color)
 {
   fcolor = color;
+}
+
+void
+set_bg_color(uint16_t color)
+{
+  bcolor = color;
+  bg_type = BG_COLOR;
+}
+
+void
+set_bg_img(const Image_t* img)
+{
+  bg_img = img;
+  bg_type = BG_IMAGE;
 }
 
 void
@@ -568,7 +598,7 @@ printChar(const Glyph_t* g, int x, int y)
     else {
       uint16_t by = y + (j / g->width);
       uint16_t bx = x + (j % g->width);
-      uint16_t bcolor = get_tile_color(img_background, bx, by);
+      uint16_t bcolor = get_bg_color(bx, by);
 
       if (alpha == 0) {
         setPixel(bcolor);
@@ -769,6 +799,17 @@ get_tile_color(const Image_t* img, int x, int y)
   uint16_t imy = y % img->height;
   uint16_t col = img->data[imx + (imy * img->width)];
   return col;
+}
+
+static uint16_t
+get_bg_color(int x, int y)
+{
+  if (bg_type == BG_IMAGE) {
+    return get_tile_color(bg_img, x, y);
+  }
+  else {
+    return bcolor;
+  }
 }
 
 void
