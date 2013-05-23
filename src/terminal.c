@@ -11,6 +11,7 @@ static uint16_t cur_col = 0;
 #define CHAR_WIDTH font_terminal->max_width
 #define CHAR_HEIGHT font_terminal->max_height
 #define MAX_COL display_width() / CHAR_WIDTH
+#define MAX_ROW display_height() / CHAR_HEIGHT
 
 void
 terminal_clear()
@@ -42,6 +43,8 @@ terminal_write(char* str)
         cur_col = 0;
       }
     }
+    if (cur_row >= MAX_ROW)
+      terminal_clear();
     str++;
   }
 }

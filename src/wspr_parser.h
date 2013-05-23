@@ -27,6 +27,7 @@ typedef enum {
   /* WiFi module output messages */
   WSPR_OUT_START,
   WSPR_OUT_VERSION = WSPR_OUT_START,
+  WSPR_OUT_DEBUG,
   WSPR_OUT_SCAN_RESULT,
   WSPR_OUT_SCAN_COMPLETE,
   WSPR_OUT_HTTP_GET,
