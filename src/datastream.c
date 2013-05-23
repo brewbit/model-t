@@ -214,7 +214,10 @@ ds_write_s32(datastream_t* ds, int32_t i)
 void
 ds_write_str(datastream_t* ds, char* str)
 {
-  ds_write_buf(ds, (uint8_t*)str, strlen(str));
+  if (str == NULL)
+    ds_write_buf(ds, NULL, 0);
+  else
+    ds_write_buf(ds, (uint8_t*)str, strlen(str));
 }
 
 void
@@ -223,7 +226,9 @@ ds_write_buf(datastream_t* ds, uint8_t* data, uint16_t len)
   CHECK_SIZE_VOID(2 + len);
 
   ds_write_u16(ds, len);
-  memcpy(&ds->buf[ds->idx], data, len);
-  ds->idx += len;
+  if (len > 0) {
+    memcpy(&ds->buf[ds->idx], data, len);
+    ds->idx += len;
+  }
 }
 
