@@ -55,7 +55,7 @@ static char* cJSON_strdup(const char* str)
 }
 
 /* Internal constructor. */
-static cJSON *cJSON_New_Item()
+static cJSON *cJSON_New_Item(void)
 {
     cJSON* node = (cJSON*)malloc(sizeof(cJSON));
     if (node) memset(node,0,sizeof(cJSON));

@@ -85,13 +85,14 @@ CSRC = $(PORTSRC) \
        $(CHIBIOS)/os/various/syscalls.c \
        $(AUTOGEN_DIR)/image_resources.c \
        $(AUTOGEN_DIR)/font_resources.c \
+       src/bapi.c \
        src/datastream.c \
        src/font.c \
        src/image.c \
        src/lcd.c \
        src/main.c \
        src/terminal.c \
-       src/web_api.c \
+       src/txn.c \
        src/wspr.c \
        src/wspr_http.c \
        src/wspr_parser.c \

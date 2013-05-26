@@ -28,19 +28,20 @@ static msg_t thread_blinker(void *arg) {
 void
 wlan_test(void)
 {
-  chThdSleepSeconds(1);
-  terminal_write("requesting version\n");
-  wspr_send(WSPR_IN_VERSION, NULL, 0);
-
-  chThdSleepSeconds(10);
-  terminal_write("making http get request\n");
-  http_header_t headers[] = {
-      {.name = "Accept",       .value = "application/json" },
-      {.name = "Content-type", .value = "application/json" },
-  };
-  wspr_http_get("brewbit.herokuapp.com", 80, headers, 2,
-      "/api/v1/account/token",
-      "{ \"username\":\"test@test.com\", \"password\":\"test123test\" }");
+//  chThdSleepSeconds(1);
+//  terminal_write("requesting version\n");
+//  wspr_send(WSPR_IN_VERSION, NULL, 0);
+//
+//  chThdSleepSeconds(10);
+//  terminal_write("making http get request\n");
+//  http_header_t headers[] = {
+//      {.name = "Accept",       .value = "application/json" },
+//      {.name = "Content-type", .value = "application/json" },
+//  };
+//  wspr_http_get("brewbit.herokuapp.com", 80,
+//      "/api/v1/account/token",
+//      headers, 2,
+//      "{ \"username\":\"test@test.com\", \"password\":\"test123test\" }");
 //  tcp_connect(mkip(192, 168, 1, 146), 4392);
 }
 
@@ -50,7 +51,6 @@ int main(void)
   chSysInit();
 
   set_bg_img(img_background);
-
   lcd_init();
 
   wspr_init();

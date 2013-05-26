@@ -7,37 +7,47 @@
 #include "datastream.h"
 #include "wspr_parser.h"
 #include "terminal.h"
+#include "txn.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 
+static txn_cache_t* http_txns;
+
+
 static void
-handle_http_get_result(uint8_t* data, uint16_t data_len);
+handle_http_result(uint8_t* data, uint16_t data_len);
 
 
 void
 wspr_http_init()
 {
-  wspr_set_handler(WSPR_OUT_HTTP_GET, handle_http_get_result);
+  http_txns = txn_cache_new();
+  wspr_set_handler(WSPR_OUT_HTTP_GET, handle_http_result);
 }
 
 void
-wspr_http_get(char* host, uint16_t port, http_header_t* headers, uint8_t num_headers, char* url, char* request)
+wspr_http_get(
+    http_get_request_t* request, wspr_http_get_handler_t callback, void* callback_data)
 {
   int i;
-  datastream_t* ds = ds_new(NULL, 1024);
-  ds_write_str(ds, host);
-  ds_write_u16(ds, port);
 
-  ds_write_u8(ds, num_headers);
-  for (i = 0; i < num_headers; ++i) {
-    ds_write_str(ds, headers[i].name);
-    ds_write_str(ds, headers[i].value);
+  txn_t* txn = txn_new(http_txns, (txn_callback_t)callback, callback_data);
+
+  datastream_t* ds = ds_new(NULL, 1024);
+  ds_write_u32(ds, txn->txn_id);
+  ds_write_str(ds, request->host);
+  ds_write_u16(ds, request->port);
+
+  ds_write_u8(ds, request->num_headers);
+  for (i = 0; i < request->num_headers; ++i) {
+    ds_write_str(ds, request->headers[i].name);
+    ds_write_str(ds, request->headers[i].value);
   }
 
-  ds_write_str(ds, url);
-  ds_write_str(ds, request);
+  ds_write_str(ds, request->url);
+  ds_write_str(ds, request->request);
 
   wspr_send(WSPR_IN_HTTP_GET, ds->buf, ds_index(ds));
 
@@ -45,25 +55,18 @@ wspr_http_get(char* host, uint16_t port, http_header_t* headers, uint8_t num_hea
 }
 
 static void
-handle_http_get_result(uint8_t* data, uint16_t data_len)
+handle_http_result(uint8_t* data, uint16_t data_len)
 {
+  http_get_response_t response;
   datastream_t* ds = ds_new(data, data_len);
 
-  int32_t result = ds_read_s32(ds);
-  uint32_t response_code = ds_read_u32(ds);
-  char* http_response = ds_read_str(ds);
-
-  terminal_write("http get ");
-  if (result == 0)
-    terminal_write("succeeded!");
-  else
-    terminal_write("failed :(");
-  terminal_write("\n  response code: ");
-  terminal_write_int(response_code);
-  terminal_write("\n  response body: ");
-  terminal_write(http_response);
-  terminal_write("\n");
-
+  uint32_t txn_id = ds_read_u32(ds);
+  response.result = ds_read_s32(ds);
+  response.response_code = ds_read_u32(ds);
+  response.response_body = ds_read_str(ds);
   ds_free(ds);
-  free(http_response);
+
+  txn_complete(http_txns, txn_id, &response);
+
+  free(response.response_body);
 }
