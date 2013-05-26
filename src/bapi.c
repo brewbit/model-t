@@ -5,6 +5,7 @@
 #include "bapi.h"
 #include "cJSON.h"
 #include "wspr_http.h"
+#include "terminal.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -74,6 +75,7 @@ bapi_thread(void* arg)
       case BAPI_IDLE:
         break;
     }
+    chThdSleepSeconds(1);
   }
 
   return 0;
@@ -86,6 +88,7 @@ bapi_get_token(bapi_t* bapi)
   cJSON_AddItemToObject(token_request, "username", cJSON_CreateString("test@test.com"));
   cJSON_AddItemToObject(token_request, "password", cJSON_CreateString("test123test"));
 
+  terminal_write("making token request\n");
   bapi_request(bapi, "/api/v1/account/token", token_request, bapi_complete_get_token);
   cJSON_Delete(token_request);
 
@@ -95,14 +98,18 @@ bapi_get_token(bapi_t* bapi)
 static void
 bapi_complete_get_token(bapi_t* bapi, cJSON* token_response)
 {
+  terminal_write("got token response\n");
   if (token_response) {
     cJSON* token = cJSON_GetObjectItem(token_response, "token");
     if (token != NULL) {
       bapi->token = strdup(token->valuestring);
+
+      terminal_write("token is: ");
+      terminal_write(bapi->token);
+      terminal_write("\n");
       bapi->state = BAPI_GET_ACCT_INFO;
       chSemSignal(&bapi->cmd_sem);
     }
-    cJSON_Delete(token_response);
   }
 }
 
@@ -112,6 +119,7 @@ bapi_get_acct_info(bapi_t* bapi)
   cJSON* acct_request = cJSON_CreateObject();
   cJSON_AddItemToObject(acct_request, "auth_token", cJSON_CreateString(bapi->token));
 
+  terminal_write("making acct info request\n");
   bapi_request(bapi, "/api/v1/account", acct_request, bapi_complete_get_acct_info);
   cJSON_Delete(acct_request);
 
@@ -121,6 +129,7 @@ bapi_get_acct_info(bapi_t* bapi)
 static void
 bapi_complete_get_acct_info(bapi_t* bapi, cJSON* acct_response)
 {
+  terminal_write("got acct info:\n");
   if (acct_response) {
     cJSON* user = cJSON_GetObjectItem(acct_response, "user");
     if (user) {
@@ -132,11 +141,14 @@ bapi_complete_get_acct_info(bapi_t* bapi, cJSON* acct_response)
       if (name)
         bapi->acct_info.name = strdup(name->valuestring);
 
+      terminal_write("  email: ");
+      terminal_write(bapi->acct_info.email);
+      terminal_write("\n  name: ");
+      terminal_write(bapi->acct_info.name);
+      terminal_write("\n");
       bapi->state = BAPI_IDLE;
       chSemSignal(&bapi->cmd_sem);
     }
-
-    cJSON_Delete(acct_response);
   }
 }
 
@@ -167,14 +179,17 @@ static void
 bapi_request_complete(void* arg, http_get_response_t* response)
 {
   bapi_t* bapi = arg;
+  cJSON* json_response = NULL;
 
   if ((response->result == 0) &&
       (response->response_code == 200) &&
       (response->response_body != NULL)) {
-    cJSON* json_response = cJSON_Parse(response->response_body);
+    json_response = cJSON_Parse(response->response_body);
+  }
 
+  if (bapi->response_handler != NULL)
     bapi->response_handler(bapi, json_response);
 
+  if (json_response != NULL)
     cJSON_Delete(json_response);
-  }
 }

@@ -30,7 +30,7 @@ txn_new(txn_cache_t* tc, txn_callback_t callback, void* callback_data)
 }
 
 txn_t*
-txn_find(txn_cache_t* tc, uint16_t txn_id)
+txn_find(txn_cache_t* tc, uint32_t txn_id)
 {
   txn_t* txn;
 
@@ -74,7 +74,7 @@ txn_callback(txn_t* txn, void* response_data)
 
 // finds a transaction and calls the callback
 void
-txn_update(txn_cache_t* tc, uint16_t txn_id, void* response_data)
+txn_update(txn_cache_t* tc, uint32_t txn_id, void* response_data)
 {
   txn_t* txn = txn_find(tc, txn_id);
   txn_callback(txn, response_data);
@@ -82,7 +82,7 @@ txn_update(txn_cache_t* tc, uint16_t txn_id, void* response_data)
 
 // same as txn_update, but also deletes the transaction
 void
-txn_complete(txn_cache_t* tc, uint16_t txn_id, void* response_data)
+txn_complete(txn_cache_t* tc, uint32_t txn_id, void* response_data)
 {
   txn_t* txn = txn_find(tc, txn_id);
   txn_callback(txn, response_data);
