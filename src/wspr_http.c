@@ -24,12 +24,12 @@ void
 wspr_http_init()
 {
   http_txns = txn_cache_new();
-  wspr_set_handler(WSPR_OUT_HTTP_GET, handle_http_result);
+  wspr_set_handler(WSPR_OUT_HTTP_REQ, handle_http_result);
 }
 
 void
-wspr_http_get(
-    http_get_request_t* request, wspr_http_get_handler_t callback, void* callback_data)
+wspr_http_request(
+    http_request_t* request, http_response_handler_t callback, void* callback_data)
 {
   int i;
 
@@ -39,6 +39,7 @@ wspr_http_get(
   ds_write_u32(ds, txn->txn_id);
   ds_write_str(ds, request->host);
   ds_write_u16(ds, request->port);
+  ds_write_u8(ds, request->method);
 
   ds_write_u8(ds, request->num_headers);
   for (i = 0; i < request->num_headers; ++i) {
@@ -49,7 +50,7 @@ wspr_http_get(
   ds_write_str(ds, request->url);
   ds_write_str(ds, request->request);
 
-  wspr_send(WSPR_IN_HTTP_GET, ds->buf, ds_index(ds));
+  wspr_send(WSPR_IN_HTTP_REQ, ds->buf, ds_index(ds));
 
   ds_free(ds);
 }
@@ -57,7 +58,7 @@ wspr_http_get(
 static void
 handle_http_result(uint8_t* data, uint16_t data_len)
 {
-  http_get_response_t response;
+  http_response_t response;
   datastream_t* ds = ds_new(data, data_len);
 
   uint32_t txn_id = ds_read_u32(ds);

@@ -39,8 +39,8 @@ static void bapi_complete_get_token(bapi_t* bapi, cJSON* response);
 static void bapi_get_acct_info(bapi_t* bapi);
 static void bapi_complete_get_acct_info(bapi_t* bapi, cJSON* response);
 
-static void bapi_request(bapi_t* bapi, char* endpoint, cJSON* request, bapi_response_handler_t handler);
-static void bapi_request_complete(void* arg, http_get_response_t* response);
+static void bapi_request(bapi_t* bapi, char* endpoint, http_method_t method, cJSON* request, bapi_response_handler_t handler);
+static void bapi_request_complete(void* arg, http_response_t* response);
 
 static msg_t bapi_thread(void* arg);
 
@@ -89,7 +89,7 @@ bapi_get_token(bapi_t* bapi)
   cJSON_AddItemToObject(token_request, "password", cJSON_CreateString("test123test"));
 
   terminal_write("making token request\n");
-  bapi_request(bapi, "/api/v1/account/token", token_request, bapi_complete_get_token);
+  bapi_request(bapi, "/api/v1/account/token", HTTP_GET, token_request, bapi_complete_get_token);
   cJSON_Delete(token_request);
 
   chSemWaitTimeoutS(&bapi->cmd_sem, 30000);
@@ -120,7 +120,7 @@ bapi_get_acct_info(bapi_t* bapi)
   cJSON_AddItemToObject(acct_request, "auth_token", cJSON_CreateString(bapi->token));
 
   terminal_write("making acct info request\n");
-  bapi_request(bapi, "/api/v1/account", acct_request, bapi_complete_get_acct_info);
+  bapi_request(bapi, "/api/v1/account", HTTP_GET, acct_request, bapi_complete_get_acct_info);
   cJSON_Delete(acct_request);
 
   chSemWaitTimeoutS(&bapi->cmd_sem, 30000);
@@ -153,7 +153,7 @@ bapi_complete_get_acct_info(bapi_t* bapi, cJSON* acct_response)
 }
 
 static void
-bapi_request(bapi_t* bapi, char* endpoint, cJSON* request, bapi_response_handler_t handler)
+bapi_request(bapi_t* bapi, char* endpoint, http_method_t method, cJSON* request, bapi_response_handler_t handler)
 {
   char* request_str = cJSON_PrintUnformatted(request);
 
@@ -163,20 +163,21 @@ bapi_request(bapi_t* bapi, char* endpoint, cJSON* request, bapi_response_handler
       {.name = "Accept",       .value = "application/json" },
       {.name = "Content-type", .value = "application/json" },
   };
-  http_get_request_t http_request = {
+  http_request_t http_request = {
     .host = BAPI_HOST,
     .port = BAPI_PORT,
+    .method = method,
     .url = endpoint,
     .num_headers = 2,
     .headers = headers,
     .request = request_str
   };
-  wspr_http_get(&http_request, bapi_request_complete, bapi);
+  wspr_http_request(&http_request, bapi_request_complete, bapi);
   free(request_str);
 }
 
 static void
-bapi_request_complete(void* arg, http_get_response_t* response)
+bapi_request_complete(void* arg, http_response_t* response)
 {
   bapi_t* bapi = arg;
   cJSON* json_response = NULL;
