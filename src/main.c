@@ -8,6 +8,7 @@
 #include "wspr.h"
 #include "image.h"
 #include "bapi.h"
+#include "touch.h"
 
 
 static WORKING_AREA(wa_thread_blinker, 128);
@@ -33,9 +34,10 @@ int main(void)
 
   set_bg_img(img_background);
   lcd_init();
+  touch_init();
 
   wspr_init();
-  bapi_init();
+//  bapi_init();
 
   chThdCreateStatic(wa_thread_blinker, sizeof(wa_thread_blinker), NORMALPRIO, thread_blinker, NULL);
 

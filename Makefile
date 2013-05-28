@@ -86,12 +86,14 @@ CSRC = $(PORTSRC) \
        $(AUTOGEN_DIR)/image_resources.c \
        $(AUTOGEN_DIR)/font_resources.c \
        src/bapi.c \
+       src/calibrate.c \
        src/datastream.c \
        src/font.c \
        src/image.c \
        src/lcd.c \
        src/main.c \
        src/terminal.c \
+       src/touch.c \
        src/txn.c \
        src/wspr.c \
        src/wspr_http.c \
