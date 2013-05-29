@@ -3,6 +3,7 @@
 	<name>b2tc-ChibiOS</name>
 	<comment></comment>
 	<projects>
+		<project>ChibiOS</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
