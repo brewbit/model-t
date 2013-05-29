@@ -55,6 +55,8 @@ gui_thread_func(void* arg)
         screen = msg->u.set_screen.screen;
         break;
     }
+
+    chMsgRelease(tp, 0);
   }
   return 0;
 }
