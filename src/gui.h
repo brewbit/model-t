@@ -42,6 +42,7 @@ typedef struct {
 
 typedef struct screen_s {
   void (*on_paint)(void);
+  void (*on_raw_touch)(uint16_t x, uint16_t y);
   void (*on_touch)(uint16_t x, uint16_t y);
   void (*on_msg)(gui_msg_t* msg);
 } screen_t;

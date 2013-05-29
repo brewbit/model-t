@@ -47,6 +47,9 @@ gui_thread_func(void* arg)
         break;
 
       case GUI_TOUCH:
+        if (screen->on_raw_touch)
+          screen->on_raw_touch(msg->u.touch.raw_x, msg->u.touch.raw_y);
+
         if (screen->on_touch)
           screen->on_touch(msg->u.touch.x, msg->u.touch.y);
         break;
