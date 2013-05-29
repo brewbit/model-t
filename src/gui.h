@@ -8,10 +8,7 @@ typedef enum {
   GUI_SET_SCREEN,
 } gui_msg_id_t;
 
-typedef struct {
-  void (*on_paint)(void);
-  void (*on_touch)(uint16_t x, uint16_t y);
-} screen_t;
+struct screen_s;
 
 typedef struct {
   gui_msg_id_t id;
@@ -31,7 +28,7 @@ typedef struct {
 
 typedef struct {
   gui_msg_id_t id;
-  screen_t* screen;
+  struct screen_s* screen;
 } gui_set_screen_msg_t;
 
 typedef struct {
@@ -42,6 +39,12 @@ typedef struct {
     gui_set_screen_msg_t set_screen;
   } u;
 } gui_msg_t;
+
+typedef struct screen_s {
+  void (*on_paint)(void);
+  void (*on_touch)(uint16_t x, uint16_t y);
+  void (*on_msg)(gui_msg_t* msg);
+} screen_t;
 
 void
 gui_init(screen_t* main_screen);

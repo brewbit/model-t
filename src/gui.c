@@ -54,6 +54,11 @@ gui_thread_func(void* arg)
       case GUI_SET_SCREEN:
         screen = msg->u.set_screen.screen;
         break;
+
+      default:
+        if (screen->on_msg)
+          screen->on_msg(msg);
+        break;
     }
 
     chMsgRelease(tp, 0);
