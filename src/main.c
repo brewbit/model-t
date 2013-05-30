@@ -1,7 +1,6 @@
 
 #include "ch.h"
 #include "hal.h"
-#include "test.h"
 
 #include "lcd.h"
 #include "terminal.h"
@@ -35,6 +34,7 @@ int main(void)
   set_bg_img(img_background);
   lcd_init();
   touch_init();
+
 
   wspr_init();
 //  bapi_init();
