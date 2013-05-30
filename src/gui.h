@@ -1,6 +1,8 @@
 
-#ifndef DISP_MGR_H
-#define DISP_MGR_H
+#ifndef GUI_H
+#define GUI_H
+
+#include "common.h"
 
 typedef enum {
   GUI_PAINT,
@@ -52,6 +54,9 @@ gui_init(screen_t* main_screen);
 
 void
 gui_set_screen(screen_t* screen);
+
+void
+gui_send_touch(point_t* pos, point_t* raw_pos);
 
 void
 gui_send_msg(gui_msg_t* msg);

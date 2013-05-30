@@ -12,7 +12,7 @@ static Thread* gui_thread;
 void
 gui_init(screen_t* main_screen)
 {
-  chThdCreateStatic(wa_gui_thread, sizeof(wa_gui_thread), NORMALPRIO, gui_thread_func, main_screen);
+  gui_thread = chThdCreateStatic(wa_gui_thread, sizeof(wa_gui_thread), NORMALPRIO, gui_thread_func, main_screen);
 }
 
 void
@@ -22,7 +22,20 @@ gui_set_screen(screen_t* screen)
       .id = GUI_SET_SCREEN,
       .screen = screen,
   };
-  chMsgSend(gui_thread, (msg_t)&msg);
+  gui_send_msg((gui_msg_t*)&msg);
+}
+
+void
+gui_send_touch(point_t* pos, point_t* raw_pos)
+{
+  gui_touch_msg_t msg = {
+      .id = GUI_TOUCH,
+      .x = pos->x,
+      .y = pos->y,
+      .raw_x = raw_pos->x,
+      .raw_y = raw_pos->y,
+  };
+  gui_send_msg((gui_msg_t*)&msg);
 }
 
 void

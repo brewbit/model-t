@@ -4,6 +4,8 @@
 #include "touch.h"
 #include "terminal.h"
 #include "lcd.h"
+#include "touch_calib.h"
+#include "gui.h"
 
 #include <stdbool.h>
 
@@ -15,6 +17,8 @@
 
 #define NUM_SAMPLES 8
 #define DISCARDED_SAMPLES 1
+
+#define TOUCH_THRESHOLD 20
 
 typedef struct {
   uint16_t read_pos_pad;
@@ -79,10 +83,21 @@ static const axis_cfg_t y_axis = {
 };
 
 static uint8_t wa_touch_thread[1024];
+static matrix_t calib_matrix;
 
 void
 touch_init()
 {
+  point_t perfectScreenSample[3] = {
+    { 100, 100 },
+    { 900, 500 },
+    { 500, 900 }
+  } ;
+  setCalibrationMatrix(
+      perfectScreenSample,
+      perfectScreenSample,
+      &calib_matrix);
+
   adcStart(&ADCD1, NULL);
 
   chThdCreateStatic(wa_touch_thread, sizeof(wa_touch_thread), NORMALPRIO, touch_thread, NULL);
@@ -117,14 +132,17 @@ touch_thread(void* arg)
   (void)arg;
 
   while (1) {
-    adcsample_t y = read_axis(&y_axis);
-    adcsample_t x = read_axis(&x_axis);
+    point_t raw;
+    raw.x = read_axis(&x_axis);
+    raw.y = read_axis(&y_axis);
 
-    terminal_clear();
-    terminal_write("x: ");
-    terminal_write_int(x);
-    terminal_write("\ny: ");
-    terminal_write_int(y);
+    if ((raw.x > TOUCH_THRESHOLD) &&
+        (raw.y > TOUCH_THRESHOLD)) {
+      point_t calib;
+      getDisplayPoint(&calib, &raw, &calib_matrix);
+
+      gui_send_touch(&raw, &calib);
+    }
 
     chThdSleepMilliseconds(500);
   }
