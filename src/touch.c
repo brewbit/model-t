@@ -7,95 +7,61 @@
 
 #include <stdbool.h>
 
-static void adccb(ADCDriver *adcp, adcsample_t *buffer, size_t n);
+
+#define XP 5
+#define XN 6
+#define YP 4
+#define YN 7
+
+#define NUM_SAMPLES 32
+
+
 static void setup_axis(u16 rp, u16 rn, u16 bp, u16 bn);
-static void setup_y_axis(void);
-static void setup_x_axis(void);
 static adcsample_t adc_avg(adcsample_t* samples, uint16_t num_samples);
 static msg_t touch_thread(void* arg);
 
 
-// X+ = PA4 = ADC1-4
-#define XP 5
-// X- = PA6
-#define XN 6
-// Y+ = PA5 = ADC1-5
-#define YP 4
-// Y- = PA7
-#define YN 7
+static const ADCConversionGroup y_conv_grp = {
+  .circular = FALSE,
+  .num_channels = 1,
+  .end_cb = NULL,
+  .error_cb = NULL,
 
-
-
-/* Total number of channels to be sampled by a single ADC operation.*/
-#define ADC_GRP1_NUM_CHANNELS   2
-
-/* Depth of the conversion buffer, channels are sampled four times each.*/
-#define ADC_GRP1_BUF_DEPTH      32
-
-/*
- * ADC samples buffer.
- */
-static adcsample_t samples[ADC_GRP1_NUM_CHANNELS * ADC_GRP1_BUF_DEPTH];
-
-/*
- * ADC conversion group.
- * Mode:        Linear buffer, 4 samples of 2 channels, SW triggered.
- * Channels:    IN11   (48 cycles sample time)
- *              Sensor (192 cycles sample time)
- */
-static const ADCConversionGroup adcgrpcfg = {
-  FALSE,
-  ADC_GRP1_NUM_CHANNELS,
-  adccb,
-  NULL,
   /* HW dependent part.*/
-  ADC_CR1_RES_0,
-  ADC_CR2_SWSTART,
-  0,
-  ADC_SMPR2_SMP_AN4(ADC_SAMPLE_480) | ADC_SMPR2_SMP_AN5(ADC_SAMPLE_480),
-  ADC_SQR1_NUM_CH(ADC_GRP1_NUM_CHANNELS),
-  0,
-  ADC_SQR3_SQ2_N(ADC_CHANNEL_IN4) | ADC_SQR3_SQ1_N(ADC_CHANNEL_IN5)
+  .cr1   = ADC_CR1_RES_0, // 10-bit resolution
+  .cr2   = ADC_CR2_SWSTART, // software triggered
+  .smpr1 = 0,
+  .smpr2 = ADC_SMPR2_SMP_AN4(ADC_SAMPLE_480),
+  .sqr1  = ADC_SQR1_NUM_CH(1),
+  .sqr2  = 0,
+  .sqr3  = ADC_SQR3_SQ1_N(ADC_CHANNEL_IN4),
 };
 
-static adcsample_t avg_y, avg_x;
-static volatile uint8_t reading_ready;
+static const ADCConversionGroup x_conv_grp = {
+  .circular = FALSE,
+  .num_channels = 1,
+  .end_cb = NULL,
+  .error_cb = NULL,
+
+  /* HW dependent part.*/
+  .cr1   = ADC_CR1_RES_0, // 10-bit resolution
+  .cr2   = ADC_CR2_SWSTART, // software triggered
+  .smpr1 = 0,
+  .smpr2 = ADC_SMPR2_SMP_AN5(ADC_SAMPLE_480),
+  .sqr1  = ADC_SQR1_NUM_CH(1),
+  .sqr2  = 0,
+  .sqr3  = ADC_SQR3_SQ1_N(ADC_CHANNEL_IN5),
+};
+
 static uint8_t wa_touch_thread[1024];
-
-
-static void
-adccb(ADCDriver *adcp, adcsample_t *buffer, size_t n) {
-
-  (void) buffer; (void) n;
-  /* Note, only in the ADC_COMPLETE state because the ADC driver fires an
-     intermediate callback when the buffer is half full.*/
-  if (adcp->state != ADC_COMPLETE) {
-    setup_x_axis();
-  }
-  else {
-    /* Calculates the average values from the ADC samples.*/
-    avg_y = (samples[0] + samples[2] + samples[4] + samples[6]) / 4;
-    avg_x = (samples[1] + samples[3] + samples[5] + samples[7]) / 4;
-
-    reading_ready = 1;
-  }
-}
+static adcsample_t samples[NUM_SAMPLES];
 
 void
 touch_init()
 {
-  chThdCreateStatic(wa_touch_thread, sizeof(wa_touch_thread), NORMALPRIO, touch_thread, NULL);
-
   adcStart(&ADCD1, NULL);
 
-
-  /* Starts an asynchronous ADC conversion operation, the conversion
-     will be executed in parallel to the current PWM cycle and will
-     terminate before the next PWM cycle.*/
-  chSysLockFromIsr();
-  setup_y_axis();
-  adcStartConversionI(&ADCD1, &adcgrpcfg, samples, ADC_GRP1_BUF_DEPTH);
-  chSysUnlockFromIsr();
+  chThdCreateStatic(wa_touch_thread, sizeof(wa_touch_thread), NORMALPRIO, touch_thread, NULL);
 }
 
 static void
@@ -110,16 +76,19 @@ setup_axis(u16 rp, u16 rn, u16 bp, u16 bn)
   palClearPad(GPIOA, bn);
 }
 
-static void
-setup_y_axis()
+void
+dump_readings(void)
 {
-  setup_axis(YP, YN, XP, XN);
-}
+  int j;
 
-static void
-setup_x_axis()
-{
-  setup_axis(XP, XN, YP, YN);
+  for (j = 0; j < NUM_SAMPLES; ++j) {
+    terminal_write_int(samples[j]);
+    terminal_write(" ");
+  }
+  adcsample_t avg_val = adc_avg(samples+2, NUM_SAMPLES-2);
+  terminal_write("\navg: ");
+  terminal_write_int(avg_val);
+  terminal_write("\n");
 }
 
 static msg_t
@@ -128,31 +97,19 @@ touch_thread(void* arg)
   (void)arg;
 
   while (1) {
-    if (reading_ready) {
-      reading_ready = 0;
-      terminal_clear();
-      terminal_write("reading ready\n");
-      int i,j;
-      for (i = 0; i < ADC_GRP1_NUM_CHANNELS; ++i) {
-        terminal_write("channel:\n");
-        for (j = 0; j < ADC_GRP1_BUF_DEPTH; ++j) {
-          terminal_write_int(samples[i*ADC_GRP1_BUF_DEPTH + j]);
-          terminal_write(" ");
-        }
-        adcsample_t avg_val = adc_avg(samples + i*ADC_GRP1_BUF_DEPTH + 2, ADC_GRP1_BUF_DEPTH-2);
-        terminal_write("avg: ");
-        terminal_write_int(avg_val);
-        terminal_write("\n");
-      }
+    terminal_clear();
 
+    terminal_write("\ny samples:\n");
+    setup_axis(YP, YN, XP, XN);
+    adcConvert(&ADCD1, &y_conv_grp, samples, NUM_SAMPLES);
+    dump_readings();
 
-      chThdSleepMilliseconds(500);
+    terminal_write("\nx samples:\n");
+    setup_axis(XP, XN, YP, YN);
+    adcConvert(&ADCD1, &x_conv_grp, samples, NUM_SAMPLES);
+    dump_readings();
 
-      chSysLockFromIsr();
-      setup_y_axis();
-      adcStartConversionI(&ADCD1, &adcgrpcfg, samples, ADC_GRP1_BUF_DEPTH);
-      chSysUnlockFromIsr();
-    }
+    chThdSleepMilliseconds(500);
   }
 
   return 0;
