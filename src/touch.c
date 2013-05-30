@@ -13,10 +13,19 @@
 #define YP 4
 #define YN 7
 
-#define NUM_SAMPLES 32
+#define NUM_SAMPLES 8
+#define DISCARDED_SAMPLES 1
+
+typedef struct {
+  uint16_t read_pos_pad;
+  uint16_t read_neg_pad;
+  uint16_t pull_pos_pad;
+  uint16_t pull_neg_pad;
+  const ADCConversionGroup* conv_grp;
+} axis_cfg_t;
 
 
-static void setup_axis(u16 rp, u16 rn, u16 bp, u16 bn);
+static uint16_t read_axis(const axis_cfg_t* axis_cfg);
 static adcsample_t adc_avg(adcsample_t* samples, uint16_t num_samples);
 static msg_t touch_thread(void* arg);
 
@@ -53,8 +62,23 @@ static const ADCConversionGroup x_conv_grp = {
   .sqr3  = ADC_SQR3_SQ1_N(ADC_CHANNEL_IN5),
 };
 
+static const axis_cfg_t x_axis = {
+    .read_pos_pad = XP,
+    .read_neg_pad = XN,
+    .pull_pos_pad = YP,
+    .pull_neg_pad = YN,
+    .conv_grp = &x_conv_grp,
+};
+
+static const axis_cfg_t y_axis = {
+    .read_pos_pad = YP,
+    .read_neg_pad = YN,
+    .pull_pos_pad = XP,
+    .pull_neg_pad = XN,
+    .conv_grp = &y_conv_grp,
+};
+
 static uint8_t wa_touch_thread[1024];
-static adcsample_t samples[NUM_SAMPLES];
 
 void
 touch_init()
@@ -64,31 +88,27 @@ touch_init()
   chThdCreateStatic(wa_touch_thread, sizeof(wa_touch_thread), NORMALPRIO, touch_thread, NULL);
 }
 
-static void
-setup_axis(u16 rp, u16 rn, u16 bp, u16 bn)
+static uint16_t
+read_axis(const axis_cfg_t* axis_cfg)
 {
-  palSetPadMode(GPIOA, rp, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOA, rn, PAL_MODE_INPUT);
-  palSetPadMode(GPIOA, bp, PAL_MODE_OUTPUT_PUSHPULL);
-  palSetPadMode(GPIOA, bn, PAL_MODE_OUTPUT_PUSHPULL);
+  adcsample_t samples[NUM_SAMPLES];
 
-  palSetPad(GPIOA, bp);
-  palClearPad(GPIOA, bn);
-}
+  /* setup the pad modes */
+  palSetPadMode(GPIOA, axis_cfg->read_pos_pad, PAL_MODE_INPUT_ANALOG);
+  palSetPadMode(GPIOA, axis_cfg->read_neg_pad, PAL_MODE_INPUT);
+  palSetPadMode(GPIOA, axis_cfg->pull_pos_pad, PAL_MODE_OUTPUT_PUSHPULL);
+  palSetPadMode(GPIOA, axis_cfg->pull_neg_pad, PAL_MODE_OUTPUT_PUSHPULL);
 
-void
-dump_readings(void)
-{
-  int j;
+  /* set the 'pull' pins to the correct state */
+  palSetPad(GPIOA, axis_cfg->pull_pos_pad);
+  palClearPad(GPIOA, axis_cfg->pull_neg_pad);
 
-  for (j = 0; j < NUM_SAMPLES; ++j) {
-    terminal_write_int(samples[j]);
-    terminal_write(" ");
-  }
-  adcsample_t avg_val = adc_avg(samples+2, NUM_SAMPLES-2);
-  terminal_write("\navg: ");
-  terminal_write_int(avg_val);
-  terminal_write("\n");
+  /* capture a number of samples from the read pin */
+  adcConvert(&ADCD1, axis_cfg->conv_grp, samples, NUM_SAMPLES);
+
+  /* average and return the samples */
+  return adc_avg(samples+DISCARDED_SAMPLES,
+      NUM_SAMPLES-DISCARDED_SAMPLES);
 }
 
 static msg_t
@@ -97,17 +117,14 @@ touch_thread(void* arg)
   (void)arg;
 
   while (1) {
+    adcsample_t y = read_axis(&y_axis);
+    adcsample_t x = read_axis(&x_axis);
+
     terminal_clear();
-
-    terminal_write("\ny samples:\n");
-    setup_axis(YP, YN, XP, XN);
-    adcConvert(&ADCD1, &y_conv_grp, samples, NUM_SAMPLES);
-    dump_readings();
-
-    terminal_write("\nx samples:\n");
-    setup_axis(XP, XN, YP, YN);
-    adcConvert(&ADCD1, &x_conv_grp, samples, NUM_SAMPLES);
-    dump_readings();
+    terminal_write("x: ");
+    terminal_write_int(x);
+    terminal_write("\ny: ");
+    terminal_write_int(y);
 
     chThdSleepMilliseconds(500);
   }
