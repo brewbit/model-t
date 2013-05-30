@@ -19,6 +19,7 @@
 #define DISCARDED_SAMPLES 1
 
 #define TOUCH_THRESHOLD 20
+#define DEBOUNCE_TIME MS2ST(100)
 
 typedef struct {
   uint16_t read_pos_pad;
@@ -84,6 +85,10 @@ static const axis_cfg_t y_axis = {
 
 static uint8_t wa_touch_thread[1024];
 static matrix_t calib_matrix;
+static point_t raw;
+static point_t calib;
+static uint8_t touch_down;
+static systime_t last_touch_time;
 
 void
 touch_init()
@@ -92,7 +97,7 @@ touch_init()
     { 100, 100 },
     { 900, 500 },
     { 500, 900 }
-  } ;
+  };
   setCalibrationMatrix(
       perfectScreenSample,
       perfectScreenSample,
@@ -132,19 +137,26 @@ touch_thread(void* arg)
   (void)arg;
 
   while (1) {
-    point_t raw;
     raw.x = read_axis(&x_axis);
     raw.y = read_axis(&y_axis);
 
     if ((raw.x > TOUCH_THRESHOLD) &&
         (raw.y > TOUCH_THRESHOLD)) {
-      point_t calib;
       getDisplayPoint(&calib, &raw, &calib_matrix);
 
-      gui_send_touch(&raw, &calib);
+      gui_touch_down(&calib, &raw);
+      touch_down = 1;
+      last_touch_time = chTimeNow();
+    }
+    else {
+      if (touch_down &&
+          !chTimeIsWithin(last_touch_time, last_touch_time + DEBOUNCE_TIME)) {
+        gui_touch_up(&calib, &raw);
+        touch_down = 0;
+      }
     }
 
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(5);
   }
 
   return 0;

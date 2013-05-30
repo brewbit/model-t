@@ -26,14 +26,36 @@ gui_set_screen(screen_t* screen)
 }
 
 void
-gui_send_touch(point_t* pos, point_t* raw_pos)
+gui_touch_down(point_t* pos, point_t* raw_pos)
 {
   gui_touch_msg_t msg = {
-      .id = GUI_TOUCH,
+      .id = GUI_TOUCH_DOWN,
       .x = pos->x,
       .y = pos->y,
       .raw_x = raw_pos->x,
       .raw_y = raw_pos->y,
+  };
+  gui_send_msg((gui_msg_t*)&msg);
+}
+
+void
+gui_touch_up(point_t* pos, point_t* raw_pos)
+{
+  gui_touch_msg_t msg = {
+      .id = GUI_TOUCH_UP,
+      .x = pos->x,
+      .y = pos->y,
+      .raw_x = raw_pos->x,
+      .raw_y = raw_pos->y,
+  };
+  gui_send_msg((gui_msg_t*)&msg);
+}
+
+void
+gui_paint()
+{
+  gui_any_msg_t msg = {
+      .id = GUI_PAINT
   };
   gui_send_msg((gui_msg_t*)&msg);
 }
@@ -59,12 +81,20 @@ gui_thread_func(void* arg)
           screen->on_paint();
         break;
 
-      case GUI_TOUCH:
-        if (screen->on_raw_touch)
-          screen->on_raw_touch(msg->u.touch.raw_x, msg->u.touch.raw_y);
+      case GUI_TOUCH_DOWN:
+        if (screen->on_raw_touch_down)
+          screen->on_raw_touch_down(msg->u.touch.raw_x, msg->u.touch.raw_y);
 
-        if (screen->on_touch)
-          screen->on_touch(msg->u.touch.x, msg->u.touch.y);
+        if (screen->on_touch_down)
+          screen->on_touch_down(msg->u.touch.x, msg->u.touch.y);
+        break;
+
+      case GUI_TOUCH_UP:
+        if (screen->on_raw_touch_up)
+          screen->on_raw_touch_up(msg->u.touch.raw_x, msg->u.touch.raw_y);
+
+        if (screen->on_touch_up)
+          screen->on_touch_up(msg->u.touch.x, msg->u.touch.y);
         break;
 
       case GUI_SET_SCREEN:

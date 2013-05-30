@@ -9,7 +9,7 @@
 #include "bapi.h"
 #include "touch.h"
 #include "gui.h"
-
+#include "gui_calib.h"
 
 static WORKING_AREA(wa_thread_blinker, 128);
 static msg_t thread_blinker(void *arg) {
@@ -27,38 +27,13 @@ static msg_t thread_blinker(void *arg) {
   return 0;
 }
 
-void
-example_on_raw_touch(uint16_t x, uint16_t y)
-{
-  terminal_clear();
-  terminal_write("raw touch\n");
-  terminal_write("x: ");
-  terminal_write_int(x);
-  terminal_write("\ny: ");
-  terminal_write_int(y);
-}
-
-void
-example_on_touch(uint16_t x, uint16_t y)
-{
-  terminal_write("\n\ncalibrated touch\n");
-  terminal_write("x: ");
-  terminal_write_int(x);
-  terminal_write("\ny: ");
-  terminal_write_int(y);
-}
-
-screen_t example_gui = {
-    .on_raw_touch = example_on_raw_touch,
-    .on_touch     = example_on_touch,
-};
-
 int main(void)
 {
   halInit();
   chSysInit();
 
-  gui_init(&example_gui);
+  gui_init(&calib_gui);
+  gui_paint();
 
   set_bg_img(img_background);
   lcd_init();
