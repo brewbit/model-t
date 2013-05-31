@@ -121,6 +121,7 @@ static const axis_cfg_t y_axis = {
 };
 
 static uint8_t wa_touch_thread[1024];
+static uint8_t touch_down;
 
 void
 touch_init()
@@ -175,22 +176,33 @@ touch_thread(void* arg)
     /* Modified form of equation 9 with a = 1024, b = 1 */
     uint32_t p = Q - rz;
 
-    terminal_clear();
-    terminal_write("z: ");
-    terminal_write_int(z1);
-    terminal_write(", ");
-    terminal_write_int(z2);
-    terminal_write("\nrz: ");
-    terminal_write_int(rz);
-    terminal_write("\np: ");
-    terminal_write_int(p);
+//    terminal_clear();
+//    terminal_write("z: ");
+//    terminal_write_int(z1);
+//    terminal_write(", ");
+//    terminal_write_int(z2);
+//    terminal_write("\nrz: ");
+//    terminal_write_int(rz);
+//    terminal_write("\np: ");
+//    terminal_write_int(p);
+
+    // swapped since the screen is rotated...
+    point_t raw = {y, x};
 
     if (p > 900) {
-      terminal_write("\npos: (");
-      terminal_write_int(x);
-      terminal_write(", ");
-      terminal_write_int(y);
-      terminal_write(")");
+//      terminal_write("\npos: (");
+//      terminal_write_int(x);
+//      terminal_write(", ");
+//      terminal_write_int(y);
+//      terminal_write(")");
+      gui_touch_down(&raw, &raw);
+      touch_down = 1;
+    }
+    else {
+      if (touch_down) {
+        gui_touch_up(&raw, &raw);
+        touch_down = 0;
+      }
     }
 
     chThdSleepMilliseconds(100);
