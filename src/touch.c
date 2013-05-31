@@ -147,7 +147,7 @@ read_axis(const axis_cfg_t* axis_cfg)
   palClearPad(GPIOA, axis_cfg->drive_neg_pad);
 
   /* Let the pins settle */
-  chThdSleepMilliseconds(20);
+  chThdSleepMicroseconds(100);
 
   /* capture a number of samples from the read pin */
   adcConvert(&ADCD1, axis_cfg->conv_grp, samples, NUM_SAMPLES);
@@ -176,25 +176,10 @@ touch_thread(void* arg)
     /* Modified form of equation 9 with a = 1024, b = 1 */
     uint32_t p = Q - rz;
 
-//    terminal_clear();
-//    terminal_write("z: ");
-//    terminal_write_int(z1);
-//    terminal_write(", ");
-//    terminal_write_int(z2);
-//    terminal_write("\nrz: ");
-//    terminal_write_int(rz);
-//    terminal_write("\np: ");
-//    terminal_write_int(p);
-
     // swapped since the screen is rotated...
     point_t raw = {y, x};
 
     if (p > 900) {
-//      terminal_write("\npos: (");
-//      terminal_write_int(x);
-//      terminal_write(", ");
-//      terminal_write_int(y);
-//      terminal_write(")");
       gui_touch_down(&raw, &raw);
       touch_down = 1;
     }
@@ -204,8 +189,6 @@ touch_thread(void* arg)
         touch_down = 0;
       }
     }
-
-    chThdSleepMilliseconds(100);
   }
 
   return 0;
