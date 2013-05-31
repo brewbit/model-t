@@ -33,7 +33,6 @@ int main(void)
   chSysInit();
 
   gui_init(&calib_gui);
-  gui_paint();
 
   set_bg_img(img_background);
   lcd_init();
@@ -42,6 +41,8 @@ int main(void)
 
   wspr_init();
 //  bapi_init();
+
+  gui_paint();
 
   chThdCreateStatic(wa_thread_blinker, sizeof(wa_thread_blinker), NORMALPRIO, thread_blinker, NULL);
 

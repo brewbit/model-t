@@ -18,8 +18,10 @@
 #define NUM_SAMPLES 8
 #define DISCARDED_SAMPLES 1
 
-#define TOUCH_THRESHOLD 20
+#define TOUCH_THRESHOLD 40
 #define DEBOUNCE_TIME MS2ST(100)
+
+#define MAX_TOUCH_VELOCITY 10
 
 typedef struct {
   uint16_t read_pos_pad;
@@ -115,13 +117,16 @@ read_axis(const axis_cfg_t* axis_cfg)
 
   /* setup the pad modes */
   palSetPadMode(GPIOA, axis_cfg->read_pos_pad, PAL_MODE_INPUT_ANALOG);
-  palSetPadMode(GPIOA, axis_cfg->read_neg_pad, PAL_MODE_INPUT);
+  palSetPadMode(GPIOA, axis_cfg->read_neg_pad, PAL_MODE_INPUT_ANALOG);
   palSetPadMode(GPIOA, axis_cfg->pull_pos_pad, PAL_MODE_OUTPUT_PUSHPULL);
   palSetPadMode(GPIOA, axis_cfg->pull_neg_pad, PAL_MODE_OUTPUT_PUSHPULL);
 
   /* set the 'pull' pins to the correct state */
   palSetPad(GPIOA, axis_cfg->pull_pos_pad);
   palClearPad(GPIOA, axis_cfg->pull_neg_pad);
+
+  /* Let the pins settle */
+  chThdSleepMilliseconds(20);
 
   /* capture a number of samples from the read pin */
   adcConvert(&ADCD1, axis_cfg->conv_grp, samples, NUM_SAMPLES);
@@ -137,11 +142,25 @@ touch_thread(void* arg)
   (void)arg;
 
   while (1) {
-    raw.x = read_axis(&x_axis);
-    raw.y = read_axis(&y_axis);
+    point_t new_raw;
+    new_raw.x = read_axis(&x_axis);
+    new_raw.y = read_axis(&y_axis);
 
-    if ((raw.x > TOUCH_THRESHOLD) &&
-        (raw.y > TOUCH_THRESHOLD)) {
+    if ((new_raw.x > TOUCH_THRESHOLD) &&
+        (new_raw.y > TOUCH_THRESHOLD)) {
+
+//      if (touch_down) {
+//        raw.x = (new_raw.x > raw.x) ?
+//            MIN(raw.x + MAX_TOUCH_VELOCITY, new_raw.x) :
+//            MAX(raw.x - MAX_TOUCH_VELOCITY, new_raw.x);
+//        raw.y = (new_raw.y > raw.y) ?
+//            MIN(raw.y + MAX_TOUCH_VELOCITY, new_raw.y) :
+//            MAX(raw.y - MAX_TOUCH_VELOCITY, new_raw.y);
+//      }
+//      else {
+        raw = new_raw;
+//      }
+
       getDisplayPoint(&calib, &raw, &calib_matrix);
 
       gui_touch_down(&calib, &raw);
@@ -156,7 +175,7 @@ touch_thread(void* arg)
       }
     }
 
-    chThdSleepMilliseconds(5);
+    chThdSleepMilliseconds(1);
   }
 
   return 0;
