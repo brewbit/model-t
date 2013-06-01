@@ -18,7 +18,7 @@
 #define NUM_SAMPLES 8
 #define DISCARDED_SAMPLES 1
 
-#define TOUCH_THRESHOLD 40
+#define TOUCH_THRESHOLD 950
 #define DEBOUNCE_TIME MS2ST(100)
 
 // ADC sample resolution
@@ -122,6 +122,7 @@ static const axis_cfg_t y_axis = {
 
 static uint8_t wa_touch_thread[1024];
 static uint8_t touch_down;
+static systime_t last_touch_time;
 
 void
 touch_init()
@@ -179,12 +180,13 @@ touch_thread(void* arg)
     // swapped since the screen is rotated...
     point_t raw = {y, x};
 
-    if (p > 900) {
+    if (p > TOUCH_THRESHOLD) {
       gui_touch_down(&raw, &raw);
       touch_down = 1;
+      last_touch_time = chTimeNow();
     }
     else {
-      if (touch_down) {
+      if (touch_down && !chTimeIsWithin(last_touch_time, last_touch_time + DEBOUNCE_TIME)) {
         gui_touch_up(&raw, &raw);
         touch_down = 0;
       }
