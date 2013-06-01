@@ -84,6 +84,7 @@ CSRC = $(PORTSRC) \
        $(AUTOGEN_DIR)/image_resources.c \
        $(AUTOGEN_DIR)/font_resources.c \
        src/bapi.c \
+       src/crc.c \
        src/datastream.c \
        src/font.c \
        src/gui.c \
@@ -91,6 +92,8 @@ CSRC = $(PORTSRC) \
        src/image.c \
        src/lcd.c \
        src/main.c \
+       src/onewire.c \
+       src/temp.c \
        src/terminal.c \
        src/touch.c \
        src/touch_calib.c \

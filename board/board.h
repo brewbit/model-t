@@ -121,7 +121,22 @@
                                      PIN_MODE_ALTERNATE(13)  | \
                                      PIN_MODE_ALTERNATE(14)  | \
                                      PIN_MODE_ALTERNATE(15))
-#define VAL_GPIOA_OTYPER            0x00000000 // all push/pull
+#define VAL_GPIOA_OTYPER            (PIN_OTYPE_PUSHPULL(0)  | \
+                                     PIN_OTYPE_PUSHPULL(1)  | \
+                                     PIN_OTYPE_OPENDRAIN(2) | \
+                                     PIN_OTYPE_PUSHPULL(3)  | \
+                                     PIN_OTYPE_PUSHPULL(4)  | \
+                                     PIN_OTYPE_PUSHPULL(5)  | \
+                                     PIN_OTYPE_PUSHPULL(6)  | \
+                                     PIN_OTYPE_PUSHPULL(7)  | \
+                                     PIN_OTYPE_PUSHPULL(8)  | \
+                                     PIN_OTYPE_PUSHPULL(9)  | \
+                                     PIN_OTYPE_PUSHPULL(10) | \
+                                     PIN_OTYPE_PUSHPULL(11) | \
+                                     PIN_OTYPE_PUSHPULL(12) | \
+                                     PIN_OTYPE_PUSHPULL(13) | \
+                                     PIN_OTYPE_PUSHPULL(14) | \
+                                     PIN_OTYPE_PUSHPULL(15))
 #define VAL_GPIOA_OSPEEDR           0xFFFFFFFF // all 100 MHz
 #define VAL_GPIOA_PUPDR             0x00000000 // all floating
 #define VAL_GPIOA_ODR               0xFFFFFFFF // all high by default
@@ -163,7 +178,22 @@
                                      PIN_MODE_ALTERNATE(13)   | \
                                      PIN_MODE_ALTERNATE(14)   | \
                                      PIN_MODE_ALTERNATE(15))
-#define VAL_GPIOB_OTYPER            0x00000000 // all push/pull
+#define VAL_GPIOB_OTYPER            (PIN_OTYPE_PUSHPULL(0)  | \
+                                     PIN_OTYPE_PUSHPULL(1)  | \
+                                     PIN_OTYPE_PUSHPULL(2)  | \
+                                     PIN_OTYPE_PUSHPULL(3)  | \
+                                     PIN_OTYPE_PUSHPULL(4)  | \
+                                     PIN_OTYPE_PUSHPULL(5)  | \
+                                     PIN_OTYPE_OPENDRAIN(6) | \
+                                     PIN_OTYPE_PUSHPULL(7)  | \
+                                     PIN_OTYPE_PUSHPULL(8)  | \
+                                     PIN_OTYPE_PUSHPULL(9)  | \
+                                     PIN_OTYPE_PUSHPULL(10) | \
+                                     PIN_OTYPE_PUSHPULL(11) | \
+                                     PIN_OTYPE_PUSHPULL(12) | \
+                                     PIN_OTYPE_PUSHPULL(13) | \
+                                     PIN_OTYPE_PUSHPULL(14) | \
+                                     PIN_OTYPE_PUSHPULL(15))
 #define VAL_GPIOB_OSPEEDR           0xFFFFFFFF // all 100 MHz
 #define VAL_GPIOB_PUPDR             0xFFFFFFFF // all pulled-up
 #define VAL_GPIOB_ODR               0x00000000 // all low by default

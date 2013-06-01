@@ -10,6 +10,7 @@
 #include "touch.h"
 #include "gui.h"
 #include "gui_calib.h"
+#include "temp.h"
 
 static WORKING_AREA(wa_thread_blinker, 128);
 static msg_t thread_blinker(void *arg) {
@@ -27,6 +28,20 @@ static msg_t thread_blinker(void *arg) {
   return 0;
 }
 
+static onewire_bus_t ob1 = {
+    .port = &SD1
+};
+
+static onewire_bus_t ob2 = {
+    .port = &SD2
+};
+
+temp_port_t tp2 = {
+    .ob = {
+        .port = &SD2
+    }
+};
+
 int main(void)
 {
   halInit();
@@ -38,6 +53,7 @@ int main(void)
   lcd_init();
   touch_init();
 
+  temp_init(&tp2);
 
   wspr_init();
 //  bapi_init();
