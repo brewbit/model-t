@@ -186,23 +186,29 @@ touch_thread(void* arg)
     /* Modified form of equation 9 with a = 1024, b = 1 */
     uint32_t p = Q - rz;
 
-    // swapped since the screen is rotated...
+#if (DISP_ORIENT == LANDSCAPE)
+    /* swapped the coordinates since the screen is rotated */
     point_t raw = {y, x};
+#else
+    point_t raw = {x, y};
+#endif
+
+    /* calibrate the raw touch coordinate */
+    point_t calib;
+    getDisplayPoint(
+        &calib,
+        &raw,
+        &calib_matrix);
 
     if (p > TOUCH_THRESHOLD) {
-      point_t calib;
-      getDisplayPoint(
-          &calib,
-          &raw,
-          &calib_matrix);
-
       gui_touch_down(&calib, &raw);
       touch_down = 1;
       last_touch_time = chTimeNow();
     }
     else {
-      if (touch_down && !chTimeIsWithin(last_touch_time, last_touch_time + DEBOUNCE_TIME)) {
-        gui_touch_up(&raw, &raw);
+      if (touch_down &&
+          !chTimeIsWithin(last_touch_time, last_touch_time + DEBOUNCE_TIME)) {
+        gui_touch_up(&calib, &raw);
         touch_down = 0;
       }
     }
