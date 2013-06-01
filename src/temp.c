@@ -78,19 +78,36 @@ temp_get_reading(temp_port_t* tp, float* temp)
   }
 
   // issue a T convert command
-  onewire_reset(&tp->ob);
-  onewire_send_byte(&tp->ob, SKIP_ROM);
-  onewire_send_byte(&tp->ob, 0x44);
+  if (!onewire_reset(&tp->ob))
+    return false;
+  if (!onewire_send_byte(&tp->ob, SKIP_ROM))
+    return false;
+  if (!onewire_send_byte(&tp->ob, 0x44))
+    return false;
   // wait for device to signal conversion complete
-  while (onewire_recv_bit(&tp->ob) == 0)
-    ;
+  while (1) {
+    uint8_t bit;
+    if (!onewire_recv_bit(&tp->ob, &bit))
+      return false;
+
+    if (bit)
+      break;
+  }
 
   // read the scratchpad register
-  onewire_reset(&tp->ob);
-  onewire_send_byte(&tp->ob, SKIP_ROM);
-  onewire_send_byte(&tp->ob, 0xBE);
-  int16_t t = onewire_recv_byte(&tp->ob);
-  t |= onewire_recv_byte(&tp->ob) << 8;
+  if (!onewire_reset(&tp->ob)) {
+    return false;
+  }
+  if (!onewire_send_byte(&tp->ob, SKIP_ROM))
+    return false;
+  if (!onewire_send_byte(&tp->ob, 0xBE))
+    return false;
+  uint8_t t1, t2;
+  if (!onewire_recv_byte(&tp->ob, &t1))
+    return false;
+  if (!onewire_recv_byte(&tp->ob, &t2))
+    return false;
+  uint16_t t = (t2 << 8) + t1;
 
   *temp = (t * 0.0625);
   return true;

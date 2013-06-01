@@ -30,9 +30,15 @@ onewire_reset(onewire_bus_t* ob)
 //  terminal_write("resetting onewire bus\n");
 
   sdStart(ob->port, &cfg_9600);
+
   sdPut(ob->port, 0xF0);
-  uint8_t recv = sdGet(ob->port);
+  msg_t recv = sdGetTimeout(ob->port, MS2ST(100));
+
   sdStart(ob->port, &cfg_115k);
+
+  if (recv < 0) {
+    return false;
+  }
   if (recv == 0xF0) {
 //    terminal_write("no devices present on bus\n");
     return false;
@@ -50,53 +56,74 @@ onewire_read_rom(onewire_bus_t* ob, uint8_t* addr)
 {
   int i;
 
-  onewire_send_byte(ob, READ_ROM);
+  if (!onewire_send_byte(ob, READ_ROM))
+    return false;
 
   for (i = 0; i < 8; ++i) {
-    addr[i] = onewire_recv_byte(ob);
+    if (!onewire_recv_byte(ob, &addr[i]))
+      return false;
   }
 
   uint8_t crc = crc8(addr, 7);
   return (crc == addr[7]);
 }
 
-void
+bool
 onewire_send_byte(onewire_bus_t* ob, uint8_t b)
 {
   int i;
   for (i = 0; i < 8; ++i) {
-    onewire_send_bit(ob, TESTBIT(&b, i));
+    if (!onewire_send_bit(ob, TESTBIT(&b, i)))
+      return false;
   }
+
+  return true;
 }
 
-uint8_t
-onewire_recv_byte(onewire_bus_t* ob)
+bool
+onewire_recv_byte(onewire_bus_t* ob, uint8_t* b)
 {
   int i;
-  uint8_t b = 0;
+  uint8_t v = 0;
   for (i = 0; i < 8; ++i) {
-    ASSIGNBIT(&b, i, onewire_recv_bit(ob));
+    uint8_t bit;
+    if (!onewire_recv_bit(ob, &bit))
+      return false;
+    ASSIGNBIT(&v, i, bit);
   }
-  return b;
+
+  *b = v;
+  return true;
 }
 
-uint8_t
-onewire_recv_bit(onewire_bus_t* ob)
+bool
+onewire_recv_bit(onewire_bus_t* ob, uint8_t* bit)
 {
   sdPut(ob->port, 0xFF);
-  u16 bit = sdGet(ob->port);
-  if (bit == 0xFF)
-    return 1;
+  msg_t ret = sdGetTimeout(ob->port, MS2ST(100));
+  if (ret < 0)
+    return false;
+
+  if (ret == 0xFF)
+    *bit = 1;
   else
-    return 0;
+    *bit = 0;
+
+  return true;
 }
 
-void
+bool
 onewire_send_bit(onewire_bus_t* ob, uint8_t b)
 {
   if (b)
     sdPut(ob->port, 0xFF);
   else
     sdPut(ob->port, 0x00);
-  sdGet(ob->port);
+
+  msg_t ret = sdGetTimeout(ob->port, MS2ST(100));
+  if (ret < 0) {
+    return false;
+  }
+
+  return true;
 }

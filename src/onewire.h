@@ -27,16 +27,16 @@ onewire_reset(onewire_bus_t* ob);
 bool
 onewire_read_rom(onewire_bus_t* ob, uint8_t* addr);
 
-void
+bool
 onewire_send_bit(onewire_bus_t* ob, uint8_t b);
 
-uint8_t
-onewire_recv_bit(onewire_bus_t* ob);
+bool
+onewire_recv_bit(onewire_bus_t* ob, uint8_t* b);
 
-void
+bool
 onewire_send_byte(onewire_bus_t* ob, uint8_t b);
 
-uint8_t
-onewire_recv_byte(onewire_bus_t* ob);
+bool
+onewire_recv_byte(onewire_bus_t* ob, uint8_t* b);
 
 #endif
