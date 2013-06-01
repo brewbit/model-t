@@ -24,8 +24,6 @@
 // ADC sample resolution
 #define Q 1024
 
-#define MAX_TOUCH_VELOCITY 10
-
 typedef struct {
   uint16_t drive_pos_pad;
   uint16_t drive_neg_pad;
@@ -124,6 +122,8 @@ static uint8_t wa_touch_thread[1024];
 static uint8_t touch_down;
 static systime_t last_touch_time;
 static matrix_t calib_matrix;
+static point_t touch_coord_raw;
+static point_t touch_coord_calib;
 
 void
 touch_init()
@@ -186,29 +186,32 @@ touch_thread(void* arg)
     /* Modified form of equation 9 with a = 1024, b = 1 */
     uint32_t p = Q - rz;
 
+    if (p > TOUCH_THRESHOLD) {
 #if (DISP_ORIENT == LANDSCAPE)
-    /* swapped the coordinates since the screen is rotated */
-    point_t raw = {y, x};
+      /* swap the coordinates since the screen is rotated */
+      touch_coord_raw.x = y;
+      touch_coord_raw.y = x;
 #else
-    point_t raw = {x, y};
+      touch_coord_raw.x = x;
+      touch_coord_raw.y = y;
 #endif
 
-    /* calibrate the raw touch coordinate */
-    point_t calib;
-    getDisplayPoint(
-        &calib,
-        &raw,
-        &calib_matrix);
+      /* calibrate the raw touch coordinate */
+      getDisplayPoint(
+          &touch_coord_calib,
+          &touch_coord_raw,
+          &calib_matrix);
 
-    if (p > TOUCH_THRESHOLD) {
-      gui_touch_down(&calib, &raw);
+      /* distribute the touch event to the GUI */
+      gui_touch_down(&touch_coord_calib, &touch_coord_raw);
+
       touch_down = 1;
       last_touch_time = chTimeNow();
     }
     else {
       if (touch_down &&
           !chTimeIsWithin(last_touch_time, last_touch_time + DEBOUNCE_TIME)) {
-        gui_touch_up(&calib, &raw);
+        gui_touch_up(&touch_coord_calib, &touch_coord_raw);
         touch_down = 0;
       }
     }
