@@ -123,6 +123,7 @@ static const axis_cfg_t y_axis = {
 static uint8_t wa_touch_thread[1024];
 static uint8_t touch_down;
 static systime_t last_touch_time;
+static matrix_t calib_matrix;
 
 void
 touch_init()
@@ -130,6 +131,14 @@ touch_init()
   adcStart(&ADCD1, NULL);
 
   chThdCreateStatic(wa_touch_thread, sizeof(wa_touch_thread), NORMALPRIO, touch_thread, NULL);
+}
+
+void
+touch_calibrate(
+    const point_t* ref_pts,
+    const point_t* sampled_pts)
+{
+  setCalibrationMatrix(ref_pts, sampled_pts, &calib_matrix);
 }
 
 static uint16_t
@@ -181,7 +190,13 @@ touch_thread(void* arg)
     point_t raw = {y, x};
 
     if (p > TOUCH_THRESHOLD) {
-      gui_touch_down(&raw, &raw);
+      point_t calib;
+      getDisplayPoint(
+          &calib,
+          &raw,
+          &calib_matrix);
+
+      gui_touch_down(&calib, &raw);
       touch_down = 1;
       last_touch_time = chTimeNow();
     }

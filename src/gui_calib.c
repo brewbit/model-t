@@ -2,11 +2,9 @@
 #include "gui_calib.h"
 #include "gui.h"
 #include "touch_calib.h"
+#include "touch.h"
 #include "terminal.h"
-
-typedef enum {
-  CALIB_
-} calib_state_t;
+#include "lcd.h"
 
 
 static void
@@ -22,7 +20,6 @@ static void
 calib_touch_up(uint16_t x, uint16_t y);
 
 
-static calib_state_t calib_state;
 static int ref_pt_idx;
 static uint8_t calib_complete;
 
@@ -32,13 +29,6 @@ static const point_t ref_pts[MAX_SAMPLES] = {
     { 170, 190 },
 };
 static point_t sampled_pts[MAX_SAMPLES];
-static matrix_t calib_matrix;
-
-//static const point_t perfect_screen_pts[MAX_SAMPLES] = {
-//    { 650, 370 },
-//    { 290, 160 },
-//    { 430, 120 },
-//};
 
 screen_t calib_gui = {
     .on_paint          = calib_paint,
@@ -46,12 +36,6 @@ screen_t calib_gui = {
     .on_touch_down     = calib_touch,
     .on_touch_up       = calib_touch_up,
 };
-
-//void
-//calib_init()
-//{
-//
-//}
 
 static void
 calib_paint()
@@ -74,31 +58,20 @@ calib_raw_touch(uint16_t x, uint16_t y)
     sampled_pts[ref_pt_idx].x = x;
     sampled_pts[ref_pt_idx].y = y;
   }
-  else {
-    point_t calib;
-    point_t raw = {
-        .x = x,
-        .y = y,
-    };
-    getDisplayPoint(
-        &calib,
-        &raw,
-        &calib_matrix);
-
-    terminal_write("\n\ncalibrated touch\n");
-    terminal_write("x: ");
-    terminal_write_int(calib.x);
-    terminal_write("\ny: ");
-    terminal_write_int(calib.y);
-
-    fillCircle(calib.x, calib.y, 25);
-  }
 }
 
 static void
 calib_touch(uint16_t x, uint16_t y)
 {
+  if (calib_complete) {
+    terminal_write("\n\ncalibrated touch\n");
+    terminal_write("x: ");
+    terminal_write_int(x);
+    terminal_write("\ny: ");
+    terminal_write_int(y);
 
+    fillCircle(x, y, 25);
+  }
 }
 
 static void
@@ -110,7 +83,7 @@ calib_touch_up(uint16_t x, uint16_t y)
   }
   else {
     calib_complete = 1;
-    setCalibrationMatrix(ref_pts, sampled_pts, &calib_matrix);
+    touch_calibrate(ref_pts, sampled_pts);
   }
 }
 
