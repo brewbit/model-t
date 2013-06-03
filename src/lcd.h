@@ -8,9 +8,9 @@
 #define PORTRAIT 0
 #define LANDSCAPE 1
 
-#define ORIENT LANDSCAPE
+#define DISP_ORIENT LANDSCAPE
 
-#if (ORIENT == PORTRAIT)
+#if (DISP_ORIENT == PORTRAIT)
 #define DISP_WIDTH 240
 #define DISP_HEIGHT 320
 #else

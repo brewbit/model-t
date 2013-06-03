@@ -87,6 +87,10 @@ calib_raw_touch(bool touch_down, point_t raw, point_t calib)
     else
       calib_touch_up(raw);
   }
+  else {
+    last_touch_pos = calib;
+    widget_invalidate(calib_screen);
+  }
 }
 
 static void
@@ -101,7 +105,7 @@ calib_touch_up(point_t p)
   (void)p;
 
   if (++ref_pt_idx < MAX_SAMPLES) {
-    widget_invalidate((widget_t*)calib_screen);
+    widget_invalidate(calib_screen);
   }
   else {
     calib_complete = 1;

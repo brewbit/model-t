@@ -142,7 +142,7 @@ lcd_init()
   LCD_Write_COM_DATA(0x00, 0x0001);
   LCD_Write_COM_DATA(0x01, 0x0100);
   LCD_Write_COM_DATA(0x02, 0x0700);
-#if (ORIENT == LANDSCAPE)
+#if (DISP_ORIENT == LANDSCAPE)
   LCD_Write_COM_DATA(0x03, 0x1028);
 #else
   LCD_Write_COM_DATA(0x03, 0x1030);
@@ -215,7 +215,7 @@ lcd_init()
 void
 setXY(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 {
-#if (ORIENT == LANDSCAPE)
+#if (DISP_ORIENT == LANDSCAPE)
   swap(uint16_t, x1, y1);
   swap(uint16_t, x2, y2)
   x1 = DISP_HEIGHT - x1 - 1;
@@ -224,7 +224,7 @@ setXY(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 #endif
 
   // set cursor
-#if (ORIENT == LANDSCAPE)
+#if (DISP_ORIENT == LANDSCAPE)
   LCD_Write_COM_DATA(0x20, x2);
 #else
   LCD_Write_COM_DATA(0x20, x1);
