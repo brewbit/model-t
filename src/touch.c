@@ -36,6 +36,7 @@ typedef struct {
 static uint16_t read_axis(const axis_cfg_t* axis_cfg);
 static adcsample_t adc_avg(adcsample_t* samples, uint16_t num_samples);
 static msg_t touch_thread(void* arg);
+static void touch_dispatch(void);
 
 
 static const ADCConversionGroup xp_conv_grp = {
@@ -124,6 +125,7 @@ static systime_t last_touch_time;
 static matrix_t calib_matrix;
 static point_t touch_coord_raw;
 static point_t touch_coord_calib;
+static touch_handler_t* touch_handlers;
 
 void
 touch_init()
@@ -131,6 +133,41 @@ touch_init()
   adcStart(&ADCD1, NULL);
 
   chThdCreateStatic(wa_touch_thread, sizeof(wa_touch_thread), NORMALPRIO, touch_thread, NULL);
+}
+
+void
+touch_handler_register(touch_handler_t* handler)
+{
+  handler->next = touch_handlers;
+  touch_handlers = handler;
+}
+
+void
+touch_handler_unregister(touch_handler_t* handler)
+{
+  touch_handler_t* prev = NULL;
+  touch_handler_t* h;
+
+  for (h = touch_handlers; h != NULL; h = h->next) {
+    if (h == handler) {
+      if (prev == NULL)
+        touch_handlers = h->next;
+      else
+        prev->next = h->next;
+      break;
+    }
+    prev = h;
+  }
+}
+
+static void
+touch_dispatch()
+{
+  touch_handler_t* h;
+  for (h = touch_handlers; h != NULL; h = h->next) {
+    if (h->on_touch != NULL)
+      h->on_touch(touch_down, touch_coord_raw, touch_coord_calib);
+  }
 }
 
 void
@@ -202,17 +239,17 @@ touch_thread(void* arg)
           &touch_coord_raw,
           &calib_matrix);
 
-      /* distribute the touch event to the GUI */
-      gui_touch_down(&touch_coord_calib, &touch_coord_raw);
-
       touch_down = 1;
       last_touch_time = chTimeNow();
+
+      /* distribute the touch event */
+      touch_dispatch();
     }
     else {
       if (touch_down &&
           !chTimeIsWithin(last_touch_time, last_touch_time + DEBOUNCE_TIME)) {
-        gui_touch_up(&touch_coord_calib, &touch_coord_raw);
         touch_down = 0;
+        touch_dispatch();
       }
     }
   }

@@ -5,6 +5,19 @@
 #include "font.h"
 #include "image.h"
 
+#define PORTRAIT 0
+#define LANDSCAPE 1
+
+#define ORIENT LANDSCAPE
+
+#if (ORIENT == PORTRAIT)
+#define DISP_WIDTH 240
+#define DISP_HEIGHT 320
+#else
+#define DISP_WIDTH 320
+#define DISP_HEIGHT 240
+#endif
+
 #define COLOR(r, g, b) (uint16_t)(((r & 0x1F)<<11) + ((g & 0x3F)<<5) + (b & 0x1F))
 
 #define BLACK COLOR(0, 0, 0)
@@ -56,9 +69,5 @@ void
 drawBitmap(int x, int y, const Image_t* img);
 void
 tile_bitmap(const Image_t* img, int x, int y, int w, int h);
-int
-display_width(void);
-int
-display_height(void);
 
 #endif

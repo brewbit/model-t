@@ -8,10 +8,10 @@
 static uint16_t cur_row = 0;
 static uint16_t cur_col = 0;
 
-#define CHAR_WIDTH font_terminal->max_width
+#define CHAR_WIDTH  font_terminal->max_width
 #define CHAR_HEIGHT font_terminal->max_height
-#define MAX_COL display_width() / CHAR_WIDTH
-#define MAX_ROW display_height() / CHAR_HEIGHT
+#define MAX_COL     (DISP_WIDTH / (CHAR_WIDTH))
+#define MAX_ROW     (DISP_HEIGHT / (CHAR_HEIGHT))
 
 void
 terminal_clear()

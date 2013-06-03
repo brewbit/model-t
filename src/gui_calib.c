@@ -5,81 +5,103 @@
 #include "touch.h"
 #include "terminal.h"
 #include "lcd.h"
+#include "image.h"
 
 
-static void
-calib_paint(void);
+static void calib_widget_touch(touch_event_t* event);
+static void calib_widget_paint(paint_event_t* event);
 
-static void
-calib_raw_touch(uint16_t x, uint16_t y);
+static void calib_raw_touch(bool touch_down, point_t raw, point_t calib);
+static void calib_touch_down(point_t p);
+static void calib_touch_up(point_t p);
 
-static void
-calib_touch(uint16_t x, uint16_t y);
-
-static void
-calib_touch_up(uint16_t x, uint16_t y);
-
-
-static int ref_pt_idx;
-static uint8_t calib_complete;
 
 static const point_t ref_pts[MAX_SAMPLES] = {
     {  50,  50 },
     { 270, 120 },
     { 170, 190 },
 };
+
+static int ref_pt_idx;
+static uint8_t calib_complete;
 static point_t sampled_pts[MAX_SAMPLES];
-
-screen_t calib_gui = {
-    .on_paint          = calib_paint,
-    .on_raw_touch_down = calib_raw_touch,
-    .on_touch_down     = calib_touch,
-    .on_touch_up       = calib_touch_up,
+static screen_t* calib_screen;
+static touch_handler_t touch_handler = {
+    .on_touch = calib_raw_touch
 };
+static widget_t calib_widget;
+static point_t last_touch_pos;
 
-static void
-calib_paint()
+void
+calib_start()
 {
-  const point_t* ref_pt = &ref_pts[ref_pt_idx];
-  fillCircle(ref_pt->x, ref_pt->y, 25);
+  calib_screen = screen_create();
+  screen_set_bg_img(calib_screen, img_background);
+
+
+  widget_init(&calib_widget, calib_screen->widget.rect);
+  calib_widget.on_paint = calib_widget_paint;
+  calib_widget.on_touch_down = calib_widget_touch;
+
+  widget_add_child((widget_t*)calib_screen, (widget_t*)&calib_widget);
+
+  gui_set_screen(calib_screen);
+
+  touch_handler_register(&touch_handler);
 }
 
 static void
-calib_raw_touch(uint16_t x, uint16_t y)
+calib_widget_paint(paint_event_t* p)
 {
-  terminal_clear();
-  terminal_write("raw touch\n");
-  terminal_write("x: ");
-  terminal_write_int(x);
-  terminal_write("\ny: ");
-  terminal_write_int(y);
+  const point_t* marker_pos;
+
+  (void)p;
 
   if (!calib_complete) {
-    sampled_pts[ref_pt_idx].x = x;
-    sampled_pts[ref_pt_idx].y = y;
+    marker_pos = &ref_pts[ref_pt_idx];
   }
+  else {
+    marker_pos = &last_touch_pos;
+  }
+  fillCircle(marker_pos->x, marker_pos->y, 25);
 }
 
 static void
-calib_touch(uint16_t x, uint16_t y)
+calib_widget_touch(touch_event_t* event)
 {
   if (calib_complete) {
-    terminal_write("\n\ncalibrated touch\n");
-    terminal_write("x: ");
-    terminal_write_int(x);
-    terminal_write("\ny: ");
-    terminal_write_int(y);
-
-    fillCircle(x, y, 25);
+    last_touch_pos.x = event->x;
+    last_touch_pos.y = event->y;
+    widget_invalidate(calib_screen);
   }
 }
 
 static void
-calib_touch_up(uint16_t x, uint16_t y)
+calib_raw_touch(bool touch_down, point_t raw, point_t calib)
 {
-  terminal_write("\ntouch up\n");
+  (void)calib;
+
+  if (!calib_complete) {
+    if (touch_down)
+      calib_touch_down(raw);
+    else
+      calib_touch_up(raw);
+  }
+}
+
+static void
+calib_touch_down(point_t p)
+{
+  sampled_pts[ref_pt_idx] = p;
+}
+
+static void
+calib_touch_up(point_t p)
+{
+  (void)p;
+
   if (++ref_pt_idx < MAX_SAMPLES) {
-    calib_paint();
+    widget_invalidate((widget_t*)calib_screen);
   }
   else {
     calib_complete = 1;

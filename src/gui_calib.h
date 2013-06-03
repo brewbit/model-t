@@ -2,8 +2,9 @@
 #ifndef GUI_CALIB
 #define GUI_CALIB
 
-#include "gui.h"
+#include "gui/screen.h"
 
-extern screen_t calib_gui;
+void
+calib_start(void);
 
 #endif

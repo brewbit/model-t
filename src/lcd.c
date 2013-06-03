@@ -10,18 +10,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define PORTRAIT 0
-#define LANDSCAPE 1
-
-#define ORIENT LANDSCAPE
-
-#if (ORIENT == PORTRAIT)
-#define DISP_WIDTH 240
-#define DISP_HEIGHT 320
-#else
-#define DISP_WIDTH 320
-#define DISP_HEIGHT 240
-#endif
 
 // Alpha blending support
 #define RED_COMPONENT(color) (((color) >> 11) & 0x1F)
@@ -414,7 +402,7 @@ void
 clrScr()
 {
   if (bg_type == BG_IMAGE) {
-    tile_bitmap(img_background, 0, 0, display_width(), display_height());
+    tile_bitmap(bg_img, 0, 0, DISP_WIDTH, DISP_HEIGHT);
   }
   else {
     long i;
@@ -828,14 +816,3 @@ tile_bitmap(const Image_t* img, int x, int y, int w, int h)
   clrXY();
 }
 
-int
-display_width()
-{
-  return DISP_WIDTH;
-}
-
-int
-display_height()
-{
-  return DISP_HEIGHT;
-}
