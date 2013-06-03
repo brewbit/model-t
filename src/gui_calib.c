@@ -8,7 +8,7 @@
 #include "image.h"
 
 
-#define NUM_SAMPLES_PER_POINT 32
+#define NUM_SAMPLES_PER_POINT 128
 
 
 static void calib_widget_touch(touch_event_t* event);
@@ -110,7 +110,10 @@ calib_touch_down(point_t p)
 {
   sampled_pts[ref_pt_idx][sample_idx % NUM_SAMPLES_PER_POINT] = p;
   sample_idx++;
-  widget_invalidate(calib_screen);
+
+  if ((sample_idx == 1) ||
+      (sample_idx == NUM_SAMPLES_PER_POINT))
+    widget_invalidate(calib_screen);
 }
 
 static void
