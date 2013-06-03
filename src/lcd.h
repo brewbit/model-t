@@ -44,7 +44,7 @@ drawRect(int x1, int y1, int x2, int y2);
 void
 drawRoundRect(int x1, int y1, int x2, int y2);
 void
-fillRect(int x1, int y1, int x2, int y2);
+fillRect(rect_t rect);
 void
 fillRoundRect(int x1, int y1, int x2, int y2);
 void
@@ -71,6 +71,6 @@ setFont(const Font_t* font);
 void
 drawBitmap(int x, int y, const Image_t* img);
 void
-tile_bitmap(const Image_t* img, int x, int y, int w, int h);
+tile_bitmap(const Image_t* img, rect_t rect);
 
 #endif

@@ -289,19 +289,13 @@ drawRoundRect(int x1, int y1, int x2, int y2)
 }
 
 void
-fillRect(int x1, int y1, int x2, int y2)
+fillRect(rect_t rect)
 {
   int i;
-  if (x1 > x2) {
-    swap(int, x1, x2);
-  }
-  if (y1 > y2) {
-    swap(int, y1, y2);
-  }
 
   cs_low();
-  setXY(x1, y1, x2, y2);
-  for (i = 0; i < (x2 - x1 + 1) * (y2 - y1 + 1); ++i) {
+  setXY(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height);
+  for (i = 0; i < (rect.width + 1) * (rect.height + 1); ++i) {
     setPixel(fcolor);
   }
   cs_high();
@@ -408,7 +402,7 @@ void
 clrScr()
 {
   if (bg_type == BG_IMAGE) {
-    tile_bitmap(bg_img, 0, 0, DISP_WIDTH, DISP_HEIGHT);
+    tile_bitmap(bg_img, display_rect);
   }
   else {
     long i;
@@ -807,14 +801,14 @@ get_bg_color(int x, int y)
 }
 
 void
-tile_bitmap(const Image_t* img, int x, int y, int w, int h)
+tile_bitmap(const Image_t* img, rect_t rect)
 {
   int i, j;
 
   cs_low();
-  setXY(x, y, x + w - 1, y + h - 1);
-  for (i = 0; i < h; ++i) {
-    for (j = 0; j < w; ++j) {
+  setXY(rect.x, rect.y, rect.x + rect.width - 1, rect.y + rect.height - 1);
+  for (i = 0; i < rect.height; ++i) {
+    for (j = 0; j < rect.width; ++j) {
       setPixel(get_tile_color(img, j, i));
     }
   }

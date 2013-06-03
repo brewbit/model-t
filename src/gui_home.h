@@ -2,9 +2,9 @@
 #ifndef GUI_HOME
 #define GUI_HOME
 
-#include "gui/gui.h"
+#include "gui/widget.h"
 
-screen_t*
-home_screen_create();
+widget_t*
+home_screen_create(void);
 
 #endif

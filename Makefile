@@ -81,6 +81,7 @@ CSRC = $(PORTSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/evtimer.c \
        $(CHIBIOS)/os/various/syscalls.c \
+       $(CHIBIOS)/os/various/chprintf.c \
        $(AUTOGEN_DIR)/image_resources.c \
        $(AUTOGEN_DIR)/font_resources.c \
        src/bapi.c \
@@ -89,6 +90,7 @@ CSRC = $(PORTSRC) \
        src/font.c \
        src/gui.c \
        src/gui_calib.c \
+       src/gui_home.c \
        src/image.c \
        src/lcd.c \
        src/main.c \

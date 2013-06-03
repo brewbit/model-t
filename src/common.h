@@ -1,6 +1,10 @@
 #ifndef __COMMON_H__
 #define __COMMON_H__
 
+#include "ch.h"
+#include "hal.h"
+#include "chprintf.h"
+
 #include "types.h"
 
 #define SETBIT(p, b) ((uint8_t*)(p))[(b) / 8] |= (1 << ((b) % 8))
@@ -13,5 +17,7 @@
 
 #define gp_low(bank, bit) palClearPad(bank, bit)
 #define gp_high(bank, bit) palSetPad(bank, bit)
+
+#define stdout (BaseChannel *)&SD3
 
 #endif

@@ -39,6 +39,7 @@ static void gui_idle(void);
 static uint8_t wa_gui_thread[1024];
 static Thread* gui_thread;
 static widget_t* screen;
+static widget_t* touch_capture_widget;
 
 
 void
@@ -80,6 +81,18 @@ gui_paint()
       .id = GUI_PAINT
   };
   gui_send_event(&event);
+}
+
+void
+gui_acquire_touch_capture(widget_t* widget)
+{
+  touch_capture_widget = widget;
+}
+
+void
+gui_release_touch_capture(void)
+{
+  touch_capture_widget = NULL;
 }
 
 static void
@@ -141,12 +154,21 @@ gui_dispatch(gui_event_t* event)
 static void
 dispatch_touch(gui_touch_event_t* event)
 {
-  touch_event_t te = {
-      .id = event->touch_down ? EVT_TOUCH_DOWN : EVT_TOUCH_UP,
-      .widget = screen,
-      .pos = event->pos,
-  };
-  widget_dispatch_event(screen, (event_t*)&te);
+  widget_t* dest_widget;
+  if (touch_capture_widget != NULL)
+    dest_widget = touch_capture_widget;
+  else {
+    dest_widget = widget_hit_test(screen, event->pos);
+  }
+
+  if (dest_widget != NULL) {
+    touch_event_t te = {
+        .id = event->touch_down ? EVT_TOUCH_DOWN : EVT_TOUCH_UP,
+        .widget = dest_widget,
+        .pos = event->pos,
+    };
+    widget_dispatch_event(dest_widget, (event_t*)&te);
+  }
 }
 
 static void

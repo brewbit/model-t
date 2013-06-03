@@ -44,7 +44,7 @@ screen_paint(paint_event_t* event)
   screen_t* s = widget_get_instance_data(event->widget);
 
   if (s->bg_type == BG_IMAGE)
-    tile_bitmap(s->bg_img, 0, 0, DISP_WIDTH, DISP_HEIGHT);
+    tile_bitmap(s->bg_img, display_rect);
   else
     fillScr(s->bg_color);
 }

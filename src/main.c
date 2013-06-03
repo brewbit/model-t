@@ -9,8 +9,10 @@
 #include "bapi.h"
 #include "touch.h"
 #include "gui.h"
-#include "gui_calib.h"
 #include "temp.h"
+#include "gui_calib.h"
+#include "gui_home.h"
+#include "chprintf.h"
 
 //temp_port_t tp1 = {
 //    .ob = {
@@ -24,10 +26,22 @@
 //    }
 //};
 
+static void
+calib_complete_callback(widget_t* w)
+{
+  widget_t* home_screen = home_screen_create();
+  gui_set_screen(home_screen);
+
+  widget_destroy(w);
+}
+
 int main(void)
 {
   halInit();
   chSysInit();
+
+  /* start stdout port */
+  sdStart(&SD3, NULL);
 
   lcd_init();
   touch_init();
@@ -36,10 +50,9 @@ int main(void)
   wspr_init();
 //  bapi_init();
 
-//  widget_t* home_screen = home_screen_create();
   gui_init();
 
-  widget_t* calib_screen = calib_screen_create();
+  widget_t* calib_screen = calib_screen_create(calib_complete_callback);
   gui_set_screen(calib_screen);
 
   while (TRUE) {

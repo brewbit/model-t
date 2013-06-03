@@ -49,4 +49,14 @@ rect_inside(rect_t r, point_t p)
           (p.y <= (r.y + r.height)));
 }
 
+static inline point_t
+rect_center(rect_t r)
+{
+  point_t center = {
+      .x = r.x + (r.width/2),
+      .y = r.y + (r.height/2),
+  };
+  return center;
+}
+
 #endif

@@ -1,8 +1,12 @@
 
 #include "ch.h"
 #include "widget.h"
+#include "common.h"
 
 #include <string.h>
+
+
+#define CALL_WC(w, m)   if ((w)->widget_class != NULL && (w)->widget_class->m != NULL) (w)->widget_class->m
 
 
 typedef struct widget_s {
@@ -29,6 +33,9 @@ static void
 widget_paint_predicate(widget_t* w);
 
 static void
+widget_destroy_predicate(widget_t* w);
+
+static void
 dispatch_touch(widget_t* w, touch_event_t* event);
 
 
@@ -44,6 +51,19 @@ widget_create(const widget_class_t* widget_class, void* instance_data, rect_t re
   w->invalid = true;
 
   return w;
+}
+
+void
+widget_destroy(widget_t* w)
+{
+  widget_for_each(w, widget_destroy_predicate, WIDGET_TRAVERSAL_BOTTOM_UP);
+}
+
+static void
+widget_destroy_predicate(widget_t* w)
+{
+  CALL_WC(w, on_destroy)(w);
+  free(w);
 }
 
 rect_t
@@ -89,15 +109,24 @@ widget_unparent(widget_t* w)
 }
 
 void
-widget_for_each(widget_t* w, widget_predicate_t pred)
+widget_for_each(widget_t* w, widget_predicate_t pred, widget_traversal_dir_t dir)
 {
   widget_t* child;
+  widget_t* next_child = NULL;
 
-  pred(w);
+  if (dir == WIDGET_TRAVERSAL_TOP_DOWN)
+    pred(w);
 
-  for (child = w->first_child; child != NULL; child = child->next_sibling) {
-    pred(child);
+  for (child = w->first_child; child != NULL; child = next_child) {
+    /*  Save the next child locally because this child might be destroyed
+     *  inside the predicate...
+     */
+    next_child = child->next_sibling;
+    widget_for_each(child, pred, dir);
   }
+
+  if (dir == WIDGET_TRAVERSAL_BOTTOM_UP)
+    pred(w);
 }
 
 widget_t*
@@ -137,19 +166,14 @@ widget_dispatch_event(widget_t* w, event_t* event)
 static void
 dispatch_touch(widget_t* w, touch_event_t* event)
 {
-  widget_t* w_hit = widget_hit_test(w, event->pos);
-  if (w_hit != NULL) {
-    event->widget = w_hit;
-    // TODO bubble touch up to parent if this widget doesn't handle touches
-    if (w_hit->widget_class->on_touch != NULL)
-      w_hit->widget_class->on_touch(event);
-  }
+  // TODO bubble touch up to parent if this widget doesn't handle touches
+  CALL_WC(w, on_touch)(event);
 }
 
 void
 widget_paint(widget_t* w)
 {
-  widget_for_each(w, widget_paint_predicate);
+  widget_for_each(w, widget_paint_predicate, WIDGET_TRAVERSAL_TOP_DOWN);
 }
 
 static void
@@ -161,9 +185,7 @@ widget_paint_predicate(widget_t* w)
         .widget = w,
     };
 
-    if (w->widget_class != NULL &&
-        w->widget_class->on_paint != NULL)
-      w->widget_class->on_paint(&event);
+    CALL_WC(w, on_paint)(&event);
 
     w->invalid = false;
   }
@@ -172,7 +194,7 @@ widget_paint_predicate(widget_t* w)
 void
 widget_invalidate(widget_t* w)
 {
-  widget_for_each(w, widget_invalidate_predicate);
+  widget_for_each(w, widget_invalidate_predicate, WIDGET_TRAVERSAL_TOP_DOWN);
 }
 
 static void

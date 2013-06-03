@@ -5,9 +5,15 @@
 #include "event.h"
 
 
+typedef enum {
+  WIDGET_TRAVERSAL_TOP_DOWN,
+  WIDGET_TRAVERSAL_BOTTOM_UP,
+} widget_traversal_dir_t;
+
 typedef struct {
   void (*on_paint)(paint_event_t* event);
   void (*on_touch)(touch_event_t* event);
+  void (*on_destroy)(widget_t* w);
 } widget_class_t;
 
 typedef void (*widget_predicate_t)(widget_t* w);
@@ -15,6 +21,9 @@ typedef void (*widget_predicate_t)(widget_t* w);
 
 widget_t*
 widget_create(const widget_class_t* widget_class, void* instance_data, rect_t rect);
+
+void
+widget_destroy(widget_t* w);
 
 rect_t
 widget_get_rect(widget_t* w);
@@ -41,6 +50,6 @@ void
 widget_invalidate(widget_t* screen);
 
 void
-widget_for_each(widget_t* w, widget_predicate_t pred);
+widget_for_each(widget_t* w, widget_predicate_t pred, widget_traversal_dir_t dir);
 
 #endif

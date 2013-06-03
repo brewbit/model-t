@@ -6,6 +6,7 @@
 #include "terminal.h"
 #include "lcd.h"
 #include "image.h"
+#include "gui/button.h"
 
 
 #define NUM_SAMPLES_PER_POINT 128
@@ -16,14 +17,21 @@ typedef struct {
   uint8_t calib_complete;
   point_t sampled_pts[NUM_CALIB_POINTS][NUM_SAMPLES_PER_POINT];
   int sample_idx;
-  widget_t* widget;
-  touch_handler_t touch_handler;
   point_t last_touch_pos;
+  calib_complete_handler_t completion_handler;
+
+  widget_t* widget;
+  widget_t* recal_button;
+  widget_t* complete_button;
 } calib_screen_t;
 
 
 static void calib_widget_touch(touch_event_t* event);
 static void calib_widget_paint(paint_event_t* event);
+static void calib_widget_destroy(widget_t* w);
+
+static void restart_calib(click_event_t* event);
+static void complete_calib(click_event_t* event);
 
 static void calib_raw_touch(bool touch_down, point_t raw, point_t calib, void* user_data);
 static void calib_touch_down(calib_screen_t* s, point_t p);
@@ -37,20 +45,54 @@ static const point_t ref_pts[NUM_CALIB_POINTS] = {
 };
 
 static const widget_class_t calib_widget_class = {
-    .on_paint = calib_widget_paint,
-    .on_touch = calib_widget_touch,
+    .on_paint   = calib_widget_paint,
+    .on_touch   = calib_widget_touch,
+    .on_destroy = calib_widget_destroy,
 };
 
 widget_t*
-calib_screen_create()
+calib_screen_create(calib_complete_handler_t completion_handler)
 {
   calib_screen_t* calib_screen = calloc(1, sizeof(calib_screen_t));
-
+  calib_screen->completion_handler = completion_handler;
   calib_screen->widget = widget_create(&calib_widget_class, calib_screen, display_rect);
+
+  rect_t rect = {
+      .x = 50,
+      .y = 180,
+      .width = 100,
+      .height = 50,
+  };
+  calib_screen->recal_button = button_create(rect, "Recalibrate", restart_calib);
+  rect.x = 200;
+  calib_screen->complete_button = button_create(rect, "Finished", complete_calib);
+
+  widget_add_child(calib_screen->widget, calib_screen->recal_button);
+  widget_add_child(calib_screen->widget, calib_screen->complete_button);
 
   touch_handler_register(calib_raw_touch, calib_screen);
 
   return calib_screen->widget;
+}
+
+static void
+calib_widget_destroy(widget_t* w)
+{
+  calib_screen_t* s = widget_get_instance_data(w);
+  touch_handler_unregister(calib_raw_touch);
+  free(s);
+}
+
+static void
+restart_calib(click_event_t* event)
+{
+
+}
+
+static void
+complete_calib(click_event_t* event)
+{
+
 }
 
 static void
@@ -59,7 +101,7 @@ calib_widget_paint(paint_event_t* event)
   calib_screen_t* s = widget_get_instance_data(event->widget);
   const point_t* marker_pos;
 
-  tile_bitmap(img_squares, 0, 0, DISP_WIDTH, DISP_HEIGHT);
+  tile_bitmap(img_squares, display_rect);
 
   if (!s->calib_complete) {
     marker_pos = &ref_pts[s->ref_pt_idx];
