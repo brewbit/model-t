@@ -20,11 +20,12 @@
 
 #define COLOR(r, g, b) (uint16_t)(((r & 0x1F)<<11) + ((g & 0x3F)<<5) + (b & 0x1F))
 
-#define BLACK COLOR(0, 0, 0)
-#define WHITE COLOR(255, 255, 255)
-#define RED   COLOR(255, 0, 0)
-#define BLUE  COLOR(0, 0, 255)
-#define GREEN COLOR(0, 255, 0)
+#define BLACK  COLOR(0, 0, 0)
+#define WHITE  COLOR(255, 255, 255)
+#define RED    COLOR(255, 0, 0)
+#define BLUE   COLOR(0, 0, 255)
+#define GREEN  COLOR(0, 255, 0)
+#define YELLOW COLOR(255, 255, 0)
 
 void
 lcd_init(void);

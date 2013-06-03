@@ -42,7 +42,7 @@
   #define     NOT_OK   0
 #endif
 
-#define MAX_SAMPLES     3
+#define NUM_CALIB_POINTS     3
 
 
 /* This arrangement of values facilitates

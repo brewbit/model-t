@@ -8,6 +8,9 @@
 #include "image.h"
 
 
+#define NUM_SAMPLES_PER_POINT 32
+
+
 static void calib_widget_touch(touch_event_t* event);
 static void calib_widget_paint(paint_event_t* event);
 
@@ -16,7 +19,7 @@ static void calib_touch_down(point_t p);
 static void calib_touch_up(point_t p);
 
 
-static const point_t ref_pts[MAX_SAMPLES] = {
+static const point_t ref_pts[NUM_CALIB_POINTS] = {
     {  50,  50 },
     { 270, 120 },
     { 170, 190 },
@@ -24,7 +27,8 @@ static const point_t ref_pts[MAX_SAMPLES] = {
 
 static int ref_pt_idx;
 static uint8_t calib_complete;
-static point_t sampled_pts[MAX_SAMPLES];
+static point_t sampled_pts[NUM_CALIB_POINTS][NUM_SAMPLES_PER_POINT];
+static int sample_idx;
 static widget_t* calib_screen;
 static widget_t* calib_widget;
 static touch_handler_t touch_handler = {
@@ -60,9 +64,17 @@ calib_widget_paint(paint_event_t* p)
 
   if (!calib_complete) {
     marker_pos = &ref_pts[ref_pt_idx];
+
+    if (sample_idx == 0)
+      setColor(YELLOW);
+    else if (sample_idx < NUM_SAMPLES_PER_POINT)
+      setColor(RED);
+    else
+      setColor(GREEN);
   }
   else {
     marker_pos = &last_touch_pos;
+    setColor(BLUE);
   }
   fillCircle(marker_pos->x, marker_pos->y, 25);
 }
@@ -96,7 +108,9 @@ calib_raw_touch(bool touch_down, point_t raw, point_t calib)
 static void
 calib_touch_down(point_t p)
 {
-  sampled_pts[ref_pt_idx] = p;
+  sampled_pts[ref_pt_idx][sample_idx % NUM_SAMPLES_PER_POINT] = p;
+  sample_idx++;
+  widget_invalidate(calib_screen);
 }
 
 static void
@@ -104,12 +118,25 @@ calib_touch_up(point_t p)
 {
   (void)p;
 
-  if (++ref_pt_idx < MAX_SAMPLES) {
+  if (++ref_pt_idx < NUM_CALIB_POINTS) {
+    sample_idx = 0;
     widget_invalidate(calib_screen);
   }
   else {
+    int i,j;
     calib_complete = 1;
-    touch_calibrate(ref_pts, sampled_pts);
+    point_t avg_sample[3];
+    for (i = 0; i < 3; ++i) {
+      avg_sample[i].x = 0;
+      avg_sample[i].y = 0;
+      for (j = 0; j < NUM_SAMPLES_PER_POINT; ++j) {
+        avg_sample[i].x += sampled_pts[i][j].x;
+        avg_sample[i].y += sampled_pts[i][j].y;
+      }
+      avg_sample[i].x /= NUM_SAMPLES_PER_POINT;
+      avg_sample[i].y /= NUM_SAMPLES_PER_POINT;
+    }
+    touch_calibrate(ref_pts, avg_sample);
   }
 }
 
