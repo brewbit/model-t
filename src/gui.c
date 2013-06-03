@@ -177,6 +177,9 @@ dispatch_touch(gui_touch_event_t* event)
 static void
 dispatch_set_screen(gui_set_screen_event_t* event)
 {
+  if (screen != NULL)
+    widget_destroy(screen);
+
   screen = event->screen;
   widget_invalidate(screen);
 }

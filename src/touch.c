@@ -129,10 +129,19 @@ static const axis_cfg_t y_axis = {
 static uint8_t wa_touch_thread[1024];
 static uint8_t touch_down;
 static systime_t last_touch_time;
-static matrix_t calib_matrix;
 static point_t touch_coord_raw;
 static point_t touch_coord_calib;
 static touch_handler_entry_t* touch_handlers;
+
+static matrix_t calib_matrix = {
+    .An      = 76320,
+    .Bn      = 3080,
+    .Cn      = -9475080,
+    .Dn      = -560,
+    .En      = 60340,
+    .Fn      = -4360660,
+    .Divider = 205664,
+};
 
 void
 touch_init()
@@ -187,6 +196,15 @@ touch_calibrate(
     const point_t* sampled_pts)
 {
   setCalibrationMatrix(ref_pts, sampled_pts, &calib_matrix);
+
+  chprintf(stdout, "touch calib params: %d %d %d %d %d %d %d\r\n",
+      calib_matrix.An,
+      calib_matrix.Bn,
+      calib_matrix.Cn,
+      calib_matrix.Dn,
+      calib_matrix.En,
+      calib_matrix.Fn,
+      calib_matrix.Divider);
 }
 
 static uint16_t

@@ -26,15 +26,6 @@
 //    }
 //};
 
-static void
-calib_complete_callback(widget_t* w)
-{
-  widget_t* home_screen = home_screen_create();
-  gui_set_screen(home_screen);
-
-  widget_destroy(w);
-}
-
 int main(void)
 {
   halInit();
@@ -52,8 +43,8 @@ int main(void)
 
   gui_init();
 
-  widget_t* calib_screen = calib_screen_create(calib_complete_callback);
-  gui_set_screen(calib_screen);
+  widget_t* home_screen = home_screen_create();
+  gui_set_screen(home_screen);
 
   while (TRUE) {
     palSetPad(GPIOB, GPIOB_LED1);
