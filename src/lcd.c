@@ -85,7 +85,13 @@ BackgroundType bg_type = BG_COLOR;
 const Image_t* bg_img = NULL;
 const Font_t* cfont;
 
-uint16_t last_val = 0xFF;
+rect_t display_rect = {
+    .x = 0,
+    .y = 0,
+    .width = DISP_WIDTH,
+    .height = DISP_HEIGHT,
+};
+
 void
 LCD_Write_Bus(uint16_t val)
 {

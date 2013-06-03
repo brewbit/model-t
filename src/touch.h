@@ -4,23 +4,17 @@
 
 #include "common.h"
 
-typedef void (*touch_cb)(bool touch_down, point_t raw, point_t calib);
-
-typedef struct touch_handler_s {
-  touch_cb on_touch;
-
-  struct touch_handler_s* next;
-} touch_handler_t;
+typedef void (*touch_handler_t)(bool touch_down, point_t raw, point_t calib, void* user_data);
 
 
 void
 touch_init(void);
 
 void
-touch_handler_register(touch_handler_t* handler);
+touch_handler_register(touch_handler_t handler, void* user_data);
 
 void
-touch_handler_unregister(touch_handler_t* handler);
+touch_handler_unregister(touch_handler_t handler);
 
 void
 touch_calibrate(

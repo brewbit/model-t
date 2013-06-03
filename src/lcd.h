@@ -27,6 +27,8 @@
 #define GREEN  COLOR(0, 255, 0)
 #define YELLOW COLOR(255, 255, 0)
 
+extern rect_t display_rect;
+
 void
 lcd_init(void);
 void

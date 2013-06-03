@@ -32,6 +32,13 @@ typedef struct {
   const ADCConversionGroup* conv_grp;
 } axis_cfg_t;
 
+typedef struct touch_handler_s {
+  touch_handler_t on_touch;
+  void* user_data;
+
+  struct touch_handler_s* next;
+} touch_handler_entry_t;
+
 
 static uint16_t read_axis(const axis_cfg_t* axis_cfg);
 static adcsample_t adc_avg(adcsample_t* samples, uint16_t num_samples);
@@ -125,7 +132,7 @@ static systime_t last_touch_time;
 static matrix_t calib_matrix;
 static point_t touch_coord_raw;
 static point_t touch_coord_calib;
-static touch_handler_t* touch_handlers;
+static touch_handler_entry_t* touch_handlers;
 
 void
 touch_init()
@@ -136,20 +143,24 @@ touch_init()
 }
 
 void
-touch_handler_register(touch_handler_t* handler)
+touch_handler_register(touch_handler_t touch_handler, void* user_data)
 {
-  handler->next = touch_handlers;
-  touch_handlers = handler;
+  touch_handler_entry_t* entry = malloc(sizeof(touch_handler_entry_t));
+  entry->on_touch = touch_handler;
+  entry->user_data = user_data;
+
+  entry->next = touch_handlers;
+  touch_handlers = entry;
 }
 
 void
-touch_handler_unregister(touch_handler_t* handler)
+touch_handler_unregister(touch_handler_t handler)
 {
-  touch_handler_t* prev = NULL;
-  touch_handler_t* h;
+  touch_handler_entry_t* prev = NULL;
+  touch_handler_entry_t* h;
 
   for (h = touch_handlers; h != NULL; h = h->next) {
-    if (h == handler) {
+    if (h->on_touch == handler) {
       if (prev == NULL)
         touch_handlers = h->next;
       else
@@ -163,10 +174,10 @@ touch_handler_unregister(touch_handler_t* handler)
 static void
 touch_dispatch()
 {
-  touch_handler_t* h;
+  touch_handler_entry_t* h;
   for (h = touch_handlers; h != NULL; h = h->next) {
     if (h->on_touch != NULL)
-      h->on_touch(touch_down, touch_coord_raw, touch_coord_calib);
+      h->on_touch(touch_down, touch_coord_raw, touch_coord_calib, h->user_data);
   }
 }
 

@@ -35,9 +35,12 @@ int main(void)
 //  temp_init(&tp2);
   wspr_init();
 //  bapi_init();
+
+//  widget_t* home_screen = home_screen_create();
   gui_init();
 
-  calib_start();
+  widget_t* calib_screen = calib_screen_create();
+  gui_set_screen(calib_screen);
 
   while (TRUE) {
     palSetPad(GPIOB, GPIOB_LED1);

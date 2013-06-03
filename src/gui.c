@@ -27,7 +27,7 @@ typedef struct {
 
 
 static msg_t gui_thread_func(void* arg);
-static void handle_touch(bool touch_down, point_t raw, point_t calib);
+static void handle_touch(bool touch_down, point_t raw, point_t calib, void* user_data);
 static void gui_send_event(gui_event_t* event);
 
 static void dispatch_touch(gui_touch_event_t* event);
@@ -40,22 +40,20 @@ static uint8_t wa_gui_thread[1024];
 static Thread* gui_thread;
 static widget_t* screen;
 
-static touch_handler_t touch_handler = {
-    .on_touch = handle_touch
-};
 
 void
 gui_init()
 {
   gui_thread = chThdCreateStatic(wa_gui_thread, sizeof(wa_gui_thread), NORMALPRIO, gui_thread_func, NULL);
 
-  touch_handler_register(&touch_handler);
+  touch_handler_register(handle_touch, NULL);
 }
 
 static void
-handle_touch(bool touch_down, point_t raw, point_t calib)
+handle_touch(bool touch_down, point_t raw, point_t calib, void* user_data)
 {
   (void)raw;
+  (void)user_data;
 
   gui_touch_event_t event = {
       .id = GUI_TOUCH,

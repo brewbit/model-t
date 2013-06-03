@@ -2,9 +2,9 @@
 #ifndef GUI_CALIB
 #define GUI_CALIB
 
-#include "gui/screen.h"
+#include "gui/widget.h"
 
-void
-calib_start(void);
+widget_t*
+calib_screen_create(void);
 
 #endif
