@@ -63,13 +63,15 @@ button_touch(touch_event_t* event)
     if (b->is_down) {
       b->is_down = false;
       gui_release_touch_capture();
-      if (b->on_click) {
-        click_event_t ce = {
-            .id = EVT_CLICK,
-            .widget = event->widget,
-            .pos = event->pos,
-        };
-        b->on_click(&ce);
+      if (rect_inside(widget_get_rect(event->widget), event->pos)) {
+        if (b->on_click) {
+          click_event_t ce = {
+              .id = EVT_CLICK,
+              .widget = event->widget,
+              .pos = event->pos,
+          };
+          b->on_click(&ce);
+        }
       }
       widget_invalidate(event->widget);
     }
