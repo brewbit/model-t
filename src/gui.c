@@ -98,7 +98,10 @@ gui_release_touch_capture(void)
 static void
 gui_send_event(gui_event_t* event)
 {
-  chMsgSend(gui_thread, (msg_t)event);
+  if (chThdSelf() == gui_thread)
+    gui_dispatch(event);
+  else
+    chMsgSend(gui_thread, (msg_t)event);
 }
 
 static msg_t
@@ -175,5 +178,5 @@ static void
 dispatch_set_screen(gui_set_screen_event_t* event)
 {
   screen = event->screen;
-  widget_paint((widget_t*)screen);
+  widget_invalidate(screen);
 }
