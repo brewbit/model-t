@@ -60,7 +60,7 @@ calib_screen_create(calib_complete_handler_t completion_handler)
   rect_t rect = {
       .x = 0,
       .y = 240-43,
-      .width = 159,
+      .width = 160,
       .height = 43,
   };
   calib_screen->recal_button = button_create(rect, "Recalibrate", restart_calib);

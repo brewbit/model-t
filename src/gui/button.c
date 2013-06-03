@@ -6,8 +6,8 @@
 #include <stdlib.h>
 
 
-#define BORDER_COLOR   COLOR(0xCC, 0xCC, 0xCC)
-#define BTN_DOWN_COLOR COLOR(0xE6, 0xE6, 0xE6)
+#define BORDER_COLOR   COLOR(0x88, 0x88, 0x88)
+#define BTN_DOWN_COLOR COLOR(0xCC, 0xCC, 0xCC)
 
 
 typedef struct {
@@ -106,10 +106,15 @@ button_paint(paint_event_t* event)
   }
 
   /* draw text */
-  setColor(BLACK);
-  setFont(font_terminal);
-  point_t center = rect_center(rect);
-  print(b->text, rect.x + 10, center.y);
+  if (b->text != NULL) {
+    setColor(BLACK);
+    setFont(font_terminal);
+    point_t center = rect_center(rect);
+    Extents_t text_extents = font_text_extents(font_terminal, b->text);
+    print(b->text,
+        center.x - (text_extents.width / 2),
+        center.y - (font_terminal->max_height / 2));
+  }
 
   /* draw icon */
 }
