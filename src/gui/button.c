@@ -115,7 +115,7 @@ button_paint(paint_event_t* event)
     Extents_t text_extents = font_text_extents(font_terminal, b->text);
     print(b->text,
         center.x - (text_extents.width / 2),
-        center.y - (font_terminal->max_height / 2));
+        center.y - (text_extents.height / 2));
   }
 
   /* draw icon */

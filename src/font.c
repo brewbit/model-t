@@ -19,23 +19,19 @@ font_text_extents(const Font_t* font, const char* str)
   e.width = 0;
   e.height = 0;
 
+  int min_y = 0;
+  int max_y = 0;
+
   while (*str) {
-    Extents_t ce = font_char_extents(font, *str++);
-    e.width += ce.width;
-    e.height = MAX(e.height, ce.height);
+    const Glyph_t* g = font_find_glyph(font, *str++);
+    e.width += g->xoffset;
+    e.width += g->advance;
+
+    min_y = MIN(g->yoffset, min_y);
+    max_y = MAX(g->height + g->yoffset, max_y);
   }
 
-  return e;
-}
-
-Extents_t
-font_char_extents(const Font_t* font, char ch)
-{
-  Extents_t e;
-  const Glyph_t* g = font_find_glyph(font, ch);
-
-  e.width = g->width;
-  e.height = g->height;
+  e.height = max_y - min_y;
 
   return e;
 }

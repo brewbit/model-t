@@ -16,7 +16,6 @@
 #define GREEN_COMPONENT(color) (((color) >> 5) & 0x3F)
 #define BLUE_COMPONENT(color) ((color) & 0x1F)
 
-//#define BLENDED_COMPONENT(fg, bg, alpha) (int)(((((float)fg) * ((float)alpha)) / 255.0f) + ((((float)bg) * (255.0f-((float)alpha))) / 255.0f))
 #define BLENDED_COMPONENT(fg, bg, alpha) (((fg) * (alpha) / 255) + ((bg) * (255-(alpha)) / 255))
 
 #define BLENDED_COLOR(fg, bg, alpha) COLOR565( \

@@ -6,9 +6,8 @@
 
 const Glyph_t*
 font_find_glyph(const Font_t* font, char ch);
+
 Extents_t
 font_text_extents(const Font_t* font, const char* str);
-Extents_t
-font_char_extents(const Font_t* font, char ch);
 
 #endif
