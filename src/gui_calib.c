@@ -86,13 +86,21 @@ calib_widget_destroy(widget_t* w)
 static void
 restart_calib(click_event_t* event)
 {
-
+  widget_t* screen_widget = widget_get_parent(event->widget);
+  calib_screen_t* s = widget_get_instance_data(screen_widget);
+  s->calib_complete = false;
+  s->sample_idx = 0;
+  s->ref_pt_idx = 0;
+  widget_invalidate(screen_widget);
 }
 
 static void
 complete_calib(click_event_t* event)
 {
-
+  widget_t* screen_widget = widget_get_parent(event->widget);
+  calib_screen_t* s = widget_get_instance_data(screen_widget);
+  if (s->completion_handler)
+    s->completion_handler(screen_widget);
 }
 
 static void
@@ -143,10 +151,6 @@ calib_raw_touch(bool touch_down, point_t raw, point_t calib, void* user_data)
       calib_touch_down(s, raw);
     else
       calib_touch_up(s, raw);
-  }
-  else {
-    s->last_touch_pos = calib;
-    widget_invalidate(s->widget);
   }
 }
 

@@ -25,6 +25,9 @@ widget_create(const widget_class_t* widget_class, void* instance_data, rect_t re
 void
 widget_destroy(widget_t* w);
 
+widget_t*
+widget_get_parent(widget_t* w);
+
 rect_t
 widget_get_rect(widget_t* w);
 

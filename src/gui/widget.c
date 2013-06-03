@@ -66,6 +66,12 @@ widget_destroy_predicate(widget_t* w)
   free(w);
 }
 
+widget_t*
+widget_get_parent(widget_t* w)
+{
+  return w->parent;
+}
+
 rect_t
 widget_get_rect(widget_t* w)
 {

@@ -14,7 +14,7 @@ static const widget_class_t home_widget_class = {
 widget_t*
 home_screen_create()
 {
-  widget_t* w = widget_create(NULL, NULL, display_rect);
+  widget_t* w = widget_create(&home_widget_class, NULL, display_rect);
 
   return w;
 }
