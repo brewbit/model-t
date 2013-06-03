@@ -64,11 +64,14 @@ calib_screen_create(calib_complete_handler_t completion_handler)
       .height = 43,
   };
   calib_screen->recal_button = button_create(rect, "Recalibrate", restart_calib);
+  widget_hide(calib_screen->recal_button);
   rect.x = 200;
   calib_screen->complete_button = button_create(rect, "Finished", complete_calib);
+  widget_hide(calib_screen->complete_button);
 
   widget_add_child(calib_screen->widget, calib_screen->recal_button);
   widget_add_child(calib_screen->widget, calib_screen->complete_button);
+
 
   touch_handler_register(calib_raw_touch, calib_screen);
 
@@ -91,6 +94,9 @@ restart_calib(click_event_t* event)
   s->calib_complete = false;
   s->sample_idx = 0;
   s->ref_pt_idx = 0;
+
+  widget_hide(s->recal_button);
+  widget_hide(s->complete_button);
   widget_invalidate(screen_widget);
 }
 
@@ -189,6 +195,9 @@ calib_touch_up(calib_screen_t* s, point_t p)
       avg_sample[i].y /= NUM_SAMPLES_PER_POINT;
     }
     touch_calibrate(ref_pts, avg_sample);
+
+    widget_show(s->recal_button);
+    widget_show(s->complete_button);
   }
 }
 

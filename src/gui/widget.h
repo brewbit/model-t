@@ -53,6 +53,15 @@ void
 widget_invalidate(widget_t* screen);
 
 void
+widget_hide(widget_t* w);
+
+void
+widget_show(widget_t* w);
+
+bool
+widget_is_visible(widget_t* w);
+
+void
 widget_for_each(widget_t* w, widget_predicate_t pred, widget_traversal_dir_t dir);
 
 #endif

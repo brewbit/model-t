@@ -6,6 +6,10 @@
 #include <stdlib.h>
 
 
+#define BORDER_COLOR   COLOR(0xCC, 0xCC, 0xCC)
+#define BTN_DOWN_COLOR COLOR(0xE6, 0xE6, 0xE6)
+
+
 typedef struct {
   bool is_down;
   char* text;
@@ -80,7 +84,7 @@ button_paint(paint_event_t* event)
   rect_t rect = widget_get_rect(event->widget);
 
   /* draw border */
-  setColor(COLOR(0x88, 0x88, 0x88));
+  setColor(BORDER_COLOR);
   drawRect(rect);
 
   /* draw background */
@@ -89,8 +93,8 @@ button_paint(paint_event_t* event)
   rect.width -= 2;
   rect.height -= 2;
   if (b->is_down) {
-    setColor(COLOR(0xAA, 0xAA, 0xAA));
-    set_bg_color(COLOR(0xAA, 0xAA, 0xAA));
+    setColor(BTN_DOWN_COLOR);
+    set_bg_color(BTN_DOWN_COLOR);
     fillRect(rect);
   }
   else {

@@ -23,6 +23,7 @@ typedef struct widget_s {
 
   rect_t rect;
   bool invalid;
+  bool visible;
 } widget_t;
 
 
@@ -49,6 +50,7 @@ widget_create(const widget_class_t* widget_class, void* instance_data, rect_t re
 
   w->rect = rect;
   w->invalid = true;
+  w->visible = true;
 
   return w;
 }
@@ -146,7 +148,7 @@ widget_hit_test(widget_t* root, point_t p)
       return w_hit;
   }
 
-  if (rect_inside(root->rect, p))
+  if (widget_is_visible(root) && rect_inside(root->rect, p))
     return root;
 
   return NULL;
@@ -185,7 +187,7 @@ widget_paint(widget_t* w)
 static void
 widget_paint_predicate(widget_t* w)
 {
-  if (w->invalid) {
+  if (w->invalid && widget_is_visible(w)) {
     paint_event_t event = {
         .id = EVT_PAINT,
         .widget = w,
@@ -200,6 +202,9 @@ widget_paint_predicate(widget_t* w)
 void
 widget_invalidate(widget_t* w)
 {
+  if (w == NULL)
+    return;
+
   widget_for_each(w, widget_invalidate_predicate, WIDGET_TRAVERSAL_TOP_DOWN);
 }
 
@@ -207,4 +212,24 @@ static void
 widget_invalidate_predicate(widget_t* w)
 {
   w->invalid = true;
+}
+
+void
+widget_hide(widget_t* w)
+{
+  w->visible = false;
+  widget_invalidate(w->parent);
+}
+
+void
+widget_show(widget_t* w)
+{
+  w->visible = true;
+  widget_invalidate(w);
+}
+
+bool
+widget_is_visible(widget_t* w)
+{
+  return w->visible && (w->parent == NULL || widget_is_visible(w->parent));
 }
