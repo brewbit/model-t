@@ -79,14 +79,31 @@ button_paint(paint_event_t* event)
 
   rect_t rect = widget_get_rect(event->widget);
 
-  if (b->is_down)
-    setColor(RED);
-  else
-    setColor(BLUE);
+  /* draw border */
+  setColor(COLOR(0x88, 0x88, 0x88));
+  drawRect(rect);
 
-  fillRect(rect);
+  /* draw background */
+  rect.x += 1;
+  rect.y += 1;
+  rect.width -= 2;
+  rect.height -= 2;
+  if (b->is_down) {
+    setColor(COLOR(0xAA, 0xAA, 0xAA));
+    set_bg_color(COLOR(0xAA, 0xAA, 0xAA));
+    fillRect(rect);
+  }
+  else {
+    point_t bg_anchor = { .x = rect.x, .y = rect.y };
+    set_bg_img(img_button_bg, bg_anchor);
+    tile_bitmap(img_button_bg, rect);
+  }
 
-  setFont(font_test);
+  /* draw text */
+  setColor(BLACK);
+  setFont(font_terminal);
   point_t center = rect_center(rect);
   print(b->text, rect.x + 10, center.y);
+
+  /* draw icon */
 }

@@ -83,6 +83,7 @@ uint16_t bcolor = BLACK;
 
 BackgroundType bg_type = BG_COLOR;
 const Image_t* bg_img = NULL;
+point_t bg_anchor;
 const Font_t* cfont;
 
 rect_t display_rect = {
@@ -252,19 +253,12 @@ clrXY()
 }
 
 void
-drawRect(int x1, int y1, int x2, int y2)
+drawRect(rect_t rect)
 {
-  if (x1 > x2) {
-    swap(int, x1, x2);
-  }
-  if (y1 > y2) {
-    swap(int, y1, y2);
-  }
-
-  drawHLine(x1, y1, x2 - x1);
-  drawHLine(x1, y2, x2 - x1);
-  drawVLine(x1, y1, y2 - y1);
-  drawVLine(x2, y1, y2 - y1);
+  drawHLine(rect.x, rect.y, rect.width-1);
+  drawHLine(rect.x, rect.y + rect.height-1, rect.width-1);
+  drawVLine(rect.x, rect.y, rect.height);
+  drawVLine(rect.x + rect.width-1, rect.y, rect.height);
 }
 
 void
@@ -295,7 +289,7 @@ fillRect(rect_t rect)
 
   cs_low();
   setXY(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height);
-  for (i = 0; i < (rect.width + 1) * (rect.height + 1); ++i) {
+  for (i = 0; i < rect.width * rect.height; ++i) {
     setPixel(fcolor);
   }
   cs_high();
@@ -445,9 +439,10 @@ set_bg_color(uint16_t color)
 }
 
 void
-set_bg_img(const Image_t* img)
+set_bg_img(const Image_t* img, point_t anchor)
 {
   bg_img = img;
+  bg_anchor = anchor;
   bg_type = BG_IMAGE;
 }
 
@@ -793,7 +788,7 @@ static uint16_t
 get_bg_color(int x, int y)
 {
   if (bg_type == BG_IMAGE) {
-    return get_tile_color(bg_img, x, y);
+    return get_tile_color(bg_img, x - bg_anchor.x, y - bg_anchor.y);
   }
   else {
     return bcolor;

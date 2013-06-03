@@ -18,7 +18,7 @@
 #define DISP_HEIGHT 240
 #endif
 
-#define COLOR(r, g, b) (uint16_t)(((r & 0x1F)<<11) + ((g & 0x3F)<<5) + (b & 0x1F))
+#define COLOR(r, g, b) (uint16_t)(((((r) * 31) / 255)<<11) + ((((g) * 63) / 255)<<5) + (((b) * 31) / 255))
 
 #define BLACK  COLOR(0, 0, 0)
 #define WHITE  COLOR(255, 255, 255)
@@ -40,7 +40,7 @@ drawLine(int x1, int y1, int x2, int y2);
 void
 fillScr(uint16_t color);
 void
-drawRect(int x1, int y1, int x2, int y2);
+drawRect(rect_t rect);
 void
 drawRoundRect(int x1, int y1, int x2, int y2);
 void
@@ -56,7 +56,7 @@ setColor(uint16_t color);
 void
 set_bg_color(uint16_t color);
 void
-set_bg_img(const Image_t* img);
+set_bg_img(const Image_t* img, point_t anchor);
 void
 print(char *st, int x, int y);
 void

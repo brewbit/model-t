@@ -45,7 +45,7 @@ const Image_t* img_##IMAGE_NAME## = &_img_##IMAGE_NAME##;
 """
 
 def rescale(p, bits):
-	return ((p >> (8-bits)) & ((2**bits)-1))
+	return int(p * ((2**bits) - 1) / 255)
 
 def convert_image(in_file, out_h, out_c):
 	in_file_base = os.path.splitext(os.path.basename(in_file))[0]
