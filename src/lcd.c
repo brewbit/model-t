@@ -235,7 +235,7 @@ setXY(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 #if (DISP_ORIENT == LANDSCAPE)
   LCD_Write_COM_DATA(0x21, y2);
 #else
-  LCD_Write_COM_DATA(0x20, y1);
+  LCD_Write_COM_DATA(0x21, y1);
 #endif
 
   // set window
