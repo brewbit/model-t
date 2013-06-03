@@ -12,7 +12,8 @@
 
 typedef struct {
   bool is_down;
-  char* text;
+  const char* text;
+  const Image_t* icon;
 
   click_handler_t on_click;
 } button_t;
@@ -30,11 +31,12 @@ static const widget_class_t button_widget_class = {
 };
 
 widget_t*
-button_create(rect_t rect, char* text, click_handler_t click_handler)
+button_create(rect_t rect, const char* text, const Image_t* icon, click_handler_t click_handler)
 {
   button_t* b = calloc(1, sizeof(button_t));
 
   b->text = text;
+  b->icon = icon;
   b->on_click = click_handler;
 
   return widget_create(&button_widget_class, b, rect);
@@ -84,6 +86,7 @@ button_paint(paint_event_t* event)
   button_t* b = widget_get_instance_data(event->widget);
 
   rect_t rect = widget_get_rect(event->widget);
+  point_t center = rect_center(rect);
 
   /* draw border */
   setColor(BORDER_COLOR);
@@ -109,7 +112,6 @@ button_paint(paint_event_t* event)
   if (b->text != NULL) {
     setColor(BLACK);
     setFont(font_terminal);
-    point_t center = rect_center(rect);
     Extents_t text_extents = font_text_extents(font_terminal, b->text);
     print(b->text,
         center.x - (text_extents.width / 2),
@@ -117,4 +119,10 @@ button_paint(paint_event_t* event)
   }
 
   /* draw icon */
+  if (b->icon != NULL) {
+    drawBitmap(
+        rect.x + 10,
+        center.y - (b->icon->height / 2),
+        b->icon);
+  }
 }

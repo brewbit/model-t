@@ -16,9 +16,10 @@
 #define GREEN_COMPONENT(color) (((color) >> 5) & 0x3F)
 #define BLUE_COMPONENT(color) ((color) & 0x1F)
 
+//#define BLENDED_COMPONENT(fg, bg, alpha) (int)(((((float)fg) * ((float)alpha)) / 255.0f) + ((((float)bg) * (255.0f-((float)alpha))) / 255.0f))
 #define BLENDED_COMPONENT(fg, bg, alpha) (((fg) * (alpha) / 255) + ((bg) * (255-(alpha)) / 255))
 
-#define BLENDED_COLOR(fg, bg, alpha) COLOR( \
+#define BLENDED_COLOR(fg, bg, alpha) COLOR565( \
         BLENDED_COMPONENT(RED_COMPONENT(fg), RED_COMPONENT(bg), alpha), \
         BLENDED_COMPONENT(GREEN_COMPONENT(fg), GREEN_COMPONENT(bg), alpha), \
         BLENDED_COMPONENT(BLUE_COMPONENT(fg), BLUE_COMPONENT(bg), alpha))
@@ -597,7 +598,7 @@ printChar(const Glyph_t* g, int x, int y)
 }
 
 void
-print(char *st, int x, int y)
+print(const char *st, int x, int y)
 {
   int xoff = 0;
 
@@ -766,9 +767,38 @@ drawBitmap(int x, int y, const Image_t* img)
   int tc;
   cs_low();
   setXY(x, y, x + img->width - 1, y + img->height - 1);
-  for (tc = 0; tc < (img->width * img->height); tc++) {
-    col = img->data[tc];
-    LCD_Write_DATA(col);
+  switch (img->format) {
+  case RGB565:
+    for (tc = 0; tc < (img->width * img->height); tc++) {
+      col = img->px[tc];
+      LCD_Write_DATA(col);
+    }
+    break;
+
+  case RGBA5658:
+    for (tc = 0; tc < (img->width * img->height); tc++) {
+      uint8_t alpha = img->alpha[tc];
+      uint16_t fcolor = img->px[tc];
+
+      if (alpha == 255) {
+        setPixel(fcolor);
+      }
+      else {
+        uint16_t by = y + (tc / img->width);
+        uint16_t bx = x + (tc % img->width);
+
+        uint16_t bcolor = get_bg_color(bx, by);
+
+        if (alpha == 0) {
+          setPixel(bcolor);
+        }
+        else {
+          col = BLENDED_COLOR(fcolor, bcolor, alpha);
+          setPixel(col);
+        }
+      }
+    }
+    break;
   }
   cs_high();
 
@@ -780,7 +810,7 @@ get_tile_color(const Image_t* img, int x, int y)
 {
   uint16_t imx = x % img->width;
   uint16_t imy = y % img->height;
-  uint16_t col = img->data[imx + (imy * img->width)];
+  uint16_t col = img->px[imx + (imy * img->width)];
   return col;
 }
 

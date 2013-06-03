@@ -18,7 +18,12 @@
 #define DISP_HEIGHT 240
 #endif
 
+/* The parameters for this macro are in the range 0-255 */
 #define COLOR(r, g, b) (uint16_t)(((((r) * 31) / 255)<<11) + ((((g) * 63) / 255)<<5) + (((b) * 31) / 255))
+
+/* The parameters for this macro are in the range 0-31, 0-63, and 0-31 respectively */
+#define COLOR565(r, g, b) (uint16_t)(((r & 0x1F)<<11) + ((g & 0x3F)<<5) + (b & 0x1F))
+
 
 #define BLACK  COLOR(0, 0, 0)
 #define WHITE  COLOR(255, 255, 255)
@@ -58,7 +63,7 @@ set_bg_color(uint16_t color);
 void
 set_bg_img(const Image_t* img, point_t anchor);
 void
-print(char *st, int x, int y);
+print(const char *st, int x, int y);
 void
 printChar(const Glyph_t* g, int x, int y);
 void

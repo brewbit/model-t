@@ -63,10 +63,10 @@ calib_screen_create(calib_complete_handler_t completion_handler)
       .width = 160,
       .height = 43,
   };
-  calib_screen->recal_button = button_create(rect, "Recalibrate", restart_calib);
+  calib_screen->recal_button = button_create(rect, "Recalibrate", img_cancel, restart_calib);
   widget_hide(calib_screen->recal_button);
   rect.x = 160;
-  calib_screen->complete_button = button_create(rect, "Finished", complete_calib);
+  calib_screen->complete_button = button_create(rect, "Finished", img_ok, complete_calib);
   widget_hide(calib_screen->complete_button);
 
   widget_add_child(calib_screen->widget, calib_screen->recal_button);

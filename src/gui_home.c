@@ -1,6 +1,7 @@
 
 #include "gui_home.h"
 #include "lcd.h"
+#include "gui/button.h"
 
 
 static void
@@ -36,7 +37,7 @@ home_screen_create()
       .width = 159,
       .height = 43,
   };
-  widget_t* calib_button = button_create(rect, "calibrate", start_calib);
+  widget_t* calib_button = button_create(rect, "Calibrate", img_up, start_calib);
   widget_add_child(w, calib_button);
 
   return w;

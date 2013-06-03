@@ -7,12 +7,20 @@ h_prologue = """
 #ifndef __IMAGE_RESOURCES_H__
 #define __IMAGE_RESOURCES_H__
 
-#include "stdint.h"
+#include <stdlib.h>
+#include <stdint.h>
+
+typedef enum {
+  RGB565,
+  RGBA5658,
+} image_format_t;
 
 typedef struct {
-	const uint16_t width;
-	const uint16_t height;
-	const uint16_t* data;
+  const image_format_t format;
+  const uint16_t width;
+  const uint16_t height;
+  const uint16_t* px;
+  const uint8_t* alpha;
 } Image_t;
 
 """
@@ -29,16 +37,24 @@ c_prologue = """
 
 """
 
-image_def_prologue = """static const uint16_t img_##IMAGE_NAME##_data[] = {
+image_px_prologue = """static const uint16_t img_##IMAGE_NAME##_px[] = {
+  """
+
+image_alpha_prologue = """
+};
+
+static const uint8_t img_##IMAGE_NAME##_alpha[] = {
   """
 
 image_def_epilogue = """
 };
 
 const Image_t _img_##IMAGE_NAME## = {
+  .format = ##IMAGE_FORMAT##,
   .width = ##IMAGE_WIDTH##,
   .height = ##IMAGE_HEIGHT##,
-  .data = img_##IMAGE_NAME##_data
+  .px = img_##IMAGE_NAME##_px,
+  .alpha = ##IMAGE_ALPHA##,
 };
 const Image_t* img_##IMAGE_NAME## = &_img_##IMAGE_NAME##;
 
@@ -49,6 +65,13 @@ def rescale(p, bits):
 
 def convert_image(in_file, out_h, out_c):
 	in_file_base = os.path.splitext(os.path.basename(in_file))[0]
+	if in_file_base.endswith('.rgba'):
+		img_format = 'RGBA5658'
+		in_file_base = in_file_base.replace('.rgba', '')
+		img_alpha_var = 'img_' + in_file_base + '_alpha'
+	else:
+		img_format = 'RGB565'
+		img_alpha_var = 'NULL'
 	
 	out_base = os.path.splitext(in_file)[0]
 
@@ -59,17 +82,26 @@ def convert_image(in_file, out_h, out_c):
 	out_h.write(image_proto
 				.replace('##IMAGE_NAME##', in_file_base))
 	
-	out_c.write(image_def_prologue
+	out_c.write(image_px_prologue
 				.replace('##IMAGE_NAME##', in_file_base))
 	
 	for p in imdata:
 		ps = (rescale(p[0], 5) << 11) + (rescale(p[1], 6) << 5) + rescale(p[2], 5)
 		out_c.write('0x%04x, ' % ps)
+		
+	if img_format == 'RGBA5658':
+		out_c.write(image_alpha_prologue
+					.replace('##IMAGE_NAME##', in_file_base))
+		
+		for p in imdata:
+			out_c.write('0x%02x, ' % p[3])
 	
 	out_c.write(image_def_epilogue
+				.replace('##IMAGE_FORMAT##', img_format)
 				.replace('##IMAGE_NAME##', in_file_base)
 				.replace('##IMAGE_WIDTH##', str(im.size[0]))
-				.replace('##IMAGE_HEIGHT##', str(im.size[1])))
+				.replace('##IMAGE_HEIGHT##', str(im.size[1]))
+				.replace('##IMAGE_ALPHA##', img_alpha_var))
 
 if __name__ == "__main__":
 	out_h = open('build/autogen/image_resources.h', 'w')
