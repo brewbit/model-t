@@ -25,12 +25,16 @@ static const point_t ref_pts[MAX_SAMPLES] = {
 static int ref_pt_idx;
 static uint8_t calib_complete;
 static point_t sampled_pts[MAX_SAMPLES];
-static screen_t* calib_screen;
+static widget_t* calib_screen;
+static widget_t* calib_widget;
 static touch_handler_t touch_handler = {
     .on_touch = calib_raw_touch
 };
-static widget_t calib_widget;
 static point_t last_touch_pos;
+static const widget_class_t calib_widget_class = {
+    .on_paint = calib_widget_paint,
+    .on_touch = calib_widget_touch,
+};
 
 void
 calib_start()
@@ -38,12 +42,9 @@ calib_start()
   calib_screen = screen_create();
   screen_set_bg_img(calib_screen, img_background);
 
+  calib_widget = widget_create(&calib_widget_class, NULL, widget_get_rect(calib_screen));
 
-  widget_init(&calib_widget, calib_screen->widget.rect);
-  calib_widget.on_paint = calib_widget_paint;
-  calib_widget.on_touch_down = calib_widget_touch;
-
-  widget_add_child((widget_t*)calib_screen, (widget_t*)&calib_widget);
+  widget_add_child(calib_screen, calib_widget);
 
   gui_set_screen(calib_screen);
 
@@ -70,8 +71,7 @@ static void
 calib_widget_touch(touch_event_t* event)
 {
   if (calib_complete) {
-    last_touch_pos.x = event->x;
-    last_touch_pos.y = event->y;
+    last_touch_pos = event->pos;
     widget_invalidate(calib_screen);
   }
 }

@@ -5,8 +5,7 @@
 
 
 typedef enum {
-  GUI_TOUCH_DOWN,
-  GUI_TOUCH_UP,
+  GUI_TOUCH,
   GUI_SET_SCREEN,
   GUI_PAINT,
 } gui_event_id_t;
@@ -17,12 +16,13 @@ typedef struct {
 
 typedef struct {
   gui_event_id_t id;
+  bool touch_down;
   point_t pos;
 } gui_touch_event_t;
 
 typedef struct {
   gui_event_id_t id;
-  screen_t* screen;
+  widget_t* screen;
 } gui_set_screen_event_t;
 
 
@@ -30,16 +30,15 @@ static msg_t gui_thread_func(void* arg);
 static void handle_touch(bool touch_down, point_t raw, point_t calib);
 static void gui_send_event(gui_event_t* event);
 
-static void handle_touch_down(gui_touch_event_t* event);
-static void handle_touch_up(gui_touch_event_t* event);
-static void handle_set_screen(gui_set_screen_event_t* event);
+static void dispatch_touch(gui_touch_event_t* event);
+static void dispatch_set_screen(gui_set_screen_event_t* event);
 static void gui_dispatch(gui_event_t* event);
 static void gui_idle(void);
 
 
 static uint8_t wa_gui_thread[1024];
 static Thread* gui_thread;
-static screen_t* screen;
+static widget_t* screen;
 
 static touch_handler_t touch_handler = {
     .on_touch = handle_touch
@@ -59,14 +58,15 @@ handle_touch(bool touch_down, point_t raw, point_t calib)
   (void)raw;
 
   gui_touch_event_t event = {
-      .id = touch_down ? GUI_TOUCH_DOWN : GUI_TOUCH_UP,
+      .id = GUI_TOUCH,
+      .touch_down = touch_down,
       .pos = calib,
   };
   gui_send_event((gui_event_t*)&event);
 }
 
 void
-gui_set_screen(screen_t* screen)
+gui_set_screen(widget_t* screen)
 {
   gui_set_screen_event_t event = {
       .id = GUI_SET_SCREEN,
@@ -127,16 +127,12 @@ gui_dispatch(gui_event_t* event)
     widget_paint(screen);
     break;
 
-  case GUI_TOUCH_DOWN:
-    handle_touch_down((gui_touch_event_t*)event);
-    break;
-
-  case GUI_TOUCH_UP:
-    handle_touch_up((gui_touch_event_t*)event);
+  case GUI_TOUCH:
+    dispatch_touch((gui_touch_event_t*)event);
     break;
 
   case GUI_SET_SCREEN:
-    handle_set_screen((gui_set_screen_event_t*)event);
+    dispatch_set_screen((gui_set_screen_event_t*)event);
     break;
 
   default:
@@ -145,27 +141,19 @@ gui_dispatch(gui_event_t* event)
 }
 
 static void
-handle_touch_down(gui_touch_event_t* event)
+dispatch_touch(gui_touch_event_t* event)
 {
-//  touch_event_t te = {
-//
-//  };
-//  widget_t* widget = widget_hit_test((widget_t*)screen, event->pos);
-//  if (widget != NULL) {
-//    widget_dispatch_event(widget, (event_t*)&te);
-//  }
+  touch_event_t te = {
+      .id = event->touch_down ? EVT_TOUCH_DOWN : EVT_TOUCH_UP,
+      .widget = screen,
+      .pos = event->pos,
+  };
+  widget_dispatch_event(screen, (event_t*)&te);
 }
 
 static void
-handle_touch_up(gui_touch_event_t* event)
+dispatch_set_screen(gui_set_screen_event_t* event)
 {
-
-}
-
-static void
-handle_set_screen(gui_set_screen_event_t* event)
-{
-  terminal_write("setting screen\n");
   screen = event->screen;
   widget_paint((widget_t*)screen);
 }

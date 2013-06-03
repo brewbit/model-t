@@ -24,8 +24,8 @@ typedef struct {
 typedef struct {
   event_id_t id;
   widget_t* widget;
-  uint16_t x;
-  uint16_t y;
+  bool touch_down;
+  point_t pos;
 } touch_event_t;
 
 

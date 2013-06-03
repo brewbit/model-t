@@ -4,27 +4,23 @@
 #include "types.h"
 #include "event.h"
 
-typedef struct widget_s {
-  struct widget_s* parent;
 
-  struct widget_s* first_child;
-  struct widget_s* last_child;
-
-  struct widget_s* next_sibling;
-  struct widget_s* prev_sibling;
-
-  rect_t rect;
-  bool invalid;
-
+typedef struct {
   void (*on_paint)(paint_event_t* event);
-  void (*on_touch_down)(touch_event_t* event);
-  void (*on_touch_up)(touch_event_t* event);
-} widget_t;
+  void (*on_touch)(touch_event_t* event);
+} widget_class_t;
 
 typedef void (*widget_predicate_t)(widget_t* w);
 
-void
-widget_init(widget_t* w, rect_t rect);
+
+widget_t*
+widget_create(const widget_class_t* widget_class, void* instance_data, rect_t rect);
+
+rect_t
+widget_get_rect(widget_t* w);
+
+void*
+widget_get_instance_data(widget_t* w);
 
 void
 widget_add_child(widget_t* parent, widget_t* child);

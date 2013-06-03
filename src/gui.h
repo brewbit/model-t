@@ -2,13 +2,13 @@
 #ifndef GUI_H
 #define GUI_H
 
-#include "gui/screen.h"
+#include "gui/widget.h"
 
 void
 gui_init(void);
 
 void
-gui_set_screen(screen_t* screen);
+gui_set_screen(widget_t* screen);
 
 void
 gui_paint(void);

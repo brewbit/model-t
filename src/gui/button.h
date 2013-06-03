@@ -3,17 +3,8 @@
 
 #include "widget.h"
 
-typedef struct {
-  widget_t widget;
-  char* text;
 
-  void (*on_click)(void);
-} button_t;
-
-button_t*
+widget_t*
 button_create(rect_t rect, char* text);
-
-void
-button_destroy(button_t* button);
 
 #endif
