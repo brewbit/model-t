@@ -150,7 +150,7 @@ lcd_init()
   LCD_Write_COM_DATA(0x01, 0x0100);
   LCD_Write_COM_DATA(0x02, 0x0700);
 #if (DISP_ORIENT == LANDSCAPE)
-  LCD_Write_COM_DATA(0x03, 0x1028);
+  LCD_Write_COM_DATA(0x03, 0x1018);
 #else
   LCD_Write_COM_DATA(0x03, 0x1030);
 #endif
@@ -225,18 +225,18 @@ setXY(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
 #if (DISP_ORIENT == LANDSCAPE)
   swap(uint16_t, x1, y1);
   swap(uint16_t, x2, y2)
-  x1 = DISP_HEIGHT - x1 - 1;
-  x2 = DISP_HEIGHT - x2 - 1;
-  swap(uint16_t, x1, x2)
+  y1 = DISP_WIDTH - y1 - 1;
+  y2 = DISP_WIDTH - y2 - 1;
+  swap(uint16_t, y1, y2)
 #endif
 
   // set cursor
-#if (DISP_ORIENT == LANDSCAPE)
-  LCD_Write_COM_DATA(0x20, x2);
-#else
   LCD_Write_COM_DATA(0x20, x1);
+#if (DISP_ORIENT == LANDSCAPE)
+  LCD_Write_COM_DATA(0x21, y2);
+#else
+  LCD_Write_COM_DATA(0x20, y1);
 #endif
-  LCD_Write_COM_DATA(0x21, y1);
 
   // set window
   LCD_Write_COM_DATA(0x50, x1);
