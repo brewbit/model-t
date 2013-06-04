@@ -39,7 +39,7 @@ int main(void)
 //  temp_init(&tp1);
 //  temp_init(&tp2);
   wspr_init();
-//  bapi_init();
+  bapi_init();
 
   gui_init();
 

@@ -87,7 +87,7 @@ handle_debug(uint8_t* data, uint16_t data_len)
   datastream_t* ds = ds_new(data, data_len);
 
   char* str = ds_read_str(ds);
-  terminal_write(str);
+//  terminal_write(str);
 
   free(str);
   ds_free(ds);
@@ -97,14 +97,6 @@ static void
 handle_version(uint8_t* data, uint16_t data_len)
 {
   (void)data_len;
-
-  terminal_write("WSPR version: ");
-  terminal_write_int(data[0]);
-  terminal_write(".");
-  terminal_write_int(data[1]);
-  terminal_write(".");
-  terminal_write_int(data[2]);
-  terminal_write("\n");
 }
 
 static void

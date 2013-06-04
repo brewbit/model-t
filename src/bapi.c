@@ -6,6 +6,7 @@
 #include "cJSON.h"
 #include "wspr_http.h"
 #include "terminal.h"
+#include "common.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -20,6 +21,7 @@ typedef enum {
   BAPI_GET_ACTIVATION_TOKEN,
   BAPI_GET_AUTH_TOKEN,
   BAPI_GET_ACCT_INFO,
+  BAPI_POST_TEMP,
   BAPI_IDLE,
 } bapi_state_t;
 
@@ -45,6 +47,9 @@ static void bapi_complete_get_auth_token(bapi_t* bapi, cJSON* response);
 static void bapi_get_acct_info(bapi_t* bapi);
 static void bapi_complete_get_acct_info(bapi_t* bapi, cJSON* response);
 
+static void bapi_post_temp(bapi_t* bapi);
+static void bapi_complete_post_temp(bapi_t* bapi, cJSON* acct_response);
+
 static void bapi_request(bapi_t* bapi, char* endpoint, http_method_t method, cJSON* request, bapi_response_handler_t handler);
 static void bapi_request_complete(void* arg, http_response_t* response);
 
@@ -68,6 +73,8 @@ bapi_thread(void* arg)
 {
   bapi_t* bapi = arg;
 
+  chprintf(stdout, "bapi thread started\r\n");
+
   while (1) {
     switch (bapi->state) {
       case BAPI_GET_ACTIVATION_TOKEN:
@@ -80,6 +87,10 @@ bapi_thread(void* arg)
 
       case BAPI_GET_ACCT_INFO:
         bapi_get_acct_info(bapi);
+        break;
+
+      case BAPI_POST_TEMP:
+        bapi_post_temp(bapi);
         break;
 
       case BAPI_IDLE:
@@ -97,7 +108,7 @@ bapi_get_activation_token(bapi_t* bapi)
   cJSON* token_request = cJSON_CreateObject();
   cJSON_AddItemToObject(token_request, "device_id", cJSON_CreateString(DEVICE_ID));
 
-  terminal_write("making activation request\n");
+  chprintf(stdout, "making activation request\r\n");
   bapi_request(bapi, "/api/v1/activation/new", HTTP_GET, token_request, bapi_complete_get_activation_token);
   cJSON_Delete(token_request);
 
@@ -107,15 +118,13 @@ bapi_get_activation_token(bapi_t* bapi)
 static void
 bapi_complete_get_activation_token(bapi_t* bapi, cJSON* token_response)
 {
-  terminal_write("got activation response\n");
+  chprintf(stdout, "got activation response\r\n");
   if (token_response) {
     cJSON* activation_token = cJSON_GetObjectItem(token_response, "activation_token");
     if (activation_token != NULL) {
       bapi->activation_token = strdup(activation_token->valuestring);
 
-      terminal_write("activation token is: ");
-      terminal_write(bapi->activation_token);
-      terminal_write("\n");
+      chprintf(stdout, "activation token is: %s\r\n", bapi->activation_token);
       bapi->state = BAPI_GET_AUTH_TOKEN;
       chSemSignal(&bapi->cmd_sem);
     }
@@ -129,7 +138,7 @@ bapi_get_auth_token(bapi_t* bapi)
   cJSON_AddItemToObject(token_request, "device_id", cJSON_CreateString(DEVICE_ID));
   cJSON_AddItemToObject(token_request, "activation_token", cJSON_CreateString(bapi->activation_token));
 
-  terminal_write("making auth request\n");
+  chprintf(stdout, "making auth request\r\n");
   bapi_request(bapi, "/api/v1/activation", HTTP_POST, token_request, bapi_complete_get_auth_token);
   cJSON_Delete(token_request);
 
@@ -139,16 +148,14 @@ bapi_get_auth_token(bapi_t* bapi)
 static void
 bapi_complete_get_auth_token(bapi_t* bapi, cJSON* token_response)
 {
-  terminal_write("got auth response\n");
+  chprintf(stdout, "got auth response\r\n");
   if (token_response) {
     cJSON* auth_token = cJSON_GetObjectItem(token_response, "auth_token");
     if ((auth_token != NULL) &&
         (auth_token->type != cJSON_NULL)) {
       bapi->auth_token = strdup(auth_token->valuestring);
 
-      terminal_write("token is: ");
-      terminal_write(bapi->auth_token);
-      terminal_write("\n");
+      chprintf(stdout, "token is: %s\r\n", bapi->auth_token);
       bapi->state = BAPI_GET_ACCT_INFO;
       chSemSignal(&bapi->cmd_sem);
     }
@@ -161,7 +168,7 @@ bapi_get_acct_info(bapi_t* bapi)
   cJSON* acct_request = cJSON_CreateObject();
   cJSON_AddItemToObject(acct_request, "auth_token", cJSON_CreateString(bapi->auth_token));
 
-  terminal_write("making acct info request\n");
+  chprintf(stdout, "making acct info request\r\n");
   bapi_request(bapi, "/api/v1/account", HTTP_GET, acct_request, bapi_complete_get_acct_info);
   cJSON_Delete(acct_request);
 
@@ -171,7 +178,7 @@ bapi_get_acct_info(bapi_t* bapi)
 static void
 bapi_complete_get_acct_info(bapi_t* bapi, cJSON* acct_response)
 {
-  terminal_write("got acct info:\n");
+  chprintf(stdout, "got acct info:\r\n");
   if (acct_response) {
     cJSON* user = cJSON_GetObjectItem(acct_response, "user");
     if (user) {
@@ -183,15 +190,33 @@ bapi_complete_get_acct_info(bapi_t* bapi, cJSON* acct_response)
       if (name)
         bapi->acct_info.name = strdup(name->valuestring);
 
-      terminal_write("  email: ");
-      terminal_write(bapi->acct_info.email);
-      terminal_write("\n  name: ");
-      terminal_write(bapi->acct_info.name);
-      terminal_write("\n");
-      bapi->state = BAPI_IDLE;
+      chprintf(stdout, "  email: %s\r\n", bapi->acct_info.email);
+      chprintf(stdout, "  name: %s\r\n", bapi->acct_info.name);
+      bapi->state = BAPI_POST_TEMP;
       chSemSignal(&bapi->cmd_sem);
     }
   }
+}
+
+static void
+bapi_post_temp(bapi_t* bapi)
+{
+  cJSON* temp_post = cJSON_CreateObject();
+  cJSON_AddItemToObject(temp_post, "auth_token", cJSON_CreateString(bapi->auth_token));
+  cJSON_AddItemToObject(temp_post, "last_known_temperature", cJSON_CreateNumber(69.69));
+
+  chprintf(stdout, "making temp post request\r\n");
+  bapi_request(bapi, "/api/v1/devices/12", HTTP_PUT, temp_post, bapi_complete_post_temp);
+  cJSON_Delete(temp_post);
+
+  chSemWaitTimeoutS(&bapi->cmd_sem, 30000);
+}
+
+static void
+bapi_complete_post_temp(bapi_t* bapi, cJSON* acct_response)
+{
+  chprintf(stdout, "got temp post response:\r\n");
+  bapi->state = BAPI_POST_TEMP;
 }
 
 static void
