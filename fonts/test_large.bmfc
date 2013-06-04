@@ -50,6 +50,6 @@ invB=0
 outlineThickness=0
 
 # selected chars (always include the question mark char [63] for unknown char replacement)
-chars=32,46,48-57,63,67,70,176
+chars=32,45,46,48-57,63,67,70,176
 
 # imported icon images
