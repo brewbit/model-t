@@ -35,7 +35,7 @@ screen_create()
       .width = DISP_WIDTH,
       .height = DISP_HEIGHT
   };
-  return widget_create(&screen_widget_class, s, rect);
+  return widget_create(NULL, &screen_widget_class, s, rect);
 }
 
 static void

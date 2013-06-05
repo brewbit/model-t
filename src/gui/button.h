@@ -8,6 +8,6 @@
 typedef void (*click_handler_t)(click_event_t* event);
 
 widget_t*
-button_create(rect_t rect, const char* text, const Image_t* icon, click_handler_t click_handler);
+button_create(widget_t* parent, rect_t rect, const char* text, const Image_t* icon, click_handler_t click_handler);
 
 #endif

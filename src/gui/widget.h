@@ -20,7 +20,7 @@ typedef void (*widget_predicate_t)(widget_t* w);
 
 
 widget_t*
-widget_create(const widget_class_t* widget_class, void* instance_data, rect_t rect);
+widget_create(widget_t* parent, const widget_class_t* widget_class, void* instance_data, rect_t rect);
 
 void
 widget_destroy(widget_t* w);

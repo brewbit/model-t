@@ -7,6 +7,13 @@
 #include <string.h>
 #include <stdio.h>
 
+
+#define TILE_SPACE 12
+#define TILE_SIZE 64
+
+#define TILE_POS(pos) (((pos + 1) * TILE_SPACE) + ((pos) * TILE_SIZE))
+#define TILE_SPAN(ntiles) (((ntiles) * TILE_SIZE) + (((ntiles) - 1) * TILE_SPACE))
+
 typedef struct {
   float cur_temp;
   systime_t temp_timestamp;
@@ -40,23 +47,43 @@ home_screen_create()
   s->temp_timestamp = chTimeNow();
   s->temp_unit = 'F';
 
-  s->screen = widget_create(&home_widget_class, s, display_rect);
+
+  point_t anchor = {0, 0};
+  set_bg_img(img_background, anchor);
+
+  s->screen = widget_create(NULL, &home_widget_class, s, display_rect);
 
   rect_t rect = {
-      .x = 0,
-      .y = 240-43,
-      .width = 160,
-      .height = 43,
+      .x      = TILE_POS(0),
+      .y      = TILE_POS(0),
+      .width  = TILE_SPAN(3),
+      .height = TILE_SPAN(2),
   };
-  s->calib_button = button_create(rect, "Calibrate", img_hand, start_calib);
-  rect.x = 160;
-  s->settings_button = button_create(rect, "Settings", img_sliders, start_calib);
+//  s->calib_button = button_create(s->screen, rect, NULL, NULL, NULL);
 
-  widget_add_child(s->screen, s->calib_button);
-  widget_add_child(s->screen, s->settings_button);
+  rect.x = TILE_POS(3);
+  rect.width = TILE_SPAN(1);
+  rect.height = TILE_SPAN(1);
+  s->settings_button = button_create(s->screen, rect, NULL, NULL, NULL);
 
-  widget_hide(s->calib_button);
-  widget_hide(s->settings_button);
+  rect.y = TILE_POS(1);
+  button_create(s->screen, rect, NULL, NULL, NULL);
+
+  rect.x = TILE_POS(0);
+  rect.y = TILE_POS(2);
+  button_create(s->screen, rect, NULL, NULL, NULL);
+
+  rect.x = TILE_POS(1);
+  button_create(s->screen, rect, NULL, NULL, NULL);
+
+  rect.x = TILE_POS(2);
+  button_create(s->screen, rect, NULL, NULL, NULL);
+
+  rect.x = TILE_POS(3);
+  button_create(s->screen, rect, NULL, NULL, NULL);
+
+//  widget_hide(s->calib_button);
+//  widget_hide(s->settings_button);
 
   return s->screen;
 }
@@ -81,24 +108,25 @@ home_screen_touch(touch_event_t* event)
 static void
 home_screen_paint(paint_event_t* event)
 {
-  char temp_str[16];
-  home_screen_t* s = widget_get_instance_data(event->widget);
-
-  if (chTimeNow() - s->temp_timestamp < MS2ST(5))
-    sprintf(temp_str, "%0.1f %c", s->cur_temp, s->temp_unit);
-  else
-    sprintf(temp_str, "--.- %c", s->temp_unit);
-
+//  char temp_str[16];
+//  home_screen_t* s = widget_get_instance_data(event->widget);
+//
+//  if (chTimeNow() - s->temp_timestamp < MS2ST(5))
+//    sprintf(temp_str, "%0.1f %c", s->cur_temp, s->temp_unit);
+//  else
+//    sprintf(temp_str, "--.- %c", s->temp_unit);
+//
   tile_bitmap(img_background, display_rect);
 
   point_t anchor = {0, 0};
   set_bg_img(img_background, anchor);
-  setColor(COLOR(0xD0, 0x25, 0x41));
-  setFont(font_test_large);
-  Extents_t extents = font_text_extents(font_test_large, temp_str);
-  print(temp_str,
-      (DISP_WIDTH / 2) - (extents.width / 2),
-      15);
+//  setColor(COLOR(0xD0, 0x25, 0x41));
+//  setFont(font_test_large);
+//  Extents_t extents = font_text_extents(font_test_large, temp_str);
+//  print(temp_str,
+//      (DISP_WIDTH / 2) - (extents.width / 2),
+//      15);
+  fillScr(COLOR(32,32,32));
 }
 
 static void

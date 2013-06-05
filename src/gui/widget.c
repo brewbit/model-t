@@ -41,7 +41,7 @@ dispatch_touch(widget_t* w, touch_event_t* event);
 
 
 widget_t*
-widget_create(const widget_class_t* widget_class, void* instance_data, rect_t rect)
+widget_create(widget_t* parent, const widget_class_t* widget_class, void* instance_data, rect_t rect)
 {
   widget_t* w = calloc(1, sizeof(widget_t));
 
@@ -51,6 +51,9 @@ widget_create(const widget_class_t* widget_class, void* instance_data, rect_t re
   w->rect = rect;
   w->invalid = true;
   w->visible = true;
+
+  if (parent != NULL)
+    widget_add_child(parent, w);
 
   return w;
 }

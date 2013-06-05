@@ -55,7 +55,7 @@ calib_screen_create(calib_complete_handler_t completion_handler)
 {
   calib_screen_t* calib_screen = calloc(1, sizeof(calib_screen_t));
   calib_screen->completion_handler = completion_handler;
-  calib_screen->widget = widget_create(&calib_widget_class, calib_screen, display_rect);
+  calib_screen->widget = widget_create(NULL, &calib_widget_class, calib_screen, display_rect);
 
   rect_t rect = {
       .x = 0,
@@ -63,15 +63,11 @@ calib_screen_create(calib_complete_handler_t completion_handler)
       .width = 160,
       .height = 43,
   };
-  calib_screen->recal_button = button_create(rect, "Retry", img_thumbs_down, restart_calib);
+  calib_screen->recal_button = button_create(calib_screen->widget, rect, "Retry", img_thumbs_down, restart_calib);
   widget_hide(calib_screen->recal_button);
   rect.x = 160;
-  calib_screen->complete_button = button_create(rect, "Accept", img_thumbs_up, complete_calib);
+  calib_screen->complete_button = button_create(calib_screen->widget, rect, "Accept", img_thumbs_up, complete_calib);
   widget_hide(calib_screen->complete_button);
-
-  widget_add_child(calib_screen->widget, calib_screen->recal_button);
-  widget_add_child(calib_screen->widget, calib_screen->complete_button);
-
 
   touch_handler_register(calib_raw_touch, calib_screen);
 

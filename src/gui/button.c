@@ -31,7 +31,7 @@ static const widget_class_t button_widget_class = {
 };
 
 widget_t*
-button_create(rect_t rect, const char* text, const Image_t* icon, click_handler_t click_handler)
+button_create(widget_t* parent, rect_t rect, const char* text, const Image_t* icon, click_handler_t click_handler)
 {
   button_t* b = calloc(1, sizeof(button_t));
 
@@ -39,7 +39,7 @@ button_create(rect_t rect, const char* text, const Image_t* icon, click_handler_
   b->icon = icon;
   b->on_click = click_handler;
 
-  return widget_create(&button_widget_class, b, rect);
+  return widget_create(parent, &button_widget_class, b, rect);
 }
 
 static void
@@ -90,23 +90,23 @@ button_paint(paint_event_t* event)
 
   /* draw border */
   setColor(BORDER_COLOR);
-  drawRect(rect);
+//  drawRect(rect);
 
   /* draw background */
   rect.x += 1;
   rect.y += 1;
   rect.width -= 2;
   rect.height -= 2;
-  if (b->is_down) {
+//  if (b->is_down) {
     setColor(BTN_DOWN_COLOR);
     set_bg_color(BTN_DOWN_COLOR);
     fillRect(rect);
-  }
-  else {
-    point_t bg_anchor = { .x = rect.x, .y = rect.y };
-    set_bg_img(img_button_bg, bg_anchor);
-    tile_bitmap(img_button_bg, rect);
-  }
+//  }
+//  else {
+//    point_t bg_anchor = { .x = rect.x, .y = rect.y };
+//    set_bg_img(img_button_bg, bg_anchor);
+//    tile_bitmap(img_button_bg, rect);
+//  }
 
   /* draw text */
   if (b->text != NULL) {
