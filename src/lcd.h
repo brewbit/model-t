@@ -25,12 +25,31 @@
 #define COLOR565(r, g, b) (uint16_t)(((r & 0x1F)<<11) + ((g & 0x3F)<<5) + (b & 0x1F))
 
 
-#define BLACK  COLOR(0, 0, 0)
-#define WHITE  COLOR(255, 255, 255)
-#define RED    COLOR(255, 0, 0)
-#define BLUE   COLOR(0, 0, 255)
-#define GREEN  COLOR(0, 255, 0)
-#define YELLOW COLOR(255, 255, 0)
+#define BLACK     COLOR(0, 0, 0)
+#define DARK_GRAY COLOR(16, 16, 16)
+#define WHITE     COLOR(255, 255, 255)
+#define LIME     COLOR(164, 196, 0)
+#define GREEN    COLOR(96, 169, 23)
+#define EMERALD  COLOR(0, 138, 0)
+#define TEAL     COLOR(0, 171, 169)
+#define CYAN     COLOR(27, 161, 226)
+#define COBALT   COLOR(0, 80, 239)
+#define INDIGO   COLOR(106, 0, 255)
+#define VIOLET   COLOR(170, 0, 255)
+#define PINK     COLOR(244, 114, 208)
+#define MAGENTA  COLOR(216, 0, 115)
+#define CRIMSON  COLOR(162, 0, 37)
+#define RED      COLOR(229, 20, 0)
+#define ORANGE   COLOR(250, 104, 0)
+#define AMBER    COLOR(240, 163, 10)
+#define YELLOW   COLOR(227, 200, 0)
+#define BROWN    COLOR(130, 90, 44)
+#define OLIVE    COLOR(109, 135, 100)
+#define STEEL    COLOR(100, 118, 135)
+#define MAUVE    COLOR(118, 96, 138)
+#define TAUPE    COLOR(135, 121, 78)
+#define PURPLE   COLOR(0xA7, 0x00, 0xAE)
+
 
 extern rect_t display_rect;
 

@@ -14,6 +14,7 @@ typedef struct {
   bool is_down;
   const char* text;
   const Image_t* icon;
+  uint16_t color;
 
   click_handler_t on_click;
 } button_t;
@@ -31,12 +32,13 @@ static const widget_class_t button_widget_class = {
 };
 
 widget_t*
-button_create(widget_t* parent, rect_t rect, const char* text, const Image_t* icon, click_handler_t click_handler)
+button_create(widget_t* parent, rect_t rect, const char* text, const Image_t* icon, uint16_t color, click_handler_t click_handler)
 {
   button_t* b = calloc(1, sizeof(button_t));
 
   b->text = text;
   b->icon = icon;
+  b->color = color;
   b->on_click = click_handler;
 
   return widget_create(parent, &button_widget_class, b, rect);
@@ -88,18 +90,10 @@ button_paint(paint_event_t* event)
   rect_t rect = widget_get_rect(event->widget);
   point_t center = rect_center(rect);
 
-  /* draw border */
-  setColor(BORDER_COLOR);
-//  drawRect(rect);
-
   /* draw background */
-  rect.x += 1;
-  rect.y += 1;
-  rect.width -= 2;
-  rect.height -= 2;
 //  if (b->is_down) {
-    setColor(BTN_DOWN_COLOR);
-    set_bg_color(BTN_DOWN_COLOR);
+    setColor(b->color);
+    set_bg_color(b->color);
     fillRect(rect);
 //  }
 //  else {
@@ -122,7 +116,7 @@ button_paint(paint_event_t* event)
   if (b->icon != NULL) {
     drawBitmap(
         rect.x + 10,
-        center.y - (b->icon->height / 2),
+        rect.y + rect.height - 10 - b->icon->height,
         b->icon);
   }
 }

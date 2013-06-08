@@ -34,12 +34,13 @@ int main(void)
   /* start stdout port */
   sdStart(&SD3, NULL);
 
+  chThdSleepMilliseconds(500);
   lcd_init();
   touch_init();
 //  temp_init(&tp1);
 //  temp_init(&tp2);
-  wspr_init();
-  bapi_init();
+//  wspr_init();
+//  bapi_init();
 
   gui_init();
 

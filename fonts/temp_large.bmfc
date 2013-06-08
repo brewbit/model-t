@@ -2,10 +2,10 @@
 fileVersion=1
 
 # font settings
-fontFile=Bedizen.ttf
-fontName=Bedizen
+fontFile=OpenSans-Regular.ttf
+fontName=OpenSans
 charSet=0
-fontSize=100
+fontSize=80
 aa=1
 scaleH=100
 useSmoothing=1

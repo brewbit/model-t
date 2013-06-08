@@ -288,8 +288,8 @@ fillRect(rect_t rect)
   int i;
 
   cs_low();
-  setXY(rect.x, rect.y, rect.x + rect.width, rect.y + rect.height);
-  for (i = 0; i < rect.width * rect.height; ++i) {
+  setXY(rect.x, rect.y, rect.x + rect.width - 1, rect.y + rect.height - 1);
+  for (i = 0; i < (rect.width * rect.height); ++i) {
     setPixel(fcolor);
   }
   cs_high();
