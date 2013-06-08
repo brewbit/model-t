@@ -3,9 +3,9 @@ fileVersion=1
 
 # font settings
 fontFile=OpenSans-Regular.ttf
-fontName=OpenSans
+fontName=Open Sans
 charSet=0
-fontSize=80
+fontSize=100
 aa=1
 scaleH=100
 useSmoothing=1
