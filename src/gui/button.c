@@ -115,8 +115,8 @@ button_paint(paint_event_t* event)
   /* draw icon */
   if (b->icon != NULL) {
     drawBitmap(
-        rect.x + 10,
-        rect.y + rect.height - 10 - b->icon->height,
+        center.x - (b->icon->width / 2),
+        center.y - (b->icon->height / 2),
         b->icon);
   }
 }
