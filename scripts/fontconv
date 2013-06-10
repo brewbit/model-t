@@ -76,17 +76,12 @@ const Font_t* font_%(font_name)s = &_font_%(font_name)s;
 """
 
 class FontConverter:
-    def __init__(self, font_config_file, out_h, out_c):
-        font_working_dir = os.path.join('build', 'fonts')
+    def __init__(self, font_config_file, font_working_dir, out_h, out_c):
         self.config_file = font_config_file
         font_config_base = os.path.splitext(font_config_file)[0]
         self.font_name = os.path.basename(font_config_base)
         self.desc_file = os.path.join(font_working_dir, self.font_name + '.fnt')
         self.config_file_rewrite = os.path.join(font_working_dir, self.font_name + '.bmfc')
-        
-        if os.path.exists(font_working_dir):
-            shutil.rmtree(font_working_dir)
-        os.mkdir(font_working_dir)
         
         self.out_h = out_h
         self.out_c = out_c
@@ -193,9 +188,14 @@ if __name__ == "__main__":
     out_c.write(c_prologue)
     out_h.write(h_prologue)
     
+    font_working_dir = os.path.join('build', 'fonts')
+    if os.path.exists(font_working_dir):
+        shutil.rmtree(font_working_dir)
+    os.mkdir(font_working_dir)
+    
     for arg in sys.argv[1:]:
         for font_config_file in glob.glob(arg):
-            f = FontConverter(font_config_file, out_h, out_c)
+            f = FontConverter(font_config_file, font_working_dir, out_h, out_c)
             f.convert()
                     
     out_h.write(h_epilogue)
