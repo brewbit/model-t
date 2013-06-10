@@ -23,7 +23,11 @@ typedef struct {
   char temp_unit;
 
   widget_t* screen;
-  widget_t* calib_button;
+  widget_t* probe1_button;
+  widget_t* probe2_button;
+  widget_t* output1_button;
+  widget_t* output2_button;
+  widget_t* conn_button;
   widget_t* settings_button;
 } home_screen_t;
 
@@ -31,8 +35,10 @@ typedef struct {
 static void home_screen_paint(paint_event_t* event);
 static void home_screen_destroy(widget_t* w);
 
-static void start_calib(click_event_t* event);
-static void calib_complete(void);
+static void click_probe_button(click_event_t* event);
+static void click_output_button(click_event_t* event);
+static void click_conn_button(click_event_t* event);
+static void click_settings_button(click_event_t* event);
 
 
 static const widget_class_t home_widget_class = {
@@ -61,23 +67,23 @@ home_screen_create()
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
   rect.height = TILE_SPAN(1);
-  button_create(s->screen, rect, NULL, img_temp_hi, AMBER, NULL);
+  s->probe1_button = button_create(s->screen, rect, NULL, img_temp_hi, AMBER, click_probe_button);
 
   rect.y = TILE_Y(1);
-  button_create(s->screen, rect, NULL, img_temp_low, PURPLE, NULL);
+  s->probe2_button = button_create(s->screen, rect, NULL, img_temp_low, PURPLE, click_probe_button);
 
   rect.x = TILE_X(0);
   rect.y = TILE_Y(2);
-  button_create(s->screen, rect, NULL, img_plug, ORANGE, NULL);
+  s->output1_button = button_create(s->screen, rect, NULL, img_plug, ORANGE, click_output_button);
 
   rect.x = TILE_X(1);
-  button_create(s->screen, rect, NULL, img_plug, CYAN, NULL);
+  s->output2_button = button_create(s->screen, rect, NULL, img_plug, CYAN, click_output_button);
 
   rect.x = TILE_X(2);
-  button_create(s->screen, rect, NULL, img_signal, STEEL, NULL);
+  s->conn_button = button_create(s->screen, rect, NULL, img_signal, STEEL, click_conn_button);
 
   rect.x = TILE_X(3);
-  button_create(s->screen, rect, NULL, img_settings, OLIVE, NULL);
+  s->settings_button = button_create(s->screen, rect, NULL, img_settings, OLIVE, click_settings_button);
 
   return s->screen;
 }
@@ -95,7 +101,8 @@ home_screen_paint(paint_event_t* event)
   char temp_str[16];
   home_screen_t* s = widget_get_instance_data(event->widget);
 
-  fillScr(COLOR(32,32,32));
+  set_bg_color(BLACK);
+  clrScr();
 
   rect_t rect = {
       .x      = TILE_X(0),
@@ -108,7 +115,7 @@ home_screen_paint(paint_event_t* event)
 
   set_bg_color(GREEN);
   setColor(WHITE);
-  setFont(font_temp_large);
+  setFont(font_opensans_62);
 //  if (chTimeNow() - s->temp_timestamp < MS2ST(5))
     sprintf(temp_str, "%0.1f", s->cur_temp);
 //  else
@@ -118,17 +125,31 @@ home_screen_paint(paint_event_t* event)
 }
 
 static void
-start_calib(click_event_t* event)
+click_probe_button(click_event_t* event)
 {
-  (void)event;
+  widget_t* parent = widget_get_parent(event->widget);
+  home_screen_t* s = widget_get_instance_data(parent);
 
-  widget_t* calib_screen = calib_screen_create(calib_complete);
-  gui_set_screen(calib_screen);
+
+//  if (event->widget == s->output1_button)
+  widget_t* settings_screen = probe_settings_screen_create();
+  gui_push_screen(settings_screen);
 }
 
 static void
-calib_complete(void)
+click_output_button(click_event_t* event)
 {
-  widget_t* home_screen = home_screen_create();
-  gui_set_screen(home_screen);
+
+}
+
+static void
+click_conn_button(click_event_t* event)
+{
+
+}
+
+static void
+click_settings_button(click_event_t* event)
+{
+
 }

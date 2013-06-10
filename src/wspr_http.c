@@ -6,7 +6,6 @@
 #include "wspr_http.h"
 #include "datastream.h"
 #include "wspr_parser.h"
-#include "terminal.h"
 #include "txn.h"
 
 #include <stdlib.h>

@@ -3,7 +3,6 @@
 #include "gui.h"
 #include "touch_calib.h"
 #include "touch.h"
-#include "terminal.h"
 #include "lcd.h"
 #include "image.h"
 #include "gui/button.h"

@@ -1,6 +1,5 @@
 #include "temp.h"
 #include "onewire.h"
-#include "terminal.h"
 
 
 static msg_t temp_thread(void* arg);

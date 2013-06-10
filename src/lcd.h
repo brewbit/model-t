@@ -25,8 +25,9 @@
 #define COLOR565(r, g, b) (uint16_t)(((r & 0x1F)<<11) + ((g & 0x3F)<<5) + (b & 0x1F))
 
 
-#define BLACK     COLOR(0, 0, 0)
-#define DARK_GRAY COLOR(16, 16, 16)
+#define BLACK     COLOR(16, 16, 16)
+#define DARK_GRAY COLOR(64, 64, 64)
+#define LIGHT_GRAY COLOR(150, 150, 150)
 #define WHITE     COLOR(255, 255, 255)
 #define LIME     COLOR(164, 196, 0)
 #define GREEN    COLOR(96, 169, 23)
@@ -61,8 +62,6 @@ void
 drawPixel(int x, int y);
 void
 drawLine(int x1, int y1, int x2, int y2);
-void
-fillScr(uint16_t color);
 void
 drawRect(rect_t rect);
 void

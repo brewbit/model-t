@@ -91,12 +91,12 @@ CSRC = $(PORTSRC) \
        src/gui.c \
        src/gui_calib.c \
        src/gui_home.c \
+       src/gui_probe.c \
        src/image.c \
        src/lcd.c \
        src/main.c \
        src/onewire.c \
        src/temp.c \
-       src/terminal.c \
        src/touch.c \
        src/touch_calib.c \
        src/txn.c \
@@ -239,7 +239,7 @@ include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
 $(AUTOGEN_DIR):
 	mkdir $@
 
-$(AUTOGEN_DIR)/font_resources.c $(AUTOGEN_DIR)/font_resources.h: $(AUTOGEN_DIR) $(wildcard images/*.bmfc)
+$(AUTOGEN_DIR)/font_resources.c $(AUTOGEN_DIR)/font_resources.h: $(AUTOGEN_DIR) $(wildcard fonts/*.bmfc)
 	python scripts/fontconv fonts/*.bmfc
 
 $(AUTOGEN_DIR)/image_resources.c $(AUTOGEN_DIR)/image_resources.h: $(AUTOGEN_DIR) $(wildcard images/*.png)

@@ -2,7 +2,6 @@
 #include "ch.h"
 #include "hal.h"
 #include "touch.h"
-#include "terminal.h"
 #include "lcd.h"
 #include "touch_calib.h"
 #include "gui.h"

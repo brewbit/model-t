@@ -5,10 +5,13 @@
 #include "gui/widget.h"
 
 void
-gui_init(void);
+gui_init(widget_t* root);
 
 void
-gui_set_screen(widget_t* screen);
+gui_push_screen(widget_t* screen);
+
+void
+gui_pop_screen(void);
 
 void
 gui_paint(void);

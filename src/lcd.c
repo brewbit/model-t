@@ -77,6 +77,8 @@ static uint16_t
 get_tile_color(const Image_t* img, int x, int y);
 static uint16_t
 get_bg_color(int x, int y);
+static void
+fillScr(uint16_t color);
 
 uint16_t fcolor = GREEN;
 uint16_t bcolor = BLACK;
@@ -399,19 +401,11 @@ clrScr()
     tile_bitmap(bg_img, display_rect);
   }
   else {
-    long i;
-
-    cs_low();
-    clrXY();
-    rs_high();
-    for (i = 0; i < (DISP_WIDTH * DISP_HEIGHT); i++) {
-      LCD_Write_Bus(0);
-    }
-    cs_high();
+    fillScr(bcolor);
   }
 }
 
-void
+static void
 fillScr(uint16_t color)
 {
   long i;

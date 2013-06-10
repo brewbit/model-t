@@ -3,7 +3,6 @@
 #include "hal.h"
 
 #include "lcd.h"
-#include "terminal.h"
 #include "wspr.h"
 #include "image.h"
 #include "bapi.h"
@@ -42,10 +41,8 @@ int main(void)
 //  wspr_init();
 //  bapi_init();
 
-  gui_init();
-
   widget_t* home_screen = home_screen_create();
-  gui_set_screen(home_screen);
+  gui_init(home_screen);
 
   while (TRUE) {
     palSetPad(GPIOB, GPIOB_LED1);

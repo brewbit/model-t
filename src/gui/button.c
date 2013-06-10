@@ -67,7 +67,7 @@ button_touch(touch_event_t* event)
     if (b->is_down) {
       b->is_down = false;
       gui_release_touch_capture();
-      if (rect_inside(widget_get_rect(event->widget), event->pos)) {
+//      if (rect_inside(widget_get_rect(event->widget), event->pos)) {
         if (b->on_click) {
           click_event_t ce = {
               .id = EVT_CLICK,
@@ -76,7 +76,7 @@ button_touch(touch_event_t* event)
           };
           b->on_click(&ce);
         }
-      }
+//      }
       widget_invalidate(event->widget);
     }
   }
@@ -103,14 +103,12 @@ button_paint(paint_event_t* event)
 //  }
 
   /* draw text */
-  if (b->text != NULL) {
-    setColor(BLACK);
-    setFont(font_terminal);
-    Extents_t text_extents = font_text_extents(font_terminal, b->text);
-    print(b->text,
-        center.x - (text_extents.width / 2),
-        center.y - (text_extents.height / 2));
-  }
+//  if (b->text != NULL) {
+//    Extents_t text_extents = font_text_extents(font_terminal, b->text);
+//    print(b->text,
+//        center.x - (text_extents.width / 2),
+//        center.y - (text_extents.height / 2));
+//  }
 
   /* draw icon */
   if (b->icon != NULL) {

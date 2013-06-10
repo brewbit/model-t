@@ -7,7 +7,6 @@
 #include "wspr_parser.h"
 #include "wspr_http.h"
 #include "wspr_tcp.h"
-#include "terminal.h"
 
 #include <stdlib.h>
 #include <string.h>

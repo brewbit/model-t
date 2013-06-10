@@ -5,7 +5,6 @@
 #include "bapi.h"
 #include "cJSON.h"
 #include "wspr_http.h"
-#include "terminal.h"
 #include "common.h"
 
 #include <stdlib.h>

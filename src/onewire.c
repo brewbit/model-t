@@ -1,7 +1,6 @@
 
 #include "onewire.h"
 #include "common.h"
-#include "terminal.h"
 #include "crc.h"
 
 static const SerialConfig cfg_115k = {
