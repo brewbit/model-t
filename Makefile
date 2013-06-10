@@ -92,6 +92,7 @@ CSRC = $(PORTSRC) \
        src/gui_calib.c \
        src/gui_home.c \
        src/gui_probe.c \
+       src/gui_output.c \
        src/image.c \
        src/lcd.c \
        src/main.c \

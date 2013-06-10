@@ -3,6 +3,8 @@
 #include "lcd.h"
 #include "gui.h"
 #include "gui/button.h"
+#include "gui_probe.h"
+#include "gui_output.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -130,8 +132,6 @@ click_probe_button(click_event_t* event)
   widget_t* parent = widget_get_parent(event->widget);
   home_screen_t* s = widget_get_instance_data(parent);
 
-
-//  if (event->widget == s->output1_button)
   widget_t* settings_screen = probe_settings_screen_create();
   gui_push_screen(settings_screen);
 }
@@ -139,7 +139,11 @@ click_probe_button(click_event_t* event)
 static void
 click_output_button(click_event_t* event)
 {
+  widget_t* parent = widget_get_parent(event->widget);
+  home_screen_t* s = widget_get_instance_data(parent);
 
+  widget_t* settings_screen = output_settings_screen_create();
+  gui_push_screen(settings_screen);
 }
 
 static void
