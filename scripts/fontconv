@@ -4,6 +4,7 @@ import glob
 import subprocess
 import Image
 import shlex
+import shutil
 import tempfile
 
 h_prologue = """
@@ -76,11 +77,16 @@ const Font_t* font_%(font_name)s = &_font_%(font_name)s;
 
 class FontConverter:
     def __init__(self, font_config_file, out_h, out_c):
+        font_working_dir = os.path.join('build', 'fonts')
         self.config_file = font_config_file
         font_config_base = os.path.splitext(font_config_file)[0]
         self.font_name = os.path.basename(font_config_base)
-        self.desc_file = font_config_base + '.fnt'
-        self.config_file_rewrite = font_config_file + '.rewrite'
+        self.desc_file = os.path.join(font_working_dir, self.font_name + '.fnt')
+        self.config_file_rewrite = os.path.join(font_working_dir, self.font_name + '.bmfc')
+        
+        if os.path.exists(font_working_dir):
+            shutil.rmtree(font_working_dir)
+        os.mkdir(font_working_dir)
         
         self.out_h = out_h
         self.out_c = out_c
@@ -143,7 +149,7 @@ class FontConverter:
             cmd, attrs = self.parse_line(line)
             if cmd == 'page':
                 if not os.path.exists(attrs['file']):
-                    attrs['file'] = os.path.join(os.path.dirname(self.config_file), attrs['file'])
+                    attrs['file'] = os.path.join(os.path.dirname(self.config_file_rewrite), attrs['file'])
                 self.pages[attrs['id']] = Image.open(attrs['file'])
             elif cmd == 'char':
                 attrs['font_name'] = self.font_name
