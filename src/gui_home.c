@@ -8,11 +8,14 @@
 #include <stdio.h>
 
 
-#define TILE_SPACE 12
-#define TILE_SIZE 64
+#define TILE_SPACE 6
+#define TILE_SIZE 72
 
-#define TILE_POS(pos) (((pos + 1) * TILE_SPACE) + ((pos) * TILE_SIZE))
+#define TILE_POS(pos) ((((pos) + 1) * TILE_SPACE) + ((pos) * TILE_SIZE))
 #define TILE_SPAN(ntiles) (((ntiles) * TILE_SIZE) + (((ntiles) - 1) * TILE_SPACE))
+
+#define TILE_X(pos) (TILE_POS(pos) + 1)
+#define TILE_Y(pos) TILE_POS(pos)
 
 typedef struct {
   float cur_temp;
@@ -25,7 +28,6 @@ typedef struct {
 } home_screen_t;
 
 
-static void home_screen_touch(touch_event_t* event);
 static void home_screen_paint(paint_event_t* event);
 static void home_screen_destroy(widget_t* w);
 
@@ -34,7 +36,6 @@ static void calib_complete(void);
 
 
 static const widget_class_t home_widget_class = {
-    .on_touch   = home_screen_touch,
     .on_paint   = home_screen_paint,
     .on_destroy = home_screen_destroy,
 };
@@ -50,33 +51,33 @@ home_screen_create()
   s->screen = widget_create(NULL, &home_widget_class, s, display_rect);
 
   rect_t rect = {
-      .x      = TILE_POS(0),
-      .y      = TILE_POS(0),
+      .x      = TILE_X(0),
+      .y      = TILE_Y(0),
       .width  = TILE_SPAN(3),
       .height = TILE_SPAN(2),
   };
 //  button_create(s->screen, rect, NULL, NULL, GREEN, NULL);
 
-  rect.x = TILE_POS(3);
+  rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
   rect.height = TILE_SPAN(1);
-  button_create(s->screen, rect, NULL, img_up, RED, NULL);
+  button_create(s->screen, rect, NULL, img_temp_hi, AMBER, NULL);
 
-  rect.y = TILE_POS(1);
-  button_create(s->screen, rect, NULL, img_down, CYAN, NULL);
+  rect.y = TILE_Y(1);
+  button_create(s->screen, rect, NULL, img_temp_low, PURPLE, NULL);
 
-  rect.x = TILE_POS(0);
-  rect.y = TILE_POS(2);
-  button_create(s->screen, rect, NULL, img_temp_hi, PURPLE, NULL);
+  rect.x = TILE_X(0);
+  rect.y = TILE_Y(2);
+  button_create(s->screen, rect, NULL, img_plug, ORANGE, NULL);
 
-  rect.x = TILE_POS(1);
-  button_create(s->screen, rect, NULL, img_temp_low, TEAL, NULL);
+  rect.x = TILE_X(1);
+  button_create(s->screen, rect, NULL, img_plug, CYAN, NULL);
 
-  rect.x = TILE_POS(2);
-  button_create(s->screen, rect, NULL, img_signal, MAGENTA, NULL);
+  rect.x = TILE_X(2);
+  button_create(s->screen, rect, NULL, img_signal, STEEL, NULL);
 
-  rect.x = TILE_POS(3);
-  button_create(s->screen, rect, NULL, img_settings, GREEN, NULL);
+  rect.x = TILE_X(3);
+  button_create(s->screen, rect, NULL, img_settings, OLIVE, NULL);
 
   return s->screen;
 }
@@ -89,16 +90,6 @@ home_screen_destroy(widget_t* w)
 }
 
 static void
-home_screen_touch(touch_event_t* event)
-{
-  home_screen_t* s = widget_get_instance_data(event->widget);
-
-  widget_show(s->calib_button);
-  widget_show(s->settings_button);
-  widget_invalidate(s->screen);
-}
-
-static void
 home_screen_paint(paint_event_t* event)
 {
   char temp_str[16];
@@ -107,8 +98,8 @@ home_screen_paint(paint_event_t* event)
   fillScr(COLOR(32,32,32));
 
   rect_t rect = {
-      .x      = TILE_POS(0),
-      .y      = TILE_POS(0),
+      .x      = TILE_X(0),
+      .y      = TILE_Y(0),
       .width  = TILE_SPAN(3),
       .height = TILE_SPAN(2),
   };
