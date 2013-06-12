@@ -122,8 +122,8 @@ home_screen_paint(paint_event_t* event)
     sprintf(temp_str, "%0.1f", s->cur_temp);
 //  else
 //    sprintf(temp_str, "--.- %c", s->temp_unit);
-    gfx_print_str(temp_str, 25, 25);
-//    print_str("F");
+    gfx_draw_str(temp_str, 25, 25);
+//    gfx_draw_str("F");
 }
 
 static void

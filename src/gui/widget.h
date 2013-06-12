@@ -6,9 +6,9 @@
 
 
 typedef enum {
-  WIDGET_TRAVERSAL_TOP_DOWN,
-  WIDGET_TRAVERSAL_BOTTOM_UP,
-} widget_traversal_dir_t;
+  WIDGET_TRAVERSAL_BEFORE_CHILDREN,
+  WIDGET_TRAVERSAL_AFTER_CHILDREN,
+} widget_traversal_event_t;
 
 typedef struct {
   void (*on_paint)(paint_event_t* event);
@@ -16,7 +16,7 @@ typedef struct {
   void (*on_destroy)(widget_t* w);
 } widget_class_t;
 
-typedef void (*widget_predicate_t)(widget_t* w);
+typedef void (*widget_predicate_t)(widget_t* w, widget_traversal_event_t event);
 
 
 widget_t*
@@ -62,6 +62,9 @@ bool
 widget_is_visible(widget_t* w);
 
 void
-widget_for_each(widget_t* w, widget_predicate_t pred, widget_traversal_dir_t dir);
+widget_set_background(widget_t* w, color_t color, bool transparent);
+
+void
+widget_for_each(widget_t* w, widget_predicate_t pred);
 
 #endif

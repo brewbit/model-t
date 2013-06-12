@@ -14,7 +14,6 @@ typedef struct {
   bool is_down;
   const char* text;
   const Image_t* icon;
-  uint16_t color;
 
   click_handler_t on_click;
 } button_t;
@@ -38,10 +37,12 @@ button_create(widget_t* parent, rect_t rect, const char* text, const Image_t* ic
 
   b->text = text;
   b->icon = icon;
-  b->color = color;
   b->on_click = click_handler;
 
-  return widget_create(parent, &button_widget_class, b, rect);
+  widget_t* w = widget_create(parent, &button_widget_class, b, rect);
+  widget_set_background(w, color, FALSE);
+
+  return w;
 }
 
 static void
@@ -92,9 +93,9 @@ button_paint(paint_event_t* event)
 
   /* draw background */
 //  if (b->is_down) {
-  gfx_set_fg_color(b->color);
-  gfx_set_bg_color(b->color);
-  gfx_fill_rect(rect);
+//  gfx_set_fg_color(b->color);
+//  gfx_set_bg_color(b->color);
+//  gfx_fill_rect(rect);
 //  }
 //  else {
 //    point_t bg_anchor = { .x = rect.x, .y = rect.y };

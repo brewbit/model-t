@@ -16,7 +16,7 @@
                                  (((b) * 31) / 255))
 
 
-#define BLACK      COLOR16(1, 1, 1)
+#define BLACK      COLOR24(16, 16, 16)
 #define DARK_GRAY  COLOR24(64, 64, 64)
 #define LIGHT_GRAY COLOR24(150, 150, 150)
 #define WHITE      COLOR24(255, 255, 255)
@@ -47,7 +47,16 @@ void
 gfx_init(void);
 
 void
+gfx_ctx_push(void);
+
+void
+gfx_ctx_pop(void);
+
+void
 gfx_clear_screen(void);
+
+void
+gfx_clear_rect(rect_t rect);
 
 void
 gfx_draw_line(int x1, int y1, int x2, int y2);
@@ -56,19 +65,7 @@ void
 gfx_draw_rect(rect_t rect);
 
 void
-gfx_draw_round_rect(int x1, int y1, int x2, int y2);
-
-void
 gfx_fill_rect(rect_t rect);
-
-void
-gfx_fill_round_rect(int x1, int y1, int x2, int y2);
-
-void
-gfx_draw_circle(int x, int y, int radius);
-
-void
-gfx_fill_circle(int x, int y, int radius);
 
 void
 gfx_set_fg_color(uint16_t color);
@@ -80,7 +77,7 @@ void
 gfx_set_bg_img(const Image_t* img, point_t anchor);
 
 void
-gfx_print_str(const char *st, int x, int y);
+gfx_draw_str(const char *st, int x, int y);
 
 void
 gfx_print_char(const Glyph_t* g, int x, int y);

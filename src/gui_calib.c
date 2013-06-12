@@ -110,23 +110,23 @@ calib_widget_paint(paint_event_t* event)
   calib_screen_t* s = widget_get_instance_data(event->widget);
   const point_t* marker_pos;
 
-  tile_bitmap(img_squares, display_rect);
+  gfx_tile_bitmap(img_squares, display_rect);
 
   if (!s->calib_complete) {
     marker_pos = &ref_pts[s->ref_pt_idx];
 
     if (s->sample_idx == 0)
-      set_color(YELLOW);
+      gfx_set_fg_color(YELLOW);
     else if (s->sample_idx < NUM_SAMPLES_PER_POINT)
-      set_color(RED);
+      gfx_set_fg_color(RED);
     else
-      set_color(GREEN);
+      gfx_set_fg_color(GREEN);
   }
   else {
     marker_pos = &s->last_touch_pos;
-    set_color(COBALT);
+    gfx_set_color(COBALT);
   }
-  fill_circle(marker_pos->x, marker_pos->y, 25);
+  gfx_fill_circle(marker_pos->x, marker_pos->y, 25);
 }
 
 static void

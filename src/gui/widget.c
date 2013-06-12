@@ -2,6 +2,7 @@
 #include "ch.h"
 #include "widget.h"
 #include "common.h"
+#include "gfx.h"
 
 #include <string.h>
 
@@ -24,17 +25,20 @@ typedef struct widget_s {
   rect_t rect;
   bool invalid;
   bool visible;
+
+  bool bg_transparent;
+  color_t bg_color;
 } widget_t;
 
 
 static void
-widget_invalidate_predicate(widget_t* w);
+widget_invalidate_predicate(widget_t* w, widget_traversal_event_t event);
 
 static void
-widget_paint_predicate(widget_t* w);
+widget_paint_predicate(widget_t* w, widget_traversal_event_t event);
 
 static void
-widget_destroy_predicate(widget_t* w);
+widget_destroy_predicate(widget_t* w, widget_traversal_event_t event);
 
 static void
 dispatch_touch(widget_t* w, touch_event_t* event);
@@ -51,6 +55,8 @@ widget_create(widget_t* parent, const widget_class_t* widget_class, void* instan
   w->rect = rect;
   w->invalid = true;
   w->visible = true;
+  w->bg_color = BLACK;
+  w->bg_transparent = true;
 
   if (parent != NULL)
     widget_add_child(parent, w);
@@ -61,14 +67,16 @@ widget_create(widget_t* parent, const widget_class_t* widget_class, void* instan
 void
 widget_destroy(widget_t* w)
 {
-  widget_for_each(w, widget_destroy_predicate, WIDGET_TRAVERSAL_BOTTOM_UP);
+  widget_for_each(w, widget_destroy_predicate);
 }
 
 static void
-widget_destroy_predicate(widget_t* w)
+widget_destroy_predicate(widget_t* w, widget_traversal_event_t event)
 {
-  CALL_WC(w, on_destroy)(w);
-  free(w);
+  if (event == WIDGET_TRAVERSAL_AFTER_CHILDREN) {
+    CALL_WC(w, on_destroy)(w);
+    free(w);
+  }
 }
 
 widget_t*
@@ -120,24 +128,22 @@ widget_unparent(widget_t* w)
 }
 
 void
-widget_for_each(widget_t* w, widget_predicate_t pred, widget_traversal_dir_t dir)
+widget_for_each(widget_t* w, widget_predicate_t pred)
 {
   widget_t* child;
   widget_t* next_child = NULL;
 
-  if (dir == WIDGET_TRAVERSAL_TOP_DOWN)
-    pred(w);
+  pred(w, WIDGET_TRAVERSAL_BEFORE_CHILDREN);
 
   for (child = w->first_child; child != NULL; child = next_child) {
     /*  Save the next child locally because this child might be destroyed
      *  inside the predicate...
      */
     next_child = child->next_sibling;
-    widget_for_each(child, pred, dir);
+    widget_for_each(child, pred);
   }
 
-  if (dir == WIDGET_TRAVERSAL_BOTTOM_UP)
-    pred(w);
+  pred(w, WIDGET_TRAVERSAL_AFTER_CHILDREN);
 }
 
 widget_t*
@@ -184,21 +190,33 @@ dispatch_touch(widget_t* w, touch_event_t* event)
 void
 widget_paint(widget_t* w)
 {
-  widget_for_each(w, widget_paint_predicate, WIDGET_TRAVERSAL_TOP_DOWN);
+  widget_for_each(w, widget_paint_predicate);
 }
 
 static void
-widget_paint_predicate(widget_t* w)
+widget_paint_predicate(widget_t* w, widget_traversal_event_t event)
 {
-  if (w->invalid && widget_is_visible(w)) {
-    paint_event_t event = {
-        .id = EVT_PAINT,
-        .widget = w,
-    };
+  if (event == WIDGET_TRAVERSAL_BEFORE_CHILDREN) {
+    if (w->invalid && widget_is_visible(w)) {
+      paint_event_t event = {
+          .id = EVT_PAINT,
+          .widget = w,
+      };
 
-    CALL_WC(w, on_paint)(&event);
+      gfx_ctx_push();
 
-    w->invalid = false;
+      if (!w->bg_transparent) {
+        gfx_set_bg_color(w->bg_color);
+        gfx_clear_rect(w->rect);
+      }
+
+      CALL_WC(w, on_paint)(&event);
+
+      w->invalid = false;
+    }
+  }
+  else {
+    gfx_ctx_pop();
   }
 }
 
@@ -208,13 +226,14 @@ widget_invalidate(widget_t* w)
   if (w == NULL)
     return;
 
-  widget_for_each(w, widget_invalidate_predicate, WIDGET_TRAVERSAL_TOP_DOWN);
+  widget_for_each(w, widget_invalidate_predicate);
 }
 
 static void
-widget_invalidate_predicate(widget_t* w)
+widget_invalidate_predicate(widget_t* w, widget_traversal_event_t event)
 {
-  w->invalid = true;
+  if (event == WIDGET_TRAVERSAL_BEFORE_CHILDREN)
+    w->invalid = true;
 }
 
 void
@@ -235,4 +254,11 @@ bool
 widget_is_visible(widget_t* w)
 {
   return w->visible && (w->parent == NULL || widget_is_visible(w->parent));
+}
+
+void
+widget_set_background(widget_t* w, color_t color, bool transparent)
+{
+  w->bg_color = color;
+  w->bg_transparent = transparent;
 }

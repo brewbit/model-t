@@ -107,6 +107,7 @@ CSRC = $(PORTSRC) \
        src/wspr_parser.c \
        src/wspr_tcp.c \
        src/gui/button.c \
+       src/gui/label.c \
        src/gui/screen.c \
        src/gui/widget.c \
        src/util/json/cJSON.c

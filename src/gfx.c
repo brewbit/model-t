@@ -30,15 +30,20 @@ static void draw_horiz_line(int x, int y, int l);
 static void draw_vert_line(int x, int y, int l);
 static uint16_t get_tile_color(const Image_t* img, int x, int y);
 static uint16_t get_bg_color(int x, int y);
-static void fill_screen(uint16_t color);
+static void fill_rect(rect_t rect, uint16_t color);
 
+typedef struct gfx_ctx_s {
+  uint16_t fcolor;
+  uint16_t bcolor;
+  BackgroundType bg_type;
+  const Image_t* bg_img;
+  point_t bg_anchor;
+  const Font_t* cfont;
 
-static uint16_t fcolor = GREEN;
-static uint16_t bcolor = BLACK;
-static BackgroundType bg_type = BG_COLOR;
-static const Image_t* bg_img = NULL;
-static point_t bg_anchor;
-static const Font_t* cfont;
+  struct gfx_ctx_s* next;
+} gfx_ctx_t;
+
+gfx_ctx_t* ctx;
 
 
 void
@@ -46,7 +51,31 @@ gfx_init()
 {
   lcd_init();
 
+  ctx = calloc(1, sizeof(gfx_ctx_t));
+  ctx->fcolor = GREEN;
+  ctx->bcolor = BLACK;
+  ctx->bg_type = BG_COLOR;
+
   gfx_clear_screen();
+}
+
+void
+gfx_ctx_push()
+{
+  gfx_ctx_t* new_ctx = calloc(1, sizeof(gfx_ctx_t));
+  *new_ctx = *ctx;
+  new_ctx->next = ctx;
+  ctx = new_ctx;
+}
+
+void
+gfx_ctx_pop()
+{
+  gfx_ctx_t* old_ctx = ctx;
+  if (old_ctx->next != NULL) {
+    ctx = old_ctx->next;
+    free(old_ctx);
+  }
 }
 
 void
@@ -61,61 +90,62 @@ gfx_draw_rect(rect_t rect)
 void
 gfx_fill_rect(rect_t rect)
 {
+  fill_rect(rect, ctx->fcolor);
+}
+
+static void
+fill_rect(rect_t rect, uint16_t color)
+{
   int i;
 
   lcd_set_cursor(rect.x, rect.y, rect.x + rect.width - 1, rect.y + rect.height - 1);
   for (i = 0; i < (rect.width * rect.height); ++i) {
-    set_pixel(fcolor);
+    set_pixel(color);
   }
 }
 
 void
 gfx_clear_screen()
 {
-  if (bg_type == BG_IMAGE) {
-    gfx_tile_bitmap(bg_img, display_rect);
-  }
-  else {
-    fill_screen(bcolor);
-  }
+  gfx_clear_rect(display_rect);
 }
 
-static void
-fill_screen(uint16_t color)
+void
+gfx_clear_rect(rect_t rect)
 {
-  long i;
-
-  lcd_clr_cursor();
-  for (i = 0; i < (DISP_WIDTH * DISP_HEIGHT); i++) {
-    set_pixel(color);
+  if (ctx->bg_type == BG_IMAGE) {
+    gfx_tile_bitmap(ctx->bg_img, rect);
+  }
+  else {
+    fill_rect(rect, ctx->bcolor);
   }
 }
 
 void
 gfx_set_fg_color(uint16_t color)
 {
-  fcolor = color;
+  ctx->fcolor = color;
 }
 
 void
 gfx_set_bg_color(uint16_t color)
 {
-  bcolor = color;
-  bg_type = BG_COLOR;
+  ctx->bcolor = color;
+  ctx->bg_type = BG_COLOR;
 }
 
 void
 gfx_set_bg_img(const Image_t* img, point_t anchor)
 {
-  bg_img = img;
-  bg_anchor = anchor;
-  bg_type = BG_IMAGE;
+  ctx->bg_img = img;
+  ctx->bg_anchor = anchor;
+  ctx->bg_type = BG_IMAGE;
 }
 
 void
 gfx_set_font(const Font_t* font)
 {
-  cfont = font;
+  ctx->cfont = font;
 }
 
 static void
@@ -157,7 +187,7 @@ gfx_draw_line(int x1, int y1, int x2, int y2)
       int i;
       for (i = x1; i >= x2; i--) {
         lcd_set_cursor(i, (int) (ty + 0.5), i, (int) (ty + 0.5));
-        lcd_write_data(fcolor);
+        lcd_write_data(ctx->fcolor);
         ty = ty - delta;
       }
     }
@@ -165,7 +195,7 @@ gfx_draw_line(int x1, int y1, int x2, int y2)
       int i;
       for (i = x1; i <= x2; i++) {
         lcd_set_cursor(i, (int) (ty + 0.5), i, (int) (ty + 0.5));
-        lcd_write_data(fcolor);
+        lcd_write_data(ctx->fcolor);
         ty = ty + delta;
       }
     }
@@ -177,7 +207,7 @@ gfx_draw_line(int x1, int y1, int x2, int y2)
       int i;
       for (i = y2 + 1; i > y1; i--) {
         lcd_set_cursor((int) (tx + 0.5), i, (int) (tx + 0.5), i);
-        lcd_write_data(fcolor);
+        lcd_write_data(ctx->fcolor);
         tx = tx + delta;
       }
     }
@@ -185,7 +215,7 @@ gfx_draw_line(int x1, int y1, int x2, int y2)
       int i;
       for (i = y1; i < y2 + 1; i++) {
         lcd_set_cursor((int) (tx + 0.5), i, (int) (tx + 0.5), i);
-        lcd_write_data(fcolor);
+        lcd_write_data(ctx->fcolor);
         tx = tx + delta;
       }
     }
@@ -201,7 +231,7 @@ draw_horiz_line(int x, int y, int l)
 
   lcd_set_cursor(x, y, x + l, y);
   for (i = 0; i < l + 1; i++) {
-    lcd_write_data(fcolor);
+    lcd_write_data(ctx->fcolor);
   }
   lcd_clr_cursor();
 }
@@ -213,7 +243,7 @@ draw_vert_line(int x, int y, int l)
 
   lcd_set_cursor(x, y, x, y + l);
   for (i = 0; i < l; i++) {
-    lcd_write_data(fcolor);
+    lcd_write_data(ctx->fcolor);
   }
   lcd_clr_cursor();
 }
@@ -228,7 +258,7 @@ gfx_print_char(const Glyph_t* g, int x, int y)
   for (j = 0; j < (g->width * g->height); j++) {
     uint8_t alpha = g->data[j];
     if (alpha == 255) {
-      set_pixel(fcolor);
+      set_pixel(ctx->fcolor);
     }
     else {
       uint16_t by = y + (j / g->width);
@@ -239,7 +269,7 @@ gfx_print_char(const Glyph_t* g, int x, int y)
         set_pixel(bcolor);
       }
       else {
-        set_pixel(BLENDED_COLOR(fcolor, bcolor, alpha));
+        set_pixel(BLENDED_COLOR(ctx->fcolor, ctx->bcolor, alpha));
       }
     }
   }
@@ -248,12 +278,12 @@ gfx_print_char(const Glyph_t* g, int x, int y)
 }
 
 void
-gfx_print_str(const char *st, int x, int y)
+gfx_draw_str(const char *st, int x, int y)
 {
   int xoff = 0;
 
   while (*st) {
-    const Glyph_t* g = font_find_glyph(cfont, *st++);
+    const Glyph_t* g = font_find_glyph(ctx->cfont, *st++);
     xoff += g->xoffset;
     gfx_print_char(g, x + xoff, y + g->yoffset);
     xoff += g->advance;
@@ -316,11 +346,11 @@ get_tile_color(const Image_t* img, int x, int y)
 static uint16_t
 get_bg_color(int x, int y)
 {
-  if (bg_type == BG_IMAGE) {
-    return get_tile_color(bg_img, x - bg_anchor.x, y - bg_anchor.y);
+  if (ctx->bg_type == BG_IMAGE) {
+    return get_tile_color(ctx->bg_img, x - ctx->bg_anchor.x, y - ctx->bg_anchor.y);
   }
   else {
-    return bcolor;
+    return ctx->bcolor;
   }
 }
 

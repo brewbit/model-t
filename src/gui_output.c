@@ -2,13 +2,18 @@
 #include "gui_output.h"
 #include "gfx.h"
 #include "gui/button.h"
+#include "gui/label.h"
 #include "gui.h"
 
 typedef struct {
   widget_t* widget;
   widget_t* back_button;
   widget_t* function_button;
+  widget_t* function_header_label;
+  widget_t* function_desc_label;
   widget_t* trigger_button;
+  widget_t* trigger_header_label;
+  widget_t* trigger_desc_label;
 } output_screen_t;
 
 
@@ -27,6 +32,7 @@ output_settings_screen_create()
 {
   output_screen_t* s = calloc(1, sizeof(output_screen_t));
   s->widget = widget_create(NULL, &output_settings_widget_class, s, display_rect);
+  widget_set_background(s->widget, BLACK, FALSE);
 
   rect_t rect = {
       .x = 15,
@@ -42,6 +48,19 @@ output_settings_screen_create()
 
   rect.y = 169;
   s->trigger_button = button_create(s->widget, rect, NULL, img_temp_38, PURPLE, NULL);
+
+  rect.x = 85;
+  rect.y = 95;
+  rect.width = 220;
+  rect.height = -1;
+  s->function_header_label = label_create(s->widget, rect, "Function: Heating", font_opensans_16, WHITE);
+
+  rect.y = 120;
+  s->function_desc_label = label_create(s->widget, rect,
+      "The output will turn on when the temp is below the setpoint.",
+      font_opensans_8,
+      WHITE);
+
 
   return s->widget;
 }
@@ -59,22 +78,19 @@ output_settings_screen_paint(paint_event_t* event)
 {
   (void)event;
 
-  gfx_set_bg_color(BLACK);
-  gfx_clear_screen();
-
   gfx_set_fg_color(WHITE);
   gfx_set_font(font_opensans_22);
-  gfx_print_str("Output 1 Setup", 85, 20);
+  gfx_draw_str("Output 1 Setup", 85, 20);
 
   gfx_set_font(font_opensans_16);
-  gfx_print_str("Function: Heating", 85, 95);
-  gfx_print_str("Trigger: Probe 2", 85, 165);
+//  gfx_draw_str("Function: Heating", 85, 95);
+  gfx_draw_str("Trigger: Probe 2", 85, 165);
 
   gfx_set_font(font_opensans_8);
-  gfx_print_str("The output will turn on when the temp", 85, 120);
-  gfx_print_str("is below the setpoint.", 85, 135);
-  gfx_print_str("The temperature will be read from", 85, 190);
-  gfx_print_str("Probe 2.", 85, 205);
+//  gfx_draw_str("The output will turn on when the temp", 85, 120);
+//  gfx_draw_str("is below the setpoint.", 85, 135);
+  gfx_draw_str("The temperature will be read from", 85, 190);
+  gfx_draw_str("Probe 2.", 85, 205);
 }
 
 
