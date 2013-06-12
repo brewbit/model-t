@@ -91,18 +91,6 @@ button_paint(paint_event_t* event)
   rect_t rect = widget_get_rect(event->widget);
   point_t center = rect_center(rect);
 
-  /* draw background */
-//  if (b->is_down) {
-//  gfx_set_fg_color(b->color);
-//  gfx_set_bg_color(b->color);
-//  gfx_fill_rect(rect);
-//  }
-//  else {
-//    point_t bg_anchor = { .x = rect.x, .y = rect.y };
-//    set_bg_img(img_button_bg, bg_anchor);
-//    tile_bitmap(img_button_bg, rect);
-//  }
-
   /* draw text */
 //  if (b->text != NULL) {
 //    Extents_t text_extents = font_text_extents(font_terminal, b->text);

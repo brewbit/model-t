@@ -49,5 +49,46 @@ label_paint(paint_event_t* event)
 
   gfx_set_font(l->font);
   gfx_set_fg_color(l->color);
-  gfx_draw_str(l->text, rect.x, rect.y);
+
+  char c;
+  int str_idx = 0;
+  bool in_whitespace = true;
+  int last_word_start = 0;
+  const char* str = l->text;
+  int text_width = 0;
+  int row = 0;
+
+  while ((c = str[str_idx]) != 0) {
+    if (c == ' ') {
+      in_whitespace = true;
+    }
+    else if (in_whitespace) {
+      // just found the beginning of a word
+      last_word_start = str_idx;
+      in_whitespace = false;
+    }
+
+    const Glyph_t* g = font_find_glyph(l->font, c);
+    text_width += g->advance;
+
+    if (text_width > rect.width) {
+      if (!in_whitespace) {
+        if (last_word_start != 0)
+          str_idx = last_word_start;
+      }
+
+      gfx_draw_str(str, str_idx, rect.x, rect.y + (row * l->font->max_height));
+
+      str = str + str_idx;
+      str_idx = 0;
+      last_word_start = 0;
+      text_width = 0;
+      row++;
+    }
+    else {
+      str_idx++;
+    }
+  }
+
+  gfx_draw_str(str, -1, rect.x, rect.y + (row * l->font->max_height));
 }

@@ -64,14 +64,14 @@ probe_settings_screen_paint(paint_event_t* event)
 
   gfx_set_fg_color(WHITE);
   gfx_set_font(font_opensans_22);
-  gfx_draw_str("Probe 1 Setup", 85, 20);
+  gfx_draw_str("Probe 1 Setup", -1, 85, 20);
 
   gfx_set_font(font_opensans_62);
-  gfx_draw_str("73.2", 100, 100);
+  gfx_draw_str("73.2", -1, 100, 100);
 
   gfx_set_fg_color(LIGHT_GRAY);
   gfx_set_font(font_opensans_22);
-  gfx_draw_str("F", 275, 120);
+  gfx_draw_str("F", -1, 275, 120);
 }
 
 

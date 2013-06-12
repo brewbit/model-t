@@ -3,6 +3,8 @@
 #include "lcd.h"
 #include "common.h"
 
+#include <limits.h>
+
 
 // Alpha blending support
 #define RED_COMPONENT(color) (((color) >> 11) & 0x1F)
@@ -278,14 +280,17 @@ gfx_print_char(const Glyph_t* g, int x, int y)
 }
 
 void
-gfx_draw_str(const char *st, int x, int y)
+gfx_draw_str(const char *str, int n, int x, int y)
 {
   int xoff = 0;
 
-  while (*st) {
-    const Glyph_t* g = font_find_glyph(ctx->cfont, *st++);
-    xoff += g->xoffset;
-    gfx_print_char(g, x + xoff, y + g->yoffset);
+  if (n == -1)
+    n = INT_MAX;
+
+  while ((*str != 0) &&
+         (n-- > 0)) {
+    const Glyph_t* g = font_find_glyph(ctx->cfont, *str++);
+    gfx_print_char(g, x + xoff + g->xoffset, y + g->yoffset);
     xoff += g->advance;
   }
 }

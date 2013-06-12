@@ -24,7 +24,6 @@ font_text_extents(const Font_t* font, const char* str)
 
   while (*str) {
     const Glyph_t* g = font_find_glyph(font, *str++);
-    e.width += g->xoffset;
     e.width += g->advance;
 
     min_y = MIN(g->yoffset, min_y);

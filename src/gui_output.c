@@ -61,6 +61,15 @@ output_settings_screen_create()
       font_opensans_8,
       WHITE);
 
+  rect.y = 165;
+  s->trigger_header_label = label_create(s->widget, rect, "Trigger: Probe 2", font_opensans_16, WHITE);
+
+  rect.y = 190;
+  s->trigger_desc_label = label_create(s->widget, rect,
+      "The temperature will be read from Probe 2.",
+      font_opensans_8,
+      WHITE);
+
 
   return s->widget;
 }
@@ -80,17 +89,14 @@ output_settings_screen_paint(paint_event_t* event)
 
   gfx_set_fg_color(WHITE);
   gfx_set_font(font_opensans_22);
-  gfx_draw_str("Output 1 Setup", 85, 20);
+  gfx_draw_str("Output 1 Setup", -1, 85, 20);
 
-  gfx_set_font(font_opensans_16);
-//  gfx_draw_str("Function: Heating", 85, 95);
-  gfx_draw_str("Trigger: Probe 2", 85, 165);
-
-  gfx_set_font(font_opensans_8);
-//  gfx_draw_str("The output will turn on when the temp", 85, 120);
-//  gfx_draw_str("is below the setpoint.", 85, 135);
-  gfx_draw_str("The temperature will be read from", 85, 190);
-  gfx_draw_str("Probe 2.", 85, 205);
+//  gfx_set_font(font_opensans_16);
+//  gfx_draw_str("Trigger: Probe 2", -1, 85, 165);
+//
+//  gfx_set_font(font_opensans_8);
+//  gfx_draw_str("The output will turn on when the temp", -1, 85, 190);
+//  gfx_draw_str("is below the setpoint.", -1, 85, 205);
 }
 
 

@@ -77,7 +77,7 @@ void
 gfx_set_bg_img(const Image_t* img, point_t anchor);
 
 void
-gfx_draw_str(const char *st, int x, int y);
+gfx_draw_str(const char *st, int n, int x, int y);
 
 void
 gfx_print_char(const Glyph_t* g, int x, int y);
