@@ -116,17 +116,17 @@ calib_widget_paint(paint_event_t* event)
     marker_pos = &ref_pts[s->ref_pt_idx];
 
     if (s->sample_idx == 0)
-      setColor(YELLOW);
+      set_color(YELLOW);
     else if (s->sample_idx < NUM_SAMPLES_PER_POINT)
-      setColor(RED);
+      set_color(RED);
     else
-      setColor(GREEN);
+      set_color(GREEN);
   }
   else {
     marker_pos = &s->last_touch_pos;
-    setColor(COBALT);
+    set_color(COBALT);
   }
-  fillCircle(marker_pos->x, marker_pos->y, 25);
+  fill_circle(marker_pos->x, marker_pos->y, 25);
 }
 
 static void

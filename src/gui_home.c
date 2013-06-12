@@ -104,7 +104,7 @@ home_screen_paint(paint_event_t* event)
   home_screen_t* s = widget_get_instance_data(event->widget);
 
   set_bg_color(BLACK);
-  clrScr();
+  clear_screen();
 
   rect_t rect = {
       .x      = TILE_X(0),
@@ -112,25 +112,25 @@ home_screen_paint(paint_event_t* event)
       .width  = TILE_SPAN(3),
       .height = TILE_SPAN(2),
   };
-  setColor(GREEN);
-  fillRect(rect);
+  set_color(GREEN);
+  fill_rect(rect);
 
   set_bg_color(GREEN);
-  setColor(WHITE);
-  setFont(font_opensans_62);
+  set_color(WHITE);
+  set_font(font_opensans_62);
 //  if (chTimeNow() - s->temp_timestamp < MS2ST(5))
     sprintf(temp_str, "%0.1f", s->cur_temp);
 //  else
 //    sprintf(temp_str, "--.- %c", s->temp_unit);
-    print(temp_str, 25, 25);
-//    print("F");
+    print_str(temp_str, 25, 25);
+//    print_str("F");
 }
 
 static void
 click_probe_button(click_event_t* event)
 {
-  widget_t* parent = widget_get_parent(event->widget);
-  home_screen_t* s = widget_get_instance_data(parent);
+//  widget_t* parent = widget_get_parent(event->widget);
+//  home_screen_t* s = widget_get_instance_data(parent);
 
   widget_t* settings_screen = probe_settings_screen_create();
   gui_push_screen(settings_screen);
@@ -139,8 +139,8 @@ click_probe_button(click_event_t* event)
 static void
 click_output_button(click_event_t* event)
 {
-  widget_t* parent = widget_get_parent(event->widget);
-  home_screen_t* s = widget_get_instance_data(parent);
+//  widget_t* parent = widget_get_parent(event->widget);
+//  home_screen_t* s = widget_get_instance_data(parent);
 
   widget_t* settings_screen = output_settings_screen_create();
   gui_push_screen(settings_screen);
@@ -149,11 +149,11 @@ click_output_button(click_event_t* event)
 static void
 click_conn_button(click_event_t* event)
 {
-
+  (void)event;
 }
 
 static void
 click_settings_button(click_event_t* event)
 {
-
+  (void)event;
 }

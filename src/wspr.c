@@ -95,6 +95,7 @@ handle_debug(uint8_t* data, uint16_t data_len)
 static void
 handle_version(uint8_t* data, uint16_t data_len)
 {
+  (void)data;
   (void)data_len;
 }
 

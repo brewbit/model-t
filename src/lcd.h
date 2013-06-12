@@ -52,47 +52,44 @@
 #define PURPLE   COLOR(0xA7, 0x00, 0xAE)
 
 
-extern rect_t display_rect;
+extern const rect_t display_rect;
 
 void
 lcd_init(void);
 void
-clrScr(void);
+clear_screen(void);
 void
-drawPixel(int x, int y);
+draw_line(int x1, int y1, int x2, int y2);
 void
-drawLine(int x1, int y1, int x2, int y2);
+draw_rect(rect_t rect);
 void
-drawRect(rect_t rect);
+draw_round_rect(int x1, int y1, int x2, int y2);
 void
-drawRoundRect(int x1, int y1, int x2, int y2);
+fill_rect(rect_t rect);
 void
-fillRect(rect_t rect);
+fill_round_rect(int x1, int y1, int x2, int y2);
 void
-fillRoundRect(int x1, int y1, int x2, int y2);
+draw_circle(int x, int y, int radius);
 void
-drawCircle(int x, int y, int radius);
+fill_circle(int x, int y, int radius);
 void
-fillCircle(int x, int y, int radius);
-void
-setColor(uint16_t color);
+set_color(uint16_t color);
 void
 set_bg_color(uint16_t color);
 void
 set_bg_img(const Image_t* img, point_t anchor);
 void
-print(const char *st, int x, int y);
+print_str(const char *st, int x, int y);
 void
-printChar(const Glyph_t* g, int x, int y);
+print_char(const Glyph_t* g, int x, int y);
 void
-printNumI(long num, int x, int y, int length, char filler);
+print_num_i(long num, int x, int y, int length, char filler);
 void
-printNumF(double num, uint8_t dec, int x, int y, char divider, int length,
-    char filler);
+print_num_f(double num, uint8_t dec, int x, int y, char divider, int length, char filler);
 void
-setFont(const Font_t* font);
+set_font(const Font_t* font);
 void
-drawBitmap(int x, int y, const Image_t* img);
+draw_bitmap(int x, int y, const Image_t* img);
 void
 tile_bitmap(const Image_t* img, rect_t rect);
 

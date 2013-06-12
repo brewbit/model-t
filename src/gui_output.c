@@ -2,6 +2,7 @@
 #include "gui_output.h"
 #include "lcd.h"
 #include "gui/button.h"
+#include "gui.h"
 
 typedef struct {
   widget_t* widget;
@@ -59,21 +60,21 @@ output_settings_screen_paint(paint_event_t* event)
   (void)event;
 
   set_bg_color(BLACK);
-  clrScr();
+  clear_screen();
 
-  setColor(WHITE);
-  setFont(font_opensans_22);
-  print("Output 1 Setup", 85, 20);
+  set_color(WHITE);
+  set_font(font_opensans_22);
+  print_str("Output 1 Setup", 85, 20);
 
-  setFont(font_opensans_16);
-  print("Function: Heating", 85, 95);
-  print("Trigger: Probe 2", 85, 165);
+  set_font(font_opensans_16);
+  print_str("Function: Heating", 85, 95);
+  print_str("Trigger: Probe 2", 85, 165);
 
-  setFont(font_opensans_8);
-  print("The output will turn on when the temp", 85, 120);
-  print("is below the setpoint.", 85, 135);
-  print("The temperature will be read from", 85, 190);
-  print("Probe 2.", 85, 205);
+  set_font(font_opensans_8);
+  print_str("The output will turn on when the temp", 85, 120);
+  print_str("is below the setpoint.", 85, 135);
+  print_str("The temperature will be read from", 85, 190);
+  print_str("Probe 2.", 85, 205);
 }
 
 

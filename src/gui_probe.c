@@ -2,6 +2,7 @@
 #include "gui_probe.h"
 #include "lcd.h"
 #include "gui/button.h"
+#include "gui.h"
 
 typedef struct {
   widget_t* widget;
@@ -59,18 +60,18 @@ probe_settings_screen_paint(paint_event_t* event)
   (void)event;
 
   set_bg_color(BLACK);
-  clrScr();
+  clear_screen();
 
-  setColor(WHITE);
-  setFont(font_opensans_22);
-  print("Probe 1 Setup", 85, 20);
+  set_color(WHITE);
+  set_font(font_opensans_22);
+  print_str("Probe 1 Setup", 85, 20);
 
-  setFont(font_opensans_62);
-  print("73.2", 100, 100);
+  set_font(font_opensans_62);
+  print_str("73.2", 100, 100);
 
-  setColor(LIGHT_GRAY);
-  setFont(font_opensans_22);
-  print("F", 275, 120);
+  set_color(LIGHT_GRAY);
+  set_font(font_opensans_22);
+  print_str("F", 275, 120);
 }
 
 

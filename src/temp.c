@@ -20,15 +20,10 @@ temp_thread(void* arg)
 
   while (1) {
     float currentTempC;
-    float currentTempF;
+//    float currentTempF;
 
     if (temp_get_reading(tp, &currentTempC)) {
-      currentTempF = (currentTempC * 1.8) + 32;
-      terminal_write("t: ");
-      terminal_write_int((uint32_t) currentTempF);
-      terminal_write(".");
-      terminal_write_int((uint32_t) (10 * (currentTempF - (uint32_t) currentTempF)));
-      terminal_write("\n");
+//      currentTempF = (currentTempC * 1.8) + 32;
 
   //    if (currentTempF > setpointTemp) {
   //      relay_on(RELAY_OUTPUT1);
@@ -41,7 +36,6 @@ temp_thread(void* arg)
     }
 
     chThdSleepSeconds(1);
-    terminal_clear();
   }
 
   return 0;

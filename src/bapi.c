@@ -214,6 +214,7 @@ bapi_post_temp(bapi_t* bapi)
 static void
 bapi_complete_post_temp(bapi_t* bapi, cJSON* acct_response)
 {
+  (void)acct_response;
   chprintf(stdout, "got temp post response:\r\n");
   bapi->state = BAPI_POST_TEMP;
 }

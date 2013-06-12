@@ -15,9 +15,6 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
-#define gp_low(bank, bit) palClearPad(bank, bit)
-#define gp_high(bank, bit) palSetPad(bank, bit)
-
 #define stdout (BaseChannel *)&SD3
 
 #endif

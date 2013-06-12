@@ -46,7 +46,7 @@ screen_paint(paint_event_t* event)
   if (s->bg_type == BG_IMAGE)
     tile_bitmap(s->bg_img, display_rect);
   else
-    fillScr(s->bg_color);
+    fill_screen(s->bg_color);
 }
 
 void

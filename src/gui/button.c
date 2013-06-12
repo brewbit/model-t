@@ -92,9 +92,9 @@ button_paint(paint_event_t* event)
 
   /* draw background */
 //  if (b->is_down) {
-    setColor(b->color);
+  set_color(b->color);
     set_bg_color(b->color);
-    fillRect(rect);
+    fill_rect(rect);
 //  }
 //  else {
 //    point_t bg_anchor = { .x = rect.x, .y = rect.y };
@@ -112,7 +112,7 @@ button_paint(paint_event_t* event)
 
   /* draw icon */
   if (b->icon != NULL) {
-    drawBitmap(
+    draw_bitmap(
         center.x - (b->icon->width / 2),
         center.y - (b->icon->height / 2),
         b->icon);

@@ -61,18 +61,9 @@ handle_tcp_connect_result(uint8_t* data, uint16_t data_len)
   uint16_t handle = ds_read_u16(ds);
   ds_free(ds);
 
-  terminal_write("tcp connection ");
   if (result == 0) {
-    terminal_write("succeeded! handle: ");
-    terminal_write_int(handle);
-
-    terminal_write("\nsending message... ");
-
     char* str = "hello from the temp controller!";
     tcp_send(0, (uint8_t*)str, (uint16_t)strlen(str));
-  }
-  else {
-    terminal_write("failed");
   }
 }
 
@@ -82,11 +73,4 @@ handle_tcp_send_result(uint8_t* data, uint16_t data_len)
   datastream_t* ds = ds_new(data, data_len);
   int32_t result = ds_read_s32(ds);
   ds_free(ds);
-
-  if (result == 0) {
-    terminal_write("succeeded!\n");
-  }
-  else {
-    terminal_write("failed :(\n");
-  }
 }
