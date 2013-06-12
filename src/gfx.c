@@ -3,10 +3,6 @@
 #include "lcd.h"
 #include "common.h"
 
-#include <math.h>
-#include <stdlib.h>
-#include <string.h>
-
 
 // Alpha blending support
 #define RED_COMPONENT(color) (((color) >> 11) & 0x1F)
@@ -35,7 +31,6 @@ static void draw_vert_line(int x, int y, int l);
 static uint16_t get_tile_color(const Image_t* img, int x, int y);
 static uint16_t get_bg_color(int x, int y);
 static void fill_screen(uint16_t color);
-static void draw_px(int x, int y);
 
 
 static uint16_t fcolor = GREEN;
@@ -68,12 +63,10 @@ gfx_fill_rect(rect_t rect)
 {
   int i;
 
-//  cs_low();
   lcd_set_cursor(rect.x, rect.y, rect.x + rect.width - 1, rect.y + rect.height - 1);
   for (i = 0; i < (rect.width * rect.height); ++i) {
     set_pixel(fcolor);
   }
-//  cs_high();
 }
 
 void
@@ -92,12 +85,10 @@ fill_screen(uint16_t color)
 {
   long i;
 
-//  cs_low();
   lcd_clr_cursor();
   for (i = 0; i < (DISP_WIDTH * DISP_HEIGHT); i++) {
     set_pixel(color);
   }
-//  cs_high();
 }
 
 void
@@ -121,20 +112,16 @@ gfx_set_bg_img(const Image_t* img, point_t anchor)
   bg_type = BG_IMAGE;
 }
 
+void
+gfx_set_font(const Font_t* font)
+{
+  cfont = font;
+}
+
 static void
 set_pixel(uint16_t color)
 {
   lcd_write_data(color);
-}
-
-static void
-draw_px(int x, int y)
-{
-//  cs_low();
-  lcd_set_cursor(x, y, x, y);
-  set_pixel(fcolor);
-//  cs_high();
-  lcd_clr_cursor();
 }
 
 void
@@ -164,7 +151,6 @@ gfx_draw_line(int x1, int y1, int x2, int y2)
     draw_vert_line(x1, y1, y2 - y1);
   }
   else if (abs(x2 - x1) > abs(y2 - y1)) {
-//    cs_low();
     delta = ((double) (y2 - y1)) / ((double) (x2 - x1));
     ty = (double) (y1);
     if (x1 > x2) {
@@ -183,10 +169,8 @@ gfx_draw_line(int x1, int y1, int x2, int y2)
         ty = ty + delta;
       }
     }
-//    cs_high();
   }
   else {
-//    cs_low();
     delta = ((float) (x2 - x1)) / ((float) (y2 - y1));
     tx = (float) (x1);
     if (y1 > y2) {
@@ -205,37 +189,32 @@ gfx_draw_line(int x1, int y1, int x2, int y2)
         tx = tx + delta;
       }
     }
-//    cs_high();
   }
 
   lcd_clr_cursor();
 }
 
 static void
-gfx_draw_horiz_line(int x, int y, int l)
+draw_horiz_line(int x, int y, int l)
 {
   int i;
 
-//  cs_low();
   lcd_set_cursor(x, y, x + l, y);
   for (i = 0; i < l + 1; i++) {
     lcd_write_data(fcolor);
   }
-//  cs_high();
   lcd_clr_cursor();
 }
 
 void
-gfx_draw_vert_line(int x, int y, int l)
+draw_vert_line(int x, int y, int l)
 {
   int i;
 
-//  cs_low();
   lcd_set_cursor(x, y, x, y + l);
   for (i = 0; i < l; i++) {
     lcd_write_data(fcolor);
   }
-//  cs_high();
   lcd_clr_cursor();
 }
 
@@ -243,8 +222,6 @@ void
 gfx_print_char(const Glyph_t* g, int x, int y)
 {
   uint16_t j;
-
-//  cs_low();
 
   lcd_set_cursor(x, y, x + g->width - 1, y + g->height - 1);
 
@@ -267,7 +244,6 @@ gfx_print_char(const Glyph_t* g, int x, int y)
     }
   }
 
-//  cs_high();
   lcd_clr_cursor();
 }
 
@@ -285,18 +261,11 @@ gfx_print_str(const char *st, int x, int y)
 }
 
 void
-gfx_set_font(const Font_t* font)
-{
-  cfont = font;
-}
-
-void
 gfx_draw_bitmap(int x, int y, const Image_t* img)
 {
   unsigned int col;
 
   int tc;
-//  cs_low();
   lcd_set_cursor(x, y, x + img->width - 1, y + img->height - 1);
   switch (img->format) {
   case RGB565:
@@ -331,7 +300,6 @@ gfx_draw_bitmap(int x, int y, const Image_t* img)
     }
     break;
   }
-//  cs_high();
 
   lcd_clr_cursor();
 }
@@ -361,14 +329,12 @@ gfx_tile_bitmap(const Image_t* img, rect_t rect)
 {
   int i, j;
 
-//  cs_low();
   lcd_set_cursor(rect.x, rect.y, rect.x + rect.width - 1, rect.y + rect.height - 1);
   for (i = 0; i < rect.height; ++i) {
     for (j = 0; j < rect.width; ++j) {
       set_pixel(get_tile_color(img, j, i));
     }
   }
-//  cs_high();
   lcd_clr_cursor();
 }
 
