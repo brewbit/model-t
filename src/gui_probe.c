@@ -1,6 +1,6 @@
 
 #include "gui_probe.h"
-#include "lcd.h"
+#include "gfx.h"
 #include "gui/button.h"
 #include "gui.h"
 
@@ -59,19 +59,19 @@ probe_settings_screen_paint(paint_event_t* event)
 {
   (void)event;
 
-  set_bg_color(BLACK);
-  clear_screen();
+  gfx_set_bg_color(BLACK);
+  gfx_clear_screen();
 
-  set_color(WHITE);
-  set_font(font_opensans_22);
-  print_str("Probe 1 Setup", 85, 20);
+  gfx_set_fg_color(WHITE);
+  gfx_set_font(font_opensans_22);
+  gfx_print_str("Probe 1 Setup", 85, 20);
 
-  set_font(font_opensans_62);
-  print_str("73.2", 100, 100);
+  gfx_set_font(font_opensans_62);
+  gfx_print_str("73.2", 100, 100);
 
-  set_color(LIGHT_GRAY);
-  set_font(font_opensans_22);
-  print_str("F", 275, 120);
+  gfx_set_fg_color(LIGHT_GRAY);
+  gfx_set_font(font_opensans_22);
+  gfx_print_str("F", 275, 120);
 }
 
 

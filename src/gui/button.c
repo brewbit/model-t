@@ -1,7 +1,7 @@
 
 #include "button.h"
 #include "gui.h"
-#include "lcd.h"
+#include "gfx.h"
 
 #include <stdlib.h>
 
@@ -92,9 +92,9 @@ button_paint(paint_event_t* event)
 
   /* draw background */
 //  if (b->is_down) {
-  set_color(b->color);
-    set_bg_color(b->color);
-    fill_rect(rect);
+  gfx_set_fg_color(b->color);
+  gfx_set_bg_color(b->color);
+  gfx_fill_rect(rect);
 //  }
 //  else {
 //    point_t bg_anchor = { .x = rect.x, .y = rect.y };
@@ -112,7 +112,7 @@ button_paint(paint_event_t* event)
 
   /* draw icon */
   if (b->icon != NULL) {
-    draw_bitmap(
+    gfx_draw_bitmap(
         center.x - (b->icon->width / 2),
         center.y - (b->icon->height / 2),
         b->icon);

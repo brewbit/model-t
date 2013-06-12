@@ -88,6 +88,7 @@ CSRC = $(PORTSRC) \
        src/crc.c \
        src/datastream.c \
        src/font.c \
+       src/gfx.c \
        src/gui.c \
        src/gui_calib.c \
        src/gui_home.c \

@@ -1,6 +1,6 @@
 
 #include "gui_output.h"
-#include "lcd.h"
+#include "gfx.h"
 #include "gui/button.h"
 #include "gui.h"
 
@@ -59,22 +59,22 @@ output_settings_screen_paint(paint_event_t* event)
 {
   (void)event;
 
-  set_bg_color(BLACK);
-  clear_screen();
+  gfx_set_bg_color(BLACK);
+  gfx_clear_screen();
 
-  set_color(WHITE);
-  set_font(font_opensans_22);
-  print_str("Output 1 Setup", 85, 20);
+  gfx_set_fg_color(WHITE);
+  gfx_set_font(font_opensans_22);
+  gfx_print_str("Output 1 Setup", 85, 20);
 
-  set_font(font_opensans_16);
-  print_str("Function: Heating", 85, 95);
-  print_str("Trigger: Probe 2", 85, 165);
+  gfx_set_font(font_opensans_16);
+  gfx_print_str("Function: Heating", 85, 95);
+  gfx_print_str("Trigger: Probe 2", 85, 165);
 
-  set_font(font_opensans_8);
-  print_str("The output will turn on when the temp", 85, 120);
-  print_str("is below the setpoint.", 85, 135);
-  print_str("The temperature will be read from", 85, 190);
-  print_str("Probe 2.", 85, 205);
+  gfx_set_font(font_opensans_8);
+  gfx_print_str("The output will turn on when the temp", 85, 120);
+  gfx_print_str("is below the setpoint.", 85, 135);
+  gfx_print_str("The temperature will be read from", 85, 190);
+  gfx_print_str("Probe 2.", 85, 205);
 }
 
 

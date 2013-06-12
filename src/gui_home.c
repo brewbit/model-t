@@ -1,6 +1,6 @@
 
 #include "gui_home.h"
-#include "lcd.h"
+#include "gfx.h"
 #include "gui.h"
 #include "gui/button.h"
 #include "gui_probe.h"
@@ -103,8 +103,8 @@ home_screen_paint(paint_event_t* event)
   char temp_str[16];
   home_screen_t* s = widget_get_instance_data(event->widget);
 
-  set_bg_color(BLACK);
-  clear_screen();
+  gfx_set_bg_color(BLACK);
+  gfx_clear_screen();
 
   rect_t rect = {
       .x      = TILE_X(0),
@@ -112,17 +112,17 @@ home_screen_paint(paint_event_t* event)
       .width  = TILE_SPAN(3),
       .height = TILE_SPAN(2),
   };
-  set_color(GREEN);
-  fill_rect(rect);
+  gfx_set_fg_color(GREEN);
+  gfx_fill_rect(rect);
 
-  set_bg_color(GREEN);
-  set_color(WHITE);
-  set_font(font_opensans_62);
+  gfx_set_bg_color(GREEN);
+  gfx_set_fg_color(WHITE);
+  gfx_set_font(font_opensans_62);
 //  if (chTimeNow() - s->temp_timestamp < MS2ST(5))
     sprintf(temp_str, "%0.1f", s->cur_temp);
 //  else
 //    sprintf(temp_str, "--.- %c", s->temp_unit);
-    print_str(temp_str, 25, 25);
+    gfx_print_str(temp_str, 25, 25);
 //    print_str("F");
 }
 
