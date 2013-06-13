@@ -183,8 +183,16 @@ widget_dispatch_event(widget_t* w, event_t* event)
 static void
 dispatch_touch(widget_t* w, touch_event_t* event)
 {
-  // TODO bubble touch up to parent if this widget doesn't handle touches
-  CALL_WC(w, on_touch)(event);
+  while (w != NULL) {
+    if ((w->widget_class != NULL) && (w->widget_class->on_touch != NULL)) {
+      event->widget = w;
+      w->widget_class->on_touch(event);
+      return;
+    }
+    else {
+      w = w->parent;
+    }
+  }
 }
 
 void
