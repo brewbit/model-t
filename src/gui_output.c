@@ -31,6 +31,7 @@ static void back_button_clicked(click_event_t* event);
 static void function_button_clicked(click_event_t* event);
 static void trigger_button_clicked(click_event_t* event);
 static void select_function(output_screen_t* s, output_function_t function);
+static void select_trigger(output_screen_t* s, output_trigger_t trigger);
 
 
 widget_class_t output_settings_widget_class = {
@@ -79,23 +80,19 @@ output_settings_screen_create()
 
   rect.x = 85;
   rect.y = 95;
-  s->function_header_label = label_create(s->function_button, rect, "Function: Heating", font_opensans_16, WHITE);
+  s->function_header_label = label_create(s->function_button, rect, NULL, font_opensans_16, WHITE);
 
   rect.y = 120;
-  s->function_desc_label = label_create(s->function_button, rect,
-      "The output will turn on when the temp is below the setpoint.",
-      font_opensans_8,
-      WHITE);
+  s->function_desc_label = label_create(s->function_button, rect, NULL, font_opensans_8, WHITE);
 
   rect.y = 165;
-  s->trigger_header_label = label_create(s->trigger_button, rect, "Trigger: Probe 2", font_opensans_16, WHITE);
+  s->trigger_header_label = label_create(s->trigger_button, rect, NULL, font_opensans_16, WHITE);
 
   rect.y = 190;
-  s->trigger_desc_label = label_create(s->trigger_button, rect,
-      "The temperature will be read from Probe 2.",
-      font_opensans_8,
-      WHITE);
+  s->trigger_desc_label = label_create(s->trigger_button, rect, NULL, font_opensans_8, WHITE);
 
+  select_function(s, OUTPUT_FUNC_HEATING);
+  select_trigger(s, OUTPUT_TRIG_PROBE1);
 
   return s->widget;
 }
@@ -187,5 +184,44 @@ select_function(output_screen_t* s, output_function_t function)
 static void
 trigger_button_clicked(click_event_t* event)
 {
+  widget_t* screen = widget_get_parent(event->widget);
+  output_screen_t* s = widget_get_instance_data(screen);
 
+  if (s->trigger == OUTPUT_TRIG_PROBE1) {
+    select_trigger(s, OUTPUT_TRIG_PROBE2);
+  }
+  else {
+    select_trigger(s, OUTPUT_TRIG_PROBE1);
+  }
+}
+
+static void
+select_trigger(output_screen_t* s, output_trigger_t trigger)
+{
+  s->trigger = trigger;
+
+  char* header;
+  char* desc;
+  uint16_t color;
+
+  switch (trigger) {
+  case OUTPUT_TRIG_PROBE1:
+    header = "Trigger: Probe 1";
+    desc = "The temperature will be read from Probe 1.";
+    color = AMBER;
+    break;
+
+  case OUTPUT_TRIG_PROBE2:
+    header = "Trigger: Probe 2";
+    desc = "The temperature will be read from Probe 2.";
+    color = PURPLE;
+    break;
+
+  default:
+    return;
+  }
+
+  label_set_text(s->trigger_header_label, header);
+  label_set_text(s->trigger_desc_label, desc);
+  widget_set_background(s->trigger_icon, color, FALSE);
 }
