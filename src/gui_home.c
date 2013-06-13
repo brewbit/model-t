@@ -34,7 +34,6 @@ typedef struct {
 } home_screen_t;
 
 
-static void home_screen_paint(paint_event_t* event);
 static void home_screen_destroy(widget_t* w);
 
 static void click_probe_button(click_event_t* event);
@@ -44,7 +43,6 @@ static void click_settings_button(click_event_t* event);
 
 
 static const widget_class_t home_widget_class = {
-    .on_paint   = home_screen_paint,
     .on_destroy = home_screen_destroy,
 };
 
@@ -57,6 +55,7 @@ home_screen_create()
   s->temp_unit = 'F';
 
   s->screen = widget_create(NULL, &home_widget_class, s, display_rect);
+  widget_set_background(s->screen, BLACK, FALSE);
 
   rect_t rect = {
       .x      = TILE_X(0),
@@ -64,7 +63,7 @@ home_screen_create()
       .width  = TILE_SPAN(3),
       .height = TILE_SPAN(2),
   };
-//  button_create(s->screen, rect, NULL, NULL, GREEN, NULL);
+  button_create(s->screen, rect, NULL, NULL, GREEN, NULL);
 
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
@@ -95,35 +94,6 @@ home_screen_destroy(widget_t* w)
 {
   home_screen_t* s = widget_get_instance_data(w);
   free(s);
-}
-
-static void
-home_screen_paint(paint_event_t* event)
-{
-  char temp_str[16];
-  home_screen_t* s = widget_get_instance_data(event->widget);
-
-  gfx_set_bg_color(BLACK);
-  gfx_clear_screen();
-
-  rect_t rect = {
-      .x      = TILE_X(0),
-      .y      = TILE_Y(0),
-      .width  = TILE_SPAN(3),
-      .height = TILE_SPAN(2),
-  };
-  gfx_set_fg_color(GREEN);
-  gfx_fill_rect(rect);
-
-  gfx_set_bg_color(GREEN);
-  gfx_set_fg_color(WHITE);
-  gfx_set_font(font_opensans_62);
-//  if (chTimeNow() - s->temp_timestamp < MS2ST(5))
-    sprintf(temp_str, "%0.1f", s->cur_temp);
-//  else
-//    sprintf(temp_str, "--.- %c", s->temp_unit);
-    gfx_draw_str(temp_str, -1, 25, 25);
-//    gfx_draw_str("F");
 }
 
 static void
