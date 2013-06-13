@@ -62,8 +62,8 @@ probe_settings_screen_create()
 
   rect.x = 100;
   rect.y = 100;
-  rect.width = 170;
-  rect.height = 55;
+  rect.width = 160;
+  rect.height = 100;
   s->temp_label = label_create(s->widget, rect, s->temp_str, font_opensans_62, WHITE);
   widget_set_background(s->temp_label, BLACK, FALSE);
 
