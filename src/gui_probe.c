@@ -2,23 +2,32 @@
 #include "gui_probe.h"
 #include "gfx.h"
 #include "gui/button.h"
+#include "gui/label.h"
 #include "gui.h"
+
+#include <stdio.h>
 
 typedef struct {
   widget_t* widget;
   widget_t* back_button;
   widget_t* up_button;
   widget_t* down_button;
+  widget_t* temp_label;
+  widget_t* temp_unit_label;
+  char temp_str[10];
+  int setpoint;
 } probe_screen_t;
 
 
-static void probe_settings_screen_paint(paint_event_t* event);
 static void probe_settings_screen_destroy(widget_t* w);
 
-static void back_clicked(click_event_t* event);
+static void back_button_clicked(click_event_t* event);
+static void up_button_clicked(click_event_t* event);
+static void down_button_clicked(click_event_t* event);
+
+static void set_setpoint(probe_screen_t* s, int setpoint);
 
 widget_class_t probe_settings_widget_class = {
-    .on_paint   = probe_settings_screen_paint,
     .on_destroy = probe_settings_screen_destroy
 };
 
@@ -34,14 +43,36 @@ probe_settings_screen_create()
       .width = 56,
       .height = 56,
   };
-  s->back_button = button_create(s->widget, rect, NULL, img_left, BLACK, back_clicked);
+  s->back_button = button_create(s->widget, rect, NULL, img_left, BLACK, back_button_clicked);
+
+  rect.x = 85;
+  rect.y = 20;
+  rect.width = 220;
+  rect.height = -1;
+  label_create(s->widget, rect, "Probe 1 Setup", font_opensans_22, WHITE);
 
   rect.x = 15;
   rect.y = 99;
-  s->up_button = button_create(s->widget, rect, NULL, img_up, RED, NULL);
+  rect.width = 56;
+  rect.height = 56;
+  s->up_button = button_create(s->widget, rect, NULL, img_up, RED, up_button_clicked);
 
   rect.y = 169;
-  s->down_button = button_create(s->widget, rect, NULL, img_down, CYAN, NULL);
+  s->down_button = button_create(s->widget, rect, NULL, img_down, CYAN, down_button_clicked);
+
+  rect.x = 100;
+  rect.y = 100;
+  rect.width = 170;
+  rect.height = 55;
+  s->temp_label = label_create(s->widget, rect, s->temp_str, font_opensans_62, WHITE);
+  widget_set_background(s->temp_label, BLACK, FALSE);
+
+  rect.x = 275;
+  rect.y = 120;
+  rect.width = 20;
+  s->temp_unit_label = label_create(s->widget, rect, "F", font_opensans_22, LIGHT_GRAY);
+
+  set_setpoint(s, 732);
 
   return s->widget;
 }
@@ -53,30 +84,36 @@ probe_settings_screen_destroy(widget_t* w)
   free(s);
 }
 
-
 static void
-probe_settings_screen_paint(paint_event_t* event)
+back_button_clicked(click_event_t* event)
 {
   (void)event;
 
-  gfx_set_bg_color(BLACK);
-  gfx_clear_screen();
-
-  gfx_set_fg_color(WHITE);
-  gfx_set_font(font_opensans_22);
-  gfx_draw_str("Probe 1 Setup", -1, 85, 20);
-
-  gfx_set_font(font_opensans_62);
-  gfx_draw_str("73.2", -1, 100, 100);
-
-  gfx_set_fg_color(LIGHT_GRAY);
-  gfx_set_font(font_opensans_22);
-  gfx_draw_str("F", -1, 275, 120);
+  gui_pop_screen();
 }
 
+static void
+up_button_clicked(click_event_t* event)
+{
+  widget_t* screen = widget_get_parent(event->widget);
+  probe_screen_t* s = widget_get_instance_data(screen);
+  set_setpoint(s, s->setpoint + 1);
+}
 
 static void
-back_clicked(click_event_t* event)
+down_button_clicked(click_event_t* event)
 {
-  gui_pop_screen();
+  widget_t* screen = widget_get_parent(event->widget);
+  probe_screen_t* s = widget_get_instance_data(screen);
+  set_setpoint(s, s->setpoint - 1);
+}
+
+static void
+set_setpoint(probe_screen_t* s, int setpoint)
+{
+  if (s->setpoint != setpoint) {
+    s->setpoint = setpoint;
+    sprintf(s->temp_str, "%0.1f", setpoint / 10.0f);
+    widget_invalidate(s->temp_label);
+  }
 }

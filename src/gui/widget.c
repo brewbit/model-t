@@ -56,7 +56,7 @@ widget_create(widget_t* parent, const widget_class_t* widget_class, void* instan
   w->invalid = true;
   w->visible = true;
   w->bg_color = BLACK;
-  w->bg_transparent = true;
+  w->bg_transparent = (parent != NULL);
 
   if (parent != NULL)
     widget_add_child(parent, w);
