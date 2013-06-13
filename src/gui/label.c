@@ -34,6 +34,14 @@ label_create(widget_t* parent, rect_t rect, const char* text, const Font_t* font
   return widget_create(parent, &label_widget_class, l, rect);
 }
 
+void
+label_set_text(widget_t* w, char* text)
+{
+  label_t* l = widget_get_instance_data(w);
+  l->text = text;
+  widget_invalidate(w);
+}
+
 static void
 label_destroy(widget_t* w)
 {

@@ -239,15 +239,19 @@ widget_invalidate_predicate(widget_t* w, widget_traversal_event_t event)
 void
 widget_hide(widget_t* w)
 {
-  w->visible = false;
-  widget_invalidate(w->parent);
+  if (w->visible) {
+    w->visible = false;
+    widget_invalidate(w->parent);
+  }
 }
 
 void
 widget_show(widget_t* w)
 {
-  w->visible = true;
-  widget_invalidate(w);
+  if (!w->visible) {
+    w->visible = true;
+    widget_invalidate(w);
+  }
 }
 
 bool
@@ -261,4 +265,5 @@ widget_set_background(widget_t* w, color_t color, bool transparent)
 {
   w->bg_color = color;
   w->bg_transparent = transparent;
+  widget_invalidate(w);
 }
