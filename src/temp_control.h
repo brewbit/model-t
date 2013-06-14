@@ -13,4 +13,7 @@ typedef enum {
   OUTPUT_TRIG_PROBE2
 } output_trigger_t;
 
+void
+temp_control_init(void);
+
 #endif

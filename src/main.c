@@ -8,22 +8,11 @@
 #include "bapi.h"
 #include "touch.h"
 #include "gui.h"
-#include "temp.h"
+#include "temp_control.h"
 #include "gui_calib.h"
 #include "gui_home.h"
 #include "chprintf.h"
 
-//temp_port_t tp1 = {
-//    .ob = {
-//        .port = &SD1
-//    }
-//};
-//
-//temp_port_t tp2 = {
-//    .ob = {
-//        .port = &SD2
-//    }
-//};
 
 int main(void)
 {
@@ -36,8 +25,7 @@ int main(void)
   chThdSleepMilliseconds(500);
   lcd_init();
   touch_init();
-//  temp_init(&tp1);
-//  temp_init(&tp2);
+  temp_control_init();
 //  wspr_init();
 //  bapi_init();
 

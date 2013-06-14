@@ -40,7 +40,6 @@ static void dispatch_touch(gui_touch_event_t* event);
 static void dispatch_push_screen(gui_push_screen_event_t* event);
 static void dispatch_pop_screen(void);
 static void gui_dispatch(gui_event_t* event);
-static void gui_idle(void);
 
 
 static uint8_t wa_gui_thread[1024];
@@ -126,8 +125,8 @@ gui_thread_func(void* arg)
   gui_push_screen(arg);
 
   while (1) {
-    if (chMsgIsPendingI(gui_thread)) {
-      Thread* tp = chMsgWait();
+    Thread* tp = chMsgWaitTimeout(100);
+    if (tp != NULL) {
       gui_event_t* event = (gui_event_t*)chMsgGet(tp);
 
       gui_dispatch(event);
@@ -135,18 +134,10 @@ gui_thread_func(void* arg)
       chMsgRelease(tp, 0);
     }
     else {
-      gui_idle();
+      widget_paint(screen_stack->widget);
     }
   }
   return 0;
-}
-
-static void
-gui_idle()
-{
-  widget_paint(screen_stack->widget);
-
-  chThdYield();
 }
 
 static void

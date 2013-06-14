@@ -26,8 +26,6 @@ onewire_init(onewire_bus_t* ob)
 bool
 onewire_reset(onewire_bus_t* ob)
 {
-//  terminal_write("resetting onewire bus\n");
-
   sdStart(ob->port, &cfg_9600);
 
   sdPut(ob->port, 0xF0);
@@ -39,12 +37,9 @@ onewire_reset(onewire_bus_t* ob)
     return false;
   }
   if (recv == 0xF0) {
-//    terminal_write("no devices present on bus\n");
     return false;
   }
   else {
-//    terminal_write("devices present on bus\n");
-//    terminal_write_hex(recv);
     return true;
   }
 }
