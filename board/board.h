@@ -54,16 +54,18 @@
  * IO pins assignments.
  */
 
-#define PORT_TFT_CTRL  GPIOA
-#define GPIOA_TFT_RST  8
-#define GPIOA_TFT_RD   9
-#define GPIOA_TFT_WR   10
-#define GPIOA_TFT_RS   11
-#define GPIOA_TFT_CS   12
+#define GPIOA_TFT_BKLT  3
+#define GPIOA_TFT_RST   8
+#define GPIOA_TFT_RD    9
+#define GPIOA_TFT_WR    10
+#define GPIOA_TFT_RS    11
+#define GPIOA_TFT_CS    12
 
-#define GPIO_PORT      GPIOB
-#define GPIOB_LED1     0
-#define GPIOB_LED2     1
+#define GPIOB_LED1      0
+#define GPIOB_LED2      1
+#define GPIOB_SFLASH_CS 5
+#define GPIOB_RELAY1    8
+#define GPIOB_RELAY2    9
 
 /*
  * I/O ports initial setup, this configuration is established soon after reset
@@ -213,8 +215,8 @@
 #define VAL_GPIOC_OSPEEDR           0xFFFFFFFF // all 100 MHz
 #define VAL_GPIOC_PUPDR             0x00000000 // all floating
 #define VAL_GPIOC_ODR               0xFFFFFFFF // all high by default
-#define VAL_GPIOC_AFRL				0x00000000 // all alt func 0
-#define VAL_GPIOC_AFRH				0x00000000 // all alt func 0
+#define VAL_GPIOC_AFRL              0x00000000 // all alt func 0
+#define VAL_GPIOC_AFRH              0x00000000 // all alt func 0
 
 /*
  * Port D setup.
@@ -225,8 +227,8 @@
 #define VAL_GPIOD_OSPEEDR           0xFFFFFFFF
 #define VAL_GPIOD_PUPDR             0xFFFFFFFF
 #define VAL_GPIOD_ODR               0xFFFFFFFF
-#define VAL_GPIOD_AFRL				0x00000000
-#define VAL_GPIOD_AFRH				0x00000000
+#define VAL_GPIOD_AFRL              0x00000000
+#define VAL_GPIOD_AFRH              0x00000000
 
 /*
  * Port E setup.
@@ -237,8 +239,8 @@
 #define VAL_GPIOE_OSPEEDR           0xFFFFFFFF
 #define VAL_GPIOE_PUPDR             0xFFFFFFFF
 #define VAL_GPIOE_ODR               0xFFFFFFFF
-#define VAL_GPIOE_AFRL				0x00000000
-#define VAL_GPIOE_AFRH				0x00000000
+#define VAL_GPIOE_AFRL              0x00000000
+#define VAL_GPIOE_AFRH              0x00000000
 
 /*
  * Port F setup.
@@ -249,8 +251,8 @@
 #define VAL_GPIOF_OSPEEDR           0xFFFFFFFF
 #define VAL_GPIOF_PUPDR             0xFFFFFFFF
 #define VAL_GPIOF_ODR               0xFFFFFFFF
-#define VAL_GPIOF_AFRL				0x00000000
-#define VAL_GPIOF_AFRH				0x00000000
+#define VAL_GPIOF_AFRL              0x00000000
+#define VAL_GPIOF_AFRH              0x00000000
 
 /*
  * Port G setup.
@@ -261,8 +263,8 @@
 #define VAL_GPIOG_OSPEEDR           0xFFFFFFFF
 #define VAL_GPIOG_PUPDR             0xFFFFFFFF
 #define VAL_GPIOG_ODR               0xFFFFFFFF
-#define VAL_GPIOG_AFRL				0x00000000
-#define VAL_GPIOG_AFRH				0x00000000
+#define VAL_GPIOG_AFRL              0x00000000
+#define VAL_GPIOG_AFRH              0x00000000
 
 /*
  * Port H setup.
@@ -273,8 +275,8 @@
 #define VAL_GPIOH_OSPEEDR           0xFFFFFFFF
 #define VAL_GPIOH_PUPDR             0xFFFFFFFF
 #define VAL_GPIOH_ODR               0xFFFFFFFF
-#define VAL_GPIOH_AFRL				0x00000000
-#define VAL_GPIOH_AFRH				0x00000000
+#define VAL_GPIOH_AFRL              0x00000000
+#define VAL_GPIOH_AFRH              0x00000000
 
 /*
  * Port I setup.
@@ -285,8 +287,8 @@
 #define VAL_GPIOI_OSPEEDR           0xFFFFFFFF
 #define VAL_GPIOI_PUPDR             0xFFFFFFFF
 #define VAL_GPIOI_ODR               0xFFFFFFFF
-#define VAL_GPIOI_AFRL				0x00000000
-#define VAL_GPIOI_AFRH				0x00000000
+#define VAL_GPIOI_AFRL              0x00000000
+#define VAL_GPIOI_AFRH              0x00000000
 
 #if !defined(_FROM_ASM_)
 #ifdef __cplusplus
