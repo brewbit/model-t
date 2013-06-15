@@ -92,15 +92,19 @@ home_screen_create()
   s->settings_button = button_create(s->screen, rect, NULL, img_settings, OLIVE, click_settings_button);
 
   // TODO replace these and the one on the probe screen with standard temperature label widgets that handle placement
-  rect.x = 10;
-  rect.y = 10;
+  rect.x = 25;
+  rect.y = 13;
   rect.width = 200;
   s->probe1_temp_label = label_create(s->stage_button, rect, "54.2", font_opensans_62, WHITE);
-//  label_create(s->stage_button, rect, "F", font_opensans_22, WHITE);
 
-  rect.y = 80;
+  rect.y = 83;
   s->probe2_temp_label = label_create(s->stage_button, rect, "71.8", font_opensans_62, WHITE);
-//  label_create(s->stage_button, rect, "F", font_opensans_22, WHITE);
+
+  rect.x = 175;
+  rect.y = 13;
+  label_create(s->stage_button, rect, "F", font_opensans_22, DARK_GRAY);
+  rect.y = 83;
+  label_create(s->stage_button, rect, "F", font_opensans_22, DARK_GRAY);
 
   rect.y = 50;
   s->single_temp_label = label_create(s->stage_button, rect, "--.-", font_opensans_62, WHITE);
