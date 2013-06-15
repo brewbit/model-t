@@ -18,7 +18,7 @@ temp_input_init(SerialDriver* port, Thread* handler)
   tp->bus.port = port;
   onewire_init(&tp->bus);
 
-  tp->thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, temp_input_thread, tp);
+  tp->thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO+1, temp_input_thread, tp);
 
   return tp;
 }
