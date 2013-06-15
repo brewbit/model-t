@@ -85,7 +85,7 @@ label_paint(paint_event_t* event)
           str_idx = last_word_start;
       }
 
-      gfx_draw_str(str, str_idx, rect.x, rect.y + (row * l->font->max_height));
+      gfx_draw_str(str, str_idx, rect.x, rect.y + (row * l->font->line_height));
 
       str = str + str_idx;
       str_idx = 0;
@@ -98,5 +98,5 @@ label_paint(paint_event_t* event)
     }
   }
 
-  gfx_draw_str(str, -1, rect.x, rect.y + (row * l->font->max_height));
+  gfx_draw_str(str, -1, rect.x, rect.y + (row * l->font->line_height));
 }

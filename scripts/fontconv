@@ -23,8 +23,7 @@ typedef struct {
 } Glyph_t;
 
 typedef struct {
-  uint8_t max_width;
-  uint8_t max_height;
+  uint8_t line_height;
   const Glyph_t* glyphs[256];
 } Font_t;
 """
@@ -62,8 +61,7 @@ const Glyph_t glyph_%(font_name)s_%(id)s = {
 
 font_def_prologue = """
 const Font_t _font_%(font_name)s = {
-  .max_width = %(max_width)d,
-  .max_height = %(max_height)d,
+  .line_height = %(line_height)d,
   .glyphs = {
 """
 
@@ -89,8 +87,7 @@ class FontConverter:
         self.pages = {}
         self.chars = {}
         
-        self.max_width = 0
-        self.max_height = 0
+        self.line_height = 0
         
     def parse_line(self, line):
         attrs = {}
@@ -142,7 +139,9 @@ class FontConverter:
         font_desc = open(self.desc_file, 'r')
         for line in font_desc:
             cmd, attrs = self.parse_line(line)
-            if cmd == 'page':
+            if cmd == 'common':
+                self.line_height = int(attrs['lineHeight'])
+            elif cmd == 'page':
                 if not os.path.exists(attrs['file']):
                     attrs['file'] = os.path.join(os.path.dirname(self.config_file_rewrite), attrs['file'])
                 self.pages[attrs['id']] = Image.open(attrs['file'])
@@ -157,11 +156,6 @@ class FontConverter:
                 attrs['xadvance'] = int(attrs['xadvance'])
                 self.chars[attrs['id']] = attrs
                 
-                if attrs['width'] > self.max_width:
-                    self.max_width = attrs['width']
-                if attrs['height'] > self.max_height:
-                    self.max_height = attrs['height']
-                
                 # if this is the ? char, copy it to location 0 for unknown char replacement
                 if attrs['id'] == '63':
                     attrs = attrs.copy()
@@ -175,8 +169,7 @@ class FontConverter:
             
         self.out_c.write(font_def_prologue % 
                          {'font_name': self.font_name,
-                          'max_width': self.max_width,
-                          'max_height': self.max_height})
+                          'line_height': self.line_height})
         for char in self.chars.values():
             self.out_c.write(font_def_glyph % char)
         self.out_c.write(font_def_epilogue % {'font_name': self.font_name})
