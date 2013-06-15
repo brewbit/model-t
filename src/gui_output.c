@@ -54,6 +54,11 @@ output_settings_screen_create()
   };
   s->back_button = button_create(s->widget, rect, NULL, img_left, BLACK, back_button_clicked);
 
+  rect.x = 85;
+  rect.y = 26;
+  rect.width = 220;
+  label_create(s->widget, rect, "Output 1 Setup", font_opensans_22, WHITE);
+
   rect.x = 10;
   rect.y = 95;
   rect.width = 300;
@@ -63,32 +68,21 @@ output_settings_screen_create()
   rect.y = 165;
   s->trigger_button = button_create(s->widget, rect, NULL, NULL, BLACK, trigger_button_clicked);
 
-  rect.x = 15;
-  rect.y = 100;
+  rect.x = 5;
+  rect.y = 5;
   rect.width = 56;
   rect.height = 56;
   s->function_icon = icon_create(s->function_button, rect, img_flame, ORANGE);
-
-  rect.y = 170;
   s->trigger_icon = icon_create(s->trigger_button, rect, img_temp_38, PURPLE);
 
-  rect.x = 85;
-  rect.y = 26;
-  rect.width = 220;
-  rect.height = -1;
-  label_create(s->widget, rect, "Output 1 Setup", font_opensans_22, WHITE);
-
-  rect.x = 85;
-  rect.y = 100;
+  rect.x = 70;
+  rect.y = 5;
+  rect.width = 200;
   s->function_header_label = label_create(s->function_button, rect, NULL, font_opensans_16, WHITE);
-
-  rect.y = 125;
-  s->function_desc_label = label_create(s->function_button, rect, NULL, font_opensans_8, WHITE);
-
-  rect.y = 170;
   s->trigger_header_label = label_create(s->trigger_button, rect, NULL, font_opensans_16, WHITE);
 
-  rect.y = 195;
+  rect.y = 30;
+  s->function_desc_label = label_create(s->function_button, rect, NULL, font_opensans_8, WHITE);
   s->trigger_desc_label = label_create(s->trigger_button, rect, NULL, font_opensans_8, WHITE);
 
   select_function(s, OUTPUT_FUNC_HEATING);

@@ -22,7 +22,7 @@ int main(void)
   /* start stdout port */
   sdStart(&SD3, NULL);
 
-  lcd_init();
+  gfx_init();
   touch_init();
   temp_control_init();
 //  wspr_init();

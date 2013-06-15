@@ -41,6 +41,7 @@ typedef struct gfx_ctx_s {
   const Image_t* bg_img;
   point_t bg_anchor;
   const Font_t* cfont;
+  point_t translation;
 
   struct gfx_ctx_s* next;
 } gfx_ctx_t;
@@ -81,6 +82,23 @@ gfx_ctx_pop()
 }
 
 void
+gfx_push_translation(uint16_t x, uint16_t y)
+{
+  ctx->translation.x += x;
+  ctx->translation.y += y;
+}
+
+static void
+gfx_set_cursor(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2)
+{
+  lcd_set_cursor(
+      ctx->translation.x + x1,
+      ctx->translation.y + y1,
+      ctx->translation.x + x2,
+      ctx->translation.y + y2);
+}
+
+void
 gfx_draw_rect(rect_t rect)
 {
   draw_horiz_line(rect.x, rect.y, rect.width-1);
@@ -100,7 +118,7 @@ fill_rect(rect_t rect, uint16_t color)
 {
   int i;
 
-  lcd_set_cursor(rect.x, rect.y, rect.x + rect.width - 1, rect.y + rect.height - 1);
+  gfx_set_cursor(rect.x, rect.y, rect.x + rect.width - 1, rect.y + rect.height - 1);
   for (i = 0; i < (rect.width * rect.height); ++i) {
     set_pixel(color);
   }
@@ -188,7 +206,7 @@ gfx_draw_line(int x1, int y1, int x2, int y2)
     if (x1 > x2) {
       int i;
       for (i = x1; i >= x2; i--) {
-        lcd_set_cursor(i, (int) (ty + 0.5), i, (int) (ty + 0.5));
+        gfx_set_cursor(i, (int) (ty + 0.5), i, (int) (ty + 0.5));
         lcd_write_data(ctx->fcolor);
         ty = ty - delta;
       }
@@ -196,7 +214,7 @@ gfx_draw_line(int x1, int y1, int x2, int y2)
     else {
       int i;
       for (i = x1; i <= x2; i++) {
-        lcd_set_cursor(i, (int) (ty + 0.5), i, (int) (ty + 0.5));
+        gfx_set_cursor(i, (int) (ty + 0.5), i, (int) (ty + 0.5));
         lcd_write_data(ctx->fcolor);
         ty = ty + delta;
       }
@@ -208,7 +226,7 @@ gfx_draw_line(int x1, int y1, int x2, int y2)
     if (y1 > y2) {
       int i;
       for (i = y2 + 1; i > y1; i--) {
-        lcd_set_cursor((int) (tx + 0.5), i, (int) (tx + 0.5), i);
+        gfx_set_cursor((int) (tx + 0.5), i, (int) (tx + 0.5), i);
         lcd_write_data(ctx->fcolor);
         tx = tx + delta;
       }
@@ -216,7 +234,7 @@ gfx_draw_line(int x1, int y1, int x2, int y2)
     else {
       int i;
       for (i = y1; i < y2 + 1; i++) {
-        lcd_set_cursor((int) (tx + 0.5), i, (int) (tx + 0.5), i);
+        gfx_set_cursor((int) (tx + 0.5), i, (int) (tx + 0.5), i);
         lcd_write_data(ctx->fcolor);
         tx = tx + delta;
       }
@@ -231,7 +249,7 @@ draw_horiz_line(int x, int y, int l)
 {
   int i;
 
-  lcd_set_cursor(x, y, x + l, y);
+  gfx_set_cursor(x, y, x + l, y);
   for (i = 0; i < l + 1; i++) {
     lcd_write_data(ctx->fcolor);
   }
@@ -243,7 +261,7 @@ draw_vert_line(int x, int y, int l)
 {
   int i;
 
-  lcd_set_cursor(x, y, x, y + l);
+  gfx_set_cursor(x, y, x, y + l);
   for (i = 0; i < l; i++) {
     lcd_write_data(ctx->fcolor);
   }
@@ -255,7 +273,7 @@ gfx_print_char(const Glyph_t* g, int x, int y)
 {
   uint16_t j;
 
-  lcd_set_cursor(x, y, x + g->width - 1, y + g->height - 1);
+  gfx_set_cursor(x, y, x + g->width - 1, y + g->height - 1);
 
   for (j = 0; j < (g->width * g->height); j++) {
     uint8_t alpha = g->data[j];
@@ -301,7 +319,7 @@ gfx_draw_bitmap(int x, int y, const Image_t* img)
   unsigned int col;
 
   int tc;
-  lcd_set_cursor(x, y, x + img->width - 1, y + img->height - 1);
+  gfx_set_cursor(x, y, x + img->width - 1, y + img->height - 1);
   switch (img->format) {
   case RGB565:
     for (tc = 0; tc < (img->width * img->height); tc++) {
@@ -364,7 +382,7 @@ gfx_tile_bitmap(const Image_t* img, rect_t rect)
 {
   int i, j;
 
-  lcd_set_cursor(rect.x, rect.y, rect.x + rect.width - 1, rect.y + rect.height - 1);
+  gfx_set_cursor(rect.x, rect.y, rect.x + rect.width - 1, rect.y + rect.height - 1);
   for (i = 0; i < rect.height; ++i) {
     for (j = 0; j < rect.width; ++j) {
       set_pixel(get_tile_color(img, j, i));

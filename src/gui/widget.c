@@ -220,6 +220,8 @@ widget_paint_predicate(widget_t* w, widget_traversal_event_t event)
 
       CALL_WC(w, on_paint)(&event);
 
+      gfx_push_translation(w->rect.x, w->rect.y);
+
       w->invalid = false;
     }
   }

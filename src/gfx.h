@@ -53,6 +53,9 @@ void
 gfx_ctx_pop(void);
 
 void
+gfx_push_translation(uint16_t x, uint16_t y);
+
+void
 gfx_clear_screen(void);
 
 void

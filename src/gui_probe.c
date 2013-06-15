@@ -48,16 +48,15 @@ probe_settings_screen_create()
   rect.x = 85;
   rect.y = 26;
   rect.width = 220;
-  rect.height = -1;
   label_create(s->widget, rect, "Probe 1 Setup", font_opensans_22, WHITE);
 
-  rect.x = 15;
-  rect.y = 99;
+  rect.x = 10;
+  rect.y = 95;
   rect.width = 56;
   rect.height = 56;
   s->up_button = button_create(s->widget, rect, NULL, img_up, RED, up_button_clicked);
 
-  rect.y = 169;
+  rect.y = 165;
   s->down_button = button_create(s->widget, rect, NULL, img_down, CYAN, down_button_clicked);
 
   rect.x = 100;
