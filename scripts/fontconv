@@ -87,6 +87,7 @@ class FontConverter:
         self.pages = {}
         self.chars = {}
         
+        self.min_yoffset = 100000
         self.line_height = 0
         
     def parse_line(self, line):
@@ -100,6 +101,7 @@ class FontConverter:
         return frags[0], attrs
     
     def process_char(self, char):
+        char['yoffset'] = char['yoffset'] - self.min_yoffset
         page = self.pages[char['page']]
         img_glyph = page.crop((char['x'],
                                char['y'],
@@ -161,6 +163,9 @@ class FontConverter:
                     attrs = attrs.copy()
                     attrs['id'] = '0'
                     self.chars[attrs['id']] = attrs
+                    
+                if attrs['yoffset'] < self.min_yoffset:
+                    self.min_yoffset = attrs['yoffset']
         
         out_h.write(font_proto % {'font_name': self.font_name})
         
@@ -169,7 +174,7 @@ class FontConverter:
             
         self.out_c.write(font_def_prologue % 
                          {'font_name': self.font_name,
-                          'line_height': self.line_height})
+                          'line_height': self.line_height - self.min_yoffset})
         for char in self.chars.values():
             self.out_c.write(font_def_glyph % char)
         self.out_c.write(font_def_epilogue % {'font_name': self.font_name})

@@ -31,6 +31,7 @@ label_create(widget_t* parent, rect_t rect, const char* text, const Font_t* font
   l->font = font;
   l->color = color;
 
+  rect.height = font->line_height;
   return widget_create(parent, &label_widget_class, l, rect);
 }
 

@@ -46,7 +46,7 @@ probe_settings_screen_create()
   s->back_button = button_create(s->widget, rect, NULL, img_left, BLACK, back_button_clicked);
 
   rect.x = 85;
-  rect.y = 20;
+  rect.y = 26;
   rect.width = 220;
   rect.height = -1;
   label_create(s->widget, rect, "Probe 1 Setup", font_opensans_22, WHITE);
@@ -61,14 +61,14 @@ probe_settings_screen_create()
   s->down_button = button_create(s->widget, rect, NULL, img_down, CYAN, down_button_clicked);
 
   rect.x = 100;
-  rect.y = 100;
+  rect.y = 130;
   rect.width = 160;
   rect.height = 100;
   s->temp_label = label_create(s->widget, rect, s->temp_str, font_opensans_62, WHITE);
   widget_set_background(s->temp_label, BLACK, FALSE);
 
   rect.x = 275;
-  rect.y = 120;
+  rect.y = 130;
   rect.width = 20;
   s->temp_unit_label = label_create(s->widget, rect, "F", font_opensans_22, LIGHT_GRAY);
 

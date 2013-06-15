@@ -73,22 +73,22 @@ output_settings_screen_create()
   s->trigger_icon = icon_create(s->trigger_button, rect, img_temp_38, PURPLE);
 
   rect.x = 85;
-  rect.y = 20;
+  rect.y = 26;
   rect.width = 220;
   rect.height = -1;
   label_create(s->widget, rect, "Output 1 Setup", font_opensans_22, WHITE);
 
   rect.x = 85;
-  rect.y = 95;
+  rect.y = 100;
   s->function_header_label = label_create(s->function_button, rect, NULL, font_opensans_16, WHITE);
 
-  rect.y = 120;
+  rect.y = 125;
   s->function_desc_label = label_create(s->function_button, rect, NULL, font_opensans_8, WHITE);
 
-  rect.y = 165;
+  rect.y = 170;
   s->trigger_header_label = label_create(s->trigger_button, rect, NULL, font_opensans_16, WHITE);
 
-  rect.y = 190;
+  rect.y = 195;
   s->trigger_desc_label = label_create(s->trigger_button, rect, NULL, font_opensans_8, WHITE);
 
   select_function(s, OUTPUT_FUNC_HEATING);

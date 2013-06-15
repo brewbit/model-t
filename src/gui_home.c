@@ -3,6 +3,7 @@
 #include "gfx.h"
 #include "gui.h"
 #include "gui/button.h"
+#include "gui/label.h"
 #include "gui_probe.h"
 #include "gui_output.h"
 
@@ -25,6 +26,10 @@ typedef struct {
   char temp_unit;
 
   widget_t* screen;
+  widget_t* stage_button;
+  widget_t* probe1_temp_label;
+  widget_t* probe2_temp_label;
+  widget_t* single_temp_label;
   widget_t* probe1_button;
   widget_t* probe2_button;
   widget_t* output1_button;
@@ -63,7 +68,7 @@ home_screen_create()
       .width  = TILE_SPAN(3),
       .height = TILE_SPAN(2),
   };
-  button_create(s->screen, rect, NULL, NULL, GREEN, NULL);
+  s->stage_button = button_create(s->screen, rect, NULL, NULL, GREEN, NULL);
 
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
@@ -85,6 +90,18 @@ home_screen_create()
 
   rect.x = TILE_X(3);
   s->settings_button = button_create(s->screen, rect, NULL, img_settings, OLIVE, click_settings_button);
+
+  rect.x = 35;
+  rect.y = 20;
+  rect.width = 200;
+  s->probe1_temp_label = label_create(s->stage_button, rect, "54.2", font_opensans_62, WHITE);
+
+  rect.y = 90;
+  s->probe2_temp_label = label_create(s->stage_button, rect, "71.8", font_opensans_62, WHITE);
+
+  rect.y = 50;
+  s->single_temp_label = label_create(s->stage_button, rect, "--.-", font_opensans_62, WHITE);
+  widget_hide(s->single_temp_label);
 
   return s->screen;
 }
