@@ -7,7 +7,6 @@
 
 typedef struct {
   onewire_bus_t bus;
-  uint8_t wa_thread[512];
   Thread* thread;
   Thread* handler;
   systime_t last_temp_time;

@@ -22,7 +22,6 @@ int main(void)
   /* start stdout port */
   sdStart(&SD3, NULL);
 
-  chThdSleepMilliseconds(500);
   lcd_init();
   touch_init();
   temp_control_init();

@@ -125,7 +125,7 @@ static const axis_cfg_t y_axis = {
     .conv_grp = &xp_conv_grp,
 };
 
-static uint8_t wa_touch_thread[1024];
+static WORKING_AREA(wa_touch_thread, 1024);
 static uint8_t touch_down;
 static systime_t last_touch_time;
 static point_t touch_coord_raw;

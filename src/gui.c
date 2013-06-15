@@ -42,10 +42,11 @@ static void dispatch_pop_screen(void);
 static void gui_dispatch(gui_event_t* event);
 
 
-static uint8_t wa_gui_thread[1024];
+static WORKING_AREA(wa_gui_thread, 1024);
 static Thread* gui_thread;
 static widget_t* touch_capture_widget;
 static widget_stack_elem_t* screen_stack = NULL;
+static systime_t last_paint_time;
 
 
 void
@@ -125,7 +126,7 @@ gui_thread_func(void* arg)
   gui_push_screen(arg);
 
   while (1) {
-    Thread* tp = chMsgWaitTimeout(100);
+    Thread* tp = chMsgWaitTimeout(MS2ST(50));
     if (tp != NULL) {
       gui_event_t* event = (gui_event_t*)chMsgGet(tp);
 
@@ -133,8 +134,10 @@ gui_thread_func(void* arg)
 
       chMsgRelease(tp, 0);
     }
-    else {
+
+    if ((chTimeNow() - last_paint_time) >= MS2ST(100)) {
       widget_paint(screen_stack->widget);
+      last_paint_time = chTimeNow();
     }
   }
   return 0;

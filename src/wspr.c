@@ -26,7 +26,7 @@ handle_version(uint8_t* data, uint16_t data_len);
 
 static SerialDriver* sd = &SD4;
 static wspr_parser_t wspr_parser;
-static uint8_t wa_thread_wspr[2500];
+static WORKING_AREA(wa_thread_wspr, 2500);
 static wspr_msg_handler_t handlers[NUM_WSPR_MSGS] = {
     [WSPR_OUT_VERSION] = handle_version,
     [WSPR_OUT_DEBUG] = handle_debug,

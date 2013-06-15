@@ -17,7 +17,8 @@ temp_input_init(SerialDriver* port, Thread* handler)
 
   tp->bus.port = port;
   onewire_init(&tp->bus);
-  tp->thread = chThdCreateStatic(tp->wa_thread, sizeof(tp->wa_thread), NORMALPRIO, temp_input_thread, tp);
+
+  tp->thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, temp_input_thread, tp);
 
   return tp;
 }
@@ -30,11 +31,7 @@ temp_input_thread(void* arg)
   while (1) {
     float temp;
 
-    chSysLock();
-    bool got_reading = temp_get_reading(tp, &temp);
-    chSysUnlock();
-
-    if (got_reading) {
+    if (temp_get_reading(tp, &temp)) {
       tp->connected = true;
       tp->last_temp_time = chTimeNow();
       send_temp_msg(tp, MSG_NEW_TEMP, temp);

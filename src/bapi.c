@@ -56,7 +56,7 @@ static msg_t bapi_thread(void* arg);
 
 
 static bapi_t bapi;
-static uint8_t wp_bapi_thread[2500];
+static WORKING_AREA(wp_bapi_thread, 2500);
 
 void
 bapi_init()
