@@ -42,8 +42,6 @@ temp_input_thread(void* arg)
         send_temp_msg(tp, MSG_PROBE_TIMEOUT, 0);
       }
     }
-
-    chThdSleepSeconds(1);
   }
 
   return 0;

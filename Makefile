@@ -256,13 +256,12 @@ download: $(BUILD_DIR)/ch.elf
 	-f target/stm32f2x.cfg \
 	-f stm32f2x-setup.cfg \
 	-c "flash write_image erase build/ch.elf" \
-	-c "reset init" \
-	-c "reset run" \
 	-c shutdown download.log 2>&1 && \
 	echo Download complete
 
 run:
-	echo Resetting target
+	@echo Resetting target
+	@sleep 1
 	@openocd \
 	-f interface/$(JTAG).cfg \
 	-f target/stm32f2x.cfg \
