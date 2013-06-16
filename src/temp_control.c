@@ -34,8 +34,8 @@ temp_control_init()
 {
   thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, temp_control_thread, NULL);
 
-//  inputs[0].port = temp_input_init(&SD1);
-  inputs[1].port = temp_input_init(&SD2);
+  inputs[0].port = temp_input_init(PROBE_1, &SD1);
+  inputs[1].port = temp_input_init(PROBE_2, &SD2);
 
   msg_subscribe(MSG_NEW_TEMP, thread, dispatch_temp_input_msg, NULL);
   msg_subscribe(MSG_PROBE_TIMEOUT, thread, dispatch_temp_input_msg, NULL);
@@ -78,7 +78,7 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data)
   switch (id) {
   case MSG_NEW_TEMP:
 //    dispatch_new_temp(tc, msg->temp);
-    chprintf(stdout, "got temp %d\r\n", (int)*((float*)msg_data));
+    chprintf(stdout, "got temp %d\r\n", ((temp_msg_t*)msg_data)->temp);
     break;
 
   case MSG_PROBE_TIMEOUT:

@@ -7,9 +7,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-typedef struct {
-  SerialDriver* port;
-} onewire_bus_t;
+typedef SerialDriver onewire_bus_t;
 
 #define READ_ROM            0x33 // Identification
 #define SKIP_ROM            0xCC // Skip addressing

@@ -3,13 +3,7 @@
 #define TEMP_CONTROL_H
 
 #include "common.h"
-
-typedef enum {
-  PROBE_1,
-  PROBE_2,
-
-  NUM_PROBES
-} probe_id_t;
+#include "temp_input.h"
 
 typedef enum {
   OUTPUT_1,

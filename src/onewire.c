@@ -20,18 +20,18 @@ static const SerialConfig cfg_9600 = {
 void
 onewire_init(onewire_bus_t* ob)
 {
-  sdStart(ob->port, &cfg_115k);
+  sdStart(ob, &cfg_115k);
 }
 
 bool
 onewire_reset(onewire_bus_t* ob)
 {
-  sdStart(ob->port, &cfg_9600);
+  sdStart(ob, &cfg_9600);
 
-  sdPut(ob->port, 0xF0);
-  msg_t recv = sdGetTimeout(ob->port, MS2ST(100));
+  sdPut(ob, 0xF0);
+  msg_t recv = sdGetTimeout(ob, MS2ST(100));
 
-  sdStart(ob->port, &cfg_115k);
+  sdStart(ob, &cfg_115k);
 
   if (recv < 0) {
     chprintf(stdout, "t\r\n");
@@ -94,8 +94,8 @@ onewire_recv_byte(onewire_bus_t* ob, uint8_t* b)
 bool
 onewire_recv_bit(onewire_bus_t* ob, uint8_t* bit)
 {
-  sdPut(ob->port, 0xFF);
-  msg_t ret = sdGetTimeout(ob->port, MS2ST(100));
+  sdPut(ob, 0xFF);
+  msg_t ret = sdGetTimeout(ob, MS2ST(100));
   if (ret < 0) {
     chprintf(stdout, "t\r\n");
     return false;
@@ -113,11 +113,11 @@ bool
 onewire_send_bit(onewire_bus_t* ob, uint8_t b)
 {
   if (b)
-    sdPut(ob->port, 0xFF);
+    sdPut(ob, 0xFF);
   else
-    sdPut(ob->port, 0x00);
+    sdPut(ob, 0x00);
 
-  msg_t ret = sdGetTimeout(ob->port, MS2ST(100));
+  msg_t ret = sdGetTimeout(ob, MS2ST(100));
   if (ret < 0) {
     chprintf(stdout, "t\r\n");
     return false;

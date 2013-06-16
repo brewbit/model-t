@@ -127,9 +127,9 @@ home_screen_msg(msg_event_t* event)
 {
   home_screen_t* s = widget_get_instance_data(event->widget);
   if (event->msg_id == MSG_NEW_TEMP) {
-    float temp = *((float*)event->msg_data);
-    sprintf(s->temp_str1, "%0.1f", temp);
-    sprintf(s->temp_str2, "%0.1f", temp);
+    temp_msg_t* msg = event->msg_data;
+    sprintf(s->temp_str1, "%d", msg->temp);
+    sprintf(s->temp_str2, "%d", msg->temp);
     widget_invalidate(s->probe1_temp_label);
     widget_invalidate(s->probe2_temp_label);
   }
