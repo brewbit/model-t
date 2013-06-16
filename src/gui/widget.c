@@ -218,13 +218,13 @@ static void
 widget_paint_predicate(widget_t* w, widget_traversal_event_t event)
 {
   if (event == WIDGET_TRAVERSAL_BEFORE_CHILDREN) {
+    gfx_ctx_push();
+
     if (w->invalid && widget_is_visible(w)) {
       paint_event_t event = {
           .id = EVT_PAINT,
           .widget = w,
       };
-
-      gfx_ctx_push();
 
       if (!w->bg_transparent) {
         gfx_set_bg_color(w->bg_color);
@@ -233,10 +233,10 @@ widget_paint_predicate(widget_t* w, widget_traversal_event_t event)
 
       CALL_WC(w, on_paint)(&event);
 
-      gfx_push_translation(w->rect.x, w->rect.y);
-
       w->invalid = false;
     }
+
+    gfx_push_translation(w->rect.x, w->rect.y);
   }
   else {
     gfx_ctx_pop();
