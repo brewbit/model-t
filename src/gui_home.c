@@ -138,10 +138,16 @@ home_screen_msg(msg_event_t* event)
 static void
 click_probe_button(click_event_t* event)
 {
-//  widget_t* parent = widget_get_parent(event->widget);
-//  home_screen_t* s = widget_get_instance_data(parent);
+  widget_t* parent = widget_get_parent(event->widget);
+  home_screen_t* s = widget_get_instance_data(parent);
 
-  widget_t* settings_screen = probe_settings_screen_create();
+  probe_id_t probe;
+  if (event->widget == s->probe1_button)
+    probe = PROBE_1;
+  else
+    probe = PROBE_2;
+
+  widget_t* settings_screen = probe_settings_screen_create(probe);
   gui_push_screen(settings_screen);
 }
 

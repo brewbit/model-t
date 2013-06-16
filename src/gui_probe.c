@@ -15,7 +15,8 @@ typedef struct {
   widget_t* temp_label;
   widget_t* temp_unit_label;
   char temp_str[10];
-  int setpoint;
+  probe_id_t probe;
+  probe_settings_t settings;
 } probe_screen_t;
 
 
@@ -32,7 +33,7 @@ widget_class_t probe_settings_widget_class = {
 };
 
 widget_t*
-probe_settings_screen_create()
+probe_settings_screen_create(probe_id_t probe)
 {
   probe_screen_t* s = calloc(1, sizeof(probe_screen_t));
   s->widget = widget_create(NULL, &probe_settings_widget_class, s, display_rect);
@@ -48,7 +49,8 @@ probe_settings_screen_create()
   rect.x = 85;
   rect.y = 26;
   rect.width = 220;
-  label_create(s->widget, rect, "Probe 1 Setup", font_opensans_22, WHITE, 1);
+  char* title = (probe == PROBE_1) ? "Probe 1 Setup" : "Probe 2 Setup";
+  label_create(s->widget, rect, title, font_opensans_22, WHITE, 1);
 
   rect.x = 10;
   rect.y = 95;
@@ -71,7 +73,9 @@ probe_settings_screen_create()
   rect.width = 20;
   s->temp_unit_label = label_create(s->widget, rect, "F", font_opensans_22, LIGHT_GRAY, 1);
 
-  set_setpoint(s, 732);
+  s->probe = probe;
+  s->settings = temp_control_get_probe_settings(probe);
+  set_setpoint(s, s->settings.setpoint);
 
   return s->widget;
 }
@@ -86,7 +90,14 @@ probe_settings_screen_destroy(widget_t* w)
 static void
 back_button_clicked(click_event_t* event)
 {
-  (void)event;
+  widget_t* w = widget_get_parent(event->widget);
+  probe_screen_t* s = widget_get_instance_data(w);
+
+  probe_settings_msg_t msg = {
+      .probe = s->probe,
+      .settings = s->settings
+  };
+  msg_broadcast(MSG_PROBE_SETTINGS, &msg);
 
   gui_pop_screen();
 }
@@ -96,7 +107,7 @@ up_button_clicked(click_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   probe_screen_t* s = widget_get_instance_data(screen);
-  set_setpoint(s, s->setpoint + 1);
+  set_setpoint(s, s->settings.setpoint + 1);
 }
 
 static void
@@ -104,15 +115,13 @@ down_button_clicked(click_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   probe_screen_t* s = widget_get_instance_data(screen);
-  set_setpoint(s, s->setpoint - 1);
+  set_setpoint(s, s->settings.setpoint - 1);
 }
 
 static void
 set_setpoint(probe_screen_t* s, int setpoint)
 {
-  if (s->setpoint != setpoint) {
-    s->setpoint = setpoint;
-    sprintf(s->temp_str, "%0.1f", setpoint / 10.0f);
-    widget_invalidate(s->temp_label);
-  }
+  s->settings.setpoint = setpoint;
+  sprintf(s->temp_str, "%0.1f", setpoint / 10.0f);
+  widget_invalidate(s->temp_label);
 }
