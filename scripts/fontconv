@@ -24,6 +24,7 @@ typedef struct {
 
 typedef struct {
   uint8_t line_height;
+  uint8_t base;
   const Glyph_t* glyphs[256];
 } Font_t;
 """
@@ -62,6 +63,7 @@ const Glyph_t glyph_%(font_name)s_%(id)s = {
 font_def_prologue = """
 const Font_t _font_%(font_name)s = {
   .line_height = %(line_height)d,
+  .base = %(base)d,
   .glyphs = {
 """
 
@@ -89,6 +91,7 @@ class FontConverter:
         
         self.min_yoffset = 100000
         self.line_height = 0
+        self.base = 0
         
     def parse_line(self, line):
         attrs = {}
@@ -143,6 +146,7 @@ class FontConverter:
             cmd, attrs = self.parse_line(line)
             if cmd == 'common':
                 self.line_height = int(attrs['lineHeight'])
+                self.base = int(attrs['base'])
             elif cmd == 'page':
                 if not os.path.exists(attrs['file']):
                     attrs['file'] = os.path.join(os.path.dirname(self.config_file_rewrite), attrs['file'])
@@ -173,8 +177,9 @@ class FontConverter:
             self.process_char(char)
             
         self.out_c.write(font_def_prologue % 
-                         {'font_name': self.font_name,
-                          'line_height': self.line_height - self.min_yoffset})
+                         {'font_name':   self.font_name,
+                          'line_height': self.line_height - self.min_yoffset + 1,
+                          'base':        self.base - self.min_yoffset + 1})
         for char in self.chars.values():
             self.out_c.write(font_def_glyph % char)
         self.out_c.write(font_def_epilogue % {'font_name': self.font_name})

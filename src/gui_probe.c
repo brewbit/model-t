@@ -48,7 +48,7 @@ probe_settings_screen_create()
   rect.x = 85;
   rect.y = 26;
   rect.width = 220;
-  label_create(s->widget, rect, "Probe 1 Setup", font_opensans_22, WHITE);
+  label_create(s->widget, rect, "Probe 1 Setup", font_opensans_22, WHITE, 1);
 
   rect.x = 10;
   rect.y = 95;
@@ -63,13 +63,13 @@ probe_settings_screen_create()
   rect.y = 130;
   rect.width = 160;
   rect.height = 100;
-  s->temp_label = label_create(s->widget, rect, s->temp_str, font_opensans_62, WHITE);
+  s->temp_label = label_create(s->widget, rect, s->temp_str, font_opensans_62, WHITE, 1);
   widget_set_background(s->temp_label, BLACK, FALSE);
 
   rect.x = 275;
   rect.y = 130;
   rect.width = 20;
-  s->temp_unit_label = label_create(s->widget, rect, "F", font_opensans_22, LIGHT_GRAY);
+  s->temp_unit_label = label_create(s->widget, rect, "F", font_opensans_22, LIGHT_GRAY, 1);
 
   set_setpoint(s, 732);
 

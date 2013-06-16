@@ -21,15 +21,15 @@
 #define TILE_Y(pos) TILE_POS(pos)
 
 typedef struct {
-  float cur_temp;
   systime_t temp_timestamp;
   char temp_unit;
+  char temp_str1[8];
+  char temp_str2[8];
 
   widget_t* screen;
   widget_t* stage_button;
   widget_t* probe1_temp_label;
   widget_t* probe2_temp_label;
-  widget_t* single_temp_label;
   widget_t* probe1_button;
   widget_t* probe2_button;
   widget_t* output1_button;
@@ -57,7 +57,6 @@ widget_t*
 home_screen_create()
 {
   home_screen_t* s = calloc(1, sizeof(home_screen_t));
-  s->cur_temp = 73.2;
   s->temp_timestamp = chTimeNow();
   s->temp_unit = 'F';
 
@@ -96,21 +95,19 @@ home_screen_create()
   // TODO replace these and the one on the probe screen with standard temperature label widgets that handle placement
   rect.x = 25;
   rect.y = 13;
-  rect.width = 200;
-  s->probe1_temp_label = label_create(s->stage_button, rect, "54.2", font_opensans_62, WHITE);
+  rect.width = 150;
+  s->probe1_temp_label = label_create(s->stage_button, rect, s->temp_str1, font_opensans_62, WHITE, 1);
+  widget_set_background(s->probe1_temp_label, GREEN, FALSE);
 
   rect.y = 83;
-  s->probe2_temp_label = label_create(s->stage_button, rect, "71.8", font_opensans_62, WHITE);
+  s->probe2_temp_label = label_create(s->stage_button, rect, s->temp_str2, font_opensans_62, WHITE, 1);
+  widget_set_background(s->probe2_temp_label, GREEN, FALSE);
 
   rect.x = 175;
   rect.y = 13;
-  label_create(s->stage_button, rect, "F", font_opensans_22, DARK_GRAY);
+  label_create(s->stage_button, rect, "F", font_opensans_22, DARK_GRAY, 1);
   rect.y = 83;
-  label_create(s->stage_button, rect, "F", font_opensans_22, DARK_GRAY);
-
-  rect.y = 50;
-  s->single_temp_label = label_create(s->stage_button, rect, "--.-", font_opensans_62, WHITE);
-  widget_hide(s->single_temp_label);
+  label_create(s->stage_button, rect, "F", font_opensans_22, DARK_GRAY, 1);
 
   gui_msg_subscribe(MSG_NEW_TEMP, s->screen);
 
@@ -130,7 +127,14 @@ home_screen_destroy(widget_t* w)
 static void
 home_screen_msg(msg_event_t* event)
 {
-
+  home_screen_t* s = widget_get_instance_data(event->widget);
+  if (event->msg_id == MSG_NEW_TEMP) {
+    float temp = *((float*)event->msg_data);
+    sprintf(s->temp_str1, "%0.1f", temp);
+    sprintf(s->temp_str2, "%0.1f", temp);
+    widget_invalidate(s->probe1_temp_label);
+    widget_invalidate(s->probe2_temp_label);
+  }
 }
 
 static void

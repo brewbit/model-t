@@ -82,6 +82,13 @@ gfx_ctx_pop()
 }
 
 void
+gfx_clear_translation()
+{
+  ctx->translation.x = 0;
+  ctx->translation.y = 0;
+}
+
+void
 gfx_push_translation(uint16_t x, uint16_t y)
 {
   ctx->translation.x += x;

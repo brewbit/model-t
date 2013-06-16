@@ -10,6 +10,7 @@ typedef struct {
   const char* text;
   const Font_t* font;
   color_t color;
+  uint8_t rows;
 } label_t;
 
 
@@ -23,15 +24,16 @@ static const widget_class_t label_widget_class = {
 };
 
 widget_t*
-label_create(widget_t* parent, rect_t rect, const char* text, const Font_t* font, color_t color)
+label_create(widget_t* parent, rect_t rect, const char* text, const Font_t* font, color_t color, uint8_t rows)
 {
   label_t* l = calloc(1, sizeof(label_t));
 
   l->text = text;
   l->font = font;
   l->color = color;
+  l->rows = rows;
 
-  rect.height = font->line_height;
+  rect.height = font->base + (font->line_height * (rows-1));
   return widget_create(parent, &label_widget_class, l, rect);
 }
 
