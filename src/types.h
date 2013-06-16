@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
+typedef uint32_t temperature_t; // temperature in 0.01 C per count
 typedef uint16_t color_t;
 
 

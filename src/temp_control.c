@@ -9,37 +9,57 @@
 
 typedef struct {
   temp_port_t* port;
-  float setpoint;
+  probe_settings_t settings;
 } temp_input_t;
 
 typedef struct {
-  temp_input_t input1;
-  temp_input_t input2;
-  Thread* thread;
-} temp_control_t;
+  uint32_t gpio;
+  output_settings_t settings;
+} relay_output_t;
 
 
 static msg_t temp_control_thread(void* arg);
 static void dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data);
+static void dispatch_output_settings(output_settings_msg_t* msg);
+static void dispatch_probe_settings(probe_settings_msg_t* msg);
+
+
+static temp_input_t inputs[NUM_PROBES];
+static relay_output_t outputs[NUM_OUTPUTS];
+static Thread* thread;
 
 
 void
 temp_control_init()
 {
-  temp_control_t* tc = calloc(1, sizeof(temp_control_t));
+  thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, temp_control_thread, NULL);
 
-  tc->thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, temp_control_thread, tc);
+//  inputs[0].port = temp_input_init(&SD1);
+  inputs[1].port = temp_input_init(&SD2);
 
-//  tc->input1.port = temp_input_init(&SD1);
-  tc->input2.port = temp_input_init(&SD2);
+  msg_subscribe(MSG_NEW_TEMP, thread, dispatch_temp_input_msg, NULL);
+  msg_subscribe(MSG_PROBE_TIMEOUT, thread, dispatch_temp_input_msg, NULL);
+  msg_subscribe(MSG_PROBE_SETTINGS, thread, dispatch_temp_input_msg, NULL);
+  msg_subscribe(MSG_OUTPUT_SETTINGS, thread, dispatch_temp_input_msg, NULL);
+}
 
-  msg_subscribe(MSG_NEW_TEMP, tc->thread, dispatch_temp_input_msg, tc);
-  msg_subscribe(MSG_PROBE_TIMEOUT, tc->thread, dispatch_temp_input_msg, tc);
+probe_settings_t
+temp_control_get_probe_settings(probe_id_t probe)
+{
+  return inputs[probe].settings;
+}
+
+output_settings_t
+temp_control_get_output_settings(output_id_t output)
+{
+  return outputs[output].settings;
 }
 
 static msg_t
 temp_control_thread(void* arg)
 {
+  (void)arg;
+
   while (1) {
     Thread* tp = chMsgWait();
     thread_msg_t* msg = (thread_msg_t*)chMsgGet(tp);
@@ -64,7 +84,33 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data)
   case MSG_PROBE_TIMEOUT:
     break;
 
+  case MSG_PROBE_SETTINGS:
+    dispatch_probe_settings(msg_data);
+    break;
+
+  case MSG_OUTPUT_SETTINGS:
+    dispatch_output_settings(msg_data);
+    break;
+
   default:
     break;
   }
+}
+
+static void
+dispatch_output_settings(output_settings_msg_t* msg)
+{
+  if (msg->output >= NUM_OUTPUTS)
+    return;
+
+  outputs[msg->output].settings = msg->settings;
+}
+
+static void
+dispatch_probe_settings(probe_settings_msg_t* msg)
+{
+  if (msg->probe >= NUM_PROBES)
+    return;
+
+  inputs[msg->probe].settings = msg->settings;
 }

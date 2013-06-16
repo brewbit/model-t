@@ -21,8 +21,8 @@ typedef struct {
   widget_t* trigger_header_label;
   widget_t* trigger_desc_label;
 
-  output_function_t function;
-  output_trigger_t trigger;
+  output_id_t output;
+  output_settings_t settings;
 } output_screen_t;
 
 
@@ -31,7 +31,7 @@ static void back_button_clicked(click_event_t* event);
 static void function_button_clicked(click_event_t* event);
 static void trigger_button_clicked(click_event_t* event);
 static void select_function(output_screen_t* s, output_function_t function);
-static void select_trigger(output_screen_t* s, output_trigger_t trigger);
+static void select_trigger(output_screen_t* s, probe_id_t trigger);
 
 
 widget_class_t output_settings_widget_class = {
@@ -40,7 +40,7 @@ widget_class_t output_settings_widget_class = {
 
 
 widget_t*
-output_settings_screen_create()
+output_settings_screen_create(output_id_t output)
 {
   output_screen_t* s = calloc(1, sizeof(output_screen_t));
   s->widget = widget_create(NULL, &output_settings_widget_class, s, display_rect);
@@ -57,7 +57,8 @@ output_settings_screen_create()
   rect.x = 85;
   rect.y = 26;
   rect.width = 220;
-  label_create(s->widget, rect, "Output 1 Setup", font_opensans_22, WHITE, 1);
+  char* title = (output == OUTPUT_1) ? "Output 1 Setup" : "Output 2 Setup";
+  label_create(s->widget, rect, title, font_opensans_22, WHITE, 1);
 
   rect.x = 10;
   rect.y = 95;
@@ -85,8 +86,10 @@ output_settings_screen_create()
   s->function_desc_label = label_create(s->function_button, rect, NULL, font_opensans_8, WHITE, 2);
   s->trigger_desc_label = label_create(s->trigger_button, rect, NULL, font_opensans_8, WHITE, 2);
 
-  select_function(s, OUTPUT_FUNC_HEATING);
-  select_trigger(s, OUTPUT_TRIG_PROBE1);
+  s->output = output;
+  s->settings = temp_control_get_output_settings(output);
+  select_function(s, s->settings.function);
+  select_trigger(s, s->settings.trigger);
 
   return s->widget;
 }
@@ -101,7 +104,14 @@ output_settings_screen_destroy(widget_t* w)
 static void
 back_button_clicked(click_event_t* event)
 {
-  (void)event;
+  widget_t* w = widget_get_parent(event->widget);
+  output_screen_t* s = widget_get_instance_data(w);
+
+  output_settings_msg_t msg = {
+      .output = s->output,
+      .settings = s->settings
+  };
+  msg_broadcast(MSG_OUTPUT_SETTINGS, &msg);
 
   gui_pop_screen();
 }
@@ -112,7 +122,7 @@ function_button_clicked(click_event_t* event)
   widget_t* screen = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(screen);
 
-  switch (s->function) {
+  switch (s->settings.function) {
   case OUTPUT_FUNC_HEATING:
     select_function(s, OUTPUT_FUNC_COOLING);
     break;
@@ -133,7 +143,7 @@ function_button_clicked(click_event_t* event)
 static void
 select_function(output_screen_t* s, output_function_t function)
 {
-  s->function = function;
+  s->settings.function = function;
 
   char* header;
   char* desc;
@@ -181,31 +191,31 @@ trigger_button_clicked(click_event_t* event)
   widget_t* screen = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(screen);
 
-  if (s->trigger == OUTPUT_TRIG_PROBE1) {
-    select_trigger(s, OUTPUT_TRIG_PROBE2);
+  if (s->settings.trigger == PROBE_1) {
+    select_trigger(s, PROBE_2);
   }
   else {
-    select_trigger(s, OUTPUT_TRIG_PROBE1);
+    select_trigger(s, PROBE_1);
   }
 }
 
 static void
-select_trigger(output_screen_t* s, output_trigger_t trigger)
+select_trigger(output_screen_t* s, probe_id_t trigger)
 {
-  s->trigger = trigger;
+  s->settings.trigger = trigger;
 
   char* header;
   char* desc;
   uint16_t color;
 
   switch (trigger) {
-  case OUTPUT_TRIG_PROBE1:
+  case PROBE_1:
     header = "Trigger: Probe 1";
     desc = "The temperature will be read from Probe 1.";
     color = AMBER;
     break;
 
-  case OUTPUT_TRIG_PROBE2:
+  case PROBE_2:
     header = "Trigger: Probe 2";
     desc = "The temperature will be read from Probe 2.";
     color = PURPLE;
