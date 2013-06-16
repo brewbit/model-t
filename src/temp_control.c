@@ -22,6 +22,7 @@ static msg_t temp_control_thread(void* arg);
 static void dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data);
 static void dispatch_output_settings(output_settings_msg_t* msg);
 static void dispatch_probe_settings(probe_settings_msg_t* msg);
+static void dispatch_new_temp(temp_msg_t* msg);
 
 
 static temp_input_t inputs[NUM_PROBES];
@@ -77,8 +78,7 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data)
 
   switch (id) {
   case MSG_NEW_TEMP:
-//    dispatch_new_temp(tc, msg->temp);
-    chprintf(stdout, "got temp %d\r\n", ((temp_msg_t*)msg_data)->temp);
+    dispatch_new_temp(msg_data);
     break;
 
   case MSG_PROBE_TIMEOUT:
@@ -95,6 +95,12 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data)
   default:
     break;
   }
+}
+
+static void
+dispatch_new_temp(temp_msg_t* msg)
+{
+  chprintf(stdout, "got temp %d\r\n", (int)msg->temp);
 }
 
 static void

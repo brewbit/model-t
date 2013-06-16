@@ -111,7 +111,6 @@ CSRC = $(PORTSRC) \
        src/gui/button.c \
        src/gui/icon.c \
        src/gui/label.c \
-       src/gui/screen.c \
        src/gui/widget.c \
        src/util/json/cJSON.c
 

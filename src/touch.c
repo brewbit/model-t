@@ -160,15 +160,6 @@ touch_calibrate(
     const point_t* sampled_pts)
 {
   setCalibrationMatrix(ref_pts, sampled_pts, &calib_matrix);
-
-  chprintf(stdout, "touch calib params: %d %d %d %d %d %d %d\r\n",
-      calib_matrix.An,
-      calib_matrix.Bn,
-      calib_matrix.Cn,
-      calib_matrix.Dn,
-      calib_matrix.En,
-      calib_matrix.Fn,
-      calib_matrix.Divider);
 }
 
 static uint16_t

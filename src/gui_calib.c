@@ -27,12 +27,13 @@ typedef struct {
 
 static void calib_widget_touch(touch_event_t* event);
 static void calib_widget_paint(paint_event_t* event);
+static void calib_widget_msg(msg_event_t* event);
 static void calib_widget_destroy(widget_t* w);
 
 static void restart_calib(click_event_t* event);
 static void complete_calib(click_event_t* event);
 
-static void calib_raw_touch(bool touch_down, point_t raw, point_t calib, void* user_data);
+static void calib_raw_touch(calib_screen_t* s, bool touch_down, point_t raw);
 static void calib_touch_down(calib_screen_t* s, point_t p);
 static void calib_touch_up(calib_screen_t* s, point_t p);
 
@@ -46,6 +47,7 @@ static const point_t ref_pts[NUM_CALIB_POINTS] = {
 static const widget_class_t calib_widget_class = {
     .on_paint   = calib_widget_paint,
     .on_touch   = calib_widget_touch,
+    .on_msg     = calib_widget_msg,
     .on_destroy = calib_widget_destroy,
 };
 
@@ -68,7 +70,7 @@ calib_screen_create(calib_complete_handler_t completion_handler)
   calib_screen->complete_button = button_create(calib_screen->widget, rect, "Accept", img_thumbs_up, WHITE, complete_calib);
   widget_hide(calib_screen->complete_button);
 
-  touch_handler_register(calib_raw_touch, calib_screen);
+  gui_msg_subscribe(MSG_TOUCH_INPUT, calib_screen->widget);
 
   return calib_screen->widget;
 }
@@ -77,8 +79,19 @@ static void
 calib_widget_destroy(widget_t* w)
 {
   calib_screen_t* s = widget_get_instance_data(w);
-  touch_handler_unregister(calib_raw_touch);
+  gui_msg_unsubscribe(MSG_TOUCH_INPUT, s->widget);
   free(s);
+}
+
+static void
+calib_widget_msg(msg_event_t* event)
+{
+  calib_screen_t* s = widget_get_instance_data(event->widget);
+
+  if (event->msg_id == MSG_TOUCH_INPUT) {
+    touch_msg_t* msg = event->msg_data;
+    calib_raw_touch(s, msg->touch_down, msg->raw);
+  }
 }
 
 static void
@@ -124,9 +137,10 @@ calib_widget_paint(paint_event_t* event)
   }
   else {
     marker_pos = &s->last_touch_pos;
-    gfx_set_color(COBALT);
+    gfx_set_fg_color(COBALT);
   }
-  gfx_fill_circle(marker_pos->x, marker_pos->y, 25);
+  rect_t r = {marker_pos->x, marker_pos->y, 25, 25};
+  gfx_fill_rect(r);
 }
 
 static void
@@ -141,12 +155,8 @@ calib_widget_touch(touch_event_t* event)
 }
 
 static void
-calib_raw_touch(bool touch_down, point_t raw, point_t calib, void* user_data)
+calib_raw_touch(calib_screen_t* s, bool touch_down, point_t raw)
 {
-  calib_screen_t* s = user_data;
-
-  (void)calib;
-
   if (!s->calib_complete) {
     if (touch_down)
       calib_touch_down(s, raw);

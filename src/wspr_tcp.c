@@ -59,6 +59,7 @@ handle_tcp_connect_result(uint8_t* data, uint16_t data_len)
   datastream_t* ds = ds_new(data, data_len);
   int32_t result = ds_read_s32(ds);
   uint16_t handle = ds_read_u16(ds);
+  (void)handle;
   ds_free(ds);
 
   if (result == 0) {
@@ -72,5 +73,6 @@ handle_tcp_send_result(uint8_t* data, uint16_t data_len)
 {
   datastream_t* ds = ds_new(data, data_len);
   int32_t result = ds_read_s32(ds);
+  (void)result;
   ds_free(ds);
 }
