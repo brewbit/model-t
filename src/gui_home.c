@@ -97,11 +97,9 @@ home_screen_create()
   rect.y = 13;
   rect.width = 150;
   s->probe1_temp_label = label_create(s->stage_button, rect, s->temp_str1, font_opensans_62, WHITE, 1);
-  widget_set_background(s->probe1_temp_label, GREEN, FALSE);
 
   rect.y = 83;
   s->probe2_temp_label = label_create(s->stage_button, rect, s->temp_str2, font_opensans_62, WHITE, 1);
-  widget_set_background(s->probe2_temp_label, GREEN, FALSE);
 
   rect.x = 175;
   rect.y = 13;

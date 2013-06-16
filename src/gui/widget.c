@@ -220,16 +220,16 @@ widget_paint_predicate(widget_t* w, widget_traversal_event_t event)
   if (event == WIDGET_TRAVERSAL_BEFORE_CHILDREN) {
     gfx_ctx_push();
 
+    if (!w->bg_transparent)
+      gfx_set_bg_color(w->bg_color);
+
     if (w->invalid && widget_is_visible(w)) {
       paint_event_t event = {
           .id = EVT_PAINT,
           .widget = w,
       };
 
-      if (!w->bg_transparent) {
-        gfx_set_bg_color(w->bg_color);
-        gfx_clear_rect(w->rect);
-      }
+      gfx_clear_rect(w->rect);
 
       CALL_WC(w, on_paint)(&event);
 
