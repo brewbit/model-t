@@ -16,7 +16,8 @@ static msg_t gui_thread_func(void* arg);
 static void dispatch_touch(touch_msg_t* event);
 static void dispatch_push_screen(widget_t* screen);
 static void dispatch_pop_screen(void);
-static void gui_dispatch(thread_msg_id_t id, void* msg_data, void* user_data);
+static void gui_dispatch(msg_id_t id, void* msg_data, void* user_data);
+static void dispatch_msg(widget_t* w, msg_id_t id, void* msg_data);
 
 
 static WORKING_AREA(wa_gui_thread, 1024);
@@ -27,9 +28,9 @@ static systime_t last_paint_time;
 
 
 void
-gui_init(widget_t* root_screen)
+gui_init()
 {
-  gui_thread = chThdCreateStatic(wa_gui_thread, sizeof(wa_gui_thread), NORMALPRIO, gui_thread_func, root_screen);
+  gui_thread = chThdCreateStatic(wa_gui_thread, sizeof(wa_gui_thread), NORMALPRIO, gui_thread_func, NULL);
 
   msg_subscribe(MSG_TOUCH_INPUT, gui_thread, gui_dispatch, NULL);
   msg_subscribe(MSG_GUI_PUSH_SCREEN, gui_thread, gui_dispatch, NULL);
@@ -60,10 +61,28 @@ gui_release_touch_capture(void)
   touch_capture_widget = NULL;
 }
 
+void
+gui_msg_subscribe(msg_id_t id, widget_t* w)
+{
+  if (w == NULL)
+    return;
+
+  msg_subscribe(id, gui_thread, gui_dispatch, w);
+}
+
+void
+gui_msg_unsubscribe(msg_id_t id, widget_t* w)
+{
+  if (w == NULL)
+    return;
+
+  msg_unsubscribe(id, gui_thread, gui_dispatch, w);
+}
+
 static msg_t
 gui_thread_func(void* arg)
 {
-  gui_push_screen(arg);
+  (void)arg;
 
   while (1) {
     Thread* tp = chMsgWaitTimeout(MS2ST(50));
@@ -76,7 +95,8 @@ gui_thread_func(void* arg)
     }
 
     if ((chTimeNow() - last_paint_time) >= MS2ST(100)) {
-      widget_paint(screen_stack->widget);
+      if (screen_stack != NULL)
+        widget_paint(screen_stack->widget);
       last_paint_time = chTimeNow();
     }
   }
@@ -84,7 +104,7 @@ gui_thread_func(void* arg)
 }
 
 static void
-gui_dispatch(thread_msg_id_t id, void* msg_data, void* user_data)
+gui_dispatch(msg_id_t id, void* msg_data, void* user_data)
 {
   (void)user_data;
 
@@ -102,6 +122,7 @@ gui_dispatch(thread_msg_id_t id, void* msg_data, void* user_data)
     break;
 
   default:
+    dispatch_msg(user_data, id, msg_data);
     break;
   }
 }
@@ -109,10 +130,11 @@ gui_dispatch(thread_msg_id_t id, void* msg_data, void* user_data)
 static void
 dispatch_touch(touch_msg_t* touch)
 {
-  widget_t* dest_widget;
+  widget_t* dest_widget = NULL;
+
   if (touch_capture_widget != NULL)
     dest_widget = touch_capture_widget;
-  else {
+  else if (screen_stack != NULL) {
     dest_widget = widget_hit_test(screen_stack->widget, touch->calib);
   }
 
@@ -148,4 +170,16 @@ dispatch_pop_screen()
 
     widget_invalidate(screen_stack->widget);
   }
+}
+
+static void
+dispatch_msg(widget_t* w, msg_id_t id, void* msg_data)
+{
+  msg_event_t event = {
+      .id = EVT_MSG,
+      .widget = w,
+      .msg_id = id,
+      .msg_data = msg_data
+  };
+  widget_dispatch_event(w, (event_t*)&event);
 }

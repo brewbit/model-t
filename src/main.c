@@ -12,6 +12,7 @@
 #include "gui_calib.h"
 #include "gui_home.h"
 #include "chprintf.h"
+#include "gfx.h"
 
 
 int main(void)
@@ -27,9 +28,10 @@ int main(void)
   temp_control_init();
 //  wspr_init();
 //  bapi_init();
+  gui_init();
 
   widget_t* home_screen = home_screen_create();
-  gui_init(home_screen);
+  gui_push_screen(home_screen);
 
   while (TRUE) {
     palSetPad(GPIOB, GPIOB_LED1);

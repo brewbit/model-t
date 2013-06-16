@@ -20,7 +20,7 @@ typedef struct {
 
 
 static msg_t temp_control_thread(void* arg);
-static void dispatch_temp_input_msg(thread_msg_id_t id, void* msg_data, void* user_data);
+static void dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data);
 
 
 void
@@ -51,7 +51,7 @@ temp_control_thread(void* arg)
 }
 
 static void
-dispatch_temp_input_msg(thread_msg_id_t id, void* msg_data, void* user_data)
+dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data)
 {
   (void)user_data;
 

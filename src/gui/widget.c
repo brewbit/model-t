@@ -43,6 +43,9 @@ widget_destroy_predicate(widget_t* w, widget_traversal_event_t event);
 static void
 dispatch_touch(widget_t* w, touch_event_t* event);
 
+static void
+dispatch_msg(widget_t* w, msg_event_t* event);
+
 
 widget_t*
 widget_create(widget_t* parent, const widget_class_t* widget_class, void* instance_data, rect_t rect)
@@ -175,9 +178,19 @@ widget_dispatch_event(widget_t* w, event_t* event)
     dispatch_touch(w, (touch_event_t*)event);
     break;
 
+  case EVT_MSG:
+    dispatch_msg(w, (msg_event_t*)event);
+    break;
+
   default:
     break;
   }
+}
+
+static void
+dispatch_msg(widget_t* w, msg_event_t* event)
+{
+  CALL_WC(w, on_msg)(event);
 }
 
 static void

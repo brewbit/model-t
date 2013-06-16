@@ -40,6 +40,7 @@ typedef struct {
 
 
 static void home_screen_destroy(widget_t* w);
+static void home_screen_msg(msg_event_t* event);
 
 static void click_probe_button(click_event_t* event);
 static void click_output_button(click_event_t* event);
@@ -49,6 +50,7 @@ static void click_settings_button(click_event_t* event);
 
 static const widget_class_t home_widget_class = {
     .on_destroy = home_screen_destroy,
+    .on_msg     = home_screen_msg
 };
 
 widget_t*
@@ -110,6 +112,8 @@ home_screen_create()
   s->single_temp_label = label_create(s->stage_button, rect, "--.-", font_opensans_62, WHITE);
   widget_hide(s->single_temp_label);
 
+  gui_msg_subscribe(MSG_NEW_TEMP, s->screen);
+
   return s->screen;
 }
 
@@ -117,7 +121,16 @@ void
 home_screen_destroy(widget_t* w)
 {
   home_screen_t* s = widget_get_instance_data(w);
+
+  gui_msg_unsubscribe(MSG_NEW_TEMP, s->screen);
+
   free(s);
+}
+
+static void
+home_screen_msg(msg_event_t* event)
+{
+
 }
 
 static void

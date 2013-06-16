@@ -13,6 +13,7 @@ typedef enum {
 typedef struct {
   void (*on_paint)(paint_event_t* event);
   void (*on_touch)(touch_event_t* event);
+  void (*on_msg)(msg_event_t* event);
   void (*on_destroy)(widget_t* w);
 } widget_class_t;
 

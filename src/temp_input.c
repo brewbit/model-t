@@ -4,9 +4,17 @@
 #include "message.h"
 
 
+typedef struct temp_port_s {
+  onewire_bus_t bus;
+  Thread* thread;
+  systime_t last_temp_time;
+  bool connected;
+} temp_port_t;
+
+
 static msg_t temp_input_thread(void* arg);
 static bool temp_get_reading(temp_port_t* tp, float* temp);
-static void send_temp_msg(thread_msg_id_t id, float temp);
+static void send_temp_msg(msg_id_t id, float temp);
 
 
 temp_port_t*
@@ -47,7 +55,7 @@ temp_input_thread(void* arg)
 }
 
 static void
-send_temp_msg(thread_msg_id_t id, float temp)
+send_temp_msg(msg_id_t id, float temp)
 {
   msg_broadcast(id, &temp);
 }

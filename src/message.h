@@ -14,26 +14,26 @@ typedef enum {
   MSG_GUI_POP_SCREEN,
 
   NUM_THREAD_MSGS
-} thread_msg_id_t;
+} msg_id_t;
 
 
 typedef struct {
-  thread_msg_id_t id;
+  msg_id_t id;
   void* user_data;
   void* msg_data;
 } thread_msg_t;
 
 
-typedef void (*thread_msg_dispatch_t)(thread_msg_id_t id, void* msg_data, void* user_data);
+typedef void (*thread_msg_dispatch_t)(msg_id_t id, void* msg_data, void* user_data);
 
 
 void
-msg_subscribe(thread_msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatcher, void* user_data);
+msg_subscribe(msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatcher, void* user_data);
 
 void
-msg_unsubscribe(thread_msg_id_t id, Thread* thread);
+msg_unsubscribe(msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatch, void* user_data);
 
 void
-msg_broadcast(thread_msg_id_t id, void* msg_data);
+msg_broadcast(msg_id_t id, void* msg_data);
 
 #endif

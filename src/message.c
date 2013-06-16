@@ -1,5 +1,6 @@
 
 #include "message.h"
+#include "common.h"
 
 #include <stdlib.h>
 
@@ -16,7 +17,7 @@ static msg_listener_t* listeners[NUM_THREAD_MSGS];
 
 
 void
-msg_subscribe(thread_msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatch, void* user_data)
+msg_subscribe(msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatch, void* user_data)
 {
   if (id >= NUM_THREAD_MSGS)
     return;
@@ -33,7 +34,7 @@ msg_subscribe(thread_msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatch
 }
 
 void
-msg_unsubscribe(thread_msg_id_t id, Thread* thread)
+msg_unsubscribe(msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatch, void* user_data)
 {
   if (id >= NUM_THREAD_MSGS)
     return;
@@ -41,7 +42,9 @@ msg_unsubscribe(thread_msg_id_t id, Thread* thread)
   msg_listener_t* listener;
   msg_listener_t* prev_listener = NULL;
   for (listener = listeners[id]; listener != NULL; listener = listener->next) {
-    if (listener->thread == thread) {
+    if ((listener->thread == thread) &&
+        (listener->dispatch == dispatch) &&
+        (listener->user_data == user_data)) {
       if (prev_listener != NULL) {
         prev_listener->next = listener->next;
       }
@@ -55,7 +58,7 @@ msg_unsubscribe(thread_msg_id_t id, Thread* thread)
 }
 
 void
-msg_broadcast(thread_msg_id_t id, void* msg_data)
+msg_broadcast(msg_id_t id, void* msg_data)
 {
   if (id >= NUM_THREAD_MSGS)
     return;

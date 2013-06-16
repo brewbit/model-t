@@ -5,7 +5,7 @@
 #include "gui/widget.h"
 
 void
-gui_init(widget_t* root);
+gui_init(void);
 
 void
 gui_push_screen(widget_t* screen);
@@ -18,5 +18,11 @@ gui_acquire_touch_capture(widget_t* widget);
 
 void
 gui_release_touch_capture(void);
+
+void
+gui_msg_subscribe(msg_id_t id, widget_t* w);
+
+void
+gui_msg_unsubscribe(msg_id_t id, widget_t* w);
 
 #endif
