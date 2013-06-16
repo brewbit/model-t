@@ -3,6 +3,7 @@
 #include "temp_control.h"
 #include "temp_input.h"
 #include "common.h"
+#include "message.h"
 
 #include <stdlib.h>
 
@@ -19,7 +20,7 @@ typedef struct {
 
 
 static msg_t temp_control_thread(void* arg);
-static void dispatch_temp_input_msg(temp_control_t* tc, temp_input_msg_t* msg);
+static void dispatch_temp_input_msg(thread_msg_id_t id, void* msg_data, void* user_data);
 
 
 void
@@ -29,21 +30,20 @@ temp_control_init()
 
   tc->thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, temp_control_thread, tc);
 
-  tc->input1.port = temp_input_init(&SD1, tc->thread);
-  tc->input2.port = temp_input_init(&SD2, tc->thread);
+//  tc->input1.port = temp_input_init(&SD1);
+  tc->input2.port = temp_input_init(&SD2);
+
+  msg_subscribe(MSG_NEW_TEMP, tc->thread, dispatch_temp_input_msg, tc);
+  msg_subscribe(MSG_PROBE_TIMEOUT, tc->thread, dispatch_temp_input_msg, tc);
 }
 
 static msg_t
 temp_control_thread(void* arg)
 {
-  temp_control_t* tc = arg;
-
-  chprintf(stdout, "starting temp control thread\r\n");
-
   while (1) {
     Thread* tp = chMsgWait();
-    msg_t msg = chMsgGet(tp);
-    dispatch_temp_input_msg(tc, (temp_input_msg_t*)msg);
+    thread_msg_t* msg = (thread_msg_t*)chMsgGet(tp);
+    dispatch_temp_input_msg(msg->id, msg->msg_data, msg->user_data);
     chMsgRelease(tp, 0);
   }
 
@@ -51,12 +51,14 @@ temp_control_thread(void* arg)
 }
 
 static void
-dispatch_temp_input_msg(temp_control_t* tc, temp_input_msg_t* msg)
+dispatch_temp_input_msg(thread_msg_id_t id, void* msg_data, void* user_data)
 {
-  switch (msg->id) {
+  (void)user_data;
+
+  switch (id) {
   case MSG_NEW_TEMP:
 //    dispatch_new_temp(tc, msg->temp);
-    chprintf(stdout, "got temp %d\r\n", (int)msg->temp);
+    chprintf(stdout, "got temp %d\r\n", (int)*((float*)msg_data));
     break;
 
   case MSG_PROBE_TIMEOUT:

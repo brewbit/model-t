@@ -1,0 +1,39 @@
+
+#ifndef MESSAGE_H
+#define MESSAGE_H
+
+#include "ch.h"
+
+typedef enum {
+  MSG_TOUCH_INPUT,
+
+  MSG_NEW_TEMP,
+  MSG_PROBE_TIMEOUT,
+
+  MSG_GUI_PUSH_SCREEN,
+  MSG_GUI_POP_SCREEN,
+
+  NUM_THREAD_MSGS
+} thread_msg_id_t;
+
+
+typedef struct {
+  thread_msg_id_t id;
+  void* user_data;
+  void* msg_data;
+} thread_msg_t;
+
+
+typedef void (*thread_msg_dispatch_t)(thread_msg_id_t id, void* msg_data, void* user_data);
+
+
+void
+msg_subscribe(thread_msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatcher, void* user_data);
+
+void
+msg_unsubscribe(thread_msg_id_t id, Thread* thread);
+
+void
+msg_broadcast(thread_msg_id_t id, void* msg_data);
+
+#endif

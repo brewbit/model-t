@@ -97,6 +97,7 @@ CSRC = $(PORTSRC) \
        src/image.c \
        src/lcd.c \
        src/main.c \
+       src/message.c \
        src/onewire.c \
        src/temp_control.c \
        src/temp_input.c \

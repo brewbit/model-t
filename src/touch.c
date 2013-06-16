@@ -5,6 +5,7 @@
 #include "lcd.h"
 #include "touch_calib.h"
 #include "gui.h"
+#include "message.h"
 
 #include <stdbool.h>
 
@@ -30,13 +31,6 @@ typedef struct {
   uint16_t sample_neg_pad;
   const ADCConversionGroup* conv_grp;
 } axis_cfg_t;
-
-typedef struct touch_handler_s {
-  touch_handler_t on_touch;
-  void* user_data;
-
-  struct touch_handler_s* next;
-} touch_handler_entry_t;
 
 
 static uint16_t read_axis(const axis_cfg_t* axis_cfg);
@@ -130,7 +124,6 @@ static uint8_t touch_down;
 static systime_t last_touch_time;
 static point_t touch_coord_raw;
 static point_t touch_coord_calib;
-static touch_handler_entry_t* touch_handlers;
 
 static matrix_t calib_matrix = {
     .An      = 76320,
@@ -150,43 +143,15 @@ touch_init()
   chThdCreateStatic(wa_touch_thread, sizeof(wa_touch_thread), NORMALPRIO, touch_thread, NULL);
 }
 
-void
-touch_handler_register(touch_handler_t touch_handler, void* user_data)
-{
-  touch_handler_entry_t* entry = malloc(sizeof(touch_handler_entry_t));
-  entry->on_touch = touch_handler;
-  entry->user_data = user_data;
-
-  entry->next = touch_handlers;
-  touch_handlers = entry;
-}
-
-void
-touch_handler_unregister(touch_handler_t handler)
-{
-  touch_handler_entry_t* prev = NULL;
-  touch_handler_entry_t* h;
-
-  for (h = touch_handlers; h != NULL; h = h->next) {
-    if (h->on_touch == handler) {
-      if (prev == NULL)
-        touch_handlers = h->next;
-      else
-        prev->next = h->next;
-      break;
-    }
-    prev = h;
-  }
-}
-
 static void
 touch_dispatch()
 {
-  touch_handler_entry_t* h;
-  for (h = touch_handlers; h != NULL; h = h->next) {
-    if (h->on_touch != NULL)
-      h->on_touch(touch_down, touch_coord_raw, touch_coord_calib, h->user_data);
-  }
+  touch_msg_t msg = {
+      .raw = touch_coord_raw,
+      .calib = touch_coord_calib,
+      .touch_down = touch_down
+  };
+  msg_broadcast(MSG_TOUCH_INPUT, &msg);
 }
 
 void
