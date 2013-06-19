@@ -42,10 +42,10 @@ typedef struct {
 static void home_screen_destroy(widget_t* w);
 static void home_screen_msg(msg_event_t* event);
 
-static void click_probe_button(click_event_t* event);
-static void click_output_button(click_event_t* event);
-static void click_conn_button(click_event_t* event);
-static void click_settings_button(click_event_t* event);
+static void click_probe_button(button_event_t* event);
+static void click_output_button(button_event_t* event);
+static void click_conn_button(button_event_t* event);
+static void click_settings_button(button_event_t* event);
 
 
 static const widget_class_t home_widget_class = {
@@ -69,28 +69,28 @@ home_screen_create()
       .width  = TILE_SPAN(3),
       .height = TILE_SPAN(2),
   };
-  s->stage_button = button_create(s->screen, rect, NULL, NULL, GREEN, NULL);
+  s->stage_button = button_create(s->screen, rect, NULL, NULL, GREEN, NULL, NULL, NULL, NULL);
 
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
   rect.height = TILE_SPAN(1);
-  s->probe1_button = button_create(s->screen, rect, NULL, img_temp_hi, AMBER, click_probe_button);
+  s->probe1_button = button_create(s->screen, rect, NULL, img_temp_hi, AMBER, NULL, NULL, NULL, click_probe_button);
 
   rect.y = TILE_Y(1);
-  s->probe2_button = button_create(s->screen, rect, NULL, img_temp_low, PURPLE, click_probe_button);
+  s->probe2_button = button_create(s->screen, rect, NULL, img_temp_low, PURPLE, NULL, NULL, NULL, click_probe_button);
 
   rect.x = TILE_X(0);
   rect.y = TILE_Y(2);
-  s->output1_button = button_create(s->screen, rect, NULL, img_plug, ORANGE, click_output_button);
+  s->output1_button = button_create(s->screen, rect, NULL, img_plug, ORANGE, NULL, NULL, NULL, click_output_button);
 
   rect.x = TILE_X(1);
-  s->output2_button = button_create(s->screen, rect, NULL, img_plug, CYAN, click_output_button);
+  s->output2_button = button_create(s->screen, rect, NULL, img_plug, CYAN, NULL, NULL, NULL, click_output_button);
 
   rect.x = TILE_X(2);
-  s->conn_button = button_create(s->screen, rect, NULL, img_signal, STEEL, click_conn_button);
+  s->conn_button = button_create(s->screen, rect, NULL, img_signal, STEEL, NULL, NULL, NULL, click_conn_button);
 
   rect.x = TILE_X(3);
-  s->settings_button = button_create(s->screen, rect, NULL, img_settings, OLIVE, click_settings_button);
+  s->settings_button = button_create(s->screen, rect, NULL, img_settings, OLIVE, NULL, NULL, NULL, click_settings_button);
 
   // TODO replace these and the one on the probe screen with standard temperature label widgets that handle placement
   rect.x = 25;
@@ -136,7 +136,7 @@ home_screen_msg(msg_event_t* event)
 }
 
 static void
-click_probe_button(click_event_t* event)
+click_probe_button(button_event_t* event)
 {
   widget_t* parent = widget_get_parent(event->widget);
   home_screen_t* s = widget_get_instance_data(parent);
@@ -152,7 +152,7 @@ click_probe_button(click_event_t* event)
 }
 
 static void
-click_output_button(click_event_t* event)
+click_output_button(button_event_t* event)
 {
   widget_t* parent = widget_get_parent(event->widget);
   home_screen_t* s = widget_get_instance_data(parent);
@@ -168,13 +168,13 @@ click_output_button(click_event_t* event)
 }
 
 static void
-click_conn_button(click_event_t* event)
+click_conn_button(button_event_t* event)
 {
   (void)event;
 }
 
 static void
-click_settings_button(click_event_t* event)
+click_settings_button(button_event_t* event)
 {
   (void)event;
 }

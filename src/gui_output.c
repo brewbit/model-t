@@ -27,9 +27,9 @@ typedef struct {
 
 
 static void output_settings_screen_destroy(widget_t* w);
-static void back_button_clicked(click_event_t* event);
-static void function_button_clicked(click_event_t* event);
-static void trigger_button_clicked(click_event_t* event);
+static void back_button_clicked(button_event_t* event);
+static void function_button_clicked(button_event_t* event);
+static void trigger_button_clicked(button_event_t* event);
 static void select_function(output_screen_t* s, output_function_t function);
 static void select_trigger(output_screen_t* s, probe_id_t trigger);
 
@@ -52,7 +52,7 @@ output_settings_screen_create(output_id_t output)
       .width = 56,
       .height = 56,
   };
-  s->back_button = button_create(s->widget, rect, NULL, img_left, BLACK, back_button_clicked);
+  s->back_button = button_create(s->widget, rect, NULL, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -64,10 +64,10 @@ output_settings_screen_create(output_id_t output)
   rect.y = 95;
   rect.width = 300;
   rect.height = 66;
-  s->function_button = button_create(s->widget, rect, NULL, NULL, BLACK, function_button_clicked);
+  s->function_button = button_create(s->widget, rect, NULL, NULL, BLACK, NULL, NULL, NULL, function_button_clicked);
 
   rect.y = 165;
-  s->trigger_button = button_create(s->widget, rect, NULL, NULL, BLACK, trigger_button_clicked);
+  s->trigger_button = button_create(s->widget, rect, NULL, NULL, BLACK, NULL, NULL, NULL, trigger_button_clicked);
 
   rect.x = 5;
   rect.y = 5;
@@ -102,7 +102,7 @@ output_settings_screen_destroy(widget_t* w)
 }
 
 static void
-back_button_clicked(click_event_t* event)
+back_button_clicked(button_event_t* event)
 {
   widget_t* w = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(w);
@@ -117,7 +117,7 @@ back_button_clicked(click_event_t* event)
 }
 
 static void
-function_button_clicked(click_event_t* event)
+function_button_clicked(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(screen);
@@ -186,7 +186,7 @@ select_function(output_screen_t* s, output_function_t function)
 }
 
 static void
-trigger_button_clicked(click_event_t* event)
+trigger_button_clicked(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(screen);

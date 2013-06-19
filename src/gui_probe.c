@@ -5,7 +5,8 @@
 #include "gui/label.h"
 #include "gui.h"
 
-#include <stdio.h>
+#define SETPOINT_STEPS_PER_VELOCITY 30
+
 
 typedef struct {
   widget_t* widget;
@@ -17,16 +18,20 @@ typedef struct {
   char temp_str[10];
   probe_id_t probe;
   probe_settings_t settings;
+  uint8_t setpoint_delta;
+  uint8_t setpoint_steps;
 } probe_screen_t;
 
 
 static void probe_settings_screen_destroy(widget_t* w);
 
-static void back_button_clicked(click_event_t* event);
-static void up_button_clicked(click_event_t* event);
-static void down_button_clicked(click_event_t* event);
-
+static void back_button_clicked(button_event_t* event);
+static void up_button_clicked(button_event_t* event);
+static void down_button_clicked(button_event_t* event);
+static void up_or_down_released(button_event_t* event);
+static void adjust_setpoint_velocity(probe_screen_t* s);
 static void set_setpoint(probe_screen_t* s, int setpoint);
+
 
 widget_class_t probe_settings_widget_class = {
     .on_destroy = probe_settings_screen_destroy
@@ -44,7 +49,7 @@ probe_settings_screen_create(probe_id_t probe)
       .width = 56,
       .height = 56,
   };
-  s->back_button = button_create(s->widget, rect, NULL, img_left, BLACK, back_button_clicked);
+  s->back_button = button_create(s->widget, rect, NULL, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -56,10 +61,10 @@ probe_settings_screen_create(probe_id_t probe)
   rect.y = 95;
   rect.width = 56;
   rect.height = 56;
-  s->up_button = button_create(s->widget, rect, NULL, img_up, RED, up_button_clicked);
+  s->up_button = button_create(s->widget, rect, NULL, img_up, RED, up_button_clicked, up_button_clicked, up_or_down_released, NULL);
 
   rect.y = 165;
-  s->down_button = button_create(s->widget, rect, NULL, img_down, CYAN, down_button_clicked);
+  s->down_button = button_create(s->widget, rect, NULL, img_down, CYAN, down_button_clicked, down_button_clicked, up_or_down_released, NULL);
 
   rect.x = 100;
   rect.y = 130;
@@ -77,6 +82,9 @@ probe_settings_screen_create(probe_id_t probe)
   s->settings = temp_control_get_probe_settings(probe);
   set_setpoint(s, s->settings.setpoint);
 
+  s->setpoint_delta = 1;
+  s->setpoint_steps = SETPOINT_STEPS_PER_VELOCITY;
+
   return s->widget;
 }
 
@@ -88,7 +96,7 @@ probe_settings_screen_destroy(widget_t* w)
 }
 
 static void
-back_button_clicked(click_event_t* event)
+back_button_clicked(button_event_t* event)
 {
   widget_t* w = widget_get_parent(event->widget);
   probe_screen_t* s = widget_get_instance_data(w);
@@ -103,19 +111,49 @@ back_button_clicked(click_event_t* event)
 }
 
 static void
-up_button_clicked(click_event_t* event)
+up_button_clicked(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   probe_screen_t* s = widget_get_instance_data(screen);
-  set_setpoint(s, s->settings.setpoint + 1);
+  set_setpoint(s, s->settings.setpoint + s->setpoint_delta);
+  adjust_setpoint_velocity(s);
 }
 
 static void
-down_button_clicked(click_event_t* event)
+down_button_clicked(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   probe_screen_t* s = widget_get_instance_data(screen);
-  set_setpoint(s, s->settings.setpoint - 1);
+  set_setpoint(s, s->settings.setpoint - s->setpoint_delta);
+  adjust_setpoint_velocity(s);
+}
+
+static void
+up_or_down_released(button_event_t* event)
+{
+  widget_t* screen = widget_get_parent(event->widget);
+  probe_screen_t* s = widget_get_instance_data(screen);
+  s->setpoint_delta = 1;
+  s->setpoint_steps = SETPOINT_STEPS_PER_VELOCITY;
+}
+
+static void
+adjust_setpoint_velocity(probe_screen_t* s)
+{
+  if (s->setpoint_steps == 0) {
+    chprintf(stdout, "steps == 0\r\n");
+    return;
+  }
+
+  if (--s->setpoint_steps <= 0 && s->setpoint_delta < 50) {
+    if (s->setpoint_delta == 1)
+      s->setpoint_delta = 10;
+    else if (s->setpoint_delta == 10)
+      s->setpoint_delta = 50;
+
+    s->setpoint_steps = SETPOINT_STEPS_PER_VELOCITY;
+    s->settings.setpoint = ((s->settings.setpoint / s->setpoint_delta) + 1) * s->setpoint_delta;
+  }
 }
 
 static void

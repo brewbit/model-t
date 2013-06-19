@@ -19,7 +19,7 @@
 #define DISCARDED_SAMPLES 1
 
 #define TOUCH_THRESHOLD 950
-#define DEBOUNCE_TIME MS2ST(100)
+#define DEBOUNCE_TIME MS2ST(20)
 
 // ADC sample resolution
 #define Q 1024

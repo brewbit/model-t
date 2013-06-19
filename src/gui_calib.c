@@ -30,8 +30,8 @@ static void calib_widget_paint(paint_event_t* event);
 static void calib_widget_msg(msg_event_t* event);
 static void calib_widget_destroy(widget_t* w);
 
-static void restart_calib(click_event_t* event);
-static void complete_calib(click_event_t* event);
+static void restart_calib(button_event_t* event);
+static void complete_calib(button_event_t* event);
 
 static void calib_raw_touch(calib_screen_t* s, bool touch_down, point_t raw);
 static void calib_touch_down(calib_screen_t* s, point_t p);
@@ -64,10 +64,10 @@ calib_screen_create(calib_complete_handler_t completion_handler)
       .width = 160,
       .height = 43,
   };
-  calib_screen->recal_button = button_create(calib_screen->widget, rect, "Retry", img_thumbs_down, WHITE, restart_calib);
+  calib_screen->recal_button = button_create(calib_screen->widget, rect, "Retry", img_thumbs_down, WHITE, NULL, NULL, NULL, restart_calib);
   widget_hide(calib_screen->recal_button);
   rect.x = 160;
-  calib_screen->complete_button = button_create(calib_screen->widget, rect, "Accept", img_thumbs_up, WHITE, complete_calib);
+  calib_screen->complete_button = button_create(calib_screen->widget, rect, "Accept", img_thumbs_up, WHITE, NULL, NULL, NULL, complete_calib);
   widget_hide(calib_screen->complete_button);
 
   gui_msg_subscribe(MSG_TOUCH_INPUT, calib_screen->widget);
@@ -95,7 +95,7 @@ calib_widget_msg(msg_event_t* event)
 }
 
 static void
-restart_calib(click_event_t* event)
+restart_calib(button_event_t* event)
 {
   widget_t* screen_widget = widget_get_parent(event->widget);
   calib_screen_t* s = widget_get_instance_data(screen_widget);
@@ -109,7 +109,7 @@ restart_calib(click_event_t* event)
 }
 
 static void
-complete_calib(click_event_t* event)
+complete_calib(button_event_t* event)
 {
   widget_t* screen_widget = widget_get_parent(event->widget);
   calib_screen_t* s = widget_get_instance_data(screen_widget);
