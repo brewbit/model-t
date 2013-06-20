@@ -34,7 +34,6 @@ onewire_reset(onewire_bus_t* ob)
   sdStart(ob, &cfg_115k);
 
   if (recv < 0) {
-    chprintf(stdout, "t\r\n");
     return false;
   }
   if (recv == 0xF0) {
@@ -97,7 +96,6 @@ onewire_recv_bit(onewire_bus_t* ob, uint8_t* bit)
   sdPut(ob, 0xFF);
   msg_t ret = sdGetTimeout(ob, MS2ST(100));
   if (ret < 0) {
-    chprintf(stdout, "t\r\n");
     return false;
   }
 
@@ -119,7 +117,6 @@ onewire_send_bit(onewire_bus_t* ob, uint8_t b)
 
   msg_t ret = sdGetTimeout(ob, MS2ST(100));
   if (ret < 0) {
-    chprintf(stdout, "t\r\n");
     return false;
   }
 

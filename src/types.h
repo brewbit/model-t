@@ -5,8 +5,17 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <limits.h>
 
-typedef uint32_t temperature_t; // temperature in 0.1 C per count
+#define INVALID_TEMP INT_MIN
+
+typedef int32_t temperature_t; // temperature in 0.01 C per count
+
+typedef enum {
+  TEMP_C,
+  TEMP_F
+} temperature_unit_t;
+
 typedef uint16_t color_t;
 
 

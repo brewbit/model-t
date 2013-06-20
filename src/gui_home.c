@@ -6,6 +6,8 @@
 #include "gui/label.h"
 #include "gui_probe.h"
 #include "gui_output.h"
+#include "temp_widget.h"
+#include "chprintf.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -21,17 +23,19 @@
 #define TILE_Y(pos) TILE_POS(pos)
 
 typedef struct {
+  bool active;
+  widget_t* temp_widget;
+  widget_t* button;
+} probe_info_t;
+
+typedef struct {
   systime_t temp_timestamp;
   char temp_unit;
-  char temp_str1[8];
-  char temp_str2[8];
 
   widget_t* screen;
   widget_t* stage_button;
-  widget_t* probe1_temp_label;
-  widget_t* probe2_temp_label;
-  widget_t* probe1_button;
-  widget_t* probe2_button;
+  probe_info_t probes[NUM_PROBES];
+
   widget_t* output1_button;
   widget_t* output2_button;
   widget_t* conn_button;
@@ -46,6 +50,12 @@ static void click_probe_button(button_event_t* event);
 static void click_output_button(button_event_t* event);
 static void click_conn_button(button_event_t* event);
 static void click_settings_button(button_event_t* event);
+
+static void dispatch_output_settings(home_screen_t* s, output_settings_msg_t* msg);
+static void dispatch_new_temp(home_screen_t* s, temp_msg_t* msg);
+static void dispatch_probe_timeout(home_screen_t* s, probe_timeout_msg_t* msg);
+
+static void place_temp_widgets(home_screen_t* s);
 
 
 static const widget_class_t home_widget_class = {
@@ -74,10 +84,10 @@ home_screen_create()
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
   rect.height = TILE_SPAN(1);
-  s->probe1_button = button_create(s->screen, rect, NULL, img_temp_hi, AMBER, NULL, NULL, NULL, click_probe_button);
+  s->probes[PROBE_1].button = button_create(s->screen, rect, NULL, img_temp_hi, AMBER, NULL, NULL, NULL, click_probe_button);
 
   rect.y = TILE_Y(1);
-  s->probe2_button = button_create(s->screen, rect, NULL, img_temp_low, PURPLE, NULL, NULL, NULL, click_probe_button);
+  s->probes[PROBE_2].button = button_create(s->screen, rect, NULL, img_temp_low, PURPLE, NULL, NULL, NULL, click_probe_button);
 
   rect.x = TILE_X(0);
   rect.y = TILE_Y(2);
@@ -93,21 +103,19 @@ home_screen_create()
   s->settings_button = button_create(s->screen, rect, NULL, img_settings, OLIVE, NULL, NULL, NULL, click_settings_button);
 
   // TODO replace these and the one on the probe screen with standard temperature label widgets that handle placement
-  rect.x = 25;
-  rect.y = 13;
-  rect.width = 150;
-  s->probe1_temp_label = label_create(s->stage_button, rect, s->temp_str1, font_opensans_62, WHITE, 1);
+  rect.x = 0;
+  rect.width = TILE_SPAN(3);
+  s->probes[PROBE_1].temp_widget = temp_widget_create(s->stage_button, rect);
+  s->probes[PROBE_2].active = true;
 
-  rect.y = 83;
-  s->probe2_temp_label = label_create(s->stage_button, rect, s->temp_str2, font_opensans_62, WHITE, 1);
+  s->probes[PROBE_2].temp_widget = temp_widget_create(s->stage_button, rect);
+  s->probes[PROBE_2].active = false;
 
-  rect.x = 175;
-  rect.y = 13;
-  label_create(s->stage_button, rect, "F", font_opensans_22, DARK_GRAY, 1);
-  rect.y = 83;
-  label_create(s->stage_button, rect, "F", font_opensans_22, DARK_GRAY, 1);
+  place_temp_widgets(s);
 
   gui_msg_subscribe(MSG_NEW_TEMP, s->screen);
+  gui_msg_subscribe(MSG_PROBE_TIMEOUT, s->screen);
+  gui_msg_subscribe(MSG_OUTPUT_SETTINGS, s->screen);
 
   return s->screen;
 }
@@ -118,6 +126,8 @@ home_screen_destroy(widget_t* w)
   home_screen_t* s = widget_get_instance_data(w);
 
   gui_msg_unsubscribe(MSG_NEW_TEMP, s->screen);
+  gui_msg_unsubscribe(MSG_PROBE_TIMEOUT, s->screen);
+  gui_msg_unsubscribe(MSG_OUTPUT_SETTINGS, s->screen);
 
   free(s);
 }
@@ -126,13 +136,107 @@ static void
 home_screen_msg(msg_event_t* event)
 {
   home_screen_t* s = widget_get_instance_data(event->widget);
-  if (event->msg_id == MSG_NEW_TEMP) {
-    temp_msg_t* msg = event->msg_data;
-    sprintf(s->temp_str1, "%d", (int)msg->temp);
-    sprintf(s->temp_str2, "%d", (int)msg->temp);
-    widget_invalidate(s->probe1_temp_label);
-    widget_invalidate(s->probe2_temp_label);
+
+  switch (event->msg_id) {
+  case MSG_NEW_TEMP:
+    dispatch_new_temp(s, event->msg_data);
+    break;
+
+  case MSG_PROBE_TIMEOUT:
+    dispatch_probe_timeout(s, event->msg_data);
+    break;
+
+  case MSG_OUTPUT_SETTINGS:
+    dispatch_output_settings(s, event->msg_data);
+    break;
+
+  default:
+    break;
   }
+}
+
+static void
+dispatch_new_temp(home_screen_t* s, temp_msg_t* msg)
+{
+  widget_t* w = s->probes[msg->probe].temp_widget;
+
+  temp_widget_set_value(w, msg->temp);
+
+  if (!s->probes[msg->probe].active) {
+    s->probes[msg->probe].active = true;
+    place_temp_widgets(s);
+  }
+}
+
+static void
+dispatch_probe_timeout(home_screen_t* s, probe_timeout_msg_t* msg)
+{
+  widget_t* w = s->probes[msg->probe].temp_widget;
+
+  if (s->probes[msg->probe].active) {
+    s->probes[msg->probe].active = false;
+    temp_widget_set_value(w, INVALID_TEMP);
+    place_temp_widgets(s);
+  }
+}
+
+static void
+place_temp_widgets(home_screen_t* s)
+{
+  int i;
+  rect_t rect = widget_get_rect(s->stage_button);
+
+  probe_info_t* active_probes[NUM_PROBES];
+  int num_active_probes = 0;
+  for (i = 0; i < NUM_PROBES; ++i) {
+    if (s->probes[i].active) {
+      widget_show(s->probes[i].temp_widget);
+      active_probes[num_active_probes++] = &s->probes[i];
+    }
+    else
+      widget_hide(s->probes[i].temp_widget);
+  }
+
+  if (num_active_probes == 0) {
+    widget_show(s->probes[PROBE_1].temp_widget);
+    active_probes[num_active_probes++] = &s->probes[PROBE_1];
+  }
+
+  for (i = 0; i < num_active_probes; ++i) {
+    rect_t wrect = widget_get_rect(active_probes[i]->temp_widget);
+
+    int spacing = (rect.height - (num_active_probes * wrect.height)) / (num_active_probes + 1);
+    wrect.y = (spacing * (i + 1)) + (wrect.height * i);
+
+    widget_set_rect(active_probes[i]->temp_widget, wrect);
+  }
+}
+
+static void
+dispatch_output_settings(home_screen_t* s, output_settings_msg_t* msg)
+{
+  widget_t* btn;
+  if (msg->output == OUTPUT_1)
+    btn = s->output1_button;
+  else
+    btn = s->output2_button;
+
+  color_t color = 0;
+  switch (msg->settings.function) {
+  case OUTPUT_FUNC_COOLING:
+    color = CYAN;
+    break;
+
+  case OUTPUT_FUNC_HEATING:
+    color = ORANGE;
+    break;
+
+  case OUTPUT_FUNC_MANUAL:
+    color = MAGENTA;
+    break;
+  }
+
+  widget_set_background(btn, color, FALSE);
 }
 
 static void
@@ -142,7 +246,7 @@ click_probe_button(button_event_t* event)
   home_screen_t* s = widget_get_instance_data(parent);
 
   probe_id_t probe;
-  if (event->widget == s->probe1_button)
+  if (event->widget == s->probes[PROBE_1].button)
     probe = PROBE_1;
   else
     probe = PROBE_2;

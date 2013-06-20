@@ -51,6 +51,7 @@ msg_unsubscribe(msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatch, voi
       else {
         listeners[id] = listener->next;
       }
+      free(listener);
       break;
     }
     prev_listener = listener;

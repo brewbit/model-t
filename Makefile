@@ -101,6 +101,7 @@ CSRC = $(PORTSRC) \
        src/onewire.c \
        src/temp_control.c \
        src/temp_input.c \
+       src/temp_widget.c \
        src/touch.c \
        src/touch_calib.c \
        src/txn.c \

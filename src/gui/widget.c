@@ -94,6 +94,13 @@ widget_get_rect(widget_t* w)
   return w->rect;
 }
 
+void
+widget_set_rect(widget_t* w, rect_t rect)
+{
+  w->rect = rect;
+  widget_invalidate(w->parent);
+}
+
 void*
 widget_get_instance_data(widget_t* w)
 {

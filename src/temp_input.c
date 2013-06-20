@@ -16,6 +16,7 @@ typedef struct temp_port_s {
 static msg_t temp_input_thread(void* arg);
 static bool temp_get_reading(temp_port_t* tp, temperature_t* temp);
 static void send_temp_msg(temp_port_t* tp, temperature_t temp);
+static void send_timeout_msg(temp_port_t* tp);
 
 
 temp_port_t*
@@ -48,7 +49,7 @@ temp_input_thread(void* arg)
     else if ((chTimeNow() - tp->last_temp_time) > S2ST(5)) {
       if (tp->connected) {
         tp->connected = false;
-        msg_broadcast(MSG_PROBE_TIMEOUT, NULL);
+        send_timeout_msg(tp);
       }
     }
   }
@@ -64,6 +65,15 @@ send_temp_msg(temp_port_t* tp, temperature_t temp)
       .temp = temp
   };
   msg_broadcast(MSG_NEW_TEMP, &msg);
+}
+
+static void
+send_timeout_msg(temp_port_t* tp)
+{
+  probe_timeout_msg_t msg = {
+      .probe = tp->probe
+  };
+  msg_broadcast(MSG_PROBE_TIMEOUT, &msg);
 }
 
 static bool
@@ -117,7 +127,7 @@ temp_get_reading(temp_port_t* tp, temperature_t* temp)
     return false;
 
   uint16_t t = (t2 << 8) + t1;
-  *temp = (temperature_t)(t * 0.625);
+  *temp = (temperature_t)((t * 100) / 16);
 
   return true;
 }

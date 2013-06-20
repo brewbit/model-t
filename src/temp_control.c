@@ -100,7 +100,6 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data)
 static void
 dispatch_new_temp(temp_msg_t* msg)
 {
-  chprintf(stdout, "got temp %d\r\n", (int)msg->temp);
 }
 
 static void

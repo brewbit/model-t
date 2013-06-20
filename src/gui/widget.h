@@ -32,6 +32,9 @@ widget_get_parent(widget_t* w);
 rect_t
 widget_get_rect(widget_t* w);
 
+void
+widget_set_rect(widget_t* w, rect_t rect);
+
 void*
 widget_get_instance_data(widget_t* w);
 
