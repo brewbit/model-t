@@ -4,6 +4,9 @@
 #include "message.h"
 
 
+#define PROBE_TIMEOUT S2ST(2)
+
+
 typedef struct temp_port_s {
   probe_id_t probe;
   onewire_bus_t* bus;
@@ -46,7 +49,7 @@ temp_input_thread(void* arg)
       tp->last_temp_time = chTimeNow();
       send_temp_msg(tp, temp);
     }
-    else if ((chTimeNow() - tp->last_temp_time) > S2ST(5)) {
+    else if ((chTimeNow() - tp->last_temp_time) > PROBE_TIMEOUT) {
       if (tp->connected) {
         tp->connected = false;
         send_timeout_msg(tp);
