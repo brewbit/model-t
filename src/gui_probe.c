@@ -4,6 +4,7 @@
 #include "gui/button.h"
 #include "gui/label.h"
 #include "gui.h"
+#include "temp_widget.h"
 
 #define SETPOINT_STEPS_PER_VELOCITY 30
 
@@ -13,12 +14,10 @@ typedef struct {
   widget_t* back_button;
   widget_t* up_button;
   widget_t* down_button;
-  widget_t* temp_label;
-  widget_t* temp_unit_label;
-  char temp_str[10];
+  widget_t* temp_widget;
   probe_id_t probe;
   probe_settings_t settings;
-  uint8_t setpoint_delta;
+  uint16_t setpoint_delta;
   uint8_t setpoint_steps;
 } probe_screen_t;
 
@@ -30,7 +29,7 @@ static void up_button_clicked(button_event_t* event);
 static void down_button_clicked(button_event_t* event);
 static void up_or_down_released(button_event_t* event);
 static void adjust_setpoint_velocity(probe_screen_t* s);
-static void set_setpoint(probe_screen_t* s, int setpoint);
+static void set_setpoint(probe_screen_t* s, temperature_t setpoint);
 
 
 widget_class_t probe_settings_widget_class = {
@@ -66,23 +65,16 @@ probe_settings_screen_create(probe_id_t probe)
   rect.y = 165;
   s->down_button = button_create(s->widget, rect, NULL, img_down, CYAN, down_button_clicked, down_button_clicked, up_or_down_released, NULL);
 
-  rect.x = 100;
+  rect.x = 90;
   rect.y = 130;
-  rect.width = 160;
-  rect.height = 100;
-  s->temp_label = label_create(s->widget, rect, s->temp_str, font_opensans_62, WHITE, 1);
-  widget_set_background(s->temp_label, BLACK, FALSE);
-
-  rect.x = 275;
-  rect.y = 130;
-  rect.width = 20;
-  s->temp_unit_label = label_create(s->widget, rect, "F", font_opensans_22, LIGHT_GRAY, 1);
+  rect.width = 210;
+  s->temp_widget = temp_widget_create(s->widget, rect);
 
   s->probe = probe;
   s->settings = temp_control_get_probe_settings(probe);
   set_setpoint(s, s->settings.setpoint);
 
-  s->setpoint_delta = 1;
+  s->setpoint_delta = 10;
   s->setpoint_steps = SETPOINT_STEPS_PER_VELOCITY;
 
   return s->widget;
@@ -133,7 +125,7 @@ up_or_down_released(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   probe_screen_t* s = widget_get_instance_data(screen);
-  s->setpoint_delta = 1;
+  s->setpoint_delta = 10;
   s->setpoint_steps = SETPOINT_STEPS_PER_VELOCITY;
 }
 
@@ -145,11 +137,11 @@ adjust_setpoint_velocity(probe_screen_t* s)
     return;
   }
 
-  if (--s->setpoint_steps <= 0 && s->setpoint_delta < 50) {
-    if (s->setpoint_delta == 1)
-      s->setpoint_delta = 10;
-    else if (s->setpoint_delta == 10)
-      s->setpoint_delta = 50;
+  if (--s->setpoint_steps <= 0 && s->setpoint_delta < 250) {
+    if (s->setpoint_delta == 10)
+      s->setpoint_delta = 100;
+    else if (s->setpoint_delta == 100)
+      s->setpoint_delta = 250;
 
     s->setpoint_steps = SETPOINT_STEPS_PER_VELOCITY;
     s->settings.setpoint = ((s->settings.setpoint / s->setpoint_delta) + 1) * s->setpoint_delta;
@@ -157,9 +149,8 @@ adjust_setpoint_velocity(probe_screen_t* s)
 }
 
 static void
-set_setpoint(probe_screen_t* s, int setpoint)
+set_setpoint(probe_screen_t* s, temperature_t setpoint)
 {
   s->settings.setpoint = setpoint;
-  sprintf(s->temp_str, "%0.1f", setpoint / 10.0f);
-  widget_invalidate(s->temp_label);
+  temp_widget_set_value(s->temp_widget, setpoint);
 }
