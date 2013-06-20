@@ -58,6 +58,11 @@ static void dispatch_probe_timeout(home_screen_t* s, probe_timeout_msg_t* msg);
 static void place_temp_widgets(home_screen_t* s);
 
 
+static const color_t probe_btn_active_color[NUM_PROBES] = {
+    AMBER,
+    PURPLE
+};
+
 static const widget_class_t home_widget_class = {
     .on_destroy = home_screen_destroy,
     .on_msg     = home_screen_msg
@@ -84,10 +89,10 @@ home_screen_create()
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
   rect.height = TILE_SPAN(1);
-  s->probes[PROBE_1].button = button_create(s->screen, rect, NULL, img_temp_hi, AMBER, NULL, NULL, NULL, click_probe_button);
+  s->probes[PROBE_1].button = button_create(s->screen, rect, NULL, img_temp_hi, DARK_GRAY, NULL, NULL, NULL, click_probe_button);
 
   rect.y = TILE_Y(1);
-  s->probes[PROBE_2].button = button_create(s->screen, rect, NULL, img_temp_low, PURPLE, NULL, NULL, NULL, click_probe_button);
+  s->probes[PROBE_2].button = button_create(s->screen, rect, NULL, img_temp_low, DARK_GRAY, NULL, NULL, NULL, click_probe_button);
 
   rect.x = TILE_X(0);
   rect.y = TILE_Y(2);
@@ -164,6 +169,7 @@ dispatch_new_temp(home_screen_t* s, temp_msg_t* msg)
 
   if (!s->probes[msg->probe].active) {
     s->probes[msg->probe].active = true;
+    widget_set_background(s->probes[msg->probe].button, probe_btn_active_color[msg->probe], false);
     place_temp_widgets(s);
   }
 }
@@ -175,6 +181,7 @@ dispatch_probe_timeout(home_screen_t* s, probe_timeout_msg_t* msg)
 
   if (s->probes[msg->probe].active) {
     s->probes[msg->probe].active = false;
+    widget_set_background(s->probes[msg->probe].button, DARK_GRAY, false);
     temp_widget_set_value(w, INVALID_TEMP);
     place_temp_widgets(s);
   }
