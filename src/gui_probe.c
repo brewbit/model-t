@@ -7,6 +7,8 @@
 #include "temp_widget.h"
 
 #define SETPOINT_STEPS_PER_VELOCITY 30
+#define MAX_TEMP (110 * 100)
+#define MIN_TEMP (-50 * 100)
 
 
 typedef struct {
@@ -65,9 +67,9 @@ probe_settings_screen_create(probe_id_t probe)
   rect.y = 165;
   s->down_button = button_create(s->widget, rect, img_down, CYAN, down_button_clicked, down_button_clicked, up_or_down_released, NULL);
 
-  rect.x = 90;
+  rect.x = 66;
   rect.y = 130;
-  rect.width = 210;
+  rect.width = 254;
   s->temp_widget = temp_widget_create(s->widget, rect);
 
   s->probe = probe;
@@ -151,6 +153,11 @@ adjust_setpoint_velocity(probe_screen_t* s)
 static void
 set_setpoint(probe_screen_t* s, temperature_t setpoint)
 {
+  if (setpoint < MIN_TEMP)
+    setpoint = MIN_TEMP;
+  else if (setpoint > MAX_TEMP)
+    setpoint = MAX_TEMP;
+
   s->settings.setpoint = setpoint;
   temp_widget_set_value(s->temp_widget, setpoint);
 }

@@ -93,6 +93,8 @@ temp_widget_set_value(widget_t* w, temperature_t temp)
 {
   temp_widget_t* s = widget_get_instance_data(w);
 
-  s->temp = temp;
-  widget_invalidate(s->widget);
+  if (s->temp != temp) {
+    s->temp = temp;
+    widget_invalidate(s->widget);
+  }
 }
