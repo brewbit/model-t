@@ -23,7 +23,6 @@
 #define TILE_Y(pos) TILE_POS(pos)
 
 typedef struct {
-  bool active;
   widget_t* temp_widget;
   widget_t* button;
 } probe_info_t;
@@ -58,11 +57,6 @@ static void dispatch_probe_timeout(home_screen_t* s, probe_timeout_msg_t* msg);
 static void place_temp_widgets(home_screen_t* s);
 
 
-static const color_t probe_btn_active_color[NUM_PROBES] = {
-    AMBER,
-    PURPLE
-};
-
 static const widget_class_t home_widget_class = {
     .on_destroy = home_screen_destroy,
     .on_msg     = home_screen_msg
@@ -84,37 +78,36 @@ home_screen_create()
       .width  = TILE_SPAN(3),
       .height = TILE_SPAN(2),
   };
-  s->stage_button = button_create(s->screen, rect, NULL, NULL, GREEN, NULL, NULL, NULL, NULL);
+  s->stage_button = button_create(s->screen, rect, NULL, GREEN, NULL, NULL, NULL, NULL);
 
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
   rect.height = TILE_SPAN(1);
-  s->probes[PROBE_1].button = button_create(s->screen, rect, NULL, img_temp_hi, DARK_GRAY, NULL, NULL, NULL, click_probe_button);
+  s->probes[PROBE_1].button = button_create(s->screen, rect, img_temp_hi, AMBER, NULL, NULL, NULL, click_probe_button);
+  widget_disable(s->probes[PROBE_1].button);
 
   rect.y = TILE_Y(1);
-  s->probes[PROBE_2].button = button_create(s->screen, rect, NULL, img_temp_low, DARK_GRAY, NULL, NULL, NULL, click_probe_button);
+  s->probes[PROBE_2].button = button_create(s->screen, rect, img_temp_low, PURPLE, NULL, NULL, NULL, click_probe_button);
+  widget_disable(s->probes[PROBE_2].button);
 
   rect.x = TILE_X(0);
   rect.y = TILE_Y(2);
-  s->output1_button = button_create(s->screen, rect, NULL, img_plug, ORANGE, NULL, NULL, NULL, click_output_button);
+  s->output1_button = button_create(s->screen, rect, img_plug, ORANGE, NULL, NULL, NULL, click_output_button);
 
   rect.x = TILE_X(1);
-  s->output2_button = button_create(s->screen, rect, NULL, img_plug, CYAN, NULL, NULL, NULL, click_output_button);
+  s->output2_button = button_create(s->screen, rect, img_plug, CYAN, NULL, NULL, NULL, click_output_button);
 
   rect.x = TILE_X(2);
-  s->conn_button = button_create(s->screen, rect, NULL, img_signal, STEEL, NULL, NULL, NULL, click_conn_button);
+  s->conn_button = button_create(s->screen, rect, img_signal, STEEL, NULL, NULL, NULL, click_conn_button);
 
   rect.x = TILE_X(3);
-  s->settings_button = button_create(s->screen, rect, NULL, img_settings, OLIVE, NULL, NULL, NULL, click_settings_button);
+  s->settings_button = button_create(s->screen, rect, img_settings, OLIVE, NULL, NULL, NULL, click_settings_button);
 
-  // TODO replace these and the one on the probe screen with standard temperature label widgets that handle placement
   rect.x = 0;
   rect.width = TILE_SPAN(3);
   s->probes[PROBE_1].temp_widget = temp_widget_create(s->stage_button, rect);
-  s->probes[PROBE_2].active = true;
 
   s->probes[PROBE_2].temp_widget = temp_widget_create(s->stage_button, rect);
-  s->probes[PROBE_2].active = false;
 
   place_temp_widgets(s);
 
@@ -167,9 +160,8 @@ dispatch_new_temp(home_screen_t* s, temp_msg_t* msg)
 
   temp_widget_set_value(w, msg->temp);
 
-  if (!s->probes[msg->probe].active) {
-    s->probes[msg->probe].active = true;
-    widget_set_background(s->probes[msg->probe].button, probe_btn_active_color[msg->probe], false);
+  if (!widget_is_enabled(s->probes[msg->probe].button)) {
+    widget_enable(s->probes[msg->probe].button, true);
     place_temp_widgets(s);
   }
 }
@@ -179,9 +171,8 @@ dispatch_probe_timeout(home_screen_t* s, probe_timeout_msg_t* msg)
 {
   widget_t* w = s->probes[msg->probe].temp_widget;
 
-  if (s->probes[msg->probe].active) {
-    s->probes[msg->probe].active = false;
-    widget_set_background(s->probes[msg->probe].button, DARK_GRAY, false);
+  if (widget_is_enabled(s->probes[msg->probe].button)) {
+    widget_disable(s->probes[msg->probe].button);
     temp_widget_set_value(w, INVALID_TEMP);
     place_temp_widgets(s);
   }
@@ -196,7 +187,7 @@ place_temp_widgets(home_screen_t* s)
   probe_info_t* active_probes[NUM_PROBES];
   int num_active_probes = 0;
   for (i = 0; i < NUM_PROBES; ++i) {
-    if (s->probes[i].active) {
+    if (widget_is_enabled(s->probes[i].button)) {
       widget_show(s->probes[i].temp_widget);
       active_probes[num_active_probes++] = &s->probes[i];
     }

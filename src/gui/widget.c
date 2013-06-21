@@ -25,6 +25,7 @@ typedef struct widget_s {
   rect_t rect;
   bool invalid;
   bool visible;
+  bool enabled;
 
   bool bg_transparent;
   color_t bg_color;
@@ -58,6 +59,7 @@ widget_create(widget_t* parent, const widget_class_t* widget_class, void* instan
   w->rect = rect;
   w->invalid = true;
   w->visible = true;
+  w->enabled = true;
   w->bg_color = BLACK;
   w->bg_transparent = (parent != NULL);
 
@@ -288,6 +290,34 @@ bool
 widget_is_visible(widget_t* w)
 {
   return w->visible && (w->parent == NULL || widget_is_visible(w->parent));
+}
+
+void
+widget_enable(widget_t* w, bool enabled)
+{
+  if (w->enabled != enabled) {
+    w->enabled = enabled;
+    widget_invalidate(w);
+
+    enable_event_t event = {
+        .id = EVT_ENABLE,
+        .widget = w,
+        .enabled = enabled
+    };
+    CALL_WC(w, on_enable)(&event);
+  }
+}
+
+void
+widget_disable(widget_t* w)
+{
+  widget_enable(w, false);
+}
+
+bool
+widget_is_enabled(widget_t* w)
+{
+  return w->enabled;
 }
 
 void

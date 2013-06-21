@@ -52,7 +52,7 @@ output_settings_screen_create(output_id_t output)
       .width = 56,
       .height = 56,
   };
-  s->back_button = button_create(s->widget, rect, NULL, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
+  s->back_button = button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -64,10 +64,10 @@ output_settings_screen_create(output_id_t output)
   rect.y = 95;
   rect.width = 300;
   rect.height = 66;
-  s->function_button = button_create(s->widget, rect, NULL, NULL, BLACK, NULL, NULL, NULL, function_button_clicked);
+  s->function_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, function_button_clicked);
 
   rect.y = 165;
-  s->trigger_button = button_create(s->widget, rect, NULL, NULL, BLACK, NULL, NULL, NULL, trigger_button_clicked);
+  s->trigger_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, trigger_button_clicked);
 
   rect.x = 5;
   rect.y = 5;

@@ -18,7 +18,6 @@ widget_t*
 button_create(
     widget_t* parent,
     rect_t rect,
-    const char* text,
     const Image_t* icon,
     uint16_t color,
     button_event_handler_t down_handler,

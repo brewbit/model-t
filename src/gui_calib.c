@@ -64,10 +64,10 @@ calib_screen_create(calib_complete_handler_t completion_handler)
       .width = 160,
       .height = 43,
   };
-  calib_screen->recal_button = button_create(calib_screen->widget, rect, "Retry", img_thumbs_down, WHITE, NULL, NULL, NULL, restart_calib);
+  calib_screen->recal_button = button_create(calib_screen->widget, rect, img_thumbs_down, WHITE, NULL, NULL, NULL, restart_calib);
   widget_hide(calib_screen->recal_button);
   rect.x = 160;
-  calib_screen->complete_button = button_create(calib_screen->widget, rect, "Accept", img_thumbs_up, WHITE, NULL, NULL, NULL, complete_calib);
+  calib_screen->complete_button = button_create(calib_screen->widget, rect, img_thumbs_up, WHITE, NULL, NULL, NULL, complete_calib);
   widget_hide(calib_screen->complete_button);
 
   gui_msg_subscribe(MSG_TOUCH_INPUT, calib_screen->widget);

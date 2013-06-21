@@ -48,7 +48,7 @@ probe_settings_screen_create(probe_id_t probe)
       .width = 56,
       .height = 56,
   };
-  s->back_button = button_create(s->widget, rect, NULL, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
+  s->back_button = button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -60,10 +60,10 @@ probe_settings_screen_create(probe_id_t probe)
   rect.y = 95;
   rect.width = 56;
   rect.height = 56;
-  s->up_button = button_create(s->widget, rect, NULL, img_up, RED, up_button_clicked, up_button_clicked, up_or_down_released, NULL);
+  s->up_button = button_create(s->widget, rect, img_up, RED, up_button_clicked, up_button_clicked, up_or_down_released, NULL);
 
   rect.y = 165;
-  s->down_button = button_create(s->widget, rect, NULL, img_down, CYAN, down_button_clicked, down_button_clicked, up_or_down_released, NULL);
+  s->down_button = button_create(s->widget, rect, img_down, CYAN, down_button_clicked, down_button_clicked, up_or_down_released, NULL);
 
   rect.x = 90;
   rect.y = 130;

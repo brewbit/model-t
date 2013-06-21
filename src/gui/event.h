@@ -9,6 +9,7 @@ typedef struct widget_s widget_t;
 
 typedef enum {
   EVT_PAINT,
+  EVT_ENABLE,
   EVT_TOUCH_DOWN,
   EVT_TOUCH_UP,
   EVT_BUTTON_DOWN,
@@ -27,6 +28,12 @@ typedef struct {
   event_id_t id;
   widget_t* widget;
 } paint_event_t;
+
+typedef struct {
+  event_id_t id;
+  widget_t* widget;
+  bool enabled;
+} enable_event_t;
 
 typedef struct {
   event_id_t id;
