@@ -137,11 +137,11 @@ adjust_setpoint_velocity(probe_screen_t* s)
     return;
   }
 
-  if (--s->setpoint_steps <= 0 && s->setpoint_delta < 250) {
+  if (--s->setpoint_steps <= 0 && s->setpoint_delta < 100) {
     if (s->setpoint_delta == 10)
+      s->setpoint_delta = 50;
+    else if (s->setpoint_delta == 50)
       s->setpoint_delta = 100;
-    else if (s->setpoint_delta == 100)
-      s->setpoint_delta = 250;
 
     s->setpoint_steps = SETPOINT_STEPS_PER_VELOCITY;
     s->settings.setpoint = ((s->settings.setpoint / s->setpoint_delta) + 1) * s->setpoint_delta;
