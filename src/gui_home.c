@@ -6,6 +6,7 @@
 #include "gui/label.h"
 #include "gui_probe.h"
 #include "gui_output.h"
+#include "gui_settings.h"
 #include "temp_widget.h"
 #include "chprintf.h"
 
@@ -279,4 +280,7 @@ static void
 click_settings_button(button_event_t* event)
 {
   (void)event;
+
+  widget_t* settings_screen = settings_screen_create();
+  gui_push_screen(settings_screen);
 }
