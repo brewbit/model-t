@@ -5,6 +5,7 @@
 #include "message.h"
 #include "temp_input.h"
 #include "gui.h"
+#include "settings.h"
 
 #include <stdio.h>
 
@@ -21,11 +22,13 @@ typedef struct {
 
 static void temp_widget_destroy(widget_t* w);
 static void temp_widget_paint(paint_event_t* event);
+static void temp_widget_msg(msg_event_t* event);
 
 
 static const widget_class_t temp_widget_class = {
     .on_destroy = temp_widget_destroy,
-    .on_paint   = temp_widget_paint
+    .on_paint   = temp_widget_paint,
+    .on_msg     = temp_widget_msg,
 };
 
 widget_t*
@@ -37,7 +40,9 @@ temp_widget_create(widget_t* parent, rect_t rect)
   s->widget = widget_create(parent, &temp_widget_class, s, rect);
 
   s->temp = INVALID_TEMP;
-  s->unit = TEMP_F;
+  s->unit = settings_get()->unit;
+
+  gui_msg_subscribe(MSG_SETTINGS, s->widget);
 
   return s->widget;
 }
@@ -46,6 +51,8 @@ static void
 temp_widget_destroy(widget_t* w)
 {
   temp_widget_t* s = widget_get_instance_data(w);
+
+  gui_msg_unsubscribe(MSG_SETTINGS, s->widget);
 
   free(s);
 }
@@ -86,6 +93,21 @@ temp_widget_paint(paint_event_t* event)
   gfx_set_fg_color(DARK_GRAY);
   gfx_set_font(font_opensans_22);
   gfx_draw_str(unit_str, -1, temp_x + temp_ext.width + SPACE, rect.y);
+}
+
+
+static void
+temp_widget_msg(msg_event_t* event)
+{
+  temp_widget_t* s = widget_get_instance_data(event->widget);
+
+  if (event->msg_id == MSG_SETTINGS) {
+    device_settings_t* settings = event->msg_data;
+    if (s->unit != settings->unit) {
+      s->unit = settings->unit;
+      widget_invalidate(event->widget);
+    }
+  }
 }
 
 void

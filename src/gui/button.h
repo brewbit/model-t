@@ -25,4 +25,7 @@ button_create(
     button_event_handler_t up_handler,
     button_event_handler_t click_handler);
 
+void
+button_set_icon(widget_t* w, const Image_t* icon);
+
 #endif

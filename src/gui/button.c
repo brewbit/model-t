@@ -58,6 +58,14 @@ button_create(widget_t* parent, rect_t rect, const Image_t* icon, uint16_t color
   return w;
 }
 
+void
+button_set_icon(widget_t* w, const Image_t* icon)
+{
+  button_t* b = widget_get_instance_data(w);
+  b->icon = icon;
+  widget_invalidate(w);
+}
+
 static void
 button_destroy(widget_t* w)
 {
