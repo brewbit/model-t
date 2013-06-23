@@ -48,16 +48,21 @@ SECTIONS
 {
     . = 0;
     _text = .;
-
-    startup : ALIGN(16) SUBALIGN(16)
+    
+    cfg : ALIGN(16) SUBALIGN(16)
     {
-        KEEP(*(vectors))
-    } > app
+        KEEP(*(app_cfg))
+    } > app_cfg
 
     app_startup : ALIGN(16) SUBALIGN(16)
     {
         KEEP(*(app_hdr))
     } > app_hdr
+
+    startup : ALIGN(16) SUBALIGN(16)
+    {
+        KEEP(*(vectors))
+    } > app
     
     constructors : ALIGN(4) SUBALIGN(4)
     {
