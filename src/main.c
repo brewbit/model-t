@@ -14,9 +14,21 @@
 #include "chprintf.h"
 #include "gfx.h"
 #include "settings.h"
+#include "app_hdr.h"
+
+int main(void);
+void ResetHandler(void);
 
 
-int main(void)
+__attribute__ ((section("app_hdr")))
+app_hdr_t _app_hdr = {
+    .magic = 0xDEADBEEF,
+    .entry = ResetHandler
+};
+
+
+int
+main()
 {
   halInit();
   chSysInit();
@@ -34,6 +46,10 @@ int main(void)
 
   widget_t* home_screen = home_screen_create();
   gui_push_screen(home_screen);
+
+
+  int* h = (int*)0x08008000;
+  chprintf(&SD3, "the value of app_hdr is 0x%x (0x%x)\r\n", *h, h);
 
   while (TRUE) {
     palSetPad(GPIOB, GPIOB_LED1);

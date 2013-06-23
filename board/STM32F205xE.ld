@@ -33,8 +33,11 @@ __process_stack_size__  = 0x0400;
 
 MEMORY
 {
-    flash : org = 0x08000000, len = 512k
-    ram : org = 0x20000000, len = 128k
+    bootloader : org = 0x08000000, len = 16k
+    app_cfg    : org = 0x08004000, len = 16k
+    app_hdr    : org = 0x08008000, len = 512
+    app        : org = 0x08008200, len = 0x77E00 /* 479.5k */
+    ram        : org = 0x20000000, len = 128k
 }
 
 __ram_start__           = ORIGIN(ram);
@@ -49,15 +52,20 @@ SECTIONS
     startup : ALIGN(16) SUBALIGN(16)
     {
         KEEP(*(vectors))
-    } > flash
+    } > app
 
+    app_startup : ALIGN(16) SUBALIGN(16)
+    {
+        KEEP(*(app_hdr))
+    } > app_hdr
+    
     constructors : ALIGN(4) SUBALIGN(4)
     {
         PROVIDE(__init_array_start = .);
         KEEP(*(SORT(.init_array.*)))
         KEEP(*(.init_array))
         PROVIDE(__init_array_end = .);
-    } > flash
+    } > app
 
     destructors : ALIGN(4) SUBALIGN(4)
     {
@@ -65,11 +73,12 @@ SECTIONS
         KEEP(*(.fini_array))
         KEEP(*(SORT(.fini_array.*)))
         PROVIDE(__fini_array_end = .);
-    } > flash
+    } > app
 
     .text : ALIGN(16) SUBALIGN(16)
     {
         *(.text.startup.*)
+        *(.text.app_startup.*)
         *(.text)
         *(.text.*)
         *(.rodata)
@@ -77,33 +86,33 @@ SECTIONS
         *(.glue_7t)
         *(.glue_7)
         *(.gcc*)
-    } > flash
+    } > app
 
     .ARM.extab :
     {
         *(.ARM.extab* .gnu.linkonce.armextab.*)
-    } > flash
+    } > app
 
     .ARM.exidx : {
         PROVIDE(__exidx_start = .);
         *(.ARM.exidx* .gnu.linkonce.armexidx.*)
         PROVIDE(__exidx_end = .);
-     } > flash
+     } > app
 
     .eh_frame_hdr :
     {
         *(.eh_frame_hdr)
-    } > flash
+    } > app
 
     .eh_frame : ONLY_IF_RO
     {
         *(.eh_frame)
-    } > flash
+    } > app
     
     .textalign : ONLY_IF_RO
     {
         . = ALIGN(8);
-    } > flash
+    } > app
 
     _etext = .;
     _textdata = _etext;
@@ -134,7 +143,7 @@ SECTIONS
         *(.ramtext)
         . = ALIGN(4);
         PROVIDE(_edata = .);
-    } > ram AT > flash
+    } > ram AT > app
 
     .bss :
     {
