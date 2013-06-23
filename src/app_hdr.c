@@ -6,9 +6,12 @@
 
 typedef struct {
   uint32_t magic;
-  void (*entry)(void);
 } app_hdr_t;
 
-extern app_hdr_t _app_hdr;
+
+__attribute__ ((section("app_hdr")))
+app_hdr_t _app_hdr = {
+    .magic = 0xDEADBEEF
+};
 
 #endif

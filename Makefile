@@ -84,6 +84,7 @@ CSRC = $(PORTSRC) \
        $(CHIBIOS)/os/various/chprintf.c \
        $(AUTOGEN_DIR)/image_resources.c \
        $(AUTOGEN_DIR)/font_resources.c \
+       src/app_hdr.c \
        src/bapi.c \
        src/crc.c \
        src/datastream.c \
