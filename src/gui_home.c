@@ -84,11 +84,11 @@ home_screen_create()
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
   rect.height = TILE_SPAN(1);
-  s->probes[PROBE_1].button = button_create(s->screen, rect, img_temp_hi, AMBER, NULL, NULL, NULL, click_probe_button);
+  s->probes[PROBE_1].button = button_create(s->screen, rect, img_temp_med, AMBER, NULL, NULL, NULL, click_probe_button);
   widget_disable(s->probes[PROBE_1].button);
 
   rect.y = TILE_Y(1);
-  s->probes[PROBE_2].button = button_create(s->screen, rect, img_temp_low, PURPLE, NULL, NULL, NULL, click_probe_button);
+  s->probes[PROBE_2].button = button_create(s->screen, rect, img_temp_med, PURPLE, NULL, NULL, NULL, click_probe_button);
   widget_disable(s->probes[PROBE_2].button);
 
   rect.x = TILE_X(0);

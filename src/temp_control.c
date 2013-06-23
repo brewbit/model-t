@@ -23,6 +23,7 @@ static void dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data
 static void dispatch_output_settings(output_settings_msg_t* msg);
 static void dispatch_probe_settings(probe_settings_msg_t* msg);
 static void dispatch_new_temp(temp_msg_t* msg);
+static void trigger_output(probe_id_t probe, output_function_t function);
 
 
 static temp_input_t inputs[NUM_PROBES];
@@ -35,8 +36,11 @@ temp_control_init()
 {
   thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, temp_control_thread, NULL);
 
-  inputs[0].port = temp_input_init(PROBE_1, &SD1);
-  inputs[1].port = temp_input_init(PROBE_2, &SD2);
+  inputs[0].port = temp_input_init(PROBE_1, &SD2);
+  inputs[1].port = temp_input_init(PROBE_2, &SD1);
+
+  outputs[OUTPUT_1].gpio = GPIOB_RELAY1;
+  outputs[OUTPUT_2].gpio = GPIOB_RELAY2;
 
   msg_subscribe(MSG_NEW_TEMP, thread, dispatch_temp_input_msg, NULL);
   msg_subscribe(MSG_PROBE_TIMEOUT, thread, dispatch_temp_input_msg, NULL);
@@ -100,6 +104,29 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data)
 static void
 dispatch_new_temp(temp_msg_t* msg)
 {
+  temperature_t setpoint = inputs[msg->probe].settings.setpoint;
+  if (msg->temp > setpoint) {
+    trigger_output(msg->probe, OUTPUT_FUNC_COOLING);
+  }
+  else if (msg->temp < setpoint) {
+    trigger_output(msg->probe, OUTPUT_FUNC_HEATING);
+  }
+}
+
+static void
+trigger_output(probe_id_t probe, output_function_t function)
+{
+  int i;
+  for (i = 0; i < NUM_OUTPUTS; ++i) {
+    if (outputs[i].settings.trigger == probe) {
+      if (outputs[i].settings.function == function) {
+        palSetPad(GPIOB, outputs[i].gpio);
+      }
+      else {
+        palClearPad(GPIOB, outputs[i].gpio);
+      }
+    }
+  }
 }
 
 static void
