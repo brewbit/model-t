@@ -5,6 +5,7 @@
 #include "gui/label.h"
 #include "gui.h"
 #include "app_cfg.h"
+#include "gui_update.h"
 
 
 typedef struct {
@@ -19,6 +20,7 @@ typedef struct {
 static void settings_screen_destroy(widget_t* w);
 static void back_button_clicked(button_event_t* event);
 static void unit_button_clicked(button_event_t* event);
+static void update_button_clicked(button_event_t* event);
 
 static void set_unit(settings_screen_t* s, temperature_unit_t unit);
 
@@ -53,7 +55,7 @@ settings_screen_create()
   s->unit_button = button_create(s->widget, rect, img_deg_f, ORANGE, NULL, NULL, NULL, unit_button_clicked);
 
   rect.x += 84;
-  button_create(s->widget, rect, NULL, CYAN, NULL, NULL, NULL, NULL);
+  button_create(s->widget, rect, img_update, CYAN, NULL, NULL, NULL, update_button_clicked);
 
   rect.x += 84;
   button_create(s->widget, rect, NULL, STEEL, NULL, NULL, NULL, NULL);
@@ -102,6 +104,15 @@ unit_button_clicked(button_event_t* event)
     set_unit(s, TEMP_F);
   else
     set_unit(s, TEMP_C);
+}
+
+static void
+update_button_clicked(button_event_t* event)
+{
+  (void)event;
+
+  widget_t* update_screen = update_screen_create();
+  gui_push_screen(update_screen);
 }
 
 static void

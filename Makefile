@@ -97,6 +97,7 @@ CSRC = $(PORTSRC) \
        src/gui_probe.c \
        src/gui_output.c \
        src/gui_settings.c \
+       src/gui_update.c \
        src/iflash.c \
        src/image.c \
        src/lcd.c \
