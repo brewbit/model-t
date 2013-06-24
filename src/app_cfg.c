@@ -9,6 +9,7 @@
 
 
 typedef struct {
+  bool is_valid;
   global_settings_t global_settings;
   probe_settings_t probe_settings[NUM_PROBES];
   output_settings_t output_settings[NUM_OUTPUTS];
@@ -30,7 +31,23 @@ static Mutex app_cfg_mtx;
 void
 app_cfg_init()
 {
-  app_cfg_local = app_cfg_stored;
+  if (app_cfg_stored.is_valid) {
+    app_cfg_local = app_cfg_stored;
+  }
+  else {
+    app_cfg_local.global_settings.unit = TEMP_F;
+
+    app_cfg_local.probe_settings[PROBE_1].setpoint = DEGF(72);
+    app_cfg_local.probe_settings[PROBE_2].setpoint = DEGF(72);
+
+    app_cfg_local.output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
+    app_cfg_local.output_settings[OUTPUT_1].trigger = PROBE_1;
+    app_cfg_local.output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
+    app_cfg_local.output_settings[OUTPUT_2].trigger = PROBE_1;
+
+    app_cfg_local.is_valid = true;
+  }
+
   chMtxInit(&app_cfg_mtx);
   chThdCreateFromHeap(NULL, 512, NORMALPRIO, app_cfg_thread, NULL);
 }

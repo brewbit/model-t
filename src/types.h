@@ -16,6 +16,9 @@ typedef enum {
   TEMP_F
 } temperature_unit_t;
 
+#define DEGF(f) (temperature_t)((((f) - 32) * 100 * 5) / 9)
+#define DEGC(c) (temperature_t)((c) * 100)
+
 typedef uint16_t color_t;
 
 
