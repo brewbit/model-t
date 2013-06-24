@@ -163,10 +163,21 @@ home_screen_msg(msg_event_t* event)
 static void
 dispatch_new_temp(home_screen_t* s, temp_msg_t* msg)
 {
-  widget_t* w = s->probes[msg->probe].temp_widget;
+  /* Update the probe button icons based on the current temp/setpoint */
+  widget_t* btn = s->probes[msg->probe].button;
+  const probe_settings_t* probe_settings = app_cfg_get_probe_settings(msg->probe);
+  if (msg->temp > probe_settings->setpoint)
+    button_set_icon(btn, img_temp_hi);
+  else if (msg->temp < probe_settings->setpoint)
+    button_set_icon(btn, img_temp_low);
+  else
+    button_set_icon(btn, img_temp_med);
 
+  /* Update the temperature display widget */
+  widget_t* w = s->probes[msg->probe].temp_widget;
   temp_widget_set_value(w, msg->temp);
 
+  /* Enable the probe button and adjust the placement of the temp display widgets */
   if (!widget_is_enabled(s->probes[msg->probe].button)) {
     widget_enable(s->probes[msg->probe].button, true);
     place_temp_widgets(s);
@@ -180,6 +191,7 @@ dispatch_probe_timeout(home_screen_t* s, probe_timeout_msg_t* msg)
 
   if (widget_is_enabled(s->probes[msg->probe].button)) {
     widget_disable(s->probes[msg->probe].button);
+    button_set_icon(s->probes[msg->probe].button, img_temp_med);
     temp_widget_set_value(w, INVALID_TEMP);
     place_temp_widgets(s);
   }

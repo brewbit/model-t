@@ -62,8 +62,10 @@ void
 button_set_icon(widget_t* w, const Image_t* icon)
 {
   button_t* b = widget_get_instance_data(w);
-  b->icon = icon;
-  widget_invalidate(w);
+  if (b->icon != icon) {
+    b->icon = icon;
+    widget_invalidate(w);
+  }
 }
 
 static void
