@@ -4,6 +4,7 @@
 #include "gfx.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 
 typedef struct {
@@ -41,8 +42,10 @@ void
 label_set_text(widget_t* w, char* text)
 {
   label_t* l = widget_get_instance_data(w);
-  l->text = text;
-  widget_invalidate(w);
+  if (strcmp(l->text, text) != 0) {
+    l->text = text;
+    widget_invalidate(w);
+  }
 }
 
 static void
