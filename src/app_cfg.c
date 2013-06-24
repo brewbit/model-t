@@ -48,7 +48,7 @@ app_cfg_thread(void* arg)
     }
     chMtxUnlock();
 
-    chThdSleepSeconds(5);
+    chThdSleepSeconds(2);
   }
 
   return 0;
