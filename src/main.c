@@ -13,7 +13,7 @@
 #include "gui_home.h"
 #include "chprintf.h"
 #include "gfx.h"
-#include "settings.h"
+#include "app_cfg.h"
 
 
 int
@@ -25,7 +25,7 @@ main(void)
   /* start stdout port */
   sdStart(&SD3, NULL);
 
-  settings_init();
+  app_cfg_init();
   gfx_init();
   touch_init();
   temp_control_init();

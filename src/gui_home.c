@@ -9,6 +9,7 @@
 #include "gui_settings.h"
 #include "temp_widget.h"
 #include "chprintf.h"
+#include "app_cfg.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -55,6 +56,7 @@ static void dispatch_output_settings(home_screen_t* s, output_settings_msg_t* ms
 static void dispatch_new_temp(home_screen_t* s, temp_msg_t* msg);
 static void dispatch_probe_timeout(home_screen_t* s, probe_timeout_msg_t* msg);
 
+static void set_output_settings(home_screen_t* s, output_id_t output, output_function_t function);
 static void place_temp_widgets(home_screen_t* s);
 
 
@@ -111,6 +113,10 @@ home_screen_create()
   s->probes[PROBE_2].temp_widget = temp_widget_create(s->stage_button, rect);
 
   place_temp_widgets(s);
+  set_output_settings(s, OUTPUT_1,
+      app_cfg_get_output_settings(OUTPUT_1)->function);
+  set_output_settings(s, OUTPUT_2,
+      app_cfg_get_output_settings(OUTPUT_2)->function);
 
   gui_msg_subscribe(MSG_NEW_TEMP, s->screen);
   gui_msg_subscribe(MSG_PROBE_TIMEOUT, s->screen);
@@ -214,14 +220,20 @@ place_temp_widgets(home_screen_t* s)
 static void
 dispatch_output_settings(home_screen_t* s, output_settings_msg_t* msg)
 {
+  set_output_settings(s, msg->output, msg->settings.function);
+}
+
+static void
+set_output_settings(home_screen_t* s, output_id_t output, output_function_t function)
+{
   widget_t* btn;
-  if (msg->output == OUTPUT_1)
+  if (output == OUTPUT_1)
     btn = s->output1_button;
   else
     btn = s->output2_button;
 
   color_t color = 0;
-  switch (msg->settings.function) {
+  switch (function) {
   case OUTPUT_FUNC_COOLING:
     color = CYAN;
     break;

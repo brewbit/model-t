@@ -5,6 +5,7 @@
 #include "gui/label.h"
 #include "gui.h"
 #include "temp_widget.h"
+#include "app_cfg.h"
 
 #define SETPOINT_STEPS_PER_VELOCITY 30
 #define MAX_TEMP (110 * 100)
@@ -95,11 +96,7 @@ back_button_clicked(button_event_t* event)
   widget_t* w = widget_get_parent(event->widget);
   probe_screen_t* s = widget_get_instance_data(w);
 
-  probe_settings_msg_t msg = {
-      .probe = s->probe,
-      .settings = s->settings
-  };
-  msg_broadcast(MSG_PROBE_SETTINGS, &msg);
+  app_cfg_set_probe_settings(s->probe, &s->settings);
 
   gui_pop_screen();
 }

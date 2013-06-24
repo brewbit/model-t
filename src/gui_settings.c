@@ -4,7 +4,7 @@
 #include "gui/button.h"
 #include "gui/label.h"
 #include "gui.h"
-#include "settings.h"
+#include "app_cfg.h"
 
 
 typedef struct {
@@ -12,7 +12,7 @@ typedef struct {
   widget_t* back_button;
   widget_t* unit_button;
 
-  device_settings_t settings;
+  global_settings_t settings;
 } settings_screen_t;
 
 
@@ -68,7 +68,7 @@ settings_screen_create()
   rect.x += 84;
   button_create(s->widget, rect, NULL, GREEN, NULL, NULL, NULL, NULL);
 
-  s->settings = *settings_get();
+  s->settings = *app_cfg_get_global_settings();
   set_unit(s, s->settings.unit);
 
   return s->widget;
@@ -87,7 +87,7 @@ back_button_clicked(button_event_t* event)
   widget_t* w = widget_get_parent(event->widget);
   settings_screen_t* s = widget_get_instance_data(w);
 
-  settings_set(&s->settings);
+  app_cfg_set_global_settings(&s->settings);
 
   gui_pop_screen();
 }

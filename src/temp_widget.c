@@ -5,7 +5,7 @@
 #include "message.h"
 #include "temp_input.h"
 #include "gui.h"
-#include "settings.h"
+#include "app_cfg.h"
 
 #include <stdio.h>
 
@@ -40,7 +40,7 @@ temp_widget_create(widget_t* parent, rect_t rect)
   s->widget = widget_create(parent, &temp_widget_class, s, rect);
 
   s->temp = INVALID_TEMP;
-  s->unit = settings_get()->unit;
+  s->unit = app_cfg_get_global_settings()->unit;
 
   gui_msg_subscribe(MSG_SETTINGS, s->widget);
 
@@ -102,7 +102,7 @@ temp_widget_msg(msg_event_t* event)
   temp_widget_t* s = widget_get_instance_data(event->widget);
 
   if (event->msg_id == MSG_SETTINGS) {
-    device_settings_t* settings = event->msg_data;
+    global_settings_t* settings = event->msg_data;
     if (s->unit != settings->unit) {
       s->unit = settings->unit;
       widget_invalidate(event->widget);

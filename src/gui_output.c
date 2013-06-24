@@ -6,6 +6,7 @@
 #include "gui/icon.h"
 #include "gui.h"
 #include "temp_control.h"
+#include "app_cfg.h"
 
 typedef struct {
   widget_t* widget;
@@ -107,11 +108,7 @@ back_button_clicked(button_event_t* event)
   widget_t* w = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(w);
 
-  output_settings_msg_t msg = {
-      .output = s->output,
-      .settings = s->settings
-  };
-  msg_broadcast(MSG_OUTPUT_SETTINGS, &msg);
+  app_cfg_set_output_settings(s->output, &s->settings);
 
   gui_pop_screen();
 }
