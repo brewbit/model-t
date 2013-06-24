@@ -42,10 +42,4 @@ typedef struct {
 void
 temp_control_init(void);
 
-probe_settings_t
-temp_control_get_probe_settings(probe_id_t probe);
-
-output_settings_t
-temp_control_get_output_settings(output_id_t output);
-
 #endif

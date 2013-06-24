@@ -74,7 +74,7 @@ probe_settings_screen_create(probe_id_t probe)
   s->temp_widget = temp_widget_create(s->widget, rect);
 
   s->probe = probe;
-  s->settings = temp_control_get_probe_settings(probe);
+  s->settings = *app_cfg_get_probe_settings(probe);
   set_setpoint(s, s->settings.setpoint);
 
   s->setpoint_delta = 10;
@@ -131,10 +131,8 @@ up_or_down_released(button_event_t* event)
 static void
 adjust_setpoint_velocity(probe_screen_t* s)
 {
-  if (s->setpoint_steps == 0) {
-    chprintf(stdout, "steps == 0\r\n");
+  if (s->setpoint_steps == 0)
     return;
-  }
 
   if (--s->setpoint_steps <= 0 && s->setpoint_delta < 100) {
     if (s->setpoint_delta == 10)

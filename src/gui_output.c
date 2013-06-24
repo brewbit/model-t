@@ -88,7 +88,7 @@ output_settings_screen_create(output_id_t output)
   s->trigger_desc_label = label_create(s->trigger_button, rect, NULL, font_opensans_8, WHITE, 2);
 
   s->output = output;
-  s->settings = temp_control_get_output_settings(output);
+  s->settings = *app_cfg_get_output_settings(output);
   select_function(s, s->settings.function);
   select_trigger(s, s->settings.trigger);
 

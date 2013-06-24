@@ -4,17 +4,17 @@
 #include "temp_input.h"
 #include "common.h"
 #include "message.h"
+#include "app_cfg.h"
 
 #include <stdlib.h>
 
 typedef struct {
   temp_port_t* port;
-  probe_settings_t settings;
+  temperature_t last_temp;
 } temp_input_t;
 
 typedef struct {
   uint32_t gpio;
-  output_settings_t settings;
 } relay_output_t;
 
 
@@ -23,7 +23,9 @@ static void dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data
 static void dispatch_output_settings(output_settings_msg_t* msg);
 static void dispatch_probe_settings(probe_settings_msg_t* msg);
 static void dispatch_new_temp(temp_msg_t* msg);
+static void dispatch_probe_timeout(probe_timeout_msg_t* msg);
 static void trigger_output(probe_id_t probe, output_function_t function);
+static void evaluate_setpoint(probe_id_t probe, temperature_t setpoint, temperature_t temp);
 
 
 static temp_input_t inputs[NUM_PROBES];
@@ -46,18 +48,6 @@ temp_control_init()
   msg_subscribe(MSG_PROBE_TIMEOUT, thread, dispatch_temp_input_msg, NULL);
   msg_subscribe(MSG_PROBE_SETTINGS, thread, dispatch_temp_input_msg, NULL);
   msg_subscribe(MSG_OUTPUT_SETTINGS, thread, dispatch_temp_input_msg, NULL);
-}
-
-probe_settings_t
-temp_control_get_probe_settings(probe_id_t probe)
-{
-  return inputs[probe].settings;
-}
-
-output_settings_t
-temp_control_get_output_settings(output_id_t output)
-{
-  return outputs[output].settings;
 }
 
 static msg_t
@@ -86,6 +76,7 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data)
     break;
 
   case MSG_PROBE_TIMEOUT:
+    dispatch_probe_timeout(msg_data);
     break;
 
   case MSG_PROBE_SETTINGS:
@@ -104,29 +95,24 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data)
 static void
 dispatch_new_temp(temp_msg_t* msg)
 {
-  temperature_t setpoint = inputs[msg->probe].settings.setpoint;
-  if (msg->temp > setpoint) {
-    trigger_output(msg->probe, OUTPUT_FUNC_COOLING);
-  }
-  else if (msg->temp < setpoint) {
-    trigger_output(msg->probe, OUTPUT_FUNC_HEATING);
-  }
+  const probe_settings_t* probe_settings = app_cfg_get_probe_settings(msg->probe);
+
+  evaluate_setpoint(
+      msg->probe,
+      probe_settings->setpoint,
+      msg->temp);
 }
 
 static void
-trigger_output(probe_id_t probe, output_function_t function)
+dispatch_probe_timeout(probe_timeout_msg_t* msg)
 {
-  int i;
-  for (i = 0; i < NUM_OUTPUTS; ++i) {
-    if (outputs[i].settings.trigger == probe) {
-      if (outputs[i].settings.function == function) {
-        palSetPad(GPIOB, outputs[i].gpio);
-      }
-      else {
-        palClearPad(GPIOB, outputs[i].gpio);
-      }
-    }
-  }
+  const probe_settings_t* probe_settings = app_cfg_get_probe_settings(msg->probe);
+
+  /* Set the last temp to the setpoint to disable any active outputs */
+  evaluate_setpoint(
+      msg->probe,
+      probe_settings->setpoint,
+      probe_settings->setpoint);
 }
 
 static void
@@ -135,7 +121,18 @@ dispatch_output_settings(output_settings_msg_t* msg)
   if (msg->output >= NUM_OUTPUTS)
     return;
 
-  outputs[msg->output].settings = msg->settings;
+  /* Re-evaluate the last temp from both probes with the new output settings */
+  const probe_settings_t* probe_settings = app_cfg_get_probe_settings(PROBE_1);
+  evaluate_setpoint(
+      PROBE_1,
+      probe_settings->setpoint,
+      inputs[PROBE_1].last_temp);
+
+  probe_settings = app_cfg_get_probe_settings(PROBE_2);
+  evaluate_setpoint(
+      PROBE_2,
+      probe_settings->setpoint,
+      inputs[PROBE_2].last_temp);
 }
 
 static void
@@ -144,5 +141,41 @@ dispatch_probe_settings(probe_settings_msg_t* msg)
   if (msg->probe >= NUM_PROBES)
     return;
 
-  inputs[msg->probe].settings = msg->settings;
+  /* Re-evaluate the last temp reading with the new probe settings */
+  evaluate_setpoint(
+      msg->probe,
+      msg->settings.setpoint,
+      inputs[msg->probe].last_temp);
+}
+
+static void
+evaluate_setpoint(probe_id_t probe, temperature_t setpoint, temperature_t temp)
+{
+  inputs[probe].last_temp = temp;
+
+  if (temp > setpoint) {
+    trigger_output(probe, OUTPUT_FUNC_COOLING);
+  }
+  else if (temp < setpoint) {
+    trigger_output(probe, OUTPUT_FUNC_HEATING);
+  }
+}
+
+static void
+trigger_output(probe_id_t probe, output_function_t function)
+{
+  int i;
+
+  for (i = 0; i < NUM_OUTPUTS; ++i) {
+    const output_settings_t* output_settings = app_cfg_get_output_settings(i);
+
+    if (output_settings->trigger == probe) {
+      if (output_settings->function == function) {
+        palSetPad(GPIOB, outputs[i].gpio);
+      }
+      else {
+        palClearPad(GPIOB, outputs[i].gpio);
+      }
+    }
+  }
 }
