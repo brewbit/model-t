@@ -22,3 +22,6 @@ prog_download = @openocd \
 download: all
 	$(call prog_download,app)
 	$(call prog_download,bootloader)
+	
+clean:
+	rm -rf .dep build
