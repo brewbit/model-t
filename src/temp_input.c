@@ -45,11 +45,11 @@ temp_input_thread(void* arg)
     temperature_t temp;
 
     if (temp_get_reading(tp, &temp)) {
-    	if (temp < DEGF(300)) {
-		  tp->connected = true;
-		  tp->last_temp_time = chTimeNow();
-		  send_temp_msg(tp, temp);
-    	}
+      if (temp < DEGF(300)) {
+        tp->connected = true;
+        tp->last_temp_time = chTimeNow();
+        send_temp_msg(tp, temp);
+      }
     }
     else if ((chTimeNow() - tp->last_temp_time) > PROBE_TIMEOUT) {
       if (tp->connected) {
