@@ -49,25 +49,25 @@
 	<storageModule moduleId="refreshScope"/>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
 		<buildTargets>
-			<target name="JTAG=jlink download run" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="JTAG=jlink download" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
-				<buildTarget>JTAG=jlink download run</buildTarget>
+				<buildArguments/>
+				<buildTarget>JTAG=jlink download</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
 			<target name="clean" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
-				<buildArguments/>
 				<buildTarget>clean</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="JTAG=olimex-arm-usb-tiny-h download run" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="JTAG=olimex-arm-usb-tiny-h download" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
 				<buildArguments/>
-				<buildTarget>JTAG=olimex-arm-usb-tiny-h download run</buildTarget>
+				<buildTarget>JTAG=olimex-arm-usb-tiny-h download</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
