@@ -5,7 +5,7 @@ make_prog = $(MAKE) -f src/$(1)/$(1).mk
 
 app:
 	$(call make_prog,app)
-	
+
 bootloader:
 	$(call make_prog,bootloader)
 
@@ -18,10 +18,14 @@ prog_download = @openocd \
 	-c "reset run" \
 	-c shutdown download.log 2>&1 && \
 	echo Download complete
-	
-download: all
+
+download_app: app
 	$(call prog_download,app)
+
+download_bootloader: bootloader
 	$(call prog_download,bootloader)
-	
+
+download: download_app download_bootloader
+
 clean:
 	rm -rf .dep build
