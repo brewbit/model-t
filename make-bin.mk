@@ -189,7 +189,7 @@ UDEFS =
 UADEFS =
 
 # List all user directories here
-UINCDIR = src/common $(PROJECT_SRC_DIR) src/app/util/json $(AUTOGEN_DIR)
+UINCDIR = src/common $(PROJECT_SRC_DIR) src/controller/util/json $(AUTOGEN_DIR)
 
 # List the user directory to look for the libraries here
 ULIBDIR =

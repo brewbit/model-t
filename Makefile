@@ -1,10 +1,13 @@
 
-all: bootloader app
+all: bootloader controller
 
 make_prog = $(MAKE) -f src/$(1)/$(1).mk
 
-app:
-	$(call make_prog,app)
+controller:
+	$(call make_prog,controller)
+	
+wifi:
+	$(call make_prog,wifi)
 
 bootloader:
 	$(call make_prog,bootloader)
@@ -19,13 +22,13 @@ prog_download = @openocd \
 	-c shutdown download.log 2>&1 && \
 	echo Download complete
 
-download_app: app
-	$(call prog_download,app)
+download_controller: controller
+	$(call prog_download,controller)
 
 download_bootloader: bootloader
 	$(call prog_download,bootloader)
 
-download: download_app download_bootloader
+download: download_controller download_bootloader
 
 clean:
 	rm -rf .dep build

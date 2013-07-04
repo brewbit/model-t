@@ -35,8 +35,8 @@
 /*
  * Board identifier.
  */
-#define BOARD_BREWBIT_TC
-#define BOARD_NAME              "BrewBit Temperature Controller"
+#define BOARD_BREWBIT_MODEL_T
+#define BOARD_NAME              "BrewBit Model-T"
 
 /*
  * Board frequencies.

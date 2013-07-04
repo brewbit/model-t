@@ -1,6 +1,6 @@
-PROJECT = bootloader
+PROJECT = wifi
 
-BOARD = II-MT-CONTROLLER
+BOARD = ISM43362
 
 PROJECT_CSRC = main.c
 

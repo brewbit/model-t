@@ -1,4 +1,6 @@
-PROJECT = app
+PROJECT = controller
+
+BOARD = II-MT-CONTROLLER
 
 PROJECT_AUTOGEN_CSRC = \
        image_resources.c \
