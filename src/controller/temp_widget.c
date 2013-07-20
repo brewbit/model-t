@@ -40,9 +40,9 @@ temp_widget_create(widget_t* parent, rect_t rect)
   s->widget = widget_create(parent, &temp_widget_class, s, rect);
 
   s->temp = INVALID_TEMP;
-  s->unit = app_cfg_get_global_settings()->unit;
+  s->unit = app_cfg_get_temp_unit();
 
-  gui_msg_subscribe(MSG_SETTINGS, s->widget);
+  gui_msg_subscribe(MSG_TEMP_UNIT, s->widget);
 
   return s->widget;
 }
@@ -52,7 +52,7 @@ temp_widget_destroy(widget_t* w)
 {
   temp_widget_t* s = widget_get_instance_data(w);
 
-  gui_msg_unsubscribe(MSG_SETTINGS, s->widget);
+  gui_msg_unsubscribe(MSG_TEMP_UNIT, s->widget);
 
   free(s);
 }
@@ -101,10 +101,10 @@ temp_widget_msg(msg_event_t* event)
 {
   temp_widget_t* s = widget_get_instance_data(event->widget);
 
-  if (event->msg_id == MSG_SETTINGS) {
-    global_settings_t* settings = event->msg_data;
-    if (s->unit != settings->unit) {
-      s->unit = settings->unit;
+  if (event->msg_id == MSG_TEMP_UNIT) {
+    temperature_unit_t* temp_unit = event->msg_data;
+    if (s->unit != *temp_unit) {
+      s->unit = *temp_unit;
       widget_invalidate(event->widget);
     }
   }

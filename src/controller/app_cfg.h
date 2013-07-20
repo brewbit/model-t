@@ -4,21 +4,23 @@
 
 #include "types.h"
 #include "temp_control.h"
-
-
-typedef struct {
-  temperature_unit_t unit;
-} global_settings_t;
+#include "touch_calib.h"
 
 
 void
 app_cfg_init(void);
 
-const global_settings_t*
-app_cfg_get_global_settings(void);
+temperature_unit_t
+app_cfg_get_temp_unit(void);
 
 void
-app_cfg_set_global_settings(global_settings_t* settings);
+app_cfg_set_temp_unit(temperature_unit_t temp_unit);
+
+const matrix_t*
+app_cfg_get_touch_calib(void);
+
+void
+app_cfg_set_touch_calib(matrix_t* touch_calib);
 
 const probe_settings_t*
 app_cfg_get_probe_settings(probe_id_t probe);

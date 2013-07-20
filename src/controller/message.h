@@ -16,7 +16,7 @@ typedef enum {
   MSG_GUI_PUSH_SCREEN,
   MSG_GUI_POP_SCREEN,
 
-  MSG_SETTINGS,
+  MSG_TEMP_UNIT,
 
   NUM_THREAD_MSGS
 } msg_id_t;

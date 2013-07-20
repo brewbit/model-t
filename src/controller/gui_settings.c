@@ -6,6 +6,7 @@
 #include "gui.h"
 #include "app_cfg.h"
 #include "gui_update.h"
+#include "gui_calib.h"
 
 
 typedef struct {
@@ -13,7 +14,7 @@ typedef struct {
   widget_t* back_button;
   widget_t* unit_button;
 
-  global_settings_t settings;
+  temperature_unit_t temp_unit;
 } settings_screen_t;
 
 
@@ -21,6 +22,7 @@ static void settings_screen_destroy(widget_t* w);
 static void back_button_clicked(button_event_t* event);
 static void unit_button_clicked(button_event_t* event);
 static void update_button_clicked(button_event_t* event);
+static void calibrate_button_clicked(button_event_t* event);
 
 static void set_unit(settings_screen_t* s, temperature_unit_t unit);
 
@@ -58,7 +60,7 @@ settings_screen_create()
   button_create(s->widget, rect, img_update, CYAN, NULL, NULL, NULL, update_button_clicked);
 
   rect.x += 84;
-  button_create(s->widget, rect, NULL, STEEL, NULL, NULL, NULL, NULL);
+  button_create(s->widget, rect, img_hand, STEEL, NULL, NULL, NULL, calibrate_button_clicked);
 
   rect.x = 48;
   rect.y += 84;
@@ -70,8 +72,8 @@ settings_screen_create()
   rect.x += 84;
   button_create(s->widget, rect, NULL, GREEN, NULL, NULL, NULL, NULL);
 
-  s->settings = *app_cfg_get_global_settings();
-  set_unit(s, s->settings.unit);
+  s->temp_unit = app_cfg_get_temp_unit();
+  set_unit(s, s->temp_unit);
 
   return s->widget;
 }
@@ -89,7 +91,7 @@ back_button_clicked(button_event_t* event)
   widget_t* w = widget_get_parent(event->widget);
   settings_screen_t* s = widget_get_instance_data(w);
 
-  app_cfg_set_global_settings(&s->settings);
+  app_cfg_set_temp_unit(s->temp_unit);
 
   gui_pop_screen();
 }
@@ -100,7 +102,7 @@ unit_button_clicked(button_event_t* event)
   widget_t* w = widget_get_parent(event->widget);
   settings_screen_t* s = widget_get_instance_data(w);
 
-  if (s->settings.unit == TEMP_C)
+  if (s->temp_unit == TEMP_C)
     set_unit(s, TEMP_F);
   else
     set_unit(s, TEMP_C);
@@ -116,9 +118,18 @@ update_button_clicked(button_event_t* event)
 }
 
 static void
+calibrate_button_clicked(button_event_t* event)
+{
+  (void)event;
+
+  widget_t* calib_screen = calib_screen_create();
+  gui_push_screen(calib_screen);
+}
+
+static void
 set_unit(settings_screen_t* s, temperature_unit_t unit)
 {
-  s->settings.unit = unit;
+  s->temp_unit = unit;
   if (unit == TEMP_F) {
     button_set_icon(s->unit_button, img_deg_f);
   }

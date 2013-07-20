@@ -106,24 +106,26 @@ gui_thread_func(void* arg)
 static void
 gui_dispatch(msg_id_t id, void* msg_data, void* user_data)
 {
-  (void)user_data;
-
-  switch(id) {
-  case MSG_GUI_PUSH_SCREEN:
-    dispatch_push_screen(msg_data);
-    break;
-
-  case MSG_GUI_POP_SCREEN:
-    dispatch_pop_screen();
-    break;
-
-  case MSG_TOUCH_INPUT:
-    dispatch_touch(msg_data);
-    break;
-
-  default:
+  if (user_data != NULL) {
     dispatch_msg(user_data, id, msg_data);
-    break;
+  }
+  else {
+    switch(id) {
+    case MSG_GUI_PUSH_SCREEN:
+      dispatch_push_screen(msg_data);
+      break;
+
+    case MSG_GUI_POP_SCREEN:
+      dispatch_pop_screen();
+      break;
+
+    case MSG_TOUCH_INPUT:
+      dispatch_touch(msg_data);
+      break;
+
+    default:
+      break;
+    }
   }
 }
 

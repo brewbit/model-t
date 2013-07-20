@@ -8,6 +8,7 @@
 #include "gui/button.h"
 
 
+#define MARKER_SIZE           50
 #define NUM_SAMPLES_PER_POINT 128
 
 
@@ -17,7 +18,6 @@ typedef struct {
   point_t sampled_pts[NUM_CALIB_POINTS][NUM_SAMPLES_PER_POINT];
   int sample_idx;
   point_t last_touch_pos;
-  calib_complete_handler_t completion_handler;
 
   widget_t* widget;
   widget_t* recal_button;
@@ -52,27 +52,29 @@ static const widget_class_t calib_widget_class = {
 };
 
 widget_t*
-calib_screen_create(calib_complete_handler_t completion_handler)
+calib_screen_create()
 {
-  calib_screen_t* calib_screen = calloc(1, sizeof(calib_screen_t));
-  calib_screen->completion_handler = completion_handler;
-  calib_screen->widget = widget_create(NULL, &calib_widget_class, calib_screen, display_rect);
+  calib_screen_t* s = calloc(1, sizeof(calib_screen_t));
+  s->widget = widget_create(NULL, &calib_widget_class, s, display_rect);
+  widget_set_background(s->widget, BLACK, FALSE);
 
   rect_t rect = {
-      .x = 0,
-      .y = 240-43,
-      .width = 160,
-      .height = 43,
+      .x = 15,
+      .y = 15,
+      .width = 56,
+      .height = 56,
   };
-  calib_screen->recal_button = button_create(calib_screen->widget, rect, img_thumbs_down, WHITE, NULL, NULL, NULL, restart_calib);
-  widget_hide(calib_screen->recal_button);
-  rect.x = 160;
-  calib_screen->complete_button = button_create(calib_screen->widget, rect, img_thumbs_up, WHITE, NULL, NULL, NULL, complete_calib);
-  widget_hide(calib_screen->complete_button);
+  s->complete_button = button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, complete_calib);
+  widget_hide(s->complete_button);
 
-  gui_msg_subscribe(MSG_TOUCH_INPUT, calib_screen->widget);
+  rect.x = 320 - 56 - 15;
+  rect.y = 240 - 56 - 15;
+  s->recal_button = button_create(s->widget, rect, img_update, BLACK, NULL, NULL, NULL, restart_calib);
+  widget_hide(s->recal_button);
 
-  return calib_screen->widget;
+  gui_msg_subscribe(MSG_TOUCH_INPUT, s->widget);
+
+  return s->widget;
 }
 
 static void
@@ -111,10 +113,9 @@ restart_calib(button_event_t* event)
 static void
 complete_calib(button_event_t* event)
 {
-  widget_t* screen_widget = widget_get_parent(event->widget);
-  calib_screen_t* s = widget_get_instance_data(screen_widget);
-  if (s->completion_handler)
-    s->completion_handler(screen_widget);
+  (void)event;
+
+  gui_pop_screen();
 }
 
 static void
@@ -122,8 +123,6 @@ calib_widget_paint(paint_event_t* event)
 {
   calib_screen_t* s = widget_get_instance_data(event->widget);
   const point_t* marker_pos;
-
-  gfx_tile_bitmap(img_squares, display_rect);
 
   if (!s->calib_complete) {
     marker_pos = &ref_pts[s->ref_pt_idx];
@@ -139,7 +138,11 @@ calib_widget_paint(paint_event_t* event)
     marker_pos = &s->last_touch_pos;
     gfx_set_fg_color(COBALT);
   }
-  rect_t r = {marker_pos->x, marker_pos->y, 25, 25};
+  rect_t r = {
+      marker_pos->x - (MARKER_SIZE / 2),
+      marker_pos->y - (MARKER_SIZE / 2),
+      MARKER_SIZE,
+      MARKER_SIZE};
   gfx_fill_rect(r);
 }
 

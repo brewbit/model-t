@@ -6,6 +6,7 @@
 #include "touch_calib.h"
 #include "gui.h"
 #include "message.h"
+#include "app_cfg.h"
 
 #include <stdbool.h>
 
@@ -125,16 +126,6 @@ static systime_t last_touch_time;
 static point_t touch_coord_raw;
 static point_t touch_coord_calib;
 
-static matrix_t calib_matrix = {
-    .An      = 76320,
-    .Bn      = 3080,
-    .Cn      = -9475080,
-    .Dn      = -560,
-    .En      = 60340,
-    .Fn      = -4360660,
-    .Divider = 205664,
-};
-
 void
 touch_init()
 {
@@ -159,7 +150,9 @@ touch_calibrate(
     const point_t* ref_pts,
     const point_t* sampled_pts)
 {
+  matrix_t calib_matrix;
   setCalibrationMatrix(ref_pts, sampled_pts, &calib_matrix);
+  app_cfg_set_touch_calib(&calib_matrix);
 }
 
 static uint16_t
@@ -221,7 +214,7 @@ touch_thread(void* arg)
       getDisplayPoint(
           &touch_coord_calib,
           &touch_coord_raw,
-          &calib_matrix);
+          app_cfg_get_touch_calib());
 
       touch_down = 1;
       last_touch_time = chTimeNow();

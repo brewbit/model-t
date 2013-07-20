@@ -75,16 +75,16 @@ main(void)
 
   chprintf(&SD3, "making http req\r\n");
 
-  http_request_t http_request = {
-    .host = "192.168.1.146",
-    .port = 8000,
-    .method = HTTP_GET,
-    .url = "/Inventek_Systems_eS-WiFiPatch/Inventek_Systems_Instructions.txt",
-    .num_headers = 0,
-    .headers = NULL,
-    .request = ""
-  };
-  wspr_http_request(&http_request, http_callback, NULL);
+//  http_request_t http_request = {
+//    .host = "192.168.1.146",
+//    .port = 8000,
+//    .method = HTTP_GET,
+//    .url = "/Inventek_Systems_eS-WiFiPatch/Inventek_Systems_Instructions.txt",
+//    .num_headers = 0,
+//    .headers = NULL,
+//    .request = ""
+//  };
+//  wspr_http_request(&http_request, http_callback, NULL);
 
   while (TRUE) {
     palSetPad(GPIOB, GPIOB_LED1);

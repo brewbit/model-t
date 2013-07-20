@@ -10,7 +10,9 @@
 
 typedef struct {
   bool is_valid;
-  global_settings_t global_settings;
+
+  temperature_unit_t temp_unit;
+  matrix_t touch_calib;
   probe_settings_t probe_settings[NUM_PROBES];
   output_settings_t output_settings[NUM_OUTPUTS];
 } app_cfg_t;
@@ -35,7 +37,15 @@ app_cfg_init()
     app_cfg_local = app_cfg_stored;
   }
   else {
-    app_cfg_local.global_settings.unit = TEMP_F;
+    app_cfg_local.temp_unit = TEMP_F;
+
+    app_cfg_local.touch_calib.An      = 76320;
+    app_cfg_local.touch_calib.Bn      = 3080;
+    app_cfg_local.touch_calib.Cn      = -9475080;
+    app_cfg_local.touch_calib.Dn      = -560;
+    app_cfg_local.touch_calib.En      = 60340;
+    app_cfg_local.touch_calib.Fn      = -4360660;
+    app_cfg_local.touch_calib.Divider = 205664;
 
     app_cfg_local.probe_settings[PROBE_1].setpoint = DEGF(72);
     app_cfg_local.probe_settings[PROBE_2].setpoint = DEGF(72);
@@ -71,20 +81,34 @@ app_cfg_thread(void* arg)
   return 0;
 }
 
-const global_settings_t*
-app_cfg_get_global_settings(void)
+temperature_unit_t
+app_cfg_get_temp_unit(void)
 {
-  return &app_cfg_local.global_settings;
+  return app_cfg_local.temp_unit;
 }
 
 void
-app_cfg_set_global_settings(global_settings_t* settings)
+app_cfg_set_temp_unit(temperature_unit_t temp_unit)
 {
   chMtxLock(&app_cfg_mtx);
-  app_cfg_local.global_settings = *settings;
+  app_cfg_local.temp_unit = temp_unit;
   chMtxUnlock();
 
-  msg_broadcast(MSG_SETTINGS, &app_cfg_local.global_settings);
+  msg_broadcast(MSG_TEMP_UNIT, &app_cfg_local.temp_unit);
+}
+
+const matrix_t*
+app_cfg_get_touch_calib(void)
+{
+  return &app_cfg_local.touch_calib;
+}
+
+void
+app_cfg_set_touch_calib(matrix_t* touch_calib)
+{
+  chMtxLock(&app_cfg_mtx);
+  app_cfg_local.touch_calib = *touch_calib;
+  chMtxUnlock();
 }
 
 const probe_settings_t*
