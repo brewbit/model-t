@@ -16,14 +16,22 @@ static txn_cache_t* http_txns;
 
 
 static void
-handle_http_result(uint8_t* data, uint16_t data_len);
+handle_http_response_header(uint8_t* data, uint16_t data_len);
+
+static void
+handle_http_response_body(uint8_t* data, uint16_t data_len);
+
+static void
+handle_http_response_complete(uint8_t* data, uint16_t data_len);
 
 
 void
 wspr_http_init()
 {
   http_txns = txn_cache_new();
-  wspr_set_handler(WSPR_OUT_HTTP_REQ, handle_http_result);
+  wspr_set_handler(WSPR_OUT_HTTP_RESPONSE_HEADER, handle_http_response_header);
+  wspr_set_handler(WSPR_OUT_HTTP_RESPONSE_BODY, handle_http_response_body);
+  wspr_set_handler(WSPR_OUT_HTTP_RESPONSE_COMPLETE, handle_http_response_complete);
 }
 
 void
@@ -49,24 +57,54 @@ wspr_http_request(
   ds_write_str(ds, request->url);
   ds_write_str(ds, request->request);
 
-  wspr_send(WSPR_IN_HTTP_REQ, ds->buf, ds_index(ds));
+  wspr_send(WSPR_IN_HTTP_REQUEST, ds->buf, ds_index(ds));
 
   ds_free(ds);
 }
 
 static void
-handle_http_result(uint8_t* data, uint16_t data_len)
+handle_http_response_header(uint8_t* data, uint16_t data_len)
 {
-  http_response_t response;
+  http_response_header_t response = {
+      .type = HTTP_RESPONSE_HEADERS
+  };
   datastream_t* ds = ds_new(data, data_len);
 
   uint32_t txn_id = ds_read_u32(ds);
   response.result = ds_read_s32(ds);
   response.response_code = ds_read_u32(ds);
-  response.response_body = ds_read_str(ds);
   ds_free(ds);
+
+  // TODO unpack headers too...
+  txn_update(http_txns, txn_id, &response);
+}
+
+static void
+handle_http_response_body(uint8_t* data, uint16_t data_len)
+{
+  http_response_body_t response = {
+      .type = HTTP_RESPONSE_BODY
+  };
+  datastream_t* ds = ds_new(data, data_len);
+  uint32_t txn_id = ds_read_u32(ds);
+  ds_read_buf(ds, &response.buf, &response.buf_len);
+
+  txn_update(http_txns, txn_id, &response);
+
+  free(response.buf);
+  ds_free(ds);
+}
+
+static void
+handle_http_response_complete(uint8_t* data, uint16_t data_len)
+{
+  http_response_t response = {
+      .type = HTTP_RESPONSE_END
+  };
+  datastream_t* ds = ds_new(data, data_len);
+  uint32_t txn_id = ds_read_u32(ds);
 
   txn_complete(http_txns, txn_id, &response);
 
-  free(response.response_body);
+  ds_free(ds);
 }

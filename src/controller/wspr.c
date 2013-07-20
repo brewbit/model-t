@@ -107,4 +107,6 @@ recv_wspr_pkt(void* arg, wspr_msg_t id, uint8_t* data, uint16_t data_len)
   wspr_msg_handler_t handler = handlers[id];
   if (handler)
     handler(data, data_len);
+  else
+    chprintf(&SD3, "no handler for pkt id %d\r\n", id);
 }

@@ -16,6 +16,12 @@ typedef enum {
   HTTP_END,
 } http_method_t;
 
+typedef enum {
+  HTTP_RESPONSE_HEADERS,
+  HTTP_RESPONSE_BODY,
+  HTTP_RESPONSE_END
+} http_response_type_t;
+
 typedef struct {
   char* name;
   char* value;
@@ -32,10 +38,22 @@ typedef struct {
 } http_request_t;
 
 typedef struct {
+  http_response_type_t type;
+} http_response_t;
+
+typedef struct {
+  http_response_type_t type;
   int32_t result;
   uint32_t response_code;
-  char* response_body;
-} http_response_t;
+  uint8_t num_headers;
+  http_header_t* headers;
+} http_response_header_t;
+
+typedef struct {
+  http_response_type_t type;
+  uint16_t buf_len;
+  uint8_t* buf;
+} http_response_body_t;
 
 typedef void (*http_response_handler_t)(void* arg, http_response_t* response);
 

@@ -34,6 +34,9 @@ typedef struct bapi_s {
   char* auth_token;
   bapi_acct_info_t acct_info;
 
+  char* response_str;
+  uint32_t response_str_len;
+  uint32_t response_str_offset;
   bapi_response_handler_t response_handler;
 } bapi_t;
 
@@ -51,6 +54,10 @@ static void bapi_complete_post_temp(bapi_t* bapi, cJSON* acct_response);
 
 static void bapi_request(bapi_t* bapi, char* endpoint, http_method_t method, cJSON* request, bapi_response_handler_t handler);
 static void bapi_request_complete(void* arg, http_response_t* response);
+
+static void dispatch_response_headers(bapi_t* bapi, http_response_header_t* response);
+static void dispatch_response_body(bapi_t* bapi, http_response_body_t* response);
+static void dispatch_response_end(bapi_t* bapi);
 
 static msg_t bapi_thread(void* arg);
 
@@ -247,12 +254,71 @@ static void
 bapi_request_complete(void* arg, http_response_t* response)
 {
   bapi_t* bapi = arg;
+
+  switch (response->type) {
+  case HTTP_RESPONSE_HEADERS:
+    dispatch_response_headers(bapi, (http_response_header_t*)response);
+    break;
+
+  case HTTP_RESPONSE_BODY:
+    dispatch_response_body(bapi, (http_response_body_t*)response);
+    break;
+
+  case HTTP_RESPONSE_END:
+    dispatch_response_end(bapi);
+    break;
+
+  default:
+    break;
+  }
+}
+
+static void
+dispatch_response_headers(bapi_t* bapi, http_response_header_t* response)
+{
+  if ((response->result == 0) &&
+      (response->response_code == 200)) {
+    bapi->response_str_len = 256;
+    bapi->response_str_offset = 0;
+    bapi->response_str = malloc(bapi->response_str_len);
+  }
+  else {
+    bapi->response_str_len = 0;
+    bapi->response_str_offset = 0;
+    bapi->response_str = NULL;
+  }
+}
+
+static void
+dispatch_response_body(bapi_t* bapi, http_response_body_t* response)
+{
+  if (bapi->response_str == NULL)
+    return;
+
+  uint32_t min_size = (bapi->response_str_offset + response->buf_len + 1);
+  if (min_size > bapi->response_str_len) {
+    bapi->response_str_len = (((min_size - 1) / 128) + 1) * 128;
+    bapi->response_str = realloc(bapi->response_str, bapi->response_str_len);
+  }
+
+  memcpy(bapi->response_str + bapi->response_str_offset, response->buf, response->buf_len);
+  bapi->response_str_offset += response->buf_len;
+  bapi->response_str[bapi->response_str_offset] = 0;
+}
+
+static void
+dispatch_response_end(bapi_t* bapi)
+{
   cJSON* json_response = NULL;
 
-  if ((response->result == 0) &&
-      (response->response_code == 200) &&
-      (response->response_body != NULL)) {
-    json_response = cJSON_Parse(response->response_body);
+  if (bapi->response_str != NULL) {
+    json_response = cJSON_Parse(bapi->response_str);
+
+    free(bapi->response_str);
+
+    bapi->response_str_len = 0;
+    bapi->response_str_offset = 0;
+    bapi->response_str = NULL;
   }
 
   if (bapi->response_handler != NULL)
