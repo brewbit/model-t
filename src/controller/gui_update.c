@@ -134,7 +134,7 @@ update_ui(update_screen_t* s)
     header = "Checking for updates";
     desc = "Contacting server...";
     delay = 4000;
-    s->state = UPDATE_AVAILABLE;
+    s->state = UPDATE_NOT_AVAILABLE;
     break;
 
   case UPDATE_AVAILABLE:

@@ -57,20 +57,20 @@ settings_screen_create()
   s->unit_button = button_create(s->widget, rect, img_deg_f, ORANGE, NULL, NULL, NULL, unit_button_clicked);
 
   rect.x += 84;
-  button_create(s->widget, rect, img_update, CYAN, NULL, NULL, NULL, update_button_clicked);
-
-  rect.x += 84;
   button_create(s->widget, rect, img_hand, STEEL, NULL, NULL, NULL, calibrate_button_clicked);
 
-  rect.x = 48;
-  rect.y += 84;
-  button_create(s->widget, rect, NULL, OLIVE, NULL, NULL, NULL, NULL);
-
   rect.x += 84;
-  button_create(s->widget, rect, NULL, PURPLE, NULL, NULL, NULL, NULL);
+  button_create(s->widget, rect, img_update, CYAN, NULL, NULL, NULL, update_button_clicked);
 
-  rect.x += 84;
-  button_create(s->widget, rect, NULL, GREEN, NULL, NULL, NULL, NULL);
+//  rect.x = 48;
+//  rect.y += 84;
+//  button_create(s->widget, rect, NULL, OLIVE, NULL, NULL, NULL, NULL);
+//
+//  rect.x += 84;
+//  button_create(s->widget, rect, NULL, PURPLE, NULL, NULL, NULL, NULL);
+//
+//  rect.x += 84;
+//  button_create(s->widget, rect, NULL, GREEN, NULL, NULL, NULL, NULL);
 
   s->temp_unit = app_cfg_get_temp_unit();
   set_unit(s, s->temp_unit);
