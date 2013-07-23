@@ -126,6 +126,8 @@ dispatch_wifi_status(wifi_screen_t* s, wspr_wifi_status_t* status)
       break;
 
     default:
+      label_set_text(s->nwk_status1, "Unknown network status");
+      label_set_text(s->nwk_status2, "");
       break;
     }
   }
