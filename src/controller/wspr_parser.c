@@ -1,6 +1,9 @@
 
+#include "ch.h"
+#include "hal.h"
 #include "wspr_parser.h"
 #include "datastream.h"
+#include "chprintf.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -69,6 +72,8 @@ wspr_parse(wspr_parser_t* p, uint8_t c)
     case PS_CKSUM:
       if (p->cksum == c && p->handler != NULL)
         p->handler(p->handler_arg, p->id, p->data, p->data_len);
+      else
+        chprintf((BaseChannel*)&SD3, "wspr chksum failed\r\n");
       p->state = PS_SYNC1;
       break;
   }

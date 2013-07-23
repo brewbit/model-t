@@ -73,7 +73,7 @@ main(void)
 
   chThdSleepSeconds(15);
 
-  chprintf(&SD3, "making http req\r\n");
+//  chprintf(&SD3, "making http req\r\n");
 
 //  http_request_t http_request = {
 //    .host = "192.168.1.146",

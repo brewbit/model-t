@@ -18,6 +18,11 @@ typedef enum {
 
   MSG_TEMP_UNIT,
 
+  MSG_WIFI_STATUS,
+
+  MSG_SCAN_RESULT,
+  MSG_SCAN_COMPLETE,
+
   NUM_THREAD_MSGS
 } msg_id_t;
 

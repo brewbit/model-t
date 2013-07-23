@@ -7,6 +7,7 @@
 #include "gui_probe.h"
 #include "gui_output.h"
 #include "gui_settings.h"
+#include "gui_wifi.h"
 #include "temp_widget.h"
 #include "chprintf.h"
 #include "app_cfg.h"
@@ -298,6 +299,9 @@ static void
 click_conn_button(button_event_t* event)
 {
   (void)event;
+
+  widget_t* wifi_screen = wifi_screen_create();
+  gui_push_screen(wifi_screen);
 }
 
 static void

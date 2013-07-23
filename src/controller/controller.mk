@@ -23,6 +23,7 @@ PROJECT_CSRC = \
        gui_output.c \
        gui_settings.c \
        gui_update.c \
+       gui_wifi.c \
        iflash.c \
        image.c \
        lcd.c \
@@ -37,6 +38,7 @@ PROJECT_CSRC = \
        txn.c \
        wspr.c \
        wspr_http.c \
+       wspr_net.c \
        wspr_parser.c \
        wspr_tcp.c \
        gui/button.c \

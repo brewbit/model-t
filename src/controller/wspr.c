@@ -7,6 +7,8 @@
 #include "wspr_parser.h"
 #include "wspr_http.h"
 #include "wspr_tcp.h"
+#include "wspr_net.h"
+#include "chprintf.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +39,7 @@ wspr_init()
 {
   wspr_tcp_init();
   wspr_http_init();
+  wspr_net_init();
 
   sdStart(sd, NULL);
   wspr_parser_init(&wspr_parser, recv_wspr_pkt, NULL);
@@ -108,5 +111,5 @@ recv_wspr_pkt(void* arg, wspr_msg_t id, uint8_t* data, uint16_t data_len)
   if (handler)
     handler(data, data_len);
   else
-    chprintf(&SD3, "no handler for pkt id %d\r\n", id);
+    chprintf((BaseChannel*)&SD3, "no handler for pkt id %d\r\n", id);
 }

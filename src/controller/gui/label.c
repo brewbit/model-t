@@ -8,7 +8,7 @@
 
 
 typedef struct {
-  const char* text;
+  char* text;
   const Font_t* font;
   color_t color;
   uint8_t rows;
@@ -29,7 +29,8 @@ label_create(widget_t* parent, rect_t rect, const char* text, const Font_t* font
 {
   label_t* l = calloc(1, sizeof(label_t));
 
-  l->text = text;
+  if (text != NULL)
+    l->text = strdup(text);
   l->font = font;
   l->color = color;
   l->rows = rows;
@@ -43,7 +44,9 @@ label_set_text(widget_t* w, char* text)
 {
   label_t* l = widget_get_instance_data(w);
   if (strcmp(l->text, text) != 0) {
-    l->text = text;
+    if (l->text != NULL)
+      free(l->text);
+    l->text = strdup(text);
     widget_invalidate(w);
   }
 }
