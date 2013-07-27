@@ -7,14 +7,29 @@
 #include <stdbool.h>
 #include <limits.h>
 
-#define INVALID_TEMP INT_MIN
-
 typedef int32_t temperature_t; // temperature in 0.01 C per count
 
 typedef enum {
   TEMP_C,
   TEMP_F
 } temperature_unit_t;
+
+typedef uint32_t humidity_t;
+
+typedef enum {
+  SAMPLE_NONE,
+  SAMPLE_TEMPERATURE,
+  SAMPLE_HUMIDITY,
+  SAMPLE_LIGHT
+} sample_type_t;
+
+typedef struct {
+  sample_type_t type;
+  union {
+    temperature_t temp;
+    humidity_t humidity;
+  } value;
+} sensor_sample_t;
 
 #define DEGF(f) (temperature_t)((((f) - 32) * 100 * 5) / 9)
 #define DEGC(c) (temperature_t)((c) * 100)

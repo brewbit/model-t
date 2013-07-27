@@ -19,8 +19,8 @@ typedef struct temp_port_s temp_port_t;
 
 typedef struct {
   probe_id_t probe;
-  temperature_t temp;
-} temp_msg_t;
+  sensor_sample_t sample;
+} sensor_msg_t;
 
 typedef struct {
   probe_id_t probe;

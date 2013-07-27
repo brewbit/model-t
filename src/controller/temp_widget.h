@@ -8,6 +8,6 @@ widget_t*
 temp_widget_create(widget_t* parent, rect_t rect);
 
 void
-temp_widget_set_value(widget_t* w, temperature_t temp);
+temp_widget_set_value(widget_t* w, sensor_sample_t* sample);
 
 #endif

@@ -4,6 +4,7 @@
 
 #include "common.h"
 #include "temp_input.h"
+#include "types.h"
 
 typedef enum {
   OUTPUT_1,
@@ -20,7 +21,7 @@ typedef enum {
 
 
 typedef struct {
-  temperature_t setpoint;
+  sensor_sample_t setpoint;
 } probe_settings_t;
 
 typedef struct {

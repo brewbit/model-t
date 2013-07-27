@@ -54,7 +54,7 @@ static void click_conn_button(button_event_t* event);
 static void click_settings_button(button_event_t* event);
 
 static void dispatch_output_settings(home_screen_t* s, output_settings_msg_t* msg);
-static void dispatch_new_temp(home_screen_t* s, temp_msg_t* msg);
+static void dispatch_new_temp(home_screen_t* s, sensor_msg_t* msg);
 static void dispatch_probe_timeout(home_screen_t* s, probe_timeout_msg_t* msg);
 
 static void set_output_settings(home_screen_t* s, output_id_t output, output_function_t function);
@@ -162,21 +162,21 @@ home_screen_msg(msg_event_t* event)
 }
 
 static void
-dispatch_new_temp(home_screen_t* s, temp_msg_t* msg)
+dispatch_new_temp(home_screen_t* s, sensor_msg_t* msg)
 {
   /* Update the probe button icons based on the current temp/setpoint */
   widget_t* btn = s->probes[msg->probe].button;
   const probe_settings_t* probe_settings = app_cfg_get_probe_settings(msg->probe);
-  if (msg->temp > probe_settings->setpoint)
+  if (msg->sample.value.temp > probe_settings->setpoint.value.temp)
     button_set_icon(btn, img_temp_hi);
-  else if (msg->temp < probe_settings->setpoint)
+  else if (msg->sample.value.temp < probe_settings->setpoint.value.temp)
     button_set_icon(btn, img_temp_low);
   else
     button_set_icon(btn, img_temp_med);
 
   /* Update the temperature display widget */
   widget_t* w = s->probes[msg->probe].temp_widget;
-  temp_widget_set_value(w, msg->temp);
+  temp_widget_set_value(w, &msg->sample);
 
   /* Enable the probe button and adjust the placement of the temp display widgets */
   if (!widget_is_enabled(s->probes[msg->probe].button)) {
@@ -193,7 +193,10 @@ dispatch_probe_timeout(home_screen_t* s, probe_timeout_msg_t* msg)
   if (widget_is_enabled(s->probes[msg->probe].button)) {
     widget_disable(s->probes[msg->probe].button);
     button_set_icon(s->probes[msg->probe].button, img_temp_med);
-    temp_widget_set_value(w, INVALID_TEMP);
+    sensor_sample_t sample = {
+        .type = SAMPLE_NONE
+    };
+    temp_widget_set_value(w, &sample);
     place_temp_widgets(s);
   }
 }

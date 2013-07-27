@@ -7,7 +7,7 @@
 
 
 #define BTN_FIRST_REPEAT_DELAY MS2ST(500)
-#define BTN_REPEAT_DELAY       MS2ST(50)
+#define BTN_REPEAT_DELAY       MS2ST(100)
 
 
 typedef struct {

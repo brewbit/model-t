@@ -17,9 +17,12 @@ typedef struct temp_port_s {
 
 
 static msg_t temp_input_thread(void* arg);
-static bool temp_get_reading(temp_port_t* tp, temperature_t* temp);
-static void send_temp_msg(temp_port_t* tp, temperature_t temp);
+static bool temp_get_sample(temp_port_t* tp, sensor_sample_t* temp);
+static void send_temp_msg(temp_port_t* tp, sensor_sample_t* sample);
 static void send_timeout_msg(temp_port_t* tp);
+
+static bool read_ds18b20(temp_port_t* tp, sensor_sample_t* temp);
+static bool read_bb(temp_port_t* tp, sensor_sample_t* sample);
 
 
 temp_port_t*
@@ -42,14 +45,12 @@ temp_input_thread(void* arg)
   temp_port_t* tp = arg;
 
   while (1) {
-    temperature_t temp;
+    sensor_sample_t sample;
 
-    if (temp_get_reading(tp, &temp)) {
-      if (temp < DEGF(300)) {
+    if (temp_get_sample(tp, &sample)) {
         tp->connected = true;
         tp->last_temp_time = chTimeNow();
-        send_temp_msg(tp, temp);
-      }
+        send_temp_msg(tp, &sample);
     }
     else if ((chTimeNow() - tp->last_temp_time) > PROBE_TIMEOUT) {
       if (tp->connected) {
@@ -63,11 +64,11 @@ temp_input_thread(void* arg)
 }
 
 static void
-send_temp_msg(temp_port_t* tp, temperature_t temp)
+send_temp_msg(temp_port_t* tp, sensor_sample_t* sample)
 {
-  temp_msg_t msg = {
+  sensor_msg_t msg = {
       .probe = tp->probe,
-      .temp = temp
+      .sample = *sample
   };
   msg_broadcast(MSG_NEW_TEMP, &msg);
 }
@@ -82,7 +83,7 @@ send_timeout_msg(temp_port_t* tp)
 }
 
 static bool
-temp_get_reading(temp_port_t* tp, temperature_t* temp)
+temp_get_sample(temp_port_t* tp, sensor_sample_t* sample)
 {
   uint8_t addr[8];
   if (!onewire_reset(tp->bus)) {
@@ -92,10 +93,23 @@ temp_get_reading(temp_port_t* tp, temperature_t* temp)
     return false;
   }
 
-  if (addr[0] != 0x28) {
+  switch (addr[0]) {
+  case 0x28:
+    return read_ds18b20(tp, sample);
+
+  case 0xBB:
+    return read_bb(tp, sample);
+
+  default:
     return false;
   }
 
+  return true;
+}
+
+static bool
+read_ds18b20(temp_port_t* tp, sensor_sample_t* sample)
+{
   // issue a T convert command
   if (!onewire_reset(tp->bus))
     return false;
@@ -132,8 +146,53 @@ temp_get_reading(temp_port_t* tp, temperature_t* temp)
     return false;
 
   uint16_t t = (t2 << 8) + t1;
-  *temp = (temperature_t)((t * 100) / 16);
+  sample->type = SAMPLE_TEMPERATURE;
+  sample->value.temp = (temperature_t)((t * 100) / 16);
 
   return true;
 }
 
+static bool
+read_bb(temp_port_t* tp, sensor_sample_t* sample)
+{
+  // issue a T convert command
+  if (!onewire_reset(tp->bus))
+    return false;
+  if (!onewire_send_byte(tp->bus, SKIP_ROM))
+    return false;
+  if (!onewire_send_byte(tp->bus, 0x44))
+    return false;
+
+  // wait for device to signal conversion complete
+  chThdSleepMilliseconds(100);
+  while (1) {
+    uint8_t bit;
+    if (!onewire_recv_bit(tp->bus, &bit))
+      return false;
+
+    if (bit)
+      break;
+    else
+      chThdSleepMilliseconds(10);
+  }
+
+  // read the scratchpad register
+  if (!onewire_reset(tp->bus)) {
+    return false;
+  }
+  if (!onewire_send_byte(tp->bus, SKIP_ROM))
+    return false;
+  if (!onewire_send_byte(tp->bus, 0xBE))
+    return false;
+  uint8_t t1, t2;
+  if (!onewire_recv_byte(tp->bus, &t1))
+    return false;
+  if (!onewire_recv_byte(tp->bus, &t2))
+    return false;
+
+  uint16_t t = (t2 << 8) + t1;
+  sample->type = SAMPLE_HUMIDITY;
+  sample->value.humidity = t * 100;
+
+  return true;
+}

@@ -10,7 +10,7 @@
 
 typedef struct {
   temp_port_t* port;
-  temperature_t last_temp;
+  sensor_sample_t last_sample;
 } temp_input_t;
 
 typedef struct {
@@ -22,10 +22,10 @@ static msg_t temp_control_thread(void* arg);
 static void dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data);
 static void dispatch_output_settings(output_settings_msg_t* msg);
 static void dispatch_probe_settings(probe_settings_msg_t* msg);
-static void dispatch_new_temp(temp_msg_t* msg);
+static void dispatch_new_temp(sensor_msg_t* msg);
 static void dispatch_probe_timeout(probe_timeout_msg_t* msg);
 static void trigger_output(probe_id_t probe, output_function_t function);
-static void evaluate_setpoint(probe_id_t probe, temperature_t setpoint, temperature_t temp);
+static void evaluate_setpoint(probe_id_t probe, sensor_sample_t setpoint, sensor_sample_t sample);
 
 
 static temp_input_t inputs[NUM_PROBES];
@@ -93,14 +93,14 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data)
 }
 
 static void
-dispatch_new_temp(temp_msg_t* msg)
+dispatch_new_temp(sensor_msg_t* msg)
 {
   const probe_settings_t* probe_settings = app_cfg_get_probe_settings(msg->probe);
 
   evaluate_setpoint(
       msg->probe,
       probe_settings->setpoint,
-      msg->temp);
+      msg->sample);
 }
 
 static void
@@ -126,13 +126,13 @@ dispatch_output_settings(output_settings_msg_t* msg)
   evaluate_setpoint(
       PROBE_1,
       probe_settings->setpoint,
-      inputs[PROBE_1].last_temp);
+      inputs[PROBE_1].last_sample);
 
   probe_settings = app_cfg_get_probe_settings(PROBE_2);
   evaluate_setpoint(
       PROBE_2,
       probe_settings->setpoint,
-      inputs[PROBE_2].last_temp);
+      inputs[PROBE_2].last_sample);
 }
 
 static void
@@ -145,18 +145,18 @@ dispatch_probe_settings(probe_settings_msg_t* msg)
   evaluate_setpoint(
       msg->probe,
       msg->settings.setpoint,
-      inputs[msg->probe].last_temp);
+      inputs[msg->probe].last_sample);
 }
 
 static void
-evaluate_setpoint(probe_id_t probe, temperature_t setpoint, temperature_t temp)
+evaluate_setpoint(probe_id_t probe, sensor_sample_t setpoint, sensor_sample_t sample)
 {
-  inputs[probe].last_temp = temp;
+  inputs[probe].last_sample = sample;
 
-  if (temp > setpoint) {
+  if (sample.value.temp > setpoint.value.temp) {
     trigger_output(probe, OUTPUT_FUNC_COOLING);
   }
-  else if (temp < setpoint) {
+  else if (sample.value.temp < setpoint.value.temp) {
     trigger_output(probe, OUTPUT_FUNC_HEATING);
   }
 }

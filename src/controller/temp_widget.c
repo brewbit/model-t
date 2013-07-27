@@ -14,7 +14,7 @@
 
 
 typedef struct {
-  temperature_t temp;
+  sensor_sample_t sample;
   temperature_unit_t unit;
   widget_t* widget;
 } temp_widget_t;
@@ -39,7 +39,7 @@ temp_widget_create(widget_t* parent, rect_t rect)
   rect.height = font_opensans_62->base;
   s->widget = widget_create(parent, &temp_widget_class, s, rect);
 
-  s->temp = INVALID_TEMP;
+  s->sample.type = SAMPLE_NONE;
   s->unit = app_cfg_get_temp_unit();
 
   gui_msg_subscribe(MSG_TEMP_UNIT, s->widget);
@@ -63,21 +63,28 @@ temp_widget_paint(paint_event_t* event)
   temp_widget_t* s = widget_get_instance_data(event->widget);
   rect_t rect = widget_get_rect(event->widget);
 
-  float temp = s->temp / 100.0f;
-  char* unit_str;
-  if (s->unit == TEMP_F) {
-    temp = ((temp * 9) / 5) + 32;
-    unit_str = "F";
+  char* unit_str = "";
+  float value = 0;
+  if (s->sample.type == SAMPLE_TEMPERATURE) {
+    value = s->sample.value.temp / 100.0f;
+    if (s->unit == TEMP_F) {
+      value = ((value * 9) / 5) + 32;
+      unit_str = "F";
+    }
+    else {
+      unit_str = "C";
+    }
   }
-  else {
-    unit_str = "C";
+  else if (s->sample.type == SAMPLE_HUMIDITY) {
+    value = s->sample.value.humidity / 100.0f;
+    unit_str = "%";
   }
 
   char temp_str[16];
-  if (s->temp == INVALID_TEMP)
+  if (s->sample.type == SAMPLE_NONE)
     sprintf(temp_str, "--.-");
   else
-    sprintf(temp_str, "%0.1f", temp);
+    sprintf(temp_str, "%0.1f", value);
 
   Extents_t temp_ext = font_text_extents(font_opensans_62, temp_str);
   Extents_t unit_ext = font_text_extents(font_opensans_22, unit_str);
@@ -111,12 +118,13 @@ temp_widget_msg(msg_event_t* event)
 }
 
 void
-temp_widget_set_value(widget_t* w, temperature_t temp)
+temp_widget_set_value(widget_t* w, sensor_sample_t* sample)
 {
   temp_widget_t* s = widget_get_instance_data(w);
 
-  if (s->temp != temp) {
-    s->temp = temp;
+  if (s->sample.type != sample->type ||
+      s->sample.value.temp != sample->value.temp) {
+    s->sample = *sample;
     widget_invalidate(s->widget);
   }
 }

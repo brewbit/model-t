@@ -47,8 +47,10 @@ app_cfg_init()
     app_cfg_local.touch_calib.Fn      = -4360660;
     app_cfg_local.touch_calib.Divider = 205664;
 
-    app_cfg_local.probe_settings[PROBE_1].setpoint = DEGF(72);
-    app_cfg_local.probe_settings[PROBE_2].setpoint = DEGF(72);
+    app_cfg_local.probe_settings[PROBE_1].setpoint.type = SAMPLE_HUMIDITY;
+    app_cfg_local.probe_settings[PROBE_1].setpoint.value.humidity = 45 * 100;
+    app_cfg_local.probe_settings[PROBE_2].setpoint.type = SAMPLE_TEMPERATURE;
+    app_cfg_local.probe_settings[PROBE_2].setpoint.value.temp = DEGF(72);
 
     app_cfg_local.output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
     app_cfg_local.output_settings[OUTPUT_1].trigger = PROBE_1;

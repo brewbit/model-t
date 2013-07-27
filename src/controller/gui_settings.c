@@ -56,8 +56,8 @@ settings_screen_create()
   rect.height = 56;
   s->unit_button = button_create(s->widget, rect, img_deg_f, ORANGE, NULL, NULL, NULL, unit_button_clicked);
 
-  rect.x += 84;
-  button_create(s->widget, rect, img_hand, STEEL, NULL, NULL, NULL, calibrate_button_clicked);
+//  rect.x += 84;
+//  button_create(s->widget, rect, img_hand, STEEL, NULL, NULL, NULL, calibrate_button_clicked);
 
   rect.x += 84;
   button_create(s->widget, rect, img_update, CYAN, NULL, NULL, NULL, update_button_clicked);
