@@ -30,6 +30,7 @@ PROJECT_CSRC = \
        main.c \
        message.c \
        onewire.c \
+       pid.c \
        temp_control.c \
        temp_input.c \
        temp_widget.c \
