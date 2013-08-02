@@ -5,6 +5,7 @@
 #include "common.h"
 #include "message.h"
 #include "app_cfg.h"
+#include "pid.h"
 
 #include <stdlib.h>
 
@@ -43,6 +44,9 @@ temp_control_init()
 
   outputs[OUTPUT_1].gpio = GPIOB_RELAY1;
   outputs[OUTPUT_2].gpio = GPIOB_RELAY2;
+
+  set_gains(PROBE_1);
+  set_gains(PROBE_2);
 
   msg_subscribe(MSG_NEW_TEMP, thread, dispatch_temp_input_msg, NULL);
   msg_subscribe(MSG_PROBE_TIMEOUT, thread, dispatch_temp_input_msg, NULL);
@@ -123,6 +127,7 @@ dispatch_output_settings(output_settings_msg_t* msg)
 
   /* Re-evaluate the last temp from both probes with the new output settings */
   const probe_settings_t* probe_settings = app_cfg_get_probe_settings(PROBE_1);
+
   evaluate_setpoint(
       PROBE_1,
       probe_settings->setpoint,
@@ -151,12 +156,17 @@ dispatch_probe_settings(probe_settings_msg_t* msg)
 static void
 evaluate_setpoint(probe_id_t probe, sensor_sample_t setpoint, sensor_sample_t sample)
 {
+  /* Run PID */
+  int16_t pid;
+
+  pid = pid_exec(probe, setpoint, sample);
+
   inputs[probe].last_sample = sample;
 
-  if (sample.value.temp > setpoint.value.temp) {
+  if ((sample.value.temp - pid) > setpoint.value.temp) {
     trigger_output(probe, OUTPUT_FUNC_COOLING);
   }
-  else if (sample.value.temp < setpoint.value.temp) {
+  else if ((sample.value.temp + pid) < setpoint.value.temp) {
     trigger_output(probe, OUTPUT_FUNC_HEATING);
   }
 }
