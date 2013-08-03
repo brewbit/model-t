@@ -4,6 +4,7 @@
 #include "gui.h"
 #include "gui/button.h"
 #include "gui/label.h"
+#include "gui_history.h"
 #include "gui_probe.h"
 #include "gui_output.h"
 #include "gui_settings.h"
@@ -52,6 +53,7 @@ static void click_probe_button(button_event_t* event);
 static void click_output_button(button_event_t* event);
 static void click_conn_button(button_event_t* event);
 static void click_settings_button(button_event_t* event);
+static void click_stage_button(button_event_t* event);
 
 static void dispatch_output_settings(home_screen_t* s, output_settings_msg_t* msg);
 static void dispatch_new_temp(home_screen_t* s, sensor_msg_t* msg);
@@ -82,7 +84,7 @@ home_screen_create()
       .width  = TILE_SPAN(3),
       .height = TILE_SPAN(2),
   };
-  s->stage_button = button_create(s->screen, rect, NULL, GREEN, NULL, NULL, NULL, NULL);
+  s->stage_button = button_create(s->screen, rect, NULL, GREEN, NULL, NULL, NULL, click_stage_button);
 
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
@@ -314,4 +316,13 @@ click_settings_button(button_event_t* event)
 
   widget_t* settings_screen = settings_screen_create();
   gui_push_screen(settings_screen);
+}
+
+static void
+click_stage_button(button_event_t* event)
+{
+  (void)event;
+
+  widget_t* history_screen = history_screen_create();
+  gui_push_screen(history_screen);
 }

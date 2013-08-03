@@ -18,6 +18,7 @@ PROJECT_CSRC = \
        gfx.c \
        gui.c \
        gui_calib.c \
+       gui_history.c \
        gui_home.c \
        gui_probe.c \
        gui_output.c \
