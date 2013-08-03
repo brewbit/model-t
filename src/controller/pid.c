@@ -8,12 +8,13 @@ float ki[NUM_PROBES];
 /* derivative gain */
 float kd[NUM_PROBES];
 
-uint16_t sampleTime = MS2ST(5000); //1 sec
+/* 1 second */
+uint16_t sampleTime = MS2ST(1000);
 int32_t  lastSample[NUM_PROBES];
 int16_t  output[NUM_PROBES];
 int16_t  iTerm[NUM_PROBES];
-uint16_t  outMin = 0;
-uint16_t  outMax = 100;
+uint16_t  outMin = -200;
+uint16_t  outMax = 200;
 bool      inAuto = FALSE;
 
 #define MANUAL    0

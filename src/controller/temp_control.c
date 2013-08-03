@@ -16,6 +16,7 @@ typedef struct {
 
 typedef struct {
   uint32_t gpio;
+  uint32_t delay_startTime;
 } relay_output_t;
 
 
@@ -27,6 +28,8 @@ static void dispatch_new_temp(sensor_msg_t* msg);
 static void dispatch_probe_timeout(probe_timeout_msg_t* msg);
 static void trigger_output(probe_id_t probe, output_function_t function);
 static void evaluate_setpoint(probe_id_t probe, sensor_sample_t setpoint, sensor_sample_t sample);
+static void start_compressor_delay(uint32_t delay_startTime);
+static bool compressor_delay_has_expired(uint32_t compressor_delay, uint32_t delay_startTime);
 
 
 static temp_input_t inputs[NUM_PROBES];
@@ -157,9 +160,7 @@ static void
 evaluate_setpoint(probe_id_t probe, sensor_sample_t setpoint, sensor_sample_t sample)
 {
   /* Run PID */
-  int16_t pid;
-
-  pid = pid_exec(probe, setpoint, sample);
+  int16_t pid = pid_exec(probe, setpoint, sample);
 
   inputs[probe].last_sample = sample;
 
@@ -178,14 +179,37 @@ trigger_output(probe_id_t probe, output_function_t function)
 
   for (i = 0; i < NUM_OUTPUTS; ++i) {
     const output_settings_t* output_settings = app_cfg_get_output_settings(i);
+    bool time_expired = compressor_delay_has_expired(output_settings->compressor_delay,
+                                                     outputs[i].delay_startTime);
 
-    if (output_settings->trigger == probe) {
+     if (output_settings->trigger == probe) {
       if (output_settings->function == function) {
-        palSetPad(GPIOB, outputs[i].gpio);
+    	if(time_expired) {
+    	  palSetPad(GPIOB, outputs[i].gpio);
+    	}
       }
       else {
         palClearPad(GPIOB, outputs[i].gpio);
+        start_compressor_delay(outputs[i].delay_startTime);
       }
     }
   }
 }
+
+static bool
+compressor_delay_has_expired(uint32_t compressor_delay, uint32_t delay_startTime)
+{
+  uint32_t current_time = chTimeNow();
+
+  if ((current_time - delay_startTime) > compressor_delay)
+    return TRUE;
+  else
+    return FALSE;
+}
+
+static void
+start_compressor_delay(uint32_t delay_startTime)
+{
+  delay_startTime = chTimeNow();
+}
+

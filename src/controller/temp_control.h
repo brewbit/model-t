@@ -6,6 +6,7 @@
 #include "temp_input.h"
 #include "types.h"
 
+
 typedef enum {
   OUTPUT_1,
   OUTPUT_2,
@@ -27,6 +28,7 @@ typedef struct {
 typedef struct {
   output_function_t function;
   probe_id_t trigger;
+  uint32_t compressor_delay;
 } output_settings_t;
 
 typedef struct {

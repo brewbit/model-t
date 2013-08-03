@@ -54,8 +54,11 @@ app_cfg_init()
 
     app_cfg_local.output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
     app_cfg_local.output_settings[OUTPUT_1].trigger = PROBE_1;
+    app_cfg_local.output_settings[OUTPUT_1].compressor_delay = S2ST(3* 60);
+
     app_cfg_local.output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
     app_cfg_local.output_settings[OUTPUT_2].trigger = PROBE_1;
+    app_cfg_local.output_settings[OUTPUT_2].compressor_delay = S2ST(3 * 60);
 
     app_cfg_local.is_valid = true;
   }
