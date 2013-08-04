@@ -15,12 +15,14 @@ typedef enum {
 } temperature_unit_t;
 
 typedef uint32_t humidity_t;
+typedef int32_t delay_time_t;
 
 typedef enum {
   SAMPLE_NONE,
   SAMPLE_TEMPERATURE,
   SAMPLE_HUMIDITY,
-  SAMPLE_LIGHT
+  SAMPLE_LIGHT,
+  SAMPLE_TIME
 } sample_type_t;
 
 typedef struct {
@@ -28,6 +30,7 @@ typedef struct {
   union {
     temperature_t temp;
     humidity_t humidity;
+    delay_time_t time;
   } value;
 } sensor_sample_t;
 

@@ -9,6 +9,7 @@
 #include "app_cfg.h"
 #include "gui_output_function.h"
 #include "gui_output_trigger.h"
+#include "gui_output_delay.h"
 
 typedef struct {
   widget_t* widget;
@@ -27,6 +28,7 @@ static void output_settings_screen_msg(msg_event_t* event);
 static void dispatch_output_settings(output_screen_t* s, output_settings_msg_t* msg);
 static void set_output_settings(output_screen_t* s, output_function_t function, probe_id_t trigger);
 static void back_button_clicked(button_event_t* event);
+static void compressor_delay_button_clicked(button_event_t* event);
 static void function_button_clicked(button_event_t* event);
 static void trigger_button_clicked(button_event_t* event);
 
@@ -67,6 +69,9 @@ output_settings_screen_create(output_id_t output)
   rect.x += 84;
   s->trigger_button = button_create(s->widget, rect, img_temp_38, AMBER, NULL, NULL, NULL, trigger_button_clicked);
 
+  rect.x += 84;
+  s->compressor_delay_button = button_create(s->widget, rect, img_stopwatch, GREEN, NULL, NULL, NULL, compressor_delay_button_clicked);
+
   s->output = output;
   s->settings = *app_cfg_get_output_settings(output);
 
@@ -101,11 +106,8 @@ dispatch_output_settings(output_screen_t* s, output_settings_msg_t* msg)
 static void
 set_output_settings(output_screen_t* s, output_function_t function, probe_id_t trigger)
 {
-  widget_t* btn1;
-  widget_t* btn2;
-
-  btn1 = s->function_button;
-  btn2 = s->trigger_button;
+  widget_t* btn1 = s->function_button;
+  widget_t* btn2 = s->trigger_button;
 
   color_t color = 0;
   const Image_t* img = img_snowflake;
@@ -127,7 +129,7 @@ set_output_settings(output_screen_t* s, output_function_t function, probe_id_t t
   widget_set_background(btn1, color, FALSE);
   button_set_icon(btn1, img);
 
-  widget_set_background(btn2, (trigger == PROBE_1) ? AMBER : PURPLE , FALSE);
+  widget_set_background(btn2, (trigger == PROBE_1) ? AMBER : PURPLE, FALSE);
 }
 
 static void
@@ -154,5 +156,15 @@ trigger_button_clicked(button_event_t* event)
 
   widget_t* output_trigger_screen = output_trigger_screen_create(s->output);
   gui_push_screen(output_trigger_screen);
+}
+
+static void
+compressor_delay_button_clicked(button_event_t* event)
+{
+  widget_t* screen = widget_get_parent(event->widget);
+  output_screen_t* s = widget_get_instance_data(screen);
+
+  widget_t* output_delay_screen = output_delay_screen_create(s->output);
+  gui_push_screen(output_delay_screen);
 }
 

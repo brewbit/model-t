@@ -79,6 +79,10 @@ temp_widget_paint(paint_event_t* event)
     value = s->sample.value.humidity / 100.0f;
     unit_str = "%";
   }
+  else if (s->sample.type == SAMPLE_TIME) {
+    value = s->sample.value.time;
+    unit_str = "min";
+  }
 
   char temp_str[16];
   if (s->sample.type == SAMPLE_NONE)
