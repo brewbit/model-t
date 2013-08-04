@@ -116,6 +116,7 @@ home_screen_create()
   s->probes[PROBE_2].temp_widget = temp_widget_create(s->stage_button, rect);
 
   place_temp_widgets(s);
+
   set_output_settings(s, OUTPUT_1,
       app_cfg_get_output_settings(OUTPUT_1)->function);
   set_output_settings(s, OUTPUT_2,
@@ -182,7 +183,7 @@ dispatch_new_temp(home_screen_t* s, sensor_msg_t* msg)
 
   /* Enable the probe button and adjust the placement of the temp display widgets */
   if (!widget_is_enabled(s->probes[msg->probe].button)) {
-    widget_enable(s->probes[msg->probe].button, true);
+    widget_enable(s->probes[msg->probe].button, TRUE);
     place_temp_widgets(s);
   }
 }
@@ -245,6 +246,7 @@ static void
 set_output_settings(home_screen_t* s, output_id_t output, output_function_t function)
 {
   widget_t* btn;
+
   if (output == OUTPUT_1)
     btn = s->output1_button;
   else
@@ -252,17 +254,16 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
 
   color_t color = 0;
   switch (function) {
-  case OUTPUT_FUNC_COOLING:
-    color = CYAN;
-    break;
+    case OUTPUT_FUNC_COOLING:
+      color = CYAN;
+      break;
 
-  case OUTPUT_FUNC_HEATING:
-    color = ORANGE;
-    break;
+    case OUTPUT_FUNC_HEATING:
+      color = ORANGE;
+      break;
 
-  case OUTPUT_FUNC_MANUAL:
-    color = MAGENTA;
-    break;
+    default:
+      break;
   }
 
   widget_set_background(btn, color, FALSE);

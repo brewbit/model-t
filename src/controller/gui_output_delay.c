@@ -134,6 +134,7 @@ set_delay(output_delay_screen_t* s, sensor_sample_t* setpoint)
   else if (setpoint->value.time > MAX_DELAY)
     setpoint->value.time = MAX_DELAY;
 
+  s->settings.compressor_delay = S2ST(setpoint->value.temp);
   s->settings.setpoint = *setpoint;
   temp_widget_set_value(s->temp_widget, setpoint);
 }
