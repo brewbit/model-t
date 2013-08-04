@@ -94,13 +94,15 @@ output_settings_screen_msg(msg_event_t* event)
 {
   output_screen_t* s = widget_get_instance_data(event->widget);
 
-  dispatch_output_settings(s, event->msg_data);
+  if (event->msg_id == MSG_OUTPUT_SETTINGS)
+    dispatch_output_settings(s, event->msg_data);
 }
 
 static void
 dispatch_output_settings(output_screen_t* s, output_settings_msg_t* msg)
 {
-  set_output_settings(s, msg->settings.function, msg->settings.trigger);
+  if (msg->output == s->output)
+    set_output_settings(s, msg->settings.function, msg->settings.trigger);
 }
 
 static void

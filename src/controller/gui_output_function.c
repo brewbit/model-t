@@ -23,7 +23,6 @@ typedef struct {
   widget_t* function_cool_desc_label;
 
   output_id_t output;
-  output_settings_t settings;
 } output_screen_t;
 
 
@@ -43,72 +42,71 @@ output_function_screen_create(output_id_t output)
   char* header;
   char* desc;
   output_screen_t* s = calloc(1, sizeof(output_screen_t));
-   s->widget = widget_create(NULL, &output_function_widget_class, s, display_rect);
-   widget_set_background(s->widget, BLACK, FALSE);
+  s->widget = widget_create(NULL, &output_function_widget_class, s, display_rect);
+  widget_set_background(s->widget, BLACK, FALSE);
 
-   rect_t rect = {
-       .x = 15,
-       .y = 15,
-       .width = 56,
-       .height = 56,
-   };
-   s->back_button = button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
+  rect_t rect = {
+      .x = 15,
+      .y = 15,
+      .width = 56,
+      .height = 56,
+  };
+  s->back_button = button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
 
-   rect.x = 85;
-   rect.y = 26;
-   rect.width = 220;
-   char* title = (output == OUTPUT_1) ? "Output 1 Func" : "Output 2 Func";
-   label_create(s->widget, rect, title, font_opensans_22, WHITE, 1);
+  rect.x = 85;
+  rect.y = 26;
+  rect.width = 220;
+  char* title = (output == OUTPUT_1) ? "Output 1 Func" : "Output 2 Func";
+  label_create(s->widget, rect, title, font_opensans_22, WHITE, 1);
 
-   rect.x = 10;
-   rect.y = 95;
-   rect.width = 300;
-   rect.height = 66;
-   s->function_heat_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, function_heat_button_clicked);
+  rect.x = 10;
+  rect.y = 95;
+  rect.width = 300;
+  rect.height = 66;
+  s->function_heat_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, function_heat_button_clicked);
 
-   rect.y = 165;
-   s->function_cool_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, function_cool_button_clicked);
+  rect.y = 165;
+  s->function_cool_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, function_cool_button_clicked);
 
-   rect.x = 5;
-   rect.y = 5;
-   rect.width = 56;
-   rect.height = 56;
-   s->function_heat_icon = icon_create(s->function_heat_button, rect, img_flame, ORANGE);
+  rect.x = 5;
+  rect.y = 5;
+  rect.width = 56;
+  rect.height = 56;
+  s->function_heat_icon = icon_create(s->function_heat_button, rect, img_flame, ORANGE);
 
-   rect.x = 70;
-   rect.y = 5;
-   rect.width = 200;
-   s->function_heat_header_label = label_create(s->function_heat_button, rect, NULL, font_opensans_16, WHITE, 1);
+  rect.x = 70;
+  rect.y = 5;
+  rect.width = 200;
+  s->function_heat_header_label = label_create(s->function_heat_button, rect, NULL, font_opensans_16, WHITE, 1);
 
-   rect.y = 30;
-   s->function_heat_desc_label = label_create(s->function_heat_button, rect, NULL, font_opensans_8, WHITE, 2);
-   header = "Function: Heating";
-   desc = "The output will turn on when the temp is below the setpoint.";
-   label_set_text(s->function_heat_header_label, header);
-   label_set_text(s->function_heat_desc_label, desc);
+  rect.y = 30;
+  s->function_heat_desc_label = label_create(s->function_heat_button, rect, NULL, font_opensans_8, WHITE, 2);
+  header = "Function: Heating";
+  desc = "The output will turn on when the temp is below the setpoint.";
+  label_set_text(s->function_heat_header_label, header);
+  label_set_text(s->function_heat_desc_label, desc);
 
-   rect.x = 5;
-   rect.y = 5;
-   rect.width = 56;
-   rect.height = 56;
-   s->function_cool_icon = icon_create(s->function_cool_button, rect, img_snowflake, CYAN);
+  rect.x = 5;
+  rect.y = 5;
+  rect.width = 56;
+  rect.height = 56;
+  s->function_cool_icon = icon_create(s->function_cool_button, rect, img_snowflake, CYAN);
 
-   rect.x = 70;
-   rect.y = 5;
-   rect.width = 200;
-   s->function_cool_header_label = label_create(s->function_cool_button, rect, NULL, font_opensans_16, WHITE, 1);
+  rect.x = 70;
+  rect.y = 5;
+  rect.width = 200;
+  s->function_cool_header_label = label_create(s->function_cool_button, rect, NULL, font_opensans_16, WHITE, 1);
 
-   rect.y = 30;
-   s->function_cool_desc_label = label_create(s->function_cool_button, rect, NULL, font_opensans_8, WHITE, 2);
-   header = "Function: Cooling";
-   desc = "The output will turn on when the temp is above the setpoint.";
-   label_set_text(s->function_cool_header_label, header);
-   label_set_text(s->function_cool_desc_label, desc);
+  rect.y = 30;
+  s->function_cool_desc_label = label_create(s->function_cool_button, rect, NULL, font_opensans_8, WHITE, 2);
+  header = "Function: Cooling";
+  desc = "The output will turn on when the temp is above the setpoint.";
+  label_set_text(s->function_cool_header_label, header);
+  label_set_text(s->function_cool_desc_label, desc);
 
-   s->output = output;
-   s->settings = *app_cfg_get_output_settings(output);
+  s->output = output;
 
-   return s->widget;
+  return s->widget;
 }
 
 static void
@@ -121,10 +119,7 @@ output_function_screen_destroy(widget_t* w)
 static void
 back_button_clicked(button_event_t* event)
 {
-  widget_t* w = widget_get_parent(event->widget);
-  output_screen_t* s = widget_get_instance_data(w);
-
-  app_cfg_set_output_settings(s->output, &s->settings);
+  (void)event;
 
   gui_pop_screen();
 }
@@ -135,8 +130,9 @@ function_heat_button_clicked(button_event_t* event)
   widget_t* w = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(w);
 
-  s->settings.function = OUTPUT_FUNC_HEATING;
-  app_cfg_set_output_settings(s->output, &s->settings);
+  output_settings_t settings = *app_cfg_get_output_settings(s->output);
+  settings.function = OUTPUT_FUNC_HEATING;
+  app_cfg_set_output_settings(s->output, &settings);
 
   gui_pop_screen();
 }
@@ -147,8 +143,9 @@ function_cool_button_clicked(button_event_t* event)
   widget_t* w = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(w);
 
-  s->settings.function = OUTPUT_FUNC_COOLING;
-  app_cfg_set_output_settings(s->output, &s->settings);
+  output_settings_t settings = *app_cfg_get_output_settings(s->output);
+  settings.function = OUTPUT_FUNC_COOLING;
+  app_cfg_set_output_settings(s->output, &settings);
 
   gui_pop_screen();
 }

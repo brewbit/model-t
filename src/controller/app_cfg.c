@@ -66,7 +66,7 @@ app_cfg_init()
     app_cfg_local.output_settings[OUTPUT_2].setpoint.value.temp = 3;
 
 
-    app_cfg_local.is_valid = true;
+    app_cfg_local.is_valid = TRUE;
   }
 
   chMtxInit(&app_cfg_mtx);

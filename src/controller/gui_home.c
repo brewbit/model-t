@@ -266,7 +266,7 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
       break;
   }
 
-  widget_set_background(btn, color, FALSE);
+  button_set_color(btn, color);
 }
 
 static void

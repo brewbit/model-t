@@ -40,6 +40,7 @@ output_delay_screen_create(output_id_t output)
 {
   output_delay_screen_t* s = calloc(1, sizeof(output_delay_screen_t));
   s->widget = widget_create(NULL, &output_delay_widget_class, s, display_rect);
+  widget_set_background(s->widget, BLACK, FALSE);
 
   rect_t rect = {
       .x = 15,
@@ -69,6 +70,7 @@ output_delay_screen_create(output_id_t output)
   rect.width = 254;
   s->temp_widget = temp_widget_create(s->widget, rect);
 
+  s->output = output;
   s->settings = *app_cfg_get_output_settings(output);
   set_delay(s, &s->settings.setpoint);
 

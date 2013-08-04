@@ -28,4 +28,7 @@ button_create(
 void
 button_set_icon(widget_t* w, const Image_t* icon);
 
+void
+button_set_color(widget_t* w, uint16_t color);
+
 #endif

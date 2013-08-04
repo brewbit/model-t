@@ -23,7 +23,6 @@ typedef struct {
   widget_t* trigger_probe2_desc_label;
 
   output_id_t output;
-  output_settings_t settings;
 } output_screen_t;
 
 
@@ -107,7 +106,6 @@ output_trigger_screen_create(output_id_t output)
   label_set_text(s->trigger_probe2_desc_label, desc);
 
   s->output = output;
-  s->settings = *app_cfg_get_output_settings(output);
 
   return s->widget;
 }
@@ -122,10 +120,7 @@ output_trigger_screen_destroy(widget_t* w)
 static void
 back_button_clicked(button_event_t* event)
 {
-  widget_t* w = widget_get_parent(event->widget);
-  output_screen_t* s = widget_get_instance_data(w);
-
-  app_cfg_set_output_settings(s->output, &s->settings);
+  (void)event;
 
   gui_pop_screen();
 }
@@ -136,8 +131,9 @@ trigger_probe1_button_clicked(button_event_t* event)
   widget_t* screen = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(screen);
 
-  s->settings.trigger = PROBE_1;
-  app_cfg_set_output_settings(s->output, &s->settings);
+  output_settings_t settings = *app_cfg_get_output_settings(s->output);
+  settings.trigger = PROBE_1;
+  app_cfg_set_output_settings(s->output, &settings);
 
   gui_pop_screen();
 }
@@ -148,8 +144,9 @@ trigger_probe2_button_clicked(button_event_t* event)
   widget_t* screen = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(screen);
 
-  s->settings.trigger = PROBE_2;
-  app_cfg_set_output_settings(s->output, &s->settings);
+  output_settings_t settings = *app_cfg_get_output_settings(s->output);
+  settings.trigger = PROBE_2;
+  app_cfg_set_output_settings(s->output, &settings);
 
   gui_pop_screen();
 }
