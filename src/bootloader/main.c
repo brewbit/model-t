@@ -46,7 +46,7 @@ main(void)
 
   if (_app_hdr.magic == 0xDEADBEEF) {
     chprintf((BaseChannel*)&SD3, "Valid app header found.  Jumping to app.\r\n");
-    chThdSleepSeconds(1);
+    chThdSleepMilliseconds(100);
     jump_to_app(0x08008200);
   }
   else {

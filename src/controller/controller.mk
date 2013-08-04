@@ -2,7 +2,7 @@ PROJECT = controller
 
 BOARD = II-MT-CONTROLLER
 
-PROJECT_INCDIR = util/json
+PROJECT_INCDIR = util util/json
 
 PROJECT_AUTOGEN_CSRC = \
        image_resources.c \
@@ -51,6 +51,7 @@ PROJECT_CSRC = \
        gui/label.c \
        gui/progressbar.c \
        gui/widget.c \
+       util/linked_list.c \
        util/json/cJSON.c
 
 include make-bin.mk

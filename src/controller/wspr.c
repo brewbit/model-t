@@ -25,6 +25,9 @@ handle_debug(uint8_t* data, uint16_t data_len);
 static void
 handle_version(uint8_t* data, uint16_t data_len);
 
+static void
+wspr_idle(void);
+
 
 static SerialDriver* sd = &SD4;
 static wspr_parser_t wspr_parser;
@@ -62,11 +65,21 @@ thread_wspr(void* arg)
   chRegSetThreadName("wspr");
 
   while (1) {
-    uint8_t c = sdGet(sd);
-    wspr_parse(&wspr_parser, c);
+    msg_t c = sdGetTimeout(sd, MS2ST(200));
+
+    if (c >= 0)
+      wspr_parse(&wspr_parser, c);
+    else
+      wspr_idle();
   }
 
   return 0;
+}
+
+static void
+wspr_idle()
+{
+  wspr_tcp_idle();
 }
 
 void

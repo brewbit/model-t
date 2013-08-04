@@ -15,41 +15,7 @@
 #include "gfx.h"
 #include "app_cfg.h"
 
-
-
-static void
-dispatch_response_headers(http_response_header_t* response)
-{
-  chprintf(&SD3, "http headers %d %d\r\n", response->result, response->response_code);
-}
-
-static void
-dispatch_response_body(http_response_body_t* response)
-{
-  chprintf(&SD3, "http body\r\n");
-}
-
-
-static void
-http_callback(void* arg, http_response_t* response)
-{
-  switch (response->type) {
-  case HTTP_RESPONSE_HEADERS:
-    dispatch_response_headers((http_response_header_t*)response);
-    break;
-
-  case HTTP_RESPONSE_BODY:
-    dispatch_response_body((http_response_body_t*)response);
-    break;
-
-  case HTTP_RESPONSE_END:
-    chprintf(&SD3, "http end\r\n");
-    break;
-
-  default:
-    break;
-  }
-}
+#define MAKE_IPV4_ADDRESS(a, b, c, d)                   ((((uint32_t) a) << 24) | (((uint32_t) b) << 16) | (((uint32_t) c) << 8) | ((uint32_t) d))
 
 int
 main(void)
@@ -73,18 +39,14 @@ main(void)
 
   chThdSleepSeconds(15);
 
-//  chprintf(&SD3, "making http req\r\n");
-
-//  http_request_t http_request = {
-//    .host = "192.168.1.146",
-//    .port = 8000,
-//    .method = HTTP_GET,
-//    .url = "/Inventek_Systems_eS-WiFiPatch/Inventek_Systems_Instructions.txt",
-//    .num_headers = 0,
-//    .headers = NULL,
-//    .request = ""
-//  };
-//  wspr_http_request(&http_request, http_callback, NULL);
+  chprintf(&SD3, "connecting to echo server\r\n");
+  BaseChannel* conn = wspr_tcp_connect(MAKE_IPV4_ADDRESS(192, 168, 1, 146), 35287);
+  if (conn != NULL) {
+    chprintf(&SD3, "connection established\r\n");
+    chprintf(conn, "Hello world!");
+  }
+  else
+    chprintf(&SD3, "connection failed\r\n");
 
   while (TRUE) {
     palSetPad(GPIOB, GPIOB_LED1);

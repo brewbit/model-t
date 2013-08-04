@@ -3,13 +3,28 @@
 
 #include "wspr.h"
 
+#include <chioch.h>
+
+
+typedef struct {
+  BaseChannel channel;
+  uint16_t handle;
+  InputQueue in;
+  OutputQueue out;
+  uint8_t out_buf[512];
+  uint8_t in_buf[512];
+  Semaphore connected;
+  VirtualTimer send_timer;
+} tcp_stream_t;
+
+
 void
 wspr_tcp_init(void);
 
 void
-tcp_connect(uint32_t ip, uint16_t port);
+wspr_tcp_idle(void);
 
-void
-tcp_send(uint16_t handle, uint8_t* data, uint16_t data_len);
+BaseChannel*
+wspr_tcp_connect(uint32_t ip, uint16_t port);
 
 #endif

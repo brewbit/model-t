@@ -15,6 +15,10 @@
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 
+#define offsetof(st, m) ((size_t)(&((st *)0)->m))
+#define container_of(ptr, type, member) \
+                (type *)( ((char *)ptr) - offsetof(type, member) )
+
 #define stdout (BaseChannel *)&SD3
 
 #endif
