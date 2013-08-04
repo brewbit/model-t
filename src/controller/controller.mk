@@ -22,6 +22,8 @@ PROJECT_CSRC = \
        gui_home.c \
        gui_probe.c \
        gui_output.c \
+       gui_output_function.c \
+       gui_output_trigger.c \
        gui_settings.c \
        gui_update.c \
        gui_wifi.c \
