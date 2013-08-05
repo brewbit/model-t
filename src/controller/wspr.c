@@ -13,6 +13,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+
+typedef struct {
+  wspr_msg_t id;
+  uint8_t* data;
+  uint16_t data_len;
+} wspr_msg_data_t;
+
+
 static msg_t
 thread_wspr(void* arg);
 
@@ -28,14 +36,18 @@ handle_version(uint8_t* data, uint16_t data_len);
 static void
 wspr_idle(void);
 
+static void
+wspr_send_msg(wspr_msg_data_t* msg);
 
 static SerialDriver* sd = &SD4;
 static wspr_parser_t wspr_parser;
+static Thread* wspr_thread;
 static WORKING_AREA(wa_thread_wspr, 2500);
 static wspr_msg_handler_t handlers[NUM_WSPR_MSGS] = {
     [WSPR_OUT_VERSION] = handle_version,
     [WSPR_OUT_DEBUG] = handle_debug,
 };
+static systime_t last_idle;
 
 void
 wspr_init()
@@ -47,7 +59,7 @@ wspr_init()
   sdStart(sd, NULL);
   wspr_parser_init(&wspr_parser, recv_wspr_pkt, NULL);
 
-  chThdCreateStatic(wa_thread_wspr, sizeof(wa_thread_wspr), NORMALPRIO, thread_wspr, NULL);
+  wspr_thread = chThdCreateStatic(wa_thread_wspr, sizeof(wa_thread_wspr), NORMALPRIO, thread_wspr, NULL);
 }
 
 void
@@ -65,12 +77,26 @@ thread_wspr(void* arg)
   chRegSetThreadName("wspr");
 
   while (1) {
-    msg_t c = sdGetTimeout(sd, MS2ST(200));
-
-    if (c >= 0)
+    while (!sdGetWouldBlock(sd)) {
+      uint8_t c = sdGet(sd);
       wspr_parse(&wspr_parser, c);
-    else
+    }
+
+    while (chMsgIsPendingI(currp)) {
+      Thread* tp = chMsgWait();
+      if (tp != NULL) {
+        wspr_msg_data_t* msg = (wspr_msg_data_t*)chMsgGet(tp);
+
+        wspr_send_msg(msg);
+
+        chMsgRelease(tp, 0);
+      }
+    }
+
+    if ((chTimeNow() - last_idle) > MS2ST(200))
       wspr_idle();
+
+    chThdSleepMilliseconds(50);
   }
 
   return 0;
@@ -80,20 +106,35 @@ static void
 wspr_idle()
 {
   wspr_tcp_idle();
+  last_idle = chTimeNow();
 }
 
 void
 wspr_send(wspr_msg_t id, uint8_t* data, uint16_t data_len)
 {
-  uint8_t* msg = NULL;
-  uint16_t msg_len;
-  uint8_t result = wspr_pack(id, data, data_len, &msg, &msg_len);
+  wspr_msg_data_t msg = {
+      .id       = id,
+      .data     = data,
+      .data_len = data_len
+  };
+  if (chThdSelf() != wspr_thread)
+    chMsgSend(wspr_thread, (msg_t)&msg);
+  else
+    wspr_send_msg(&msg);
+}
+
+static void
+wspr_send_msg(wspr_msg_data_t* msg)
+{
+  uint8_t* buf = NULL;
+  uint16_t buf_len;
+  uint8_t result = wspr_pack(msg->id, msg->data, msg->data_len, &buf, &buf_len);
 
   if (result == 0)
-    sdWrite(sd, msg, msg_len);
+    sdWrite(sd, buf, buf_len);
 
-  if (msg)
-    free(msg);
+  if (buf)
+    free(buf);
 }
 
 static void

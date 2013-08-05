@@ -39,14 +39,19 @@ main(void)
 
   chThdSleepSeconds(15);
 
-  chprintf(&SD3, "connecting to echo server\r\n");
+  chprintf((BaseChannel*)&SD3, "connecting to echo server\r\n");
   BaseChannel* conn = wspr_tcp_connect(MAKE_IPV4_ADDRESS(192, 168, 1, 146), 35287);
   if (conn != NULL) {
-    chprintf(&SD3, "connection established\r\n");
-    chprintf(conn, "Hello world!");
+    uint8_t recv[32] = {0};
+    chprintf((BaseChannel*)&SD3, "connection established\r\n");
+    chIOWriteTimeout(conn, "Hello world!", 12, MS2ST(5000));
+    chThdSleepMilliseconds(2000);
+    chprintf((BaseChannel*)&SD3, "waiting\r\n");
+    chIOReadTimeout(conn, recv, sizeof(recv)-1, MS2ST(5000));
+    chprintf((BaseChannel*)&SD3, "recvd: %s\r\n", recv);
   }
   else
-    chprintf(&SD3, "connection failed\r\n");
+    chprintf((BaseChannel*)&SD3, "connection failed\r\n");
 
   while (TRUE) {
     palSetPad(GPIOB, GPIOB_LED1);

@@ -34,21 +34,12 @@ static msg_t tcp_put(void *instance, uint8_t b, systime_t time);
 static msg_t tcp_get(void *instance, systime_t time);
 static size_t tcp_writet(void *instance, const uint8_t *bp, size_t n, systime_t time);
 static size_t tcp_readt(void *instance, uint8_t *bp, size_t n, systime_t time);
-static void tcp_in_notify(GenericQueue *qp);
-static void tcp_out_notify(GenericQueue *qp);
-static void tcp_stream_tick(tcp_stream_t* s);
-
-static void
-tcp_connect_complete(tcp_stream_setup_t* ss, tcp_connect_response_t* response_data);
-
-static void
-handle_tcp_connect_result(uint8_t* data, uint16_t data_len);
-
-static void
-handle_tcp_send_result(uint8_t* data, uint16_t data_len);
-
-static void
-handle_tcp_recv(uint8_t* data, uint16_t data_len);
+static void tcp_stream_pump(tcp_stream_t* s);
+static tcp_stream_t* find_stream(uint16_t handle);
+static void tcp_connect_complete(tcp_stream_setup_t* ss, tcp_connect_response_t* response_data);
+static void handle_tcp_connect_result(uint8_t* data, uint16_t data_len);
+static void handle_tcp_send_result(uint8_t* data, uint16_t data_len);
+static void handle_tcp_recv(uint8_t* data, uint16_t data_len);
 
 
 const struct BaseChannelVMT tcp_vmt = {
@@ -86,27 +77,41 @@ wspr_tcp_idle()
   linked_list_node_t* node;
   for (node = conn_list->head; node != NULL; node = node->next) {
     tcp_stream_t* s = node->data;
-    tcp_stream_tick(s);
+    tcp_stream_pump(s);
   }
 }
 
 static void
-tcp_stream_tick(tcp_stream_t* s)
+tcp_stream_pump(tcp_stream_t* s)
 {
-  int i;
-  datastream_t* ds = ds_new(NULL, 1024);
+  // send any data that has been queued up
+  if (!chOQIsEmptyI(&s->out)) {
+    int i;
+    datastream_t* ds = ds_new(NULL, 1024);
 
-  ds_write_u16(ds, s->handle);
-  uint16_t n = MIN(chOQGetFullI(&s->out), 256);
-  ds_write_u16(ds, n);
-  for (i = 0; i < n; ++i) {
-    uint8_t b = chOQGetI(&s->out);
-    ds_write_u8(ds, b);
+    ds_write_u16(ds, s->handle);
+    uint16_t n = MIN(chOQGetFullI(&s->out), 256);
+    ds_write_u16(ds, n);
+    for (i = 0; i < n; ++i) {
+      uint8_t b = chOQGetI(&s->out);
+      ds_write_u8(ds, b);
+    }
+
+    wspr_send(WSPR_IN_TCP_SEND, ds->buf, ds_index(ds));
+
+    ds_free(ds);
   }
 
-  wspr_send(WSPR_IN_TCP_SEND, ds->buf, ds_index(ds));
+  // request more recv data if it has all been processed
+  if (chIQIsEmptyI(&s->in)) {
+    datastream_t* ds = ds_new(NULL, 1024);
 
-  ds_free(ds);
+    ds_write_u16(ds, s->handle);
+
+    wspr_send(WSPR_IN_TCP_RECV, ds->buf, ds_index(ds));
+
+    ds_free(ds);
+  }
 }
 
 BaseChannel*
@@ -134,27 +139,12 @@ wspr_tcp_connect(uint32_t ip, uint16_t port)
   if (ss.result == 0) {
     tcp_stream = calloc(1, sizeof(tcp_stream_t));
     tcp_stream->channel.vmt = &tcp_vmt;
-    chIQInit(&tcp_stream->in, tcp_stream->in_buf, sizeof(tcp_stream->in_buf), tcp_in_notify);
+    chIQInit(&tcp_stream->in, tcp_stream->in_buf, sizeof(tcp_stream->in_buf), NULL);
     chOQInit(&tcp_stream->out, tcp_stream->out_buf, sizeof(tcp_stream->out_buf), NULL);
     linked_list_append(conn_list, tcp_stream);
   }
 
   return (BaseChannel*)tcp_stream;
-}
-
-static void
-tcp_in_notify(GenericQueue *qp)
-{
-  if (chOQIsEmptyI(qp)) {
-    tcp_stream_t* s = container_of(qp, tcp_stream_t, in);
-    datastream_t* ds = ds_new(NULL, 1024);
-
-    ds_write_u16(ds, s->handle);
-
-    wspr_send(WSPR_IN_TCP_RECV, ds->buf, ds_index(ds));
-
-    ds_free(ds);
-  }
 }
 
 static void
@@ -247,5 +237,34 @@ handle_tcp_send_result(uint8_t* data, uint16_t data_len)
 static void
 handle_tcp_recv(uint8_t* data, uint16_t data_len)
 {
+  uint8_t* recv_data;
+  uint16_t recv_len;
 
+  datastream_t* ds = ds_new(data, data_len);
+
+  uint16_t handle = ds_read_u16(ds);
+  ds_read_buf(ds, &recv_data, &recv_len);
+
+  tcp_stream_t* s = find_stream(handle);
+  if (s != NULL) {
+    int i;
+    for (i = 0; i < recv_len; ++i) {
+      chIQPutI(&s->in, recv_data[i]);
+    }
+  }
+
+  ds_free(ds);
+}
+
+static tcp_stream_t*
+find_stream(uint16_t handle)
+{
+  linked_list_node_t* node;
+  for (node = conn_list->head; node != NULL; node = node->next) {
+    tcp_stream_t* s = node->data;
+    if (s->handle == handle)
+      return s;
+  }
+
+  return NULL;
 }
