@@ -30,6 +30,36 @@ jump_to_app(uint32_t address)
     usrMain();
 }
 
+static void
+check_reset_source()
+{
+  int csr = RCC->CSR;
+
+  chprintf((BaseChannel*)&SD3, "  Reset source: ");
+
+  if (csr & RCC_CSR_BORRSTF)
+    chprintf((BaseChannel*)&SD3, "BORRSTF\r\n");
+
+  if (csr & RCC_CSR_PADRSTF)
+    chprintf((BaseChannel*)&SD3, "PADRSTF\r\n");
+
+  if (csr & RCC_CSR_PORRSTF)
+    chprintf((BaseChannel*)&SD3, "PORRSTF\r\n");
+
+  if (csr & RCC_CSR_SFTRSTF)
+    chprintf((BaseChannel*)&SD3, "SFTRSTF\r\n");
+
+  if (csr & RCC_CSR_WDGRSTF)
+    chprintf((BaseChannel*)&SD3, "WDGRSTF\r\n");
+
+  if (csr & RCC_CSR_WWDGRSTF)
+    chprintf((BaseChannel*)&SD3, "WWDGRSTF\r\n");
+
+  if (csr & RCC_CSR_LPWRRSTF)
+    chprintf((BaseChannel*)&SD3, "LPWRRSTF\r\n");
+
+  RCC->CSR |= RCC_CSR_RMVF;
+}
 
 int
 main(void)
@@ -40,7 +70,10 @@ main(void)
   /* start stdout port */
   sdStart(&SD3, NULL);
 
-  chprintf((BaseChannel*)&SD3, "started bootloader\r\n");
+  chprintf((BaseChannel*)&SD3, "Started bootloader\r\n");
+
+  check_reset_source();
+
   chprintf((BaseChannel*)&SD3, "  app_hdr.magic = 0x%x\r\n", _app_hdr.magic);
 
 
