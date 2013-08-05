@@ -27,7 +27,7 @@ wspr_net_init()
   wspr_set_handler(WSPR_OUT_SCAN_RESULT, handle_scan_result);
   wspr_set_handler(WSPR_OUT_SCAN_COMPLETE, handle_scan_complete);
 
-//  chVTSetI(&status_timer, S2ST(1), wspr_net_req_status, NULL);
+  chVTSetI(&status_timer, S2ST(1), wspr_net_req_status, NULL);
 }
 
 static void

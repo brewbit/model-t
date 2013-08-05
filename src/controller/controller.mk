@@ -14,6 +14,7 @@ PROJECT_CSRC = \
        bapi.c \
        crc.c \
        datastream.c \
+       debug_client.c \
        font.c \
        gfx.c \
        gui.c \

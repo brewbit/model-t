@@ -14,8 +14,8 @@
 #include "chprintf.h"
 #include "gfx.h"
 #include "app_cfg.h"
+#include "debug_client.h"
 
-#define MAKE_IPV4_ADDRESS(a, b, c, d)                   ((((uint32_t) a) << 24) | (((uint32_t) b) << 16) | (((uint32_t) c) << 8) | ((uint32_t) d))
 
 int
 main(void)
@@ -33,25 +33,10 @@ main(void)
   wspr_init();
 //  bapi_init();
   gui_init();
+  debug_client_init();
 
   widget_t* home_screen = home_screen_create();
   gui_push_screen(home_screen);
-
-  chThdSleepSeconds(15);
-
-  chprintf((BaseChannel*)&SD3, "connecting to echo server\r\n");
-  BaseChannel* conn = wspr_tcp_connect(MAKE_IPV4_ADDRESS(192, 168, 1, 146), 35287);
-  if (conn != NULL) {
-    uint8_t recv[32] = {0};
-    chprintf((BaseChannel*)&SD3, "connection established\r\n");
-    chIOWriteTimeout(conn, "Hello world!", 12, MS2ST(5000));
-    chThdSleepMilliseconds(2000);
-    chprintf((BaseChannel*)&SD3, "waiting\r\n");
-    chIOReadTimeout(conn, recv, sizeof(recv)-1, MS2ST(5000));
-    chprintf((BaseChannel*)&SD3, "recvd: %s\r\n", recv);
-  }
-  else
-    chprintf((BaseChannel*)&SD3, "connection failed\r\n");
 
   while (TRUE) {
     palSetPad(GPIOB, GPIOB_LED1);
