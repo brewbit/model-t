@@ -19,12 +19,6 @@ typedef struct {
   uint16_t handle;
 } tcp_connect_response_t;
 
-typedef struct {
-  Semaphore sem_connect;
-  int32_t result;
-  uint16_t handle;
-} tcp_stream_setup_t;
-
 
 static size_t tcp_write(void *instance, const uint8_t *bp, size_t n);
 static size_t tcp_read(void *instance, uint8_t *bp, size_t n);
@@ -36,7 +30,7 @@ static size_t tcp_writet(void *instance, const uint8_t *bp, size_t n, systime_t 
 static size_t tcp_readt(void *instance, uint8_t *bp, size_t n, systime_t time);
 static void tcp_stream_pump(tcp_stream_t* s);
 static tcp_stream_t* find_stream(uint16_t handle);
-static void tcp_connect_complete(tcp_stream_setup_t* ss, tcp_connect_response_t* response_data);
+static void tcp_connect_complete(wspr_tcp_connect_handler_t connect_handler, tcp_connect_response_t* response_data);
 static void handle_tcp_connect_result(uint8_t* data, uint16_t data_len);
 static void handle_tcp_send_result(uint8_t* data, uint16_t data_len);
 static void handle_tcp_recv(uint8_t* data, uint16_t data_len);
@@ -114,14 +108,13 @@ tcp_stream_pump(tcp_stream_t* s)
   }
 }
 
-BaseChannel*
-wspr_tcp_connect(uint32_t ip, uint16_t port)
+bool
+wspr_tcp_connect(uint32_t ip, uint16_t port, wspr_tcp_connect_handler_t connect_handler)
 {
-  tcp_stream_setup_t ss;
-  chSemInit(&ss.sem_connect, 0);
+  if (connect_handler == NULL)
+    return false;
 
-
-  txn_t* txn = txn_new(tcp_txns, (txn_callback_t)tcp_connect_complete, &ss);
+  txn_t* txn = txn_new(tcp_txns, (txn_callback_t)tcp_connect_complete, connect_handler);
 
   datastream_t* ds = ds_new(NULL, 1024);
 
@@ -133,26 +126,25 @@ wspr_tcp_connect(uint32_t ip, uint16_t port)
 
   ds_free(ds);
 
-  chSemWait(&ss.sem_connect);
-
-  tcp_stream_t* tcp_stream = NULL;
-  if (ss.result == 0) {
-    tcp_stream = calloc(1, sizeof(tcp_stream_t));
-    tcp_stream->channel.vmt = &tcp_vmt;
-    chIQInit(&tcp_stream->in, tcp_stream->in_buf, sizeof(tcp_stream->in_buf), NULL);
-    chOQInit(&tcp_stream->out, tcp_stream->out_buf, sizeof(tcp_stream->out_buf), NULL);
-    linked_list_append(conn_list, tcp_stream);
-  }
-
-  return (BaseChannel*)tcp_stream;
+  return true;
 }
 
 static void
-tcp_connect_complete(tcp_stream_setup_t* ss, tcp_connect_response_t* response)
+tcp_connect_complete(wspr_tcp_connect_handler_t connect_handler, tcp_connect_response_t* response)
 {
-  ss->handle = response->handle;
-  ss->result = response->result;
-  chSemSignal(&ss->sem_connect);
+  tcp_stream_t* tcp_stream = NULL;
+  if (response->result == 0) {
+    tcp_stream = calloc(1, sizeof(tcp_stream_t));
+    tcp_stream->channel.vmt = &tcp_vmt;
+    tcp_stream->handle = response->handle;
+
+    chIQInit(&tcp_stream->in, tcp_stream->in_buf, sizeof(tcp_stream->in_buf), NULL);
+    chOQInit(&tcp_stream->out, tcp_stream->out_buf, sizeof(tcp_stream->out_buf), NULL);
+
+    linked_list_append(conn_list, tcp_stream);
+  }
+
+  connect_handler((BaseChannel*)tcp_stream);
 }
 
 static size_t

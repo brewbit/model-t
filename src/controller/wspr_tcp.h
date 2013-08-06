@@ -2,6 +2,7 @@
 #define __WSPR_TCP_H__
 
 #include "wspr.h"
+#include "common.h"
 
 #include <chioch.h>
 
@@ -21,13 +22,16 @@ typedef struct {
 } tcp_stream_t;
 
 
+typedef void (*wspr_tcp_connect_handler_t)(BaseChannel* tcp_channel);
+
+
 void
 wspr_tcp_init(void);
 
 void
 wspr_tcp_idle(void);
 
-BaseChannel*
-wspr_tcp_connect(uint32_t ip, uint16_t port);
+bool
+wspr_tcp_connect(uint32_t ip, uint16_t port, wspr_tcp_connect_handler_t connect_handler);
 
 #endif
