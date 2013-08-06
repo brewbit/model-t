@@ -84,6 +84,7 @@ wspr_pack(wspr_msg_t id, uint8_t* data, uint16_t data_len, uint8_t** msg, uint16
 {
   int i;
   uint32_t chksum = 0;
+  int error;
 
   *msg = malloc(data_len + PKT_OVERHEAD);
 
@@ -98,12 +99,11 @@ wspr_pack(wspr_msg_t id, uint8_t* data, uint16_t data_len, uint8_t** msg, uint16
   }
 
   ds_write_u32(ds, chksum);
-  ds_free(ds);
 
   *msg_len = ds_index(ds);
+  error = ds_error(ds);
 
-  if (ds_error(ds))
-    return 1;
-  else
-    return 0;
+  ds_free(ds);
+
+  return error;
 }
