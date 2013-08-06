@@ -5,7 +5,7 @@
 #include "lcd.h"
 #include "wspr.h"
 #include "image.h"
-#include "bapi.h"
+#include "web_api.h"
 #include "touch.h"
 #include "gui.h"
 #include "temp_control.h"
@@ -57,7 +57,7 @@ main(void)
   touch_init();
   temp_control_init();
   wspr_init();
-//  bapi_init();
+  web_api_init();
   gui_init();
   debug_client_init();
 

@@ -11,7 +11,6 @@ PROJECT_AUTOGEN_CSRC = \
 PROJECT_CSRC = \
        app_cfg.c \
        app_hdr.c \
-       bapi.c \
        crc.c \
        datastream.c \
        debug_client.c \
@@ -42,6 +41,7 @@ PROJECT_CSRC = \
        touch.c \
        touch_calib.c \
        txn.c \
+       web_api.c \
        wspr.c \
        wspr_http.c \
        wspr_net.c \
