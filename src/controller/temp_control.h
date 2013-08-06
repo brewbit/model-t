@@ -22,14 +22,14 @@ typedef enum {
 
 
 typedef struct {
-  sensor_sample_t setpoint;
+  quantity_t setpoint;
 } probe_settings_t;
 
 typedef struct {
   output_function_t function;
   probe_id_t trigger;
   uint32_t compressor_delay;
-  sensor_sample_t setpoint;
+  quantity_t setpoint;
 } output_settings_t;
 
 typedef struct {

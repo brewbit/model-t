@@ -19,7 +19,7 @@ typedef struct temp_port_s temp_port_t;
 
 typedef struct {
   probe_id_t probe;
-  sensor_sample_t sample;
+  quantity_t sample;
 } sensor_msg_t;
 
 typedef struct {

@@ -170,9 +170,9 @@ dispatch_new_temp(home_screen_t* s, sensor_msg_t* msg)
   /* Update the probe button icons based on the current temp/setpoint */
   widget_t* btn = s->probes[msg->probe].button;
   const probe_settings_t* probe_settings = app_cfg_get_probe_settings(msg->probe);
-  if (msg->sample.value.temp > probe_settings->setpoint.value.temp)
+  if (msg->sample.value > probe_settings->setpoint.value)
     button_set_icon(btn, img_temp_hi);
-  else if (msg->sample.value.temp < probe_settings->setpoint.value.temp)
+  else if (msg->sample.value < probe_settings->setpoint.value)
     button_set_icon(btn, img_temp_low);
   else
     button_set_icon(btn, img_temp_med);
@@ -196,8 +196,9 @@ dispatch_probe_timeout(home_screen_t* s, probe_timeout_msg_t* msg)
   if (widget_is_enabled(s->probes[msg->probe].button)) {
     widget_disable(s->probes[msg->probe].button);
     button_set_icon(s->probes[msg->probe].button, img_temp_med);
-    sensor_sample_t sample = {
-        .type = SAMPLE_NONE
+    quantity_t sample = {
+        .unit = UNIT_NONE,
+        .value = NAN
     };
     temp_widget_set_value(w, &sample);
     place_temp_widgets(s);

@@ -28,7 +28,7 @@ static void back_button_clicked(button_event_t* event);
 static void up_button_clicked(button_event_t* event);
 static void down_button_clicked(button_event_t* event);
 static void up_or_down_released(button_event_t* event);
-static void set_delay(output_delay_screen_t* s, sensor_sample_t* setpoint);
+static void set_delay(output_delay_screen_t* s, quantity_t* setpoint);
 
 
 widget_class_t output_delay_widget_class = {
@@ -100,9 +100,9 @@ up_button_clicked(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   output_delay_screen_t* s = widget_get_instance_data(screen);
-  sensor_sample_t new_sp = {
-      .type = s->settings.setpoint.type,
-      .value.temp = s->settings.setpoint.value.temp += 1
+  quantity_t new_sp = {
+      .unit = s->settings.setpoint.unit,
+      .value = s->settings.setpoint.value += 1
   };
 
   set_delay(s, &new_sp);
@@ -113,9 +113,9 @@ down_button_clicked(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   output_delay_screen_t* s = widget_get_instance_data(screen);
-  sensor_sample_t new_sp = {
-      .type = s->settings.setpoint.type,
-      .value.temp = s->settings.setpoint.value.temp -= 1
+  quantity_t new_sp = {
+      .unit = s->settings.setpoint.unit,
+      .value = s->settings.setpoint.value -= 1
   };
 
   set_delay(s, &new_sp);
@@ -129,14 +129,14 @@ up_or_down_released(button_event_t* event)
 }
 
 static void
-set_delay(output_delay_screen_t* s, sensor_sample_t* setpoint)
+set_delay(output_delay_screen_t* s, quantity_t* setpoint)
 {
-  if (setpoint->value.time < MIN_DELAY)
-    setpoint->value.time = MIN_DELAY;
-  else if (setpoint->value.time > MAX_DELAY)
-    setpoint->value.time = MAX_DELAY;
+  if (setpoint->value < MIN_DELAY)
+    setpoint->value = MIN_DELAY;
+  else if (setpoint->value > MAX_DELAY)
+    setpoint->value = MAX_DELAY;
 
-  s->settings.compressor_delay = S2ST(setpoint->value.temp);
+  s->settings.compressor_delay = S2ST(setpoint->value);
   s->settings.setpoint = *setpoint;
   temp_widget_set_value(s->temp_widget, setpoint);
 }

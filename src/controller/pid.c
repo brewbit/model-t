@@ -25,10 +25,10 @@ bool      inAuto = FALSE;
 int8_t controllerDirection = DIRECT;
 
 
-int16_t pid_exec(probe_id_t probe, sensor_sample_t setpoint, sensor_sample_t sample)
+int16_t pid_exec(probe_id_t probe, quantity_t setpoint, quantity_t sample)
 {
   static uint32_t lastTime[NUM_PROBES];
-  static int32_t  lastSample[NUM_PROBES];
+  static float  lastSample[NUM_PROBES];
   int32_t error;
   int32_t dSample;
 
@@ -41,7 +41,7 @@ int16_t pid_exec(probe_id_t probe, sensor_sample_t setpoint, sensor_sample_t sam
 
   if(timeChange >= sampleTime) {
     /* P roportional */
-    error = setpoint.value.temp - sample.value.temp;
+    error = setpoint.value - sample.value;
 
     /* I ntegral */
     iTerm[probe] += (int16_t)(ki[probe] * error);
@@ -51,13 +51,13 @@ int16_t pid_exec(probe_id_t probe, sensor_sample_t setpoint, sensor_sample_t sam
       iTerm[probe] = outMin;
 
     /* D erivative */
-    dSample = (uint32_t)(sample.value.temp - lastSample[probe]);
+    dSample = (uint32_t)(sample.value - lastSample[probe]);
 
     /*Compute PID Output*/
     output[probe] = (int16_t)(kp[probe] * error) + iTerm[probe] - (kd[probe] * dSample);
 
     /*Remember some variables for next time*/
-    lastSample[probe] = sample.value.temp;
+    lastSample[probe] = sample.value;
     lastTime[probe] = currentTime;
 
     /* return output */
@@ -116,7 +116,7 @@ void SetOutputLimits(probe_id_t probe, double Min, double Max)
      iTerm[probe] = outMin;
 }
 
-void set_mode(uint8_t Mode, probe_id_t probe, sensor_sample_t sample)
+void set_mode(uint8_t Mode, probe_id_t probe, quantity_t sample)
 {
   bool newAuto = (Mode == AUTOMATIC);
   if(newAuto && !inAuto) {
@@ -126,9 +126,9 @@ void set_mode(uint8_t Mode, probe_id_t probe, sensor_sample_t sample)
   inAuto = newAuto;
 }
 
-void pid_reinit(probe_id_t probe, sensor_sample_t sample)
+void pid_reinit(probe_id_t probe, quantity_t sample)
 {
-  lastSample[probe] = sample.value.temp;
+  lastSample[probe] = sample.value;
   iTerm[probe] = output[probe];
 
   if(iTerm[probe] > outMax)

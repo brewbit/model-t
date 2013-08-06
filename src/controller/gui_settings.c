@@ -14,7 +14,7 @@ typedef struct {
   widget_t* back_button;
   widget_t* unit_button;
 
-  temperature_unit_t temp_unit;
+  unit_t temp_unit;
 } settings_screen_t;
 
 
@@ -24,7 +24,7 @@ static void unit_button_clicked(button_event_t* event);
 static void update_button_clicked(button_event_t* event);
 static void calibrate_button_clicked(button_event_t* event);
 
-static void set_unit(settings_screen_t* s, temperature_unit_t unit);
+static void set_unit(settings_screen_t* s, unit_t unit);
 
 
 widget_class_t settings_widget_class = {
@@ -102,10 +102,10 @@ unit_button_clicked(button_event_t* event)
   widget_t* w = widget_get_parent(event->widget);
   settings_screen_t* s = widget_get_instance_data(w);
 
-  if (s->temp_unit == TEMP_C)
-    set_unit(s, TEMP_F);
+  if (s->temp_unit == UNIT_TEMP_DEG_C)
+    set_unit(s, UNIT_TEMP_DEG_F);
   else
-    set_unit(s, TEMP_C);
+    set_unit(s, UNIT_TEMP_DEG_C);
 }
 
 static void
@@ -127,10 +127,10 @@ calibrate_button_clicked(button_event_t* event)
 }
 
 static void
-set_unit(settings_screen_t* s, temperature_unit_t unit)
+set_unit(settings_screen_t* s, unit_t unit)
 {
   s->temp_unit = unit;
-  if (unit == TEMP_F) {
+  if (unit == UNIT_TEMP_DEG_F) {
     button_set_icon(s->unit_button, img_deg_f);
   }
   else {

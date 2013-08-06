@@ -2,6 +2,7 @@
 #include "onewire.h"
 #include "common.h"
 #include "message.h"
+#include "app_cfg.h"
 
 
 #define PROBE_TIMEOUT S2ST(2)
@@ -17,12 +18,12 @@ typedef struct temp_port_s {
 
 
 static msg_t temp_input_thread(void* arg);
-static bool temp_get_sample(temp_port_t* tp, sensor_sample_t* temp);
-static void send_temp_msg(temp_port_t* tp, sensor_sample_t* sample);
+static bool temp_get_sample(temp_port_t* tp, quantity_t* temp);
+static void send_temp_msg(temp_port_t* tp, quantity_t* sample);
 static void send_timeout_msg(temp_port_t* tp);
 
-static bool read_ds18b20(temp_port_t* tp, sensor_sample_t* temp);
-static bool read_bb(temp_port_t* tp, sensor_sample_t* sample);
+static bool read_ds18b20(temp_port_t* tp, quantity_t* temp);
+static bool read_bb(temp_port_t* tp, quantity_t* sample);
 
 
 temp_port_t*
@@ -45,7 +46,7 @@ temp_input_thread(void* arg)
   temp_port_t* tp = arg;
 
   while (1) {
-    sensor_sample_t sample;
+    quantity_t sample;
 
     if (temp_get_sample(tp, &sample)) {
         tp->connected = true;
@@ -64,7 +65,7 @@ temp_input_thread(void* arg)
 }
 
 static void
-send_temp_msg(temp_port_t* tp, sensor_sample_t* sample)
+send_temp_msg(temp_port_t* tp, quantity_t* sample)
 {
   sensor_msg_t msg = {
       .probe = tp->probe,
@@ -83,7 +84,7 @@ send_timeout_msg(temp_port_t* tp)
 }
 
 static bool
-temp_get_sample(temp_port_t* tp, sensor_sample_t* sample)
+temp_get_sample(temp_port_t* tp, quantity_t* sample)
 {
   uint8_t addr[8];
   if (!onewire_reset(tp->bus)) {
@@ -108,7 +109,7 @@ temp_get_sample(temp_port_t* tp, sensor_sample_t* sample)
 }
 
 static bool
-read_ds18b20(temp_port_t* tp, sensor_sample_t* sample)
+read_ds18b20(temp_port_t* tp, quantity_t* sample)
 {
   // issue a T convert command
   if (!onewire_reset(tp->bus))
@@ -146,14 +147,17 @@ read_ds18b20(temp_port_t* tp, sensor_sample_t* sample)
     return false;
 
   uint16_t t = (t2 << 8) + t1;
-  sample->type = SAMPLE_TEMPERATURE;
-  sample->value.temp = (temperature_t)((t * 100) / 16);
+  sample->unit = app_cfg_get_temp_unit();
+  sample->value = (t / 16.0f);
+  if (sample->unit == UNIT_TEMP_DEG_F) {
+    sample->value = (sample->value * 1.8f) + 32;
+  }
 
   return true;
 }
 
 static bool
-read_bb(temp_port_t* tp, sensor_sample_t* sample)
+read_bb(temp_port_t* tp, quantity_t* sample)
 {
   // issue a T convert command
   if (!onewire_reset(tp->bus))
@@ -191,8 +195,8 @@ read_bb(temp_port_t* tp, sensor_sample_t* sample)
     return false;
 
   uint16_t t = (t2 << 8) + t1;
-  sample->type = SAMPLE_HUMIDITY;
-  sample->value.humidity = t * 100;
+  sample->unit = UNIT_HUMIDITY_PCT;
+  sample->value = t;
 
   return true;
 }

@@ -11,7 +11,7 @@
 typedef struct {
   bool is_valid;
 
-  temperature_unit_t temp_unit;
+  unit_t temp_unit;
   matrix_t touch_calib;
   probe_settings_t probe_settings[NUM_PROBES];
   output_settings_t output_settings[NUM_OUTPUTS];
@@ -37,7 +37,7 @@ app_cfg_init()
     app_cfg_local = app_cfg_stored;
   }
   else {
-    app_cfg_local.temp_unit = TEMP_F;
+    app_cfg_local.temp_unit = UNIT_TEMP_DEG_F;
 
     app_cfg_local.touch_calib.An      = 76320;
     app_cfg_local.touch_calib.Bn      = 3080;
@@ -47,23 +47,23 @@ app_cfg_init()
     app_cfg_local.touch_calib.Fn      = -4360660;
     app_cfg_local.touch_calib.Divider = 205664;
 
-    app_cfg_local.probe_settings[PROBE_1].setpoint.type = SAMPLE_TEMPERATURE;
-    app_cfg_local.probe_settings[PROBE_1].setpoint.value.temp = DEGF(72);
+    app_cfg_local.probe_settings[PROBE_1].setpoint.unit = UNIT_TEMP_DEG_F;
+    app_cfg_local.probe_settings[PROBE_1].setpoint.value = 72;
 
-    app_cfg_local.probe_settings[PROBE_2].setpoint.type = SAMPLE_TEMPERATURE;
-    app_cfg_local.probe_settings[PROBE_2].setpoint.value.temp = DEGF(72);
+    app_cfg_local.probe_settings[PROBE_2].setpoint.unit = UNIT_TEMP_DEG_F;
+    app_cfg_local.probe_settings[PROBE_2].setpoint.value = 72;
 
     app_cfg_local.output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
     app_cfg_local.output_settings[OUTPUT_1].trigger = PROBE_1;
     app_cfg_local.output_settings[OUTPUT_1].compressor_delay = S2ST(3* 60);
-    app_cfg_local.output_settings[OUTPUT_1].setpoint.type = SAMPLE_TIME;
-    app_cfg_local.output_settings[OUTPUT_1].setpoint.value.temp = 3;
+    app_cfg_local.output_settings[OUTPUT_1].setpoint.unit = UNIT_TIME_MIN;
+    app_cfg_local.output_settings[OUTPUT_1].setpoint.value = 3;
 
     app_cfg_local.output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
     app_cfg_local.output_settings[OUTPUT_2].trigger = PROBE_1;
     app_cfg_local.output_settings[OUTPUT_2].compressor_delay = S2ST(3 * 60);
-    app_cfg_local.output_settings[OUTPUT_2].setpoint.type = SAMPLE_TIME;
-    app_cfg_local.output_settings[OUTPUT_2].setpoint.value.temp = 3;
+    app_cfg_local.output_settings[OUTPUT_2].setpoint.unit = UNIT_TIME_MIN;
+    app_cfg_local.output_settings[OUTPUT_2].setpoint.value = 3;
 
 
     app_cfg_local.is_valid = TRUE;
@@ -92,15 +92,19 @@ app_cfg_thread(void* arg)
   return 0;
 }
 
-temperature_unit_t
+unit_t
 app_cfg_get_temp_unit(void)
 {
   return app_cfg_local.temp_unit;
 }
 
 void
-app_cfg_set_temp_unit(temperature_unit_t temp_unit)
+app_cfg_set_temp_unit(unit_t temp_unit)
 {
+  if (temp_unit != UNIT_TEMP_DEG_C &&
+      temp_unit != UNIT_TEMP_DEG_F)
+    return;
+
   chMtxLock(&app_cfg_mtx);
   app_cfg_local.temp_unit = temp_unit;
   chMtxUnlock();

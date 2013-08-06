@@ -7,35 +7,22 @@
 #include <stdbool.h>
 #include <limits.h>
 
-typedef int32_t temperature_t; // temperature in 0.01 C per count
-
 typedef enum {
-  TEMP_C,
-  TEMP_F
-} temperature_unit_t;
-
-typedef uint32_t humidity_t;
-typedef int32_t delay_time_t;
-
-typedef enum {
-  SAMPLE_NONE,
-  SAMPLE_TEMPERATURE,
-  SAMPLE_HUMIDITY,
-  SAMPLE_LIGHT,
-  SAMPLE_TIME
-} sample_type_t;
+  UNIT_NONE,
+  UNIT_TEMP_DEG_F,
+  UNIT_TEMP_DEG_C,
+  UNIT_HUMIDITY_PCT,
+  UNIT_TIME_SEC,
+  UNIT_TIME_MIN,
+  UNIT_TIME_HOUR,
+  UNIT_TIME_DAY
+} unit_t;
 
 typedef struct {
-  sample_type_t type;
-  union {
-    temperature_t temp;
-    humidity_t humidity;
-    delay_time_t time;
-  } value;
-} sensor_sample_t;
+  float value;
+  unit_t unit;
+} quantity_t;
 
-#define DEGF(f) (temperature_t)((((f) - 32) * 100 * 5) / 9)
-#define DEGC(c) (temperature_t)((c) * 100)
 
 typedef uint16_t color_t;
 

@@ -11,7 +11,7 @@
 
 typedef struct {
   temp_port_t* port;
-  sensor_sample_t last_sample;
+  quantity_t last_sample;
 } temp_input_t;
 
 typedef struct {
@@ -27,7 +27,7 @@ static void dispatch_probe_settings(probe_settings_msg_t* msg);
 static void dispatch_new_temp(sensor_msg_t* msg);
 static void dispatch_probe_timeout(probe_timeout_msg_t* msg);
 static void trigger_output(probe_id_t probe, output_function_t function);
-static void evaluate_setpoint(probe_id_t probe, sensor_sample_t setpoint, sensor_sample_t sample);
+static void evaluate_setpoint(probe_id_t probe, quantity_t setpoint, quantity_t sample);
 static void start_compressor_delay(uint32_t delay_startTime);
 static bool compressor_delay_has_expired(uint32_t compressor_delay, uint32_t delay_startTime);
 
@@ -157,17 +157,17 @@ dispatch_probe_settings(probe_settings_msg_t* msg)
 }
 
 static void
-evaluate_setpoint(probe_id_t probe, sensor_sample_t setpoint, sensor_sample_t sample)
+evaluate_setpoint(probe_id_t probe, quantity_t setpoint, quantity_t sample)
 {
   /* Run PID */
   int16_t pid = pid_exec(probe, setpoint, sample);
 
   inputs[probe].last_sample = sample;
 
-  if ((sample.value.temp - pid) > setpoint.value.temp) {
+  if ((sample.value - pid) > setpoint.value) {
     trigger_output(probe, OUTPUT_FUNC_COOLING);
   }
-  else if ((sample.value.temp + pid) < setpoint.value.temp) {
+  else if ((sample.value + pid) < setpoint.value) {
     trigger_output(probe, OUTPUT_FUNC_HEATING);
   }
 }

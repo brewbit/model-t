@@ -14,21 +14,18 @@
 
 
 typedef struct {
-  sensor_sample_t sample;
-  temperature_unit_t unit;
+  quantity_t sample;
   widget_t* widget;
 } temp_widget_t;
 
 
 static void temp_widget_destroy(widget_t* w);
 static void temp_widget_paint(paint_event_t* event);
-static void temp_widget_msg(msg_event_t* event);
 
 
 static const widget_class_t temp_widget_class = {
     .on_destroy = temp_widget_destroy,
     .on_paint   = temp_widget_paint,
-    .on_msg     = temp_widget_msg,
 };
 
 widget_t*
@@ -39,10 +36,8 @@ temp_widget_create(widget_t* parent, rect_t rect)
   rect.height = font_opensans_62->base;
   s->widget = widget_create(parent, &temp_widget_class, s, rect);
 
-  s->sample.type = SAMPLE_NONE;
-  s->unit = app_cfg_get_temp_unit();
-
-  gui_msg_subscribe(MSG_TEMP_UNIT, s->widget);
+  s->sample.unit = UNIT_NONE;
+  s->sample.value = NAN;
 
   return s->widget;
 }
@@ -51,8 +46,6 @@ static void
 temp_widget_destroy(widget_t* w)
 {
   temp_widget_t* s = widget_get_instance_data(w);
-
-  gui_msg_unsubscribe(MSG_TEMP_UNIT, s->widget);
 
   free(s);
 }
@@ -64,31 +57,44 @@ temp_widget_paint(paint_event_t* event)
   rect_t rect = widget_get_rect(event->widget);
 
   char* unit_str = "";
-  float value = 0;
-  if (s->sample.type == SAMPLE_TEMPERATURE) {
-    value = s->sample.value.temp / 100.0f;
-    if (s->unit == TEMP_F) {
-      value = ((value * 9) / 5) + 32;
+  switch (s->sample.unit) {
+  case UNIT_TEMP_DEG_C:
+    unit_str = "C";
+    break;
+
+  case UNIT_TEMP_DEG_F:
       unit_str = "F";
-    }
-    else {
-      unit_str = "C";
-    }
-  }
-  else if (s->sample.type == SAMPLE_HUMIDITY) {
-    value = s->sample.value.humidity / 100.0f;
+      break;
+
+  case UNIT_HUMIDITY_PCT:
     unit_str = "%";
-  }
-  else if (s->sample.type == SAMPLE_TIME) {
-    value = s->sample.value.time;
+    break;
+
+  case UNIT_TIME_SEC:
+    unit_str = "sec";
+    break;
+
+  case UNIT_TIME_MIN:
     unit_str = "min";
+    break;
+
+  case UNIT_TIME_HOUR:
+    unit_str = "hr";
+    break;
+
+  case UNIT_TIME_DAY:
+    unit_str = "day";
+    break;
+
+  default:
+    break;
   }
 
   char temp_str[16];
-  if (s->sample.type == SAMPLE_NONE)
+  if (isnan(s->sample.value))
     sprintf(temp_str, "--.-");
   else
-    sprintf(temp_str, "%0.1f", value);
+    sprintf(temp_str, "%0.1f", s->sample.value);
 
   Extents_t temp_ext = font_text_extents(font_opensans_62, temp_str);
   Extents_t unit_ext = font_text_extents(font_opensans_22, unit_str);
@@ -106,28 +112,13 @@ temp_widget_paint(paint_event_t* event)
   gfx_draw_str(unit_str, -1, temp_x + temp_ext.width + SPACE, rect.y);
 }
 
-
-static void
-temp_widget_msg(msg_event_t* event)
-{
-  temp_widget_t* s = widget_get_instance_data(event->widget);
-
-  if (event->msg_id == MSG_TEMP_UNIT) {
-    temperature_unit_t* temp_unit = event->msg_data;
-    if (s->unit != *temp_unit) {
-      s->unit = *temp_unit;
-      widget_invalidate(event->widget);
-    }
-  }
-}
-
 void
-temp_widget_set_value(widget_t* w, sensor_sample_t* sample)
+temp_widget_set_value(widget_t* w, quantity_t* sample)
 {
   temp_widget_t* s = widget_get_instance_data(w);
 
-  if (s->sample.type != sample->type ||
-      s->sample.value.temp != sample->value.temp) {
+  if (s->sample.unit != sample->unit ||
+      s->sample.value != sample->value) {
     s->sample = *sample;
     widget_invalidate(s->widget);
   }

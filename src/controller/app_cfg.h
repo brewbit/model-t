@@ -10,11 +10,11 @@
 void
 app_cfg_init(void);
 
-temperature_unit_t
+unit_t
 app_cfg_get_temp_unit(void);
 
 void
-app_cfg_set_temp_unit(temperature_unit_t temp_unit);
+app_cfg_set_temp_unit(unit_t temp_unit);
 
 const matrix_t*
 app_cfg_get_touch_calib(void);

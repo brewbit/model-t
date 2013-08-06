@@ -8,10 +8,13 @@
 #include "app_cfg.h"
 
 #define SETPOINT_STEPS_PER_VELOCITY 30
-#define MAX_TEMP (110 * 100)
-#define MIN_TEMP (-50 * 100)
+#define MAX_TEMP_C (110)
+#define MIN_TEMP_C (-10)
 
-#define MAX_HUMIDITY (100 * 100)
+#define MAX_TEMP_F (212)
+#define MIN_TEMP_F (-10)
+
+#define MAX_HUMIDITY (100)
 #define MIN_HUMIDITY (0)
 
 
@@ -23,7 +26,7 @@ typedef struct {
   widget_t* temp_widget;
   probe_id_t probe;
   probe_settings_t settings;
-  uint16_t setpoint_delta;
+  float setpoint_delta;
   uint8_t setpoint_steps;
 } probe_screen_t;
 
@@ -35,7 +38,7 @@ static void up_button_clicked(button_event_t* event);
 static void down_button_clicked(button_event_t* event);
 static void up_or_down_released(button_event_t* event);
 static void adjust_setpoint_velocity(probe_screen_t* s);
-static void set_setpoint(probe_screen_t* s, sensor_sample_t* setpoint);
+static void set_setpoint(probe_screen_t* s, quantity_t* setpoint);
 
 
 widget_class_t probe_settings_widget_class = {
@@ -80,7 +83,7 @@ probe_settings_screen_create(probe_id_t probe)
   s->settings = *app_cfg_get_probe_settings(probe);
   set_setpoint(s, &s->settings.setpoint);
 
-  s->setpoint_delta = 10;
+  s->setpoint_delta = 0.1;
   s->setpoint_steps = SETPOINT_STEPS_PER_VELOCITY;
 
   return s->widget;
@@ -109,9 +112,9 @@ up_button_clicked(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   probe_screen_t* s = widget_get_instance_data(screen);
-  sensor_sample_t new_sp = {
-      .type = s->settings.setpoint.type,
-      .value.temp = s->settings.setpoint.value.temp + s->setpoint_delta
+  quantity_t new_sp = {
+      .unit = s->settings.setpoint.unit,
+      .value = s->settings.setpoint.value + s->setpoint_delta
   };
   set_setpoint(s, &new_sp);
   adjust_setpoint_velocity(s);
@@ -122,9 +125,9 @@ down_button_clicked(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   probe_screen_t* s = widget_get_instance_data(screen);
-  sensor_sample_t new_sp = {
-      .type = s->settings.setpoint.type,
-      .value.temp = s->settings.setpoint.value.temp - s->setpoint_delta
+  quantity_t new_sp = {
+      .unit = s->settings.setpoint.unit,
+      .value = s->settings.setpoint.value - s->setpoint_delta
   };
   set_setpoint(s, &new_sp);
   adjust_setpoint_velocity(s);
@@ -135,7 +138,7 @@ up_or_down_released(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   probe_screen_t* s = widget_get_instance_data(screen);
-  s->setpoint_delta = 10;
+  s->setpoint_delta = 0.1;
   s->setpoint_steps = SETPOINT_STEPS_PER_VELOCITY;
 }
 
@@ -145,31 +148,28 @@ adjust_setpoint_velocity(probe_screen_t* s)
   if (s->setpoint_steps == 0)
     return;
 
-  if (--s->setpoint_steps <= 0 && s->setpoint_delta < 100) {
-    if (s->setpoint_delta == 10)
-      s->setpoint_delta = 50;
-    else if (s->setpoint_delta == 50)
-      s->setpoint_delta = 100;
+  if (--s->setpoint_steps <= 0 && s->setpoint_delta < 1) {
+    if (s->setpoint_delta == 0.1)
+      s->setpoint_delta = 0.5;
+    else if (s->setpoint_delta == 0.5)
+      s->setpoint_delta = 1;
 
     s->setpoint_steps = SETPOINT_STEPS_PER_VELOCITY;
-    s->settings.setpoint.value.temp = ((s->settings.setpoint.value.temp / s->setpoint_delta) + 1) * s->setpoint_delta;
+    s->settings.setpoint.value += s->setpoint_delta;
   }
 }
 
 static void
-set_setpoint(probe_screen_t* s, sensor_sample_t* setpoint)
+set_setpoint(probe_screen_t* s, quantity_t* setpoint)
 {
-  if (setpoint->type == SAMPLE_TEMPERATURE) {
-    if (setpoint->value.temp < MIN_TEMP)
-      setpoint->value.temp = MIN_TEMP;
-    else if (setpoint->value.temp > MAX_TEMP)
-      setpoint->value.temp = MAX_TEMP;
+  if (setpoint->unit == UNIT_TEMP_DEG_F) {
+    setpoint->value = LIMIT(setpoint->value, MIN_TEMP_F, MAX_TEMP_F);
   }
-  else if (setpoint->type == SAMPLE_HUMIDITY) {
-    if (setpoint->value.humidity < MIN_HUMIDITY)
-      setpoint->value.humidity = MIN_HUMIDITY;
-    else if (setpoint->value.humidity > MAX_HUMIDITY)
-      setpoint->value.humidity = MAX_HUMIDITY;
+  if (setpoint->unit == UNIT_TEMP_DEG_C) {
+    setpoint->value = LIMIT(setpoint->value, MIN_TEMP_C, MAX_TEMP_C);
+  }
+  else if (setpoint->unit == UNIT_HUMIDITY_PCT) {
+    setpoint->value = LIMIT(setpoint->value, MIN_HUMIDITY, MAX_HUMIDITY);
   }
 
   s->settings.setpoint = *setpoint;
