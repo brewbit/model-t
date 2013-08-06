@@ -8,8 +8,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// sync1, sync2, id, len1, len2, cksum1-3
-#define PKT_OVERHEAD 9
 
 void
 wspr_parser_init(wspr_parser_t* p, wspr_pkt_handler handler, void* handler_arg)
