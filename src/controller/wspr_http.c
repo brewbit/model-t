@@ -42,7 +42,8 @@ wspr_http_request(
 
   txn_t* txn = txn_new(http_txns, (txn_callback_t)callback, callback_data);
 
-  datastream_t* ds = ds_new(NULL, 1024);
+  datastream_t* ds = wspr_msg_start(WSPR_IN_HTTP_REQUEST);
+
   ds_write_u32(ds, txn->txn_id);
   ds_write_str(ds, request->host);
   ds_write_u16(ds, request->port);
@@ -57,9 +58,7 @@ wspr_http_request(
   ds_write_str(ds, request->url);
   ds_write_str(ds, request->request);
 
-  wspr_send(WSPR_IN_HTTP_REQUEST, ds->buf, ds_index(ds));
-
-  ds_free(ds);
+  wspr_msg_end();
 }
 
 static void

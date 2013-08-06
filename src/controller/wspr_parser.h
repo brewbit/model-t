@@ -4,8 +4,8 @@
 
 #include <stdint.h>
 
-#define SYNC1_CHAR 0x16
-#define SYNC2_CHAR 0x16
+#define WSPR_SYNC1_CHAR 0x16
+#define WSPR_SYNC2_CHAR 0x16
 
 #define MAX_DATA 1024
 
@@ -81,8 +81,5 @@ wspr_parser_init(wspr_parser_t* parser,
 
 void
 wspr_parse(wspr_parser_t* p, uint8_t c);
-
-uint8_t
-wspr_pack(wspr_msg_t id, uint8_t* data, uint16_t data_len, uint8_t** msg, uint16_t* msg_len);
 
 #endif

@@ -26,13 +26,15 @@ wspr_net_init()
 void
 wspr_net_idle()
 {
-  wspr_send(WSPR_IN_STATUS, NULL, 0);
+  wspr_msg_start(WSPR_IN_STATUS);
+  wspr_msg_end();
 }
 
 void
 wspr_net_scan()
 {
-  wspr_send(WSPR_IN_SCAN, NULL, 0);
+  wspr_msg_start(WSPR_IN_SCAN);
+  wspr_msg_end();
 }
 
 static void

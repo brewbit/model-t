@@ -39,12 +39,14 @@ static wspr_msg_handler_t handlers[NUM_WSPR_MSGS] = {
     [WSPR_OUT_DEBUG] = handle_debug,
 };
 static systime_t last_idle;
-static Mutex wspr_mtx;
+static Mutex msg_mutex;
+static uint8_t msg_chksum;
+static datastream_t* msg_data;
 
 void
 wspr_init()
 {
-  chMtxInit(&wspr_mtx);
+  chMtxInit(&msg_mutex);
 
   wspr_tcp_init();
   wspr_http_init();
@@ -94,23 +96,47 @@ wspr_idle()
   last_idle = chTimeNow();
 }
 
-void
-wspr_send(wspr_msg_t id, uint8_t* data, uint16_t data_len)
+datastream_t*
+wspr_msg_start(wspr_msg_t id)
 {
-  uint8_t* buf = NULL;
-  uint16_t buf_len;
-  uint8_t result = wspr_pack(id, data, data_len, &buf, &buf_len);
+  chMtxLock(&msg_mutex);
 
-  if (result == 0) {
-    chMtxLock(&wspr_mtx);
+  sdPut(sd, WSPR_SYNC1_CHAR);
+  sdPut(sd, WSPR_SYNC2_CHAR);
+  sdPut(sd, id);
 
-    sdWrite(sd, buf, buf_len);
+  msg_chksum = id;
 
-    chMtxUnlock();
+  msg_data = ds_new(NULL, 1024);
+
+  return msg_data;
+}
+
+void
+wspr_msg_end()
+{
+  int i;
+
+  uint16_t data_len = ds_index(msg_data);
+
+  sdPut(sd, data_len);
+  sdPut(sd, data_len >> 8);
+  if (data_len > 0)
+    sdWrite(sd, msg_data->buf, data_len);
+
+  msg_chksum += (data_len & 0xFF);
+  msg_chksum += (data_len >> 8) & 0xFF;
+
+  for (i = 0; i < data_len; ++i) {
+    msg_chksum += msg_data->buf[i];
   }
 
-  if (buf)
-    free(buf);
+  sdPut(sd, msg_chksum);
+
+  ds_free(msg_data);
+  msg_data = NULL;
+
+  chMtxUnlock();
 }
 
 static void

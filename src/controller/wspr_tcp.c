@@ -81,7 +81,7 @@ tcp_stream_pump(tcp_stream_t* s)
   // send any data that has been queued up
   if (!chOQIsEmptyI(&s->out)) {
     int i;
-    datastream_t* ds = ds_new(NULL, 1024);
+    datastream_t* ds = wspr_msg_start(WSPR_IN_TCP_SEND);
 
     ds_write_u16(ds, s->handle);
     uint16_t n = MIN(chOQGetFullI(&s->out), 256);
@@ -94,20 +94,16 @@ tcp_stream_pump(tcp_stream_t* s)
       ds_write_u8(ds, b);
     }
 
-    wspr_send(WSPR_IN_TCP_SEND, ds->buf, ds_index(ds));
-
-    ds_free(ds);
+    wspr_msg_end();
   }
 
   // request more recv data if it has all been processed
   if (chIQIsEmptyI(&s->in)) {
-    datastream_t* ds = ds_new(NULL, 1024);
+    datastream_t* ds = wspr_msg_start(WSPR_IN_TCP_RECV);
 
     ds_write_u16(ds, s->handle);
 
-    wspr_send(WSPR_IN_TCP_RECV, ds->buf, ds_index(ds));
-
-    ds_free(ds);
+    wspr_msg_end();
   }
 }
 
@@ -119,15 +115,13 @@ wspr_tcp_connect(uint32_t ip, uint16_t port, wspr_tcp_connect_handler_t connect_
 
   txn_t* txn = txn_new(tcp_txns, (txn_callback_t)tcp_connect_complete, connect_handler);
 
-  datastream_t* ds = ds_new(NULL, 1024);
+  datastream_t* ds = wspr_msg_start(WSPR_IN_TCP_CONNECT);
 
   ds_write_u32(ds, txn->txn_id);
   ds_write_u32(ds, ip);
   ds_write_u16(ds, port);
 
-  wspr_send(WSPR_IN_TCP_CONNECT, ds->buf, ds_index(ds));
-
-  ds_free(ds);
+  wspr_msg_end();
 
   return true;
 }
