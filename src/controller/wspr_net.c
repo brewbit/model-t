@@ -14,11 +14,6 @@ static void handle_status(uint8_t* data, uint16_t data_len);
 static void handle_scan_result(uint8_t* data, uint16_t data_len);
 static void handle_scan_complete(uint8_t* data, uint16_t data_len);
 
-static void wspr_net_req_status(void* arg);
-
-
-static VirtualTimer status_timer;
-
 
 void
 wspr_net_init()
@@ -26,18 +21,12 @@ wspr_net_init()
   wspr_set_handler(WSPR_OUT_STATUS, handle_status);
   wspr_set_handler(WSPR_OUT_SCAN_RESULT, handle_scan_result);
   wspr_set_handler(WSPR_OUT_SCAN_COMPLETE, handle_scan_complete);
-
-  chVTSetI(&status_timer, S2ST(1), wspr_net_req_status, NULL);
 }
 
-static void
-wspr_net_req_status(void* arg)
+void
+wspr_net_idle()
 {
-  (void)arg;
-
   wspr_send(WSPR_IN_STATUS, NULL, 0);
-
-  chVTSetI(&status_timer, S2ST(1), wspr_net_req_status, NULL);
 }
 
 void

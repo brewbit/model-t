@@ -26,6 +26,9 @@ void
 wspr_net_init(void);
 
 void
+wspr_net_idle(void);
+
+void
 wspr_net_scan(void);
 
 #endif

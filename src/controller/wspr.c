@@ -14,13 +14,6 @@
 #include <string.h>
 
 
-typedef struct {
-  wspr_msg_t id;
-  uint8_t* data;
-  uint16_t data_len;
-} wspr_msg_data_t;
-
-
 static msg_t
 thread_wspr(void* arg);
 
@@ -36,8 +29,6 @@ handle_version(uint8_t* data, uint16_t data_len);
 static void
 wspr_idle(void);
 
-static void
-wspr_send_msg(wspr_msg_data_t* msg);
 
 static SerialDriver* sd = &SD4;
 static wspr_parser_t wspr_parser;
@@ -48,10 +39,13 @@ static wspr_msg_handler_t handlers[NUM_WSPR_MSGS] = {
     [WSPR_OUT_DEBUG] = handle_debug,
 };
 static systime_t last_idle;
+static Mutex wspr_mtx;
 
 void
 wspr_init()
 {
+  chMtxInit(&wspr_mtx);
+
   wspr_tcp_init();
   wspr_http_init();
   wspr_net_init();
@@ -77,26 +71,16 @@ thread_wspr(void* arg)
   chRegSetThreadName("wspr");
 
   while (1) {
-    while (!sdGetWouldBlock(sd)) {
+    if (!sdGetWouldBlock(sd)) {
       uint8_t c = sdGet(sd);
       wspr_parse(&wspr_parser, c);
     }
-
-    while (chMsgIsPendingI(currp)) {
-      Thread* tp = chMsgWait();
-      if (tp != NULL) {
-        wspr_msg_data_t* msg = (wspr_msg_data_t*)chMsgGet(tp);
-
-        wspr_send_msg(msg);
-
-        chMsgRelease(tp, 0);
-      }
-    }
-
-    if ((chTimeNow() - last_idle) > MS2ST(200))
+    else if ((chTimeNow() - last_idle) > MS2ST(200)) {
       wspr_idle();
-
-    chThdSleepMilliseconds(50);
+    }
+    else {
+      chThdSleepMilliseconds(50);
+    }
   }
 
   return 0;
@@ -106,32 +90,24 @@ static void
 wspr_idle()
 {
   wspr_tcp_idle();
+  wspr_net_idle();
   last_idle = chTimeNow();
 }
 
 void
 wspr_send(wspr_msg_t id, uint8_t* data, uint16_t data_len)
 {
-  wspr_msg_data_t msg = {
-      .id       = id,
-      .data     = data,
-      .data_len = data_len
-  };
-  if (chThdSelf() != wspr_thread)
-    chMsgSend(wspr_thread, (msg_t)&msg);
-  else
-    wspr_send_msg(&msg);
-}
-
-static void
-wspr_send_msg(wspr_msg_data_t* msg)
-{
   uint8_t* buf = NULL;
   uint16_t buf_len;
-  uint8_t result = wspr_pack(msg->id, msg->data, msg->data_len, &buf, &buf_len);
+  uint8_t result = wspr_pack(id, data, data_len, &buf, &buf_len);
 
-  if (result == 0)
+  if (result == 0) {
+    chMtxLock(&wspr_mtx);
+
     sdWrite(sd, buf, buf_len);
+
+    chMtxUnlock();
+  }
 
   if (buf)
     free(buf);
@@ -143,7 +119,6 @@ handle_debug(uint8_t* data, uint16_t data_len)
   datastream_t* ds = ds_new(data, data_len);
 
   char* str = ds_read_str(ds);
-//  terminal_write(str);
 
   free(str);
   ds_free(ds);
