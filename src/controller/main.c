@@ -16,6 +16,32 @@
 #include "app_cfg.h"
 #include "debug_client.h"
 
+void NMIVector(void)
+{
+  chprintf((BaseChannel*)&SD3, "NMI Vector\r\n");
+}
+
+void HardFaultVector(void)
+{
+  chprintf((BaseChannel*)&SD3, "Hard Fault Vector\r\n");
+}
+
+void MemManageVector(void)
+{
+  chprintf((BaseChannel*)&SD3, "Mem Manage Vector\r\n");
+}
+
+void BusFaultVector(void)
+{
+  chprintf((BaseChannel*)&SD3, "Bus Fault Vector\r\n");
+}
+
+void UsageFaultVector(void)
+{
+  chprintf((BaseChannel*)&SD3, "Usage Fault Vector\r\n");
+}
+
+
 
 int
 main(void)
