@@ -24,7 +24,7 @@ static void
 dispatch_wifi_status(wspr_wifi_status_t* status);
 
 static void
-on_connect(BaseChannel* tcp_channel);
+on_connect(BaseChannel* tcp_channel, void* user_data);
 
 
 static BaseChannel* dbg_conn;
@@ -63,7 +63,7 @@ debug_client_thread(void* arg)
         break;
 
       case DBG_CONNECT:
-        wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 35287, on_connect);
+        wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 35287, on_connect, NULL);
 
         dbg_state = DBG_IDLE;
         break;
@@ -82,13 +82,13 @@ debug_client_thread(void* arg)
 }
 
 static void
-on_connect(BaseChannel* conn)
+on_connect(BaseChannel* conn, void* user_data)
 {
   if (conn != NULL) {
     dbg_conn = conn;
   }
   else {
-    wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 35287, on_connect);
+    wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 35287, on_connect, NULL);
   }
   dbg_state = DBG_IDLE;
 }

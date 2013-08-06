@@ -22,7 +22,7 @@ typedef struct {
 } tcp_stream_t;
 
 
-typedef void (*wspr_tcp_connect_handler_t)(BaseChannel* tcp_channel);
+typedef void (*wspr_tcp_connect_handler_t)(BaseChannel* conn, void* user_data);
 
 
 void
@@ -32,6 +32,6 @@ void
 wspr_tcp_idle(void);
 
 bool
-wspr_tcp_connect(uint32_t ip, uint16_t port, wspr_tcp_connect_handler_t connect_handler);
+wspr_tcp_connect(uint32_t ip, uint16_t port, wspr_tcp_connect_handler_t connect_handler, void* user_data);
 
 #endif
