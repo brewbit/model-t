@@ -25,14 +25,14 @@ wspr_parse(wspr_parser_t* p, uint8_t c)
 {
   switch (p->state) {
     case PS_SYNC1:
-      if (c == SYNC1_CHAR)
+      if (c == WSPR_SYNC1_CHAR)
         p->state = PS_SYNC2;
       break;
 
     case PS_SYNC2:
-      if (c == SYNC2_CHAR)
+      if (c == WSPR_SYNC2_CHAR)
         p->state = PS_ID;
-      else if (c != SYNC1_CHAR)
+      else if (c != WSPR_SYNC1_CHAR)
         p->state = PS_SYNC1;
       break;
 
