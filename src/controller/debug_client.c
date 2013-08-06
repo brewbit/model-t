@@ -86,10 +86,10 @@ on_connect(BaseChannel* conn)
 {
   if (conn != NULL) {
     dbg_conn = conn;
-    chprintf(dbg_conn, "this is a test\r\n");
   }
-  else
+  else {
     wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 35287, on_connect);
+  }
   dbg_state = DBG_IDLE;
 }
 

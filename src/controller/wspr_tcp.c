@@ -87,7 +87,10 @@ tcp_stream_pump(tcp_stream_t* s)
     uint16_t n = MIN(chOQGetFullI(&s->out), 256);
     ds_write_u16(ds, n);
     for (i = 0; i < n; ++i) {
+      chSysLock();
       uint8_t b = chOQGetI(&s->out);
+      chSysUnlock();
+
       ds_write_u8(ds, b);
     }
 
@@ -240,9 +243,11 @@ handle_tcp_recv(uint8_t* data, uint16_t data_len)
   tcp_stream_t* s = find_stream(handle);
   if (s != NULL) {
     int i;
+    chSysLock();
     for (i = 0; i < recv_len; ++i) {
       chIQPutI(&s->in, recv_data[i]);
     }
+    chSysUnlock();
   }
 
   ds_free(ds);
