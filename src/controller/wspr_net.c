@@ -57,11 +57,11 @@ handle_status(uint8_t* data, uint16_t data_len)
 static void
 handle_scan_result(uint8_t* data, uint16_t data_len)
 {
-  chprintf((BaseChannel*)&SD3, "scan result\r\n");
+  chprintf((BaseChannel*)&SD4, "scan result\r\n");
 }
 
 static void
 handle_scan_complete(uint8_t* data, uint16_t data_len)
 {
-  chprintf((BaseChannel*)&SD3, "scan complete\r\n");
+  chprintf((BaseChannel*)&SD4, "scan complete\r\n");
 }

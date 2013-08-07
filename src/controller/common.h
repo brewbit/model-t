@@ -20,6 +20,6 @@
 #define container_of(ptr, type, member) \
                 (type *)( ((char *)ptr) - offsetof(type, member) )
 
-#define stdout (BaseChannel *)&SD3
+#define stdout (BaseChannel *)&SD4
 
 #endif

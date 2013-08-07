@@ -20,7 +20,6 @@ static void gui_dispatch(msg_id_t id, void* msg_data, void* user_data);
 static void dispatch_msg(widget_t* w, msg_id_t id, void* msg_data);
 
 
-static WORKING_AREA(wa_gui_thread, 1024);
 static Thread* gui_thread;
 static widget_t* touch_capture_widget;
 static widget_stack_elem_t* screen_stack = NULL;
@@ -30,7 +29,7 @@ static systime_t last_paint_time;
 void
 gui_init()
 {
-  gui_thread = chThdCreateStatic(wa_gui_thread, sizeof(wa_gui_thread), NORMALPRIO, gui_thread_func, NULL);
+  gui_thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, gui_thread_func, NULL);
 
   msg_subscribe(MSG_TOUCH_INPUT, gui_thread, gui_dispatch, NULL);
   msg_subscribe(MSG_GUI_PUSH_SCREEN, gui_thread, gui_dispatch, NULL);
@@ -85,22 +84,25 @@ gui_thread_func(void* arg)
   (void)arg;
 
   while (1) {
-    Thread* tp = chMsgWaitTimeout(MS2ST(50));
-    if (tp != NULL) {
-      thread_msg_t* msg = (thread_msg_t*)chMsgGet(tp);
+    Thread* tp = chMsgWait();
+    thread_msg_t* msg = (thread_msg_t*)chMsgGet(tp);
 
-      gui_dispatch(msg->id, msg->msg_data, msg->user_data);
+    gui_dispatch(msg->id, msg->msg_data, msg->user_data);
 
-      chMsgRelease(tp, 0);
-    }
-
-    if ((chTimeNow() - last_paint_time) >= MS2ST(100)) {
-      if (screen_stack != NULL)
-        widget_paint(screen_stack->widget);
-      last_paint_time = chTimeNow();
-    }
+    chMsgRelease(tp, 0);
   }
+
   return 0;
+}
+
+void
+gui_idle()
+{
+  if ((chTimeNow() - last_paint_time) >= MS2ST(100)) {
+    if (screen_stack != NULL)
+      widget_paint(screen_stack->widget);
+    last_paint_time = chTimeNow();
+  }
 }
 
 static void

@@ -26,11 +26,8 @@ handle_debug(uint8_t* data, uint16_t data_len);
 static void
 handle_version(uint8_t* data, uint16_t data_len);
 
-static void
-wspr_idle(void);
 
-
-static SerialDriver* sd = &SD4;
+static SerialDriver* sd = &SD3;
 static wspr_parser_t wspr_parser;
 static Thread* wspr_thread;
 static WORKING_AREA(wa_thread_wspr, 2500);
@@ -43,9 +40,21 @@ static Mutex msg_mutex;
 static uint8_t msg_chksum;
 static datastream_t* msg_data;
 
+//static uint8_t wspr_rx[2][512];
+//static VirtualTimer rx_timeout;
+//static uint8_t* recv_buf;
+//static uint8_t* proc_buf;
+//static uint16_t proc_len;
+//static const UARTConfig wspr_uart_cfg = {
+//    .rxend_cb = wspr_rx_end
+//};
+
 void
 wspr_init()
 {
+//  recv_buf = wspr_rx[0];
+//  proc_buf = wspr_rx[1];
+//  proc_len = 0;
   chMtxInit(&msg_mutex);
 
   wspr_tcp_init();
@@ -55,7 +64,7 @@ wspr_init()
   sdStart(sd, NULL);
   wspr_parser_init(&wspr_parser, recv_wspr_pkt, NULL);
 
-  wspr_thread = chThdCreateStatic(wa_thread_wspr, sizeof(wa_thread_wspr), NORMALPRIO, thread_wspr, NULL);
+  wspr_thread = chThdCreateStatic(wa_thread_wspr, sizeof(wa_thread_wspr), NORMALPRIO + 1, thread_wspr, NULL);
 }
 
 void
@@ -73,27 +82,44 @@ thread_wspr(void* arg)
   chRegSetThreadName("wspr");
 
   while (1) {
-    if (!sdGetWouldBlock(sd)) {
-      uint8_t c = sdGet(sd);
-      wspr_parse(&wspr_parser, c);
-    }
-    else if ((chTimeNow() - last_idle) > MS2ST(200)) {
-      wspr_idle();
-    }
-    else {
-      chThdSleepMilliseconds(50);
-    }
+    uint8_t c = sdGet(sd);
+    wspr_parse(&wspr_parser, c);
   }
 
   return 0;
 }
 
-static void
+//static void
+//wspr_rx_end(UARTDriver* uart)
+//{
+//  chSysLock();
+//
+//  if (chVTIsArmedI(&rx_timeout))
+//    chVTResetI(&rx_timeout);
+//
+//  uartStartReceive(uart, sizeof(wspr_rx), wspr_rx);
+//  chVTSetI(&rx_timeout, MS2ST(100), wspr_tx_timeout, uart);
+//
+//  chSysUnlock();
+//}
+//
+//static void
+//wspr_rx_timeout(void* arg)
+//{
+//  UARTDriver* uart = arg;
+//  size_t rx_left = uartStopReceive(uart);
+//  size_t available = sizeof(wspr_rx) - rx_left;
+//
+//}
+
+void
 wspr_idle()
 {
-  wspr_tcp_idle();
-  wspr_net_idle();
-  last_idle = chTimeNow();
+  if ((chTimeNow() - last_idle) > MS2ST(200)) {
+    wspr_tcp_idle();
+    wspr_net_idle();
+    last_idle = chTimeNow();
+  }
 }
 
 datastream_t*
@@ -166,5 +192,5 @@ recv_wspr_pkt(void* arg, wspr_msg_t id, uint8_t* data, uint16_t data_len)
   if (handler)
     handler(data, data_len);
   else
-    chprintf((BaseChannel*)&SD3, "no handler for pkt id %d\r\n", id);
+    chprintf((BaseChannel*)&SD4, "no handler for pkt id %d\r\n", id);
 }

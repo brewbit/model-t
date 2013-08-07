@@ -8,6 +8,9 @@ void
 gui_init(void);
 
 void
+gui_idle(void);
+
+void
 gui_push_screen(widget_t* screen);
 
 void

@@ -18,30 +18,41 @@
 
 void NMIVector(void)
 {
-  chprintf((BaseChannel*)&SD3, "NMI Vector\r\n");
+  chprintf((BaseChannel*)&SD4, "NMI Vector\r\n");
 }
 
 void HardFaultVector(void)
 {
-  chprintf((BaseChannel*)&SD3, "Hard Fault Vector\r\n");
+  chprintf((BaseChannel*)&SD4, "Hard Fault Vector\r\n");
 }
 
 void MemManageVector(void)
 {
-  chprintf((BaseChannel*)&SD3, "Mem Manage Vector\r\n");
+  chprintf((BaseChannel*)&SD4, "Mem Manage Vector\r\n");
 }
 
 void BusFaultVector(void)
 {
-  chprintf((BaseChannel*)&SD3, "Bus Fault Vector\r\n");
+  chprintf((BaseChannel*)&SD4, "Bus Fault Vector\r\n");
 }
 
 void UsageFaultVector(void)
 {
-  chprintf((BaseChannel*)&SD3, "Usage Fault Vector\r\n");
+  chprintf((BaseChannel*)&SD4, "Usage Fault Vector\r\n");
 }
 
+msg_t
+idle_thread(void* arg)
+{
+  (void)arg;
 
+  while (1) {
+    wspr_idle();
+    gui_idle();
+  }
+
+  return 0;
+}
 
 int
 main(void)
@@ -50,7 +61,9 @@ main(void)
   chSysInit();
 
   /* start stdout port */
-  sdStart(&SD3, NULL);
+  sdStart(&SD4, NULL);
+
+  chThdCreateFromHeap(NULL, 1024, NORMALPRIO - 1, idle_thread, NULL);
 
   app_cfg_init();
   gfx_init();

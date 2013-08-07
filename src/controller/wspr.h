@@ -14,6 +14,9 @@ typedef void (*wspr_msg_handler_t)(uint8_t* data, uint16_t data_len);
 void
 wspr_init(void);
 
+void
+wspr_idle(void);
+
 datastream_t*
 wspr_msg_start(wspr_msg_t id);
 

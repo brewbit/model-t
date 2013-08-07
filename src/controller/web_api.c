@@ -113,7 +113,7 @@ read_conn(web_api_t* w)
 {
   while (!chIOGetWouldBlock(w->conn)) {
     uint8_t c = chIOGet(w->conn);
-    chprintf(&SD3, "%d\r\n", c);
+    chprintf(&SD4, "%d\r\n", c);
   }
 }
 
@@ -141,7 +141,7 @@ dispatch_wifi_status(web_api_t* w, wspr_wifi_status_t* p)
 {
   if (w->state == NOT_CONNECTED &&
       p->state == WSPR_SUCCESS) {
-    chprintf(&SD3, "connecting...\r\n");
+    chprintf(&SD4, "connecting...\r\n");
     wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 31337, on_connect, w);
     w->state = CONNECTING;
   }
@@ -153,12 +153,12 @@ on_connect(BaseChannel* conn, void* user_data)
   web_api_t* w = user_data;
 
   if (conn != NULL) {
-    chprintf(&SD3, "connected\r\n");
+    chprintf(&SD4, "connected\r\n");
     w->conn = conn;
     w->state = CONNECTED;
   }
   else {
-    chprintf(&SD3, "retry\r\n");
+    chprintf(&SD4, "retry\r\n");
     w->state = NOT_CONNECTED;
   }
 }
