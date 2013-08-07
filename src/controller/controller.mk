@@ -50,6 +50,7 @@ PROJECT_CSRC = \
        gui/icon.c \
        gui/label.c \
        gui/progressbar.c \
+       gui/scatter_plot.c \
        gui/widget.c \
        util/linked_list.c \
        util/json/cJSON.c

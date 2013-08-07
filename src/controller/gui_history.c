@@ -2,6 +2,7 @@
 #include "gui_history.h"
 #include "gui/button.h"
 #include "gui/label.h"
+#include "gui/scatter_plot.h"
 #include "gfx.h"
 #include "gui.h"
 
@@ -11,12 +12,10 @@ typedef struct {
 
 
 static void history_screen_destroy(widget_t* w);
-static void history_screen_paint(paint_event_t* event);
 static void back_button_clicked(button_event_t* event);
 
 widget_class_t history_widget_class = {
     .on_destroy = history_screen_destroy,
-    .on_paint = history_screen_paint
 };
 
 widget_t*
@@ -38,6 +37,12 @@ history_screen_create()
   rect.width = 220;
   label_create(s->widget, rect, "Temp History", font_opensans_22, WHITE, 1);
 
+  rect.x = 5;
+  rect.y = 80;
+  rect.width = DISP_WIDTH - 10;
+  rect.height = DISP_HEIGHT - 88;
+  scatter_plot_create(s->widget, rect);
+
   return s->widget;
 }
 
@@ -46,14 +51,6 @@ history_screen_destroy(widget_t* w)
 {
   history_screen_t* s = widget_get_instance_data(w);
   free(s);
-}
-
-
-static void
-history_screen_paint(paint_event_t* event)
-{
-
-  gfx_draw_line(100, 100, 200, 200);
 }
 
 static void
