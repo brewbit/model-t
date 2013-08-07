@@ -35,28 +35,28 @@ check_reset_source()
 {
   int csr = RCC->CSR;
 
-  chprintf((BaseChannel*)&SD4, "  Reset source: ");
+  chprintf((BaseChannel*)SD_STDIO, "  Reset source: ");
 
   if (csr & RCC_CSR_BORRSTF)
-    chprintf((BaseChannel*)&SD4, "BORRSTF\r\n");
+    chprintf((BaseChannel*)SD_STDIO, "BORRSTF\r\n");
 
   if (csr & RCC_CSR_PADRSTF)
-    chprintf((BaseChannel*)&SD4, "PADRSTF\r\n");
+    chprintf((BaseChannel*)SD_STDIO, "PADRSTF\r\n");
 
   if (csr & RCC_CSR_PORRSTF)
-    chprintf((BaseChannel*)&SD4, "PORRSTF\r\n");
+    chprintf((BaseChannel*)SD_STDIO, "PORRSTF\r\n");
 
   if (csr & RCC_CSR_SFTRSTF)
-    chprintf((BaseChannel*)&SD4, "SFTRSTF\r\n");
+    chprintf((BaseChannel*)SD_STDIO, "SFTRSTF\r\n");
 
   if (csr & RCC_CSR_WDGRSTF)
-    chprintf((BaseChannel*)&SD4, "WDGRSTF\r\n");
+    chprintf((BaseChannel*)SD_STDIO, "WDGRSTF\r\n");
 
   if (csr & RCC_CSR_WWDGRSTF)
-    chprintf((BaseChannel*)&SD4, "WWDGRSTF\r\n");
+    chprintf((BaseChannel*)SD_STDIO, "WWDGRSTF\r\n");
 
   if (csr & RCC_CSR_LPWRRSTF)
-    chprintf((BaseChannel*)&SD4, "LPWRRSTF\r\n");
+    chprintf((BaseChannel*)SD_STDIO, "LPWRRSTF\r\n");
 
   RCC->CSR |= RCC_CSR_RMVF;
 }
@@ -68,22 +68,22 @@ main(void)
   chSysInit();
 
   /* start stdout port */
-  sdStart(&SD4, NULL);
+  sdStart(SD_STDIO, NULL);
 
-  chprintf((BaseChannel*)&SD4, "Started bootloader\r\n");
+  chprintf((BaseChannel*)SD_STDIO, "Started bootloader\r\n");
 
   check_reset_source();
 
-  chprintf((BaseChannel*)&SD4, "  app_hdr.magic = 0x%x\r\n", _app_hdr.magic);
+  chprintf((BaseChannel*)SD_STDIO, "  app_hdr.magic = 0x%x\r\n", _app_hdr.magic);
 
 
   if (_app_hdr.magic == 0xDEADBEEF) {
-    chprintf((BaseChannel*)&SD4, "Valid app header found.  Jumping to app.\r\n");
+    chprintf((BaseChannel*)SD_STDIO, "Valid app header found.  Jumping to app.\r\n");
     chThdSleepMilliseconds(100);
     jump_to_app(0x08008200);
   }
   else {
-    chprintf((BaseChannel*)&SD4, "Invalid app header found...\r\n");
+    chprintf((BaseChannel*)SD_STDIO, "Invalid app header found...\r\n");
   }
 
   while (TRUE) {

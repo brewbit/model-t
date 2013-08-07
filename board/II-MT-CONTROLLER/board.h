@@ -68,6 +68,14 @@
 #define GPIOB_RELAY2    9
 
 /*
+ * Serial port assignments.
+ */
+#define SD_OW1   (&SD2)
+#define SD_OW2   (&SD1)
+#define SD_WIFI  (&SD3)
+#define SD_STDIO (&SD4)
+
+/*
  * I/O ports initial setup, this configuration is established soon after reset
  * in the initialization code.
  * Please refer to the STM32 Reference Manual for details.

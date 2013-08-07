@@ -115,7 +115,7 @@ read_conn()
 {
   while (!chIOGetWouldBlock(wapi_conn)) {
     uint8_t c = chIOGet(wapi_conn);
-    chprintf((BaseChannel*)&SD4, "%d\r\n", c);
+    chprintf((BaseChannel*)SD_STDIO, "%d\r\n", c);
   }
 }
 
@@ -196,7 +196,7 @@ dispatch_wifi_status(wspr_wifi_status_t* p)
 {
   if (state == NOT_CONNECTED &&
       p->state == WSPR_SUCCESS) {
-    chprintf((BaseChannel*)&SD4, "connecting...\r\n");
+    chprintf((BaseChannel*)SD_STDIO, "connecting...\r\n");
     wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 31337, on_connect, NULL);
     state = CONNECTING;
   }
@@ -208,12 +208,12 @@ on_connect(BaseChannel* conn, void* user_data)
   (void)user_data;
 
   if (conn != NULL) {
-    chprintf((BaseChannel*)&SD4, "connected\r\n");
+    chprintf((BaseChannel*)SD_STDIO, "connected\r\n");
     wapi_conn = conn;
     state = CONNECTED;
   }
   else {
-    chprintf((BaseChannel*)&SD4, "retry\r\n");
+    chprintf((BaseChannel*)SD_STDIO, "retry\r\n");
     state = NOT_CONNECTED;
   }
 }
@@ -222,7 +222,7 @@ static void
 dispatch_sensor_sample(sensor_msg_t* p)
 {
   if (wapi_conn != NULL) {
-    chprintf((BaseChannel*)&SD4, "sending temp\r\n");
+    chprintf((BaseChannel*)SD_STDIO, "sending temp\r\n");
     datastream_t* ds = web_api_msg_start(WAPI_SENSOR_SAMPLE);
     ds_write_u8(ds, p->sensor);
     ds_write_float(ds, p->sample.value);

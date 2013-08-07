@@ -27,7 +27,7 @@ static void
 handle_version(uint8_t* data, uint16_t data_len);
 
 
-static SerialDriver* sd = &SD3;
+static SerialDriver* sd = SD_WIFI;
 static wspr_parser_t wspr_parser;
 static wspr_msg_handler_t handlers[NUM_WSPR_MSGS] = {
     [WSPR_OUT_VERSION] = handle_version,
@@ -190,5 +190,5 @@ recv_wspr_pkt(void* arg, wspr_msg_t id, uint8_t* data, uint16_t data_len)
   if (handler)
     handler(data, data_len);
   else
-    chprintf((BaseChannel*)&SD4, "no handler for pkt id %d\r\n", id);
+    chprintf((BaseChannel*)SD_STDIO, "no handler for pkt id %d\r\n", id);
 }

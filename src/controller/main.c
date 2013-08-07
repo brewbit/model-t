@@ -18,27 +18,27 @@
 
 void NMIVector(void)
 {
-  chprintf((BaseChannel*)&SD4, "NMI Vector\r\n");
+  chprintf((BaseChannel*)SD_STDIO, "NMI Vector\r\n");
 }
 
 void HardFaultVector(void)
 {
-  chprintf((BaseChannel*)&SD4, "Hard Fault Vector\r\n");
+  chprintf((BaseChannel*)SD_STDIO, "Hard Fault Vector\r\n");
 }
 
 void MemManageVector(void)
 {
-  chprintf((BaseChannel*)&SD4, "Mem Manage Vector\r\n");
+  chprintf((BaseChannel*)SD_STDIO, "Mem Manage Vector\r\n");
 }
 
 void BusFaultVector(void)
 {
-  chprintf((BaseChannel*)&SD4, "Bus Fault Vector\r\n");
+  chprintf((BaseChannel*)SD_STDIO, "Bus Fault Vector\r\n");
 }
 
 void UsageFaultVector(void)
 {
-  chprintf((BaseChannel*)&SD4, "Usage Fault Vector\r\n");
+  chprintf((BaseChannel*)SD_STDIO, "Usage Fault Vector\r\n");
 }
 
 msg_t
@@ -62,7 +62,7 @@ main(void)
   chSysInit();
 
   /* start stdout port */
-  sdStart(&SD4, NULL);
+  sdStart(SD_STDIO, NULL);
 
   chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
 

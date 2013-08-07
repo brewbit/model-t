@@ -71,7 +71,7 @@ wspr_parse(wspr_parser_t* p, uint8_t c)
       if (p->cksum == c && p->handler != NULL)
         p->handler(p->handler_arg, p->id, p->data, p->data_len);
       else
-        chprintf((BaseChannel*)&SD4, "wspr chksum failed\r\n");
+        chprintf((BaseChannel*)SD_STDIO, "wspr chksum failed\r\n");
       p->state = PS_SYNC1;
       break;
   }

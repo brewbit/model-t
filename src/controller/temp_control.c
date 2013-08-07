@@ -42,8 +42,8 @@ temp_control_init()
 {
   thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, temp_control_thread, NULL);
 
-  inputs[0].port = sensor_init(SENSOR_1, &SD2);
-  inputs[1].port = sensor_init(SENSOR_2, &SD1);
+  inputs[0].port = sensor_init(SENSOR_1, SD_OW1);
+  inputs[1].port = sensor_init(SENSOR_2, SD_OW2);
 
   outputs[OUTPUT_1].gpio = GPIOB_RELAY1;
   outputs[OUTPUT_2].gpio = GPIOB_RELAY2;
