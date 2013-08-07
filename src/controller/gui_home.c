@@ -345,6 +345,6 @@ click_stage_button(button_event_t* event)
 {
   (void)event;
 
-  widget_t* history_screen = history_screen_create();
-  gui_push_screen(history_screen);
+//  widget_t* history_screen = history_screen_create();
+//  gui_push_screen(history_screen);
 }
