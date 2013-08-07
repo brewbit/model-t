@@ -68,6 +68,9 @@ void
 ds_write_s32(datastream_t* ds, int32_t i);
 
 void
+ds_write_float(datastream_t* ds, float f);
+
+void
 ds_write_str(datastream_t* ds, char* str);
 
 void

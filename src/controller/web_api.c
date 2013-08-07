@@ -8,21 +8,22 @@
 #include "common.h"
 #include "message.h"
 #include "sensor.h"
+#include "crc.h"
 
 #include <stdlib.h>
 #include <string.h>
 
 
 typedef enum {
-  VERSION,
-  ACTIVATION,
-  AUTH,
-  DEVICE_SETTINGS,
-  TEMP_PROFILE,
-  UPGRADE,
-  ACK,
-  NACK,
-  TEMP_SAMPLE
+  WAPI_VERSION,
+  WAPI_ACTIVATION,
+  WAPI_AUTH,
+  WAPI_DEVICE_SETTINGS,
+  WAPI_TEMP_PROFILE,
+  WAPI_UPGRADE,
+  WAPI_ACK,
+  WAPI_NACK,
+  WAPI_SENSOR_SAMPLE
 } web_api_msg_id_t;
 
 typedef enum {
@@ -30,18 +31,6 @@ typedef enum {
   CONNECTING,
   CONNECTED,
 } web_api_state_t;
-
-// 0xB3EB17
-// u8 msg type
-// u32 data len
-// var data
-// u16 crc
-
-
-typedef struct {
-  BaseChannel* conn;
-  web_api_state_t state;
-} web_api_t;
 
 
 static msg_t
@@ -51,34 +40,47 @@ static void
 web_api_dispatch(msg_id_t id, void* msg_data, void* user_data);
 
 static void
-dispatch_wifi_status(web_api_t* w, wspr_wifi_status_t* p);
+dispatch_wifi_status(wspr_wifi_status_t* p);
 
 static void
-dispatch_sensor_sample(web_api_t* w, sensor_msg_t* p);
+dispatch_sensor_sample(sensor_msg_t* p);
 
 static void
 on_connect(BaseChannel* tcp_channel, void* user_data);
 
 static void
-read_conn(web_api_t* w);
+read_conn(void);
+
+static datastream_t*
+web_api_msg_start(web_api_msg_id_t id);
+
+static void
+web_api_msg_end(void);
+
+
+static BaseChannel* wapi_conn;
+static Mutex wapi_tx_mutex;
+static datastream_t* msg_data;
+static uint16_t msg_crc;
+static web_api_state_t state;
 
 
 void
 web_api_init()
 {
-  web_api_t* w = calloc(1, sizeof(web_api_t));
-  w->state = NOT_CONNECTED;
+  chMtxInit(&wapi_tx_mutex);
+  state = NOT_CONNECTED;
 
-  Thread* th_web_api = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, web_api_thread, w);
+  Thread* th_web_api = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, web_api_thread, NULL);
 
-  msg_subscribe(MSG_WIFI_STATUS, th_web_api, web_api_dispatch, w);
-  msg_subscribe(MSG_SENSOR_SAMPLE, th_web_api, web_api_dispatch, w);
+  msg_subscribe(MSG_WIFI_STATUS, th_web_api, web_api_dispatch, NULL);
+  msg_subscribe(MSG_SENSOR_SAMPLE, th_web_api, web_api_dispatch, NULL);
 }
 
 static msg_t
 web_api_thread(void* arg)
 {
-  web_api_t* w = arg;
+  (void)arg;
 
   while (1) {
     if (chMsgIsPendingI(chThdSelf())) {
@@ -90,7 +92,7 @@ web_api_thread(void* arg)
       chMsgRelease(tp, 0);
     }
     else {
-      switch (w->state) {
+      switch (state) {
       case NOT_CONNECTED:
         break;
 
@@ -98,7 +100,7 @@ web_api_thread(void* arg)
         break;
 
       case CONNECTED:
-        read_conn(w);
+        read_conn();
         break;
       }
       chThdSleepMilliseconds(200);
@@ -109,26 +111,79 @@ web_api_thread(void* arg)
 }
 
 static void
-read_conn(web_api_t* w)
+read_conn()
 {
-  while (!chIOGetWouldBlock(w->conn)) {
-    uint8_t c = chIOGet(w->conn);
-    chprintf(&SD4, "%d\r\n", c);
+  while (!chIOGetWouldBlock(wapi_conn)) {
+    uint8_t c = chIOGet(wapi_conn);
+    chprintf((BaseChannel*)&SD4, "%d\r\n", c);
   }
+}
+
+static datastream_t*
+web_api_msg_start(web_api_msg_id_t id)
+{
+  chMtxLock(&wapi_tx_mutex);
+
+  chIOPut(wapi_conn, 0xB3);
+  chIOPut(wapi_conn, 0xEB);
+  chIOPut(wapi_conn, 0x17);
+  chIOPut(wapi_conn, id);
+
+  msg_crc = crc16(0,       0xB3);
+  msg_crc = crc16(msg_crc, 0xEB);
+  msg_crc = crc16(msg_crc, 0x17);
+  msg_crc = crc16(msg_crc, id);
+
+  msg_data = ds_new(NULL, 1024);
+
+  return msg_data;
+}
+
+static void
+web_api_msg_end()
+{
+  int i;
+
+  uint32_t data_len = ds_index(msg_data);
+
+  chIOPut(wapi_conn, data_len);
+  chIOPut(wapi_conn, data_len >> 8);
+  chIOPut(wapi_conn, data_len >> 16);
+  chIOPut(wapi_conn, data_len >> 24);
+
+  if (data_len > 0)
+    chSequentialStreamWrite(wapi_conn, msg_data->buf, data_len);
+
+  msg_crc = crc16(msg_crc, data_len);
+  msg_crc = crc16(msg_crc, data_len >> 8);
+  msg_crc = crc16(msg_crc, data_len >> 16);
+  msg_crc = crc16(msg_crc, data_len >> 24);
+
+  for (i = 0; i < data_len; ++i) {
+    msg_crc = crc16(msg_crc, msg_data->buf[i]);
+  }
+
+  chIOPut(wapi_conn, msg_crc);
+  chIOPut(wapi_conn, msg_crc >> 8);
+
+  ds_free(msg_data);
+  msg_data = NULL;
+
+  chMtxUnlock();
 }
 
 static void
 web_api_dispatch(msg_id_t id, void* msg_data, void* user_data)
 {
-  web_api_t* w = user_data;
+  (void)user_data;
 
   switch (id) {
   case MSG_WIFI_STATUS:
-    dispatch_wifi_status(w, msg_data);
+    dispatch_wifi_status(msg_data);
     break;
 
   case MSG_SENSOR_SAMPLE:
-    dispatch_sensor_sample(w, msg_data);
+    dispatch_sensor_sample(msg_data);
     break;
 
   default:
@@ -137,36 +192,40 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* user_data)
 }
 
 static void
-dispatch_wifi_status(web_api_t* w, wspr_wifi_status_t* p)
+dispatch_wifi_status(wspr_wifi_status_t* p)
 {
-  if (w->state == NOT_CONNECTED &&
+  if (state == NOT_CONNECTED &&
       p->state == WSPR_SUCCESS) {
-    chprintf(&SD4, "connecting...\r\n");
-    wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 31337, on_connect, w);
-    w->state = CONNECTING;
+    chprintf((BaseChannel*)&SD4, "connecting...\r\n");
+    wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 31337, on_connect, NULL);
+    state = CONNECTING;
   }
 }
 
 static void
 on_connect(BaseChannel* conn, void* user_data)
 {
-  web_api_t* w = user_data;
+  (void)user_data;
 
   if (conn != NULL) {
-    chprintf(&SD4, "connected\r\n");
-    w->conn = conn;
-    w->state = CONNECTED;
+    chprintf((BaseChannel*)&SD4, "connected\r\n");
+    wapi_conn = conn;
+    state = CONNECTED;
   }
   else {
-    chprintf(&SD4, "retry\r\n");
-    w->state = NOT_CONNECTED;
+    chprintf((BaseChannel*)&SD4, "retry\r\n");
+    state = NOT_CONNECTED;
   }
 }
 
 static void
-dispatch_sensor_sample(web_api_t* w, sensor_msg_t* p)
+dispatch_sensor_sample(sensor_msg_t* p)
 {
-  if (w->conn != NULL) {
-
+  if (wapi_conn != NULL) {
+    chprintf((BaseChannel*)&SD4, "sending temp\r\n");
+    datastream_t* ds = web_api_msg_start(WAPI_SENSOR_SAMPLE);
+    ds_write_u8(ds, p->sensor);
+    ds_write_float(ds, p->sample.value);
+    web_api_msg_end();
   }
 }

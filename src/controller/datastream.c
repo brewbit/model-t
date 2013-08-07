@@ -212,6 +212,12 @@ ds_write_s32(datastream_t* ds, int32_t i)
 }
 
 void
+ds_write_float(datastream_t* ds, float f)
+{
+  ds_write_u32(ds, *((uint32_t*)&f));
+}
+
+void
 ds_write_str(datastream_t* ds, char* str)
 {
   if (str == NULL)
