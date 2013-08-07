@@ -5,7 +5,7 @@
 #include "gui/button.h"
 #include "gui/label.h"
 #include "gui_history.h"
-#include "gui_sensor.h"
+#include "gui_quantity_select.h"
 #include "gui_output.h"
 #include "gui_settings.h"
 #include "gui_wifi.h"
@@ -60,6 +60,7 @@ static void dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg)
 
 static void set_output_settings(home_screen_t* s, output_id_t output, output_function_t function);
 static void place_quantity_widgets(home_screen_t* s);
+static void update_setpoint(quantity_t setpoint, void* user_data);
 
 
 static const widget_class_t home_widget_class = {
@@ -177,7 +178,7 @@ dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg)
 
   /* Update the quantity display widget */
   widget_t* w = s->sensors[msg->sensor].quantity_widget;
-  quantity_widget_set_value(w, &msg->sample);
+  quantity_widget_set_value(w, msg->sample);
 
   /* Enable the sensor button and adjust the placement of the quantity display widgets */
   if (!widget_is_enabled(s->sensors[msg->sensor].button)) {
@@ -198,7 +199,7 @@ dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg)
         .unit = UNIT_NONE,
         .value = NAN
     };
-    quantity_widget_set_value(w, &sample);
+    quantity_widget_set_value(w, sample);
     place_quantity_widgets(s);
   }
 }
@@ -275,13 +276,29 @@ click_sensor_button(button_event_t* event)
   home_screen_t* s = widget_get_instance_data(parent);
 
   sensor_id_t sensor;
-  if (event->widget == s->sensors[SENSOR_1].button)
+  char* title;
+  if (event->widget == s->sensors[SENSOR_1].button) {
     sensor = SENSOR_1;
-  else
+    title = "Sensor 1 Setup";
+  }
+  else {
     sensor = SENSOR_2;
+    title = "Sensor 2 Setup";
+  }
 
-  widget_t* settings_screen = sensor_settings_screen_create(sensor);
+  const sensor_settings_t* settings = app_cfg_get_sensor_settings(sensor);
+
+  widget_t* settings_screen = quantity_select_screen_create(title, settings->setpoint, update_setpoint, (void*)sensor);
   gui_push_screen(settings_screen);
+}
+
+static void
+update_setpoint(quantity_t setpoint, void* user_data)
+{
+  sensor_id_t sensor = (sensor_id_t)user_data;
+  sensor_settings_t settings = *app_cfg_get_sensor_settings(sensor);
+  settings.setpoint = setpoint;
+  app_cfg_set_sensor_settings(sensor, &settings);
 }
 
 static void

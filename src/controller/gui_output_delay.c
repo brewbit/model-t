@@ -1,5 +1,5 @@
 
-#include "gui_sensor.h"
+#include "gui_output_delay.h"
 #include "gfx.h"
 #include "gui/button.h"
 #include "gui/label.h"
@@ -28,7 +28,7 @@ static void back_button_clicked(button_event_t* event);
 static void up_button_clicked(button_event_t* event);
 static void down_button_clicked(button_event_t* event);
 static void up_or_down_released(button_event_t* event);
-static void set_delay(output_delay_screen_t* s, quantity_t* setpoint);
+static void set_delay(output_delay_screen_t* s, quantity_t setpoint);
 
 
 widget_class_t output_delay_widget_class = {
@@ -72,7 +72,7 @@ output_delay_screen_create(output_id_t output)
 
   s->output = output;
   s->settings = *app_cfg_get_output_settings(output);
-  set_delay(s, &s->settings.setpoint);
+  set_delay(s, s->settings.setpoint);
 
   return s->widget;
 }
@@ -105,7 +105,7 @@ up_button_clicked(button_event_t* event)
       .value = s->settings.setpoint.value += 1
   };
 
-  set_delay(s, &new_sp);
+  set_delay(s, new_sp);
 }
 
 static void
@@ -118,7 +118,7 @@ down_button_clicked(button_event_t* event)
       .value = s->settings.setpoint.value -= 1
   };
 
-  set_delay(s, &new_sp);
+  set_delay(s, new_sp);
 }
 
 static void
@@ -129,14 +129,14 @@ up_or_down_released(button_event_t* event)
 }
 
 static void
-set_delay(output_delay_screen_t* s, quantity_t* setpoint)
+set_delay(output_delay_screen_t* s, quantity_t setpoint)
 {
-  if (setpoint->value < MIN_DELAY)
-    setpoint->value = MIN_DELAY;
-  else if (setpoint->value > MAX_DELAY)
-    setpoint->value = MAX_DELAY;
+  if (setpoint.value < MIN_DELAY)
+    setpoint.value = MIN_DELAY;
+  else if (setpoint.value > MAX_DELAY)
+    setpoint.value = MAX_DELAY;
 
-  s->settings.compressor_delay = S2ST(setpoint->value);
-  s->settings.setpoint = *setpoint;
+  s->settings.compressor_delay = S2ST(setpoint.value);
+  s->settings.setpoint = setpoint;
   quantity_widget_set_value(s->quantity_widget, setpoint);
 }

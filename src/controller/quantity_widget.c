@@ -115,13 +115,13 @@ quantity_widget_paint(paint_event_t* event)
 }
 
 void
-quantity_widget_set_value(widget_t* w, quantity_t* sample)
+quantity_widget_set_value(widget_t* w, quantity_t sample)
 {
   quantity_widget_t* s = widget_get_instance_data(w);
 
-  if (s->sample.unit != sample->unit ||
-      s->sample.value != sample->value) {
-    s->sample = *sample;
+  if (s->sample.unit != sample.unit ||
+      s->sample.value != sample.value) {
+    s->sample = sample;
     widget_invalidate(s->widget);
   }
 }

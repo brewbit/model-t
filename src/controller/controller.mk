@@ -24,7 +24,7 @@ PROJECT_CSRC = \
        gui_output_function.c \
        gui_output_trigger.c \
        gui_output_delay.c \
-       gui_sensor.c \
+       gui_quantity_select.c \
        gui_settings.c \
        gui_update.c \
        gui_wifi.c \
