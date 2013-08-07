@@ -90,14 +90,52 @@ app_cfg_get_temp_unit(void)
   return app_cfg_local.temp_unit;
 }
 
+quantity_t
+quantity_convert(quantity_t q, unit_t unit)
+{
+  if (q.unit == unit)
+    return q;
+
+  switch (unit) {
+  case UNIT_TEMP_DEG_C:
+    if (q.unit == UNIT_TEMP_DEG_F)
+      q.value = (5.0f / 9.0f) * (q.value - 32);
+    break;
+
+  case UNIT_TEMP_DEG_F:
+    if (q.unit == UNIT_TEMP_DEG_C)
+      q.value = ((9.0f / 5.0f) * q.value) + 32;
+    break;
+
+    /* Can't convert any other quantities */
+  default:
+    break;
+  }
+
+  q.unit = unit;
+
+  return q;
+}
+
 void
 app_cfg_set_temp_unit(unit_t temp_unit)
 {
+  int i;
+
   if (temp_unit != UNIT_TEMP_DEG_C &&
       temp_unit != UNIT_TEMP_DEG_F)
     return;
 
+  if (temp_unit == app_cfg_local.temp_unit)
+    return;
+
   chMtxLock(&app_cfg_mtx);
+
+  for (i = 0; i < NUM_SENSORS; ++i) {
+    sensor_settings_t* s = &app_cfg_local.sensor_settings[i];
+    s->setpoint = quantity_convert(s->setpoint, temp_unit);
+  }
+
   app_cfg_local.temp_unit = temp_unit;
   chMtxUnlock();
 
