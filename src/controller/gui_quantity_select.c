@@ -99,7 +99,6 @@ quantity_select_screen_create(
   rect.width = 254;
   s->quantity_widget = quantity_widget_create(s->widget, rect);
 
-  s->quantity = quantity;
   set_quantity(s, quantity);
 
   s->cur_velocity = 0;
@@ -175,14 +174,25 @@ adjust_quantity_velocity(quantity_select_screen_t* s)
 static void
 set_quantity(quantity_select_screen_t* s, quantity_t quantity)
 {
-  if (quantity.unit == UNIT_TEMP_DEG_F) {
+  switch (quantity.unit) {
+  case UNIT_TEMP_DEG_F:
     quantity.value = LIMIT(quantity.value, MIN_TEMP_F, MAX_TEMP_F);
-  }
-  if (quantity.unit == UNIT_TEMP_DEG_C) {
+    break;
+
+  case UNIT_TEMP_DEG_C:
     quantity.value = LIMIT(quantity.value, MIN_TEMP_C, MAX_TEMP_C);
-  }
-  else if (quantity.unit == UNIT_HUMIDITY_PCT) {
+    break;
+
+  case UNIT_HUMIDITY_PCT:
     quantity.value = LIMIT(quantity.value, MIN_HUMIDITY, MAX_HUMIDITY);
+    break;
+
+  case UNIT_TIME_MIN:
+    quantity.value = LIMIT(quantity.value, 0, 30);
+    break;
+
+  default:
+    break;
   }
 
   s->quantity = quantity;
