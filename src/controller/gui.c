@@ -34,6 +34,7 @@ gui_init()
   msg_subscribe(MSG_TOUCH_INPUT, gui_thread, gui_dispatch, NULL);
   msg_subscribe(MSG_GUI_PUSH_SCREEN, gui_thread, gui_dispatch, NULL);
   msg_subscribe(MSG_GUI_POP_SCREEN, gui_thread, gui_dispatch, NULL);
+  msg_subscribe(MSG_GUI_PAINT, gui_thread, gui_dispatch, NULL);
 }
 
 void
@@ -99,8 +100,7 @@ void
 gui_idle()
 {
   if ((chTimeNow() - last_paint_time) >= MS2ST(100)) {
-    if (screen_stack != NULL)
-      widget_paint(screen_stack->widget);
+    msg_broadcast(MSG_GUI_PAINT, NULL);
     last_paint_time = chTimeNow();
   }
 }
@@ -123,6 +123,11 @@ gui_dispatch(msg_id_t id, void* msg_data, void* user_data)
 
     case MSG_TOUCH_INPUT:
       dispatch_touch(msg_data);
+      break;
+
+    case MSG_GUI_PAINT:
+      if (screen_stack != NULL)
+        widget_paint(screen_stack->widget);
       break;
 
     default:

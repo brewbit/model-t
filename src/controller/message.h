@@ -15,6 +15,7 @@ typedef enum {
 
   MSG_GUI_PUSH_SCREEN,
   MSG_GUI_POP_SCREEN,
+  MSG_GUI_PAINT,
 
   MSG_TEMP_UNIT,
 
