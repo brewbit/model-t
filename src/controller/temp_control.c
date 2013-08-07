@@ -210,6 +210,7 @@ compressor_delay_has_expired(uint32_t compressor_delay, uint32_t delay_startTime
 static void
 start_compressor_delay(uint32_t delay_startTime)
 {
-  delay_startTime = chTimeNow();
+  (void)delay_startTime;
+//  delay_startTime = chTimeNow();
 }
 

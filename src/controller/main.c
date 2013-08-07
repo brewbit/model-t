@@ -18,27 +18,27 @@
 
 void NMIVector(void)
 {
-  chprintf((BaseChannel*)SD_STDIO, "NMI Vector\r\n");
+  chprintf(SD_STDIO, "NMI Vector\r\n");
 }
 
 void HardFaultVector(void)
 {
-  chprintf((BaseChannel*)SD_STDIO, "Hard Fault Vector\r\n");
+  chprintf(SD_STDIO, "Hard Fault Vector\r\n");
 }
 
 void MemManageVector(void)
 {
-  chprintf((BaseChannel*)SD_STDIO, "Mem Manage Vector\r\n");
+  chprintf(SD_STDIO, "Mem Manage Vector\r\n");
 }
 
 void BusFaultVector(void)
 {
-  chprintf((BaseChannel*)SD_STDIO, "Bus Fault Vector\r\n");
+  chprintf(SD_STDIO, "Bus Fault Vector\r\n");
 }
 
 void UsageFaultVector(void)
 {
-  chprintf((BaseChannel*)SD_STDIO, "Usage Fault Vector\r\n");
+  chprintf(SD_STDIO, "Usage Fault Vector\r\n");
 }
 
 msg_t

@@ -7,6 +7,13 @@
 
 
 static void
+jump_to_app(uint32_t address);
+
+static void
+check_reset_source(void);
+
+
+static void
 jump_to_app(uint32_t address)
 {
     typedef void (*funcPtr)(void);
@@ -35,28 +42,28 @@ check_reset_source()
 {
   int csr = RCC->CSR;
 
-  chprintf((BaseChannel*)SD_STDIO, "  Reset source: ");
+  chprintf(SD_STDIO, "  Reset source: ");
 
   if (csr & RCC_CSR_BORRSTF)
-    chprintf((BaseChannel*)SD_STDIO, "BORRSTF\r\n");
+    chprintf(SD_STDIO, "BORRSTF\r\n");
 
   if (csr & RCC_CSR_PADRSTF)
-    chprintf((BaseChannel*)SD_STDIO, "PADRSTF\r\n");
+    chprintf(SD_STDIO, "PADRSTF\r\n");
 
   if (csr & RCC_CSR_PORRSTF)
-    chprintf((BaseChannel*)SD_STDIO, "PORRSTF\r\n");
+    chprintf(SD_STDIO, "PORRSTF\r\n");
 
   if (csr & RCC_CSR_SFTRSTF)
-    chprintf((BaseChannel*)SD_STDIO, "SFTRSTF\r\n");
+    chprintf(SD_STDIO, "SFTRSTF\r\n");
 
   if (csr & RCC_CSR_WDGRSTF)
-    chprintf((BaseChannel*)SD_STDIO, "WDGRSTF\r\n");
+    chprintf(SD_STDIO, "WDGRSTF\r\n");
 
   if (csr & RCC_CSR_WWDGRSTF)
-    chprintf((BaseChannel*)SD_STDIO, "WWDGRSTF\r\n");
+    chprintf(SD_STDIO, "WWDGRSTF\r\n");
 
   if (csr & RCC_CSR_LPWRRSTF)
-    chprintf((BaseChannel*)SD_STDIO, "LPWRRSTF\r\n");
+    chprintf(SD_STDIO, "LPWRRSTF\r\n");
 
   RCC->CSR |= RCC_CSR_RMVF;
 }
@@ -70,20 +77,20 @@ main(void)
   /* start stdout port */
   sdStart(SD_STDIO, NULL);
 
-  chprintf((BaseChannel*)SD_STDIO, "Started bootloader\r\n");
+  chprintf(SD_STDIO, "Started bootloader\r\n");
 
   check_reset_source();
 
-  chprintf((BaseChannel*)SD_STDIO, "  app_hdr.magic = 0x%x\r\n", _app_hdr.magic);
+  chprintf(SD_STDIO, "  app_hdr.magic = 0x%x\r\n", _app_hdr.magic);
 
 
   if (_app_hdr.magic == 0xDEADBEEF) {
-    chprintf((BaseChannel*)SD_STDIO, "Valid app header found.  Jumping to app.\r\n");
+    chprintf(SD_STDIO, "Valid app header found.  Jumping to app.\r\n");
     chThdSleepMilliseconds(100);
     jump_to_app(0x08008200);
   }
   else {
-    chprintf((BaseChannel*)SD_STDIO, "Invalid app header found...\r\n");
+    chprintf(SD_STDIO, "Invalid app header found...\r\n");
   }
 
   while (TRUE) {

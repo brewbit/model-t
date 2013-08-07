@@ -84,6 +84,8 @@ debug_client_thread(void* arg)
 static void
 on_connect(BaseChannel* conn, void* user_data)
 {
+  (void)user_data;
+
   if (conn != NULL) {
     dbg_conn = conn;
   }

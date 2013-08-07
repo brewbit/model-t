@@ -73,7 +73,7 @@
 #define SD_OW1   (&SD2)
 #define SD_OW2   (&SD1)
 #define SD_WIFI  (&SD3)
-#define SD_STDIO (&SD4)
+#define SD_STDIO ((void*)&SD4)
 
 /*
  * I/O ports initial setup, this configuration is established soon after reset
