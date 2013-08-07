@@ -25,11 +25,11 @@ app_cfg_get_touch_calib(void);
 void
 app_cfg_set_touch_calib(matrix_t* touch_calib);
 
-const probe_settings_t*
-app_cfg_get_probe_settings(probe_id_t probe);
+const sensor_settings_t*
+app_cfg_get_sensor_settings(sensor_id_t sensor);
 
 void
-app_cfg_set_probe_settings(probe_id_t probe, probe_settings_t* settings);
+app_cfg_set_sensor_settings(sensor_id_t sensor, sensor_settings_t* settings);
 
 const output_settings_t*
 app_cfg_get_output_settings(output_id_t output);

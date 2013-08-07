@@ -1,59 +1,59 @@
-#include "temp_input.h"
+#include "sensor.h"
 #include "onewire.h"
 #include "common.h"
 #include "message.h"
 #include "app_cfg.h"
 
 
-#define PROBE_TIMEOUT S2ST(2)
+#define SENSOR_TIMEOUT S2ST(2)
 
 
-typedef struct temp_port_s {
-  probe_id_t probe;
+typedef struct sensor_port_s {
+  sensor_id_t sensor;
   onewire_bus_t* bus;
   Thread* thread;
-  systime_t last_temp_time;
+  systime_t last_sample_time;
   bool connected;
-} temp_port_t;
+} sensor_port_t;
 
 
-static msg_t temp_input_thread(void* arg);
-static bool temp_get_sample(temp_port_t* tp, quantity_t* temp);
-static void send_temp_msg(temp_port_t* tp, quantity_t* sample);
-static void send_timeout_msg(temp_port_t* tp);
+static msg_t sensor_thread(void* arg);
+static bool sensor_get_sample(sensor_port_t* tp, quantity_t* sample);
+static void send_sensor_msg(sensor_port_t* tp, quantity_t* sample);
+static void send_timeout_msg(sensor_port_t* tp);
 
-static bool read_ds18b20(temp_port_t* tp, quantity_t* temp);
-static bool read_bb(temp_port_t* tp, quantity_t* sample);
+static bool read_ds18b20(sensor_port_t* tp, quantity_t* sample);
+static bool read_bb(sensor_port_t* tp, quantity_t* sample);
 
 
-temp_port_t*
-temp_input_init(probe_id_t probe, onewire_bus_t* port)
+sensor_port_t*
+sensor_init(sensor_id_t sensor, onewire_bus_t* port)
 {
-  temp_port_t* tp = calloc(1, sizeof(temp_port_t));
+  sensor_port_t* tp = calloc(1, sizeof(sensor_port_t));
 
-  tp->probe = probe;
+  tp->sensor = sensor;
   tp->bus = port;
   onewire_init(tp->bus);
 
-  tp->thread = chThdCreateFromHeap(NULL, 1024, HIGHPRIO, temp_input_thread, tp);
+  tp->thread = chThdCreateFromHeap(NULL, 1024, HIGHPRIO, sensor_thread, tp);
 
   return tp;
 }
 
 static msg_t
-temp_input_thread(void* arg)
+sensor_thread(void* arg)
 {
-  temp_port_t* tp = arg;
+  sensor_port_t* tp = arg;
 
   while (1) {
     quantity_t sample;
 
-    if (temp_get_sample(tp, &sample)) {
+    if (sensor_get_sample(tp, &sample)) {
         tp->connected = true;
-        tp->last_temp_time = chTimeNow();
-        send_temp_msg(tp, &sample);
+        tp->last_sample_time = chTimeNow();
+        send_sensor_msg(tp, &sample);
     }
-    else if ((chTimeNow() - tp->last_temp_time) > PROBE_TIMEOUT) {
+    else if ((chTimeNow() - tp->last_sample_time) > SENSOR_TIMEOUT) {
       if (tp->connected) {
         tp->connected = false;
         send_timeout_msg(tp);
@@ -65,26 +65,26 @@ temp_input_thread(void* arg)
 }
 
 static void
-send_temp_msg(temp_port_t* tp, quantity_t* sample)
+send_sensor_msg(sensor_port_t* tp, quantity_t* sample)
 {
   sensor_msg_t msg = {
-      .probe = tp->probe,
+      .sensor = tp->sensor,
       .sample = *sample
   };
-  msg_broadcast(MSG_NEW_TEMP, &msg);
+  msg_broadcast(MSG_SENSOR_SAMPLE, &msg);
 }
 
 static void
-send_timeout_msg(temp_port_t* tp)
+send_timeout_msg(sensor_port_t* tp)
 {
-  probe_timeout_msg_t msg = {
-      .probe = tp->probe
+  sensor_timeout_msg_t msg = {
+      .sensor = tp->sensor
   };
-  msg_broadcast(MSG_PROBE_TIMEOUT, &msg);
+  msg_broadcast(MSG_SENSOR_TIMEOUT, &msg);
 }
 
 static bool
-temp_get_sample(temp_port_t* tp, quantity_t* sample)
+sensor_get_sample(sensor_port_t* tp, quantity_t* sample)
 {
   uint8_t addr[8];
   if (!onewire_reset(tp->bus)) {
@@ -109,7 +109,7 @@ temp_get_sample(temp_port_t* tp, quantity_t* sample)
 }
 
 static bool
-read_ds18b20(temp_port_t* tp, quantity_t* sample)
+read_ds18b20(sensor_port_t* tp, quantity_t* sample)
 {
   // issue a T convert command
   if (!onewire_reset(tp->bus))
@@ -157,7 +157,7 @@ read_ds18b20(temp_port_t* tp, quantity_t* sample)
 }
 
 static bool
-read_bb(temp_port_t* tp, quantity_t* sample)
+read_bb(sensor_port_t* tp, quantity_t* sample)
 {
   // issue a T convert command
   if (!onewire_reset(tp->bus))

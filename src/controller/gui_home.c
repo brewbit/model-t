@@ -5,7 +5,7 @@
 #include "gui/button.h"
 #include "gui/label.h"
 #include "gui_history.h"
-#include "gui_probe.h"
+#include "gui_sensor.h"
 #include "gui_output.h"
 #include "gui_settings.h"
 #include "gui_wifi.h"
@@ -29,7 +29,7 @@
 typedef struct {
   widget_t* temp_widget;
   widget_t* button;
-} probe_info_t;
+} sensor_info_t;
 
 typedef struct {
   systime_t temp_timestamp;
@@ -37,7 +37,7 @@ typedef struct {
 
   widget_t* screen;
   widget_t* stage_button;
-  probe_info_t probes[NUM_PROBES];
+  sensor_info_t sensors[NUM_SENSORS];
 
   widget_t* output1_button;
   widget_t* output2_button;
@@ -49,15 +49,15 @@ typedef struct {
 static void home_screen_destroy(widget_t* w);
 static void home_screen_msg(msg_event_t* event);
 
-static void click_probe_button(button_event_t* event);
+static void click_sensor_button(button_event_t* event);
 static void click_output_button(button_event_t* event);
 static void click_conn_button(button_event_t* event);
 static void click_settings_button(button_event_t* event);
 static void click_stage_button(button_event_t* event);
 
 static void dispatch_output_settings(home_screen_t* s, output_settings_msg_t* msg);
-static void dispatch_new_temp(home_screen_t* s, sensor_msg_t* msg);
-static void dispatch_probe_timeout(home_screen_t* s, probe_timeout_msg_t* msg);
+static void dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg);
+static void dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg);
 
 static void set_output_settings(home_screen_t* s, output_id_t output, output_function_t function);
 static void place_temp_widgets(home_screen_t* s);
@@ -89,12 +89,12 @@ home_screen_create()
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
   rect.height = TILE_SPAN(1);
-  s->probes[PROBE_1].button = button_create(s->screen, rect, img_temp_med, AMBER, NULL, NULL, NULL, click_probe_button);
-  widget_disable(s->probes[PROBE_1].button);
+  s->sensors[SENSOR_1].button = button_create(s->screen, rect, img_temp_med, AMBER, NULL, NULL, NULL, click_sensor_button);
+  widget_disable(s->sensors[SENSOR_1].button);
 
   rect.y = TILE_Y(1);
-  s->probes[PROBE_2].button = button_create(s->screen, rect, img_temp_med, PURPLE, NULL, NULL, NULL, click_probe_button);
-  widget_disable(s->probes[PROBE_2].button);
+  s->sensors[SENSOR_2].button = button_create(s->screen, rect, img_temp_med, PURPLE, NULL, NULL, NULL, click_sensor_button);
+  widget_disable(s->sensors[SENSOR_2].button);
 
   rect.x = TILE_X(0);
   rect.y = TILE_Y(2);
@@ -111,9 +111,9 @@ home_screen_create()
 
   rect.x = 0;
   rect.width = TILE_SPAN(3);
-  s->probes[PROBE_1].temp_widget = temp_widget_create(s->stage_button, rect);
+  s->sensors[SENSOR_1].temp_widget = temp_widget_create(s->stage_button, rect);
 
-  s->probes[PROBE_2].temp_widget = temp_widget_create(s->stage_button, rect);
+  s->sensors[SENSOR_2].temp_widget = temp_widget_create(s->stage_button, rect);
 
   place_temp_widgets(s);
 
@@ -122,8 +122,8 @@ home_screen_create()
   set_output_settings(s, OUTPUT_2,
       app_cfg_get_output_settings(OUTPUT_2)->function);
 
-  gui_msg_subscribe(MSG_NEW_TEMP, s->screen);
-  gui_msg_subscribe(MSG_PROBE_TIMEOUT, s->screen);
+  gui_msg_subscribe(MSG_SENSOR_SAMPLE, s->screen);
+  gui_msg_subscribe(MSG_SENSOR_TIMEOUT, s->screen);
   gui_msg_subscribe(MSG_OUTPUT_SETTINGS, s->screen);
 
   return s->screen;
@@ -134,8 +134,8 @@ home_screen_destroy(widget_t* w)
 {
   home_screen_t* s = widget_get_instance_data(w);
 
-  gui_msg_unsubscribe(MSG_NEW_TEMP, s->screen);
-  gui_msg_unsubscribe(MSG_PROBE_TIMEOUT, s->screen);
+  gui_msg_unsubscribe(MSG_SENSOR_SAMPLE, s->screen);
+  gui_msg_unsubscribe(MSG_SENSOR_TIMEOUT, s->screen);
   gui_msg_unsubscribe(MSG_OUTPUT_SETTINGS, s->screen);
 
   free(s);
@@ -147,12 +147,12 @@ home_screen_msg(msg_event_t* event)
   home_screen_t* s = widget_get_instance_data(event->widget);
 
   switch (event->msg_id) {
-  case MSG_NEW_TEMP:
-    dispatch_new_temp(s, event->msg_data);
+  case MSG_SENSOR_SAMPLE:
+    dispatch_sensor_sample(s, event->msg_data);
     break;
 
-  case MSG_PROBE_TIMEOUT:
-    dispatch_probe_timeout(s, event->msg_data);
+  case MSG_SENSOR_TIMEOUT:
+    dispatch_sensor_timeout(s, event->msg_data);
     break;
 
   case MSG_OUTPUT_SETTINGS:
@@ -165,37 +165,37 @@ home_screen_msg(msg_event_t* event)
 }
 
 static void
-dispatch_new_temp(home_screen_t* s, sensor_msg_t* msg)
+dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg)
 {
-  /* Update the probe button icons based on the current temp/setpoint */
-  widget_t* btn = s->probes[msg->probe].button;
-  const probe_settings_t* probe_settings = app_cfg_get_probe_settings(msg->probe);
-  if (msg->sample.value > probe_settings->setpoint.value)
+  /* Update the sensor button icons based on the current temp/setpoint */
+  widget_t* btn = s->sensors[msg->sensor].button;
+  const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(msg->sensor);
+  if (msg->sample.value > sensor_settings->setpoint.value)
     button_set_icon(btn, img_temp_hi);
-  else if (msg->sample.value < probe_settings->setpoint.value)
+  else if (msg->sample.value < sensor_settings->setpoint.value)
     button_set_icon(btn, img_temp_low);
   else
     button_set_icon(btn, img_temp_med);
 
   /* Update the temperature display widget */
-  widget_t* w = s->probes[msg->probe].temp_widget;
+  widget_t* w = s->sensors[msg->sensor].temp_widget;
   temp_widget_set_value(w, &msg->sample);
 
-  /* Enable the probe button and adjust the placement of the temp display widgets */
-  if (!widget_is_enabled(s->probes[msg->probe].button)) {
-    widget_enable(s->probes[msg->probe].button, TRUE);
+  /* Enable the sensor button and adjust the placement of the temp display widgets */
+  if (!widget_is_enabled(s->sensors[msg->sensor].button)) {
+    widget_enable(s->sensors[msg->sensor].button, TRUE);
     place_temp_widgets(s);
   }
 }
 
 static void
-dispatch_probe_timeout(home_screen_t* s, probe_timeout_msg_t* msg)
+dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg)
 {
-  widget_t* w = s->probes[msg->probe].temp_widget;
+  widget_t* w = s->sensors[msg->sensor].temp_widget;
 
-  if (widget_is_enabled(s->probes[msg->probe].button)) {
-    widget_disable(s->probes[msg->probe].button);
-    button_set_icon(s->probes[msg->probe].button, img_temp_med);
+  if (widget_is_enabled(s->sensors[msg->sensor].button)) {
+    widget_disable(s->sensors[msg->sensor].button);
+    button_set_icon(s->sensors[msg->sensor].button, img_temp_med);
     quantity_t sample = {
         .unit = UNIT_NONE,
         .value = NAN
@@ -211,29 +211,29 @@ place_temp_widgets(home_screen_t* s)
   int i;
   rect_t rect = widget_get_rect(s->stage_button);
 
-  probe_info_t* active_probes[NUM_PROBES];
-  int num_active_probes = 0;
-  for (i = 0; i < NUM_PROBES; ++i) {
-    if (widget_is_enabled(s->probes[i].button)) {
-      widget_show(s->probes[i].temp_widget);
-      active_probes[num_active_probes++] = &s->probes[i];
+  sensor_info_t* active_sensors[NUM_SENSORS];
+  int num_active_sensors = 0;
+  for (i = 0; i < NUM_SENSORS; ++i) {
+    if (widget_is_enabled(s->sensors[i].button)) {
+      widget_show(s->sensors[i].temp_widget);
+      active_sensors[num_active_sensors++] = &s->sensors[i];
     }
     else
-      widget_hide(s->probes[i].temp_widget);
+      widget_hide(s->sensors[i].temp_widget);
   }
 
-  if (num_active_probes == 0) {
-    widget_show(s->probes[PROBE_1].temp_widget);
-    active_probes[num_active_probes++] = &s->probes[PROBE_1];
+  if (num_active_sensors == 0) {
+    widget_show(s->sensors[SENSOR_1].temp_widget);
+    active_sensors[num_active_sensors++] = &s->sensors[SENSOR_1];
   }
 
-  for (i = 0; i < num_active_probes; ++i) {
-    rect_t wrect = widget_get_rect(active_probes[i]->temp_widget);
+  for (i = 0; i < num_active_sensors; ++i) {
+    rect_t wrect = widget_get_rect(active_sensors[i]->temp_widget);
 
-    int spacing = (rect.height - (num_active_probes * wrect.height)) / (num_active_probes + 1);
+    int spacing = (rect.height - (num_active_sensors * wrect.height)) / (num_active_sensors + 1);
     wrect.y = (spacing * (i + 1)) + (wrect.height * i);
 
-    widget_set_rect(active_probes[i]->temp_widget, wrect);
+    widget_set_rect(active_sensors[i]->temp_widget, wrect);
   }
 }
 
@@ -271,18 +271,18 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
 }
 
 static void
-click_probe_button(button_event_t* event)
+click_sensor_button(button_event_t* event)
 {
   widget_t* parent = widget_get_parent(event->widget);
   home_screen_t* s = widget_get_instance_data(parent);
 
-  probe_id_t probe;
-  if (event->widget == s->probes[PROBE_1].button)
-    probe = PROBE_1;
+  sensor_id_t sensor;
+  if (event->widget == s->sensors[SENSOR_1].button)
+    sensor = SENSOR_1;
   else
-    probe = PROBE_2;
+    sensor = SENSOR_2;
 
-  widget_t* settings_screen = probe_settings_screen_create(probe);
+  widget_t* settings_screen = sensor_settings_screen_create(sensor);
   gui_push_screen(settings_screen);
 }
 

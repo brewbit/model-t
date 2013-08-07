@@ -26,7 +26,7 @@ typedef struct {
 static void output_settings_screen_destroy(widget_t* w);
 static void output_settings_screen_msg(msg_event_t* event);
 static void dispatch_output_settings(output_screen_t* s, output_settings_msg_t* msg);
-static void set_output_settings(output_screen_t* s, output_function_t function, probe_id_t trigger);
+static void set_output_settings(output_screen_t* s, output_function_t function, sensor_id_t trigger);
 static void back_button_clicked(button_event_t* event);
 static void compressor_delay_button_clicked(button_event_t* event);
 static void function_button_clicked(button_event_t* event);
@@ -106,7 +106,7 @@ dispatch_output_settings(output_screen_t* s, output_settings_msg_t* msg)
 }
 
 static void
-set_output_settings(output_screen_t* s, output_function_t function, probe_id_t trigger)
+set_output_settings(output_screen_t* s, output_function_t function, sensor_id_t trigger)
 {
   widget_t* btn1 = s->function_button;
   widget_t* btn2 = s->trigger_button;
@@ -131,12 +131,14 @@ set_output_settings(output_screen_t* s, output_function_t function, probe_id_t t
   widget_set_background(btn1, color, FALSE);
   button_set_icon(btn1, img);
 
-  widget_set_background(btn2, (trigger == PROBE_1) ? AMBER : PURPLE, FALSE);
+  widget_set_background(btn2, (trigger == SENSOR_1) ? AMBER : PURPLE, FALSE);
 }
 
 static void
 back_button_clicked(button_event_t* event)
 {
+  (void)event;
+
   gui_pop_screen();
 }
 

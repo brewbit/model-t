@@ -12,15 +12,15 @@ typedef struct {
   widget_t* widget;
   widget_t* back_button;
 
-  widget_t* trigger_probe1_button;
-  widget_t* trigger_probe1_icon;
-  widget_t* trigger_probe1_header_label;
-  widget_t* trigger_probe1_desc_label;
+  widget_t* trigger_sensor1_button;
+  widget_t* trigger_sensor1_icon;
+  widget_t* trigger_sensor1_header_label;
+  widget_t* trigger_sensor1_desc_label;
 
-  widget_t* trigger_probe2_button;
-  widget_t* trigger_probe2_icon;
-  widget_t* trigger_probe2_header_label;
-  widget_t* trigger_probe2_desc_label;
+  widget_t* trigger_sensor2_button;
+  widget_t* trigger_sensor2_icon;
+  widget_t* trigger_sensor2_header_label;
+  widget_t* trigger_sensor2_desc_label;
 
   output_id_t output;
 } output_screen_t;
@@ -28,8 +28,8 @@ typedef struct {
 
 static void output_trigger_screen_destroy(widget_t* w);
 static void back_button_clicked(button_event_t* event);
-static void trigger_probe1_button_clicked(button_event_t* event);
-static void trigger_probe2_button_clicked(button_event_t* event);
+static void trigger_sensor1_button_clicked(button_event_t* event);
+static void trigger_sensor2_button_clicked(button_event_t* event);
 
 
 widget_class_t output_trigger_widget_class = {
@@ -64,46 +64,46 @@ output_trigger_screen_create(output_id_t output)
   rect.y = 95;
   rect.width = 300;
   rect.height = 66;
-  s->trigger_probe1_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, trigger_probe1_button_clicked);
+  s->trigger_sensor1_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, trigger_sensor1_button_clicked);
 
   rect.y = 165;
-  s->trigger_probe2_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, trigger_probe2_button_clicked);
+  s->trigger_sensor2_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, trigger_sensor2_button_clicked);
 
   rect.x = 5;
   rect.y = 5;
   rect.width = 56;
   rect.height = 56;
-  s->trigger_probe1_icon = icon_create(s->trigger_probe1_button, rect, img_temp_38, AMBER);
+  s->trigger_sensor1_icon = icon_create(s->trigger_sensor1_button, rect, img_temp_38, AMBER);
 
   rect.x = 70;
   rect.y = 5;
   rect.width = 200;
-  s->trigger_probe1_header_label = label_create(s->trigger_probe1_button, rect, NULL, font_opensans_16, WHITE, 1);
+  s->trigger_sensor1_header_label = label_create(s->trigger_sensor1_button, rect, NULL, font_opensans_16, WHITE, 1);
 
   rect.y = 30;
-  s->trigger_probe1_desc_label = label_create(s->trigger_probe1_button, rect, NULL, font_opensans_8, WHITE, 2);
-  header = "Trigger: Probe 1";
-  desc = "The temperature will be read from Probe 1.";
-  label_set_text(s->trigger_probe1_header_label, header);
-  label_set_text(s->trigger_probe1_desc_label, desc);
+  s->trigger_sensor1_desc_label = label_create(s->trigger_sensor1_button, rect, NULL, font_opensans_8, WHITE, 2);
+  header = "Trigger: Sensor 1";
+  desc = "The temperature will be read from Sensor 1.";
+  label_set_text(s->trigger_sensor1_header_label, header);
+  label_set_text(s->trigger_sensor1_desc_label, desc);
 
   rect.x = 5;
   rect.y = 5;
   rect.width = 56;
   rect.height = 56;
-  s->trigger_probe2_icon = icon_create(s->trigger_probe2_button, rect, img_temp_38, PURPLE);
+  s->trigger_sensor2_icon = icon_create(s->trigger_sensor2_button, rect, img_temp_38, PURPLE);
 
   rect.x = 70;
   rect.y = 5;
   rect.width = 200;
-  s->trigger_probe2_header_label = label_create(s->trigger_probe2_button, rect, NULL, font_opensans_16, WHITE, 1);
+  s->trigger_sensor2_header_label = label_create(s->trigger_sensor2_button, rect, NULL, font_opensans_16, WHITE, 1);
 
   rect.y = 30;
-  s->trigger_probe2_desc_label = label_create(s->trigger_probe2_button, rect, NULL, font_opensans_8, WHITE, 2);
-  header = "Trigger: Probe 2";
-  desc = "The temperature will be read from Probe 2.";
-  label_set_text(s->trigger_probe2_header_label, header);
-  label_set_text(s->trigger_probe2_desc_label, desc);
+  s->trigger_sensor2_desc_label = label_create(s->trigger_sensor2_button, rect, NULL, font_opensans_8, WHITE, 2);
+  header = "Trigger: Sensor 2";
+  desc = "The temperature will be read from Sensor 2.";
+  label_set_text(s->trigger_sensor2_header_label, header);
+  label_set_text(s->trigger_sensor2_desc_label, desc);
 
   s->output = output;
 
@@ -126,26 +126,26 @@ back_button_clicked(button_event_t* event)
 }
 
 static void
-trigger_probe1_button_clicked(button_event_t* event)
+trigger_sensor1_button_clicked(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(screen);
 
   output_settings_t settings = *app_cfg_get_output_settings(s->output);
-  settings.trigger = PROBE_1;
+  settings.trigger = SENSOR_1;
   app_cfg_set_output_settings(s->output, &settings);
 
   gui_pop_screen();
 }
 
 static void
-trigger_probe2_button_clicked(button_event_t* event)
+trigger_sensor2_button_clicked(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(screen);
 
   output_settings_t settings = *app_cfg_get_output_settings(s->output);
-  settings.trigger = PROBE_2;
+  settings.trigger = SENSOR_2;
   app_cfg_set_output_settings(s->output, &settings);
 
   gui_pop_screen();

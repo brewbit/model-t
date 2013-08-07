@@ -7,7 +7,7 @@
 #include "wspr_net.h"
 #include "common.h"
 #include "message.h"
-#include "temp_input.h"
+#include "sensor.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -54,7 +54,7 @@ static void
 dispatch_wifi_status(web_api_t* w, wspr_wifi_status_t* p);
 
 static void
-dispatch_new_temp(web_api_t* w, sensor_msg_t* p);
+dispatch_sensor_sample(web_api_t* w, sensor_msg_t* p);
 
 static void
 on_connect(BaseChannel* tcp_channel, void* user_data);
@@ -72,7 +72,7 @@ web_api_init()
   Thread* th_web_api = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, web_api_thread, w);
 
   msg_subscribe(MSG_WIFI_STATUS, th_web_api, web_api_dispatch, w);
-  msg_subscribe(MSG_NEW_TEMP, th_web_api, web_api_dispatch, w);
+  msg_subscribe(MSG_SENSOR_SAMPLE, th_web_api, web_api_dispatch, w);
 }
 
 static msg_t
@@ -127,8 +127,8 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* user_data)
     dispatch_wifi_status(w, msg_data);
     break;
 
-  case MSG_NEW_TEMP:
-    dispatch_new_temp(w, msg_data);
+  case MSG_SENSOR_SAMPLE:
+    dispatch_sensor_sample(w, msg_data);
     break;
 
   default:
@@ -164,7 +164,7 @@ on_connect(BaseChannel* conn, void* user_data)
 }
 
 static void
-dispatch_new_temp(web_api_t* w, sensor_msg_t* p)
+dispatch_sensor_sample(web_api_t* w, sensor_msg_t* p)
 {
   if (w->conn != NULL) {
 

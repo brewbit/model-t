@@ -1,5 +1,5 @@
 
-#include "gui_probe.h"
+#include "gui_sensor.h"
 #include "gfx.h"
 #include "gui/button.h"
 #include "gui/label.h"

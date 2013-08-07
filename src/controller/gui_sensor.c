@@ -1,5 +1,5 @@
 
-#include "gui_probe.h"
+#include "gui_sensor.h"
 #include "gfx.h"
 #include "gui/button.h"
 #include "gui/label.h"
@@ -24,32 +24,32 @@ typedef struct {
   widget_t* up_button;
   widget_t* down_button;
   widget_t* temp_widget;
-  probe_id_t probe;
-  probe_settings_t settings;
+  sensor_id_t sensor;
+  sensor_settings_t settings;
   float setpoint_delta;
   uint8_t setpoint_steps;
-} probe_screen_t;
+} sensor_screen_t;
 
 
-static void probe_settings_screen_destroy(widget_t* w);
+static void sensor_settings_screen_destroy(widget_t* w);
 
 static void back_button_clicked(button_event_t* event);
 static void up_button_clicked(button_event_t* event);
 static void down_button_clicked(button_event_t* event);
 static void up_or_down_released(button_event_t* event);
-static void adjust_setpoint_velocity(probe_screen_t* s);
-static void set_setpoint(probe_screen_t* s, quantity_t* setpoint);
+static void adjust_setpoint_velocity(sensor_screen_t* s);
+static void set_setpoint(sensor_screen_t* s, quantity_t* setpoint);
 
 
-widget_class_t probe_settings_widget_class = {
-    .on_destroy = probe_settings_screen_destroy
+widget_class_t sensor_settings_widget_class = {
+    .on_destroy = sensor_settings_screen_destroy
 };
 
 widget_t*
-probe_settings_screen_create(probe_id_t probe)
+sensor_settings_screen_create(sensor_id_t sensor)
 {
-  probe_screen_t* s = calloc(1, sizeof(probe_screen_t));
-  s->widget = widget_create(NULL, &probe_settings_widget_class, s, display_rect);
+  sensor_screen_t* s = calloc(1, sizeof(sensor_screen_t));
+  s->widget = widget_create(NULL, &sensor_settings_widget_class, s, display_rect);
 
   rect_t rect = {
       .x = 15,
@@ -62,7 +62,7 @@ probe_settings_screen_create(probe_id_t probe)
   rect.x = 85;
   rect.y = 26;
   rect.width = 220;
-  char* title = (probe == PROBE_1) ? "Probe 1 Setup" : "Probe 2 Setup";
+  char* title = (sensor == SENSOR_1) ? "Sensor 1 Setup" : "Sensor 2 Setup";
   label_create(s->widget, rect, title, font_opensans_22, WHITE, 1);
 
   rect.x = 10;
@@ -79,8 +79,8 @@ probe_settings_screen_create(probe_id_t probe)
   rect.width = 254;
   s->temp_widget = temp_widget_create(s->widget, rect);
 
-  s->probe = probe;
-  s->settings = *app_cfg_get_probe_settings(probe);
+  s->sensor = sensor;
+  s->settings = *app_cfg_get_sensor_settings(sensor);
   set_setpoint(s, &s->settings.setpoint);
 
   s->setpoint_delta = 0.1;
@@ -90,9 +90,9 @@ probe_settings_screen_create(probe_id_t probe)
 }
 
 static void
-probe_settings_screen_destroy(widget_t* w)
+sensor_settings_screen_destroy(widget_t* w)
 {
-  probe_screen_t* s = widget_get_instance_data(w);
+  sensor_screen_t* s = widget_get_instance_data(w);
   free(s);
 }
 
@@ -100,9 +100,9 @@ static void
 back_button_clicked(button_event_t* event)
 {
   widget_t* w = widget_get_parent(event->widget);
-  probe_screen_t* s = widget_get_instance_data(w);
+  sensor_screen_t* s = widget_get_instance_data(w);
 
-  app_cfg_set_probe_settings(s->probe, &s->settings);
+  app_cfg_set_sensor_settings(s->sensor, &s->settings);
 
   gui_pop_screen();
 }
@@ -111,7 +111,7 @@ static void
 up_button_clicked(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
-  probe_screen_t* s = widget_get_instance_data(screen);
+  sensor_screen_t* s = widget_get_instance_data(screen);
   quantity_t new_sp = {
       .unit = s->settings.setpoint.unit,
       .value = s->settings.setpoint.value + s->setpoint_delta
@@ -124,7 +124,7 @@ static void
 down_button_clicked(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
-  probe_screen_t* s = widget_get_instance_data(screen);
+  sensor_screen_t* s = widget_get_instance_data(screen);
   quantity_t new_sp = {
       .unit = s->settings.setpoint.unit,
       .value = s->settings.setpoint.value - s->setpoint_delta
@@ -137,13 +137,13 @@ static void
 up_or_down_released(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
-  probe_screen_t* s = widget_get_instance_data(screen);
+  sensor_screen_t* s = widget_get_instance_data(screen);
   s->setpoint_delta = 0.1;
   s->setpoint_steps = SETPOINT_STEPS_PER_VELOCITY;
 }
 
 static void
-adjust_setpoint_velocity(probe_screen_t* s)
+adjust_setpoint_velocity(sensor_screen_t* s)
 {
   if (s->setpoint_steps == 0)
     return;
@@ -160,7 +160,7 @@ adjust_setpoint_velocity(probe_screen_t* s)
 }
 
 static void
-set_setpoint(probe_screen_t* s, quantity_t* setpoint)
+set_setpoint(sensor_screen_t* s, quantity_t* setpoint)
 {
   if (setpoint->unit == UNIT_TEMP_DEG_F) {
     setpoint->value = LIMIT(setpoint->value, MIN_TEMP_F, MAX_TEMP_F);

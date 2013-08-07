@@ -3,7 +3,7 @@
 #define TEMP_CONTROL_H
 
 #include "common.h"
-#include "temp_input.h"
+#include "sensor.h"
 #include "types.h"
 
 
@@ -23,19 +23,19 @@ typedef enum {
 
 typedef struct {
   quantity_t setpoint;
-} probe_settings_t;
+} sensor_settings_t;
 
 typedef struct {
   output_function_t function;
-  probe_id_t trigger;
+  sensor_id_t trigger;
   uint32_t compressor_delay;
   quantity_t setpoint;
 } output_settings_t;
 
 typedef struct {
-  probe_id_t probe;
-  probe_settings_t settings;
-} probe_settings_msg_t;
+  sensor_id_t sensor;
+  sensor_settings_t settings;
+} sensor_settings_msg_t;
 
 typedef struct {
   output_id_t output;

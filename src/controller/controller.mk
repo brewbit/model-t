@@ -20,11 +20,11 @@ PROJECT_CSRC = \
        gui_calib.c \
        gui_history.c \
        gui_home.c \
-       gui_probe.c \
        gui_output.c \
        gui_output_function.c \
        gui_output_trigger.c \
        gui_output_delay.c \
+       gui_sensor.c \
        gui_settings.c \
        gui_update.c \
        gui_wifi.c \
@@ -35,8 +35,8 @@ PROJECT_CSRC = \
        message.c \
        onewire.c \
        pid.c \
+       sensor.c \
        temp_control.c \
-       temp_input.c \
        temp_widget.c \
        touch.c \
        touch_calib.c \

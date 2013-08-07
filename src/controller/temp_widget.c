@@ -3,7 +3,7 @@
 #include "gui/label.h"
 #include "gfx.h"
 #include "message.h"
-#include "temp_input.h"
+#include "sensor.h"
 #include "gui.h"
 #include "app_cfg.h"
 

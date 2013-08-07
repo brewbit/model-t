@@ -13,7 +13,7 @@ typedef struct {
 
   unit_t temp_unit;
   matrix_t touch_calib;
-  probe_settings_t probe_settings[NUM_PROBES];
+  sensor_settings_t sensor_settings[NUM_SENSORS];
   output_settings_t output_settings[NUM_OUTPUTS];
 } app_cfg_t;
 
@@ -45,20 +45,20 @@ app_cfg_init()
     app_cfg_local.touch_calib.Fn      = -4360660;
     app_cfg_local.touch_calib.Divider = 205664;
 
-    app_cfg_local.probe_settings[PROBE_1].setpoint.unit = UNIT_TEMP_DEG_F;
-    app_cfg_local.probe_settings[PROBE_1].setpoint.value = 72;
+    app_cfg_local.sensor_settings[SENSOR_1].setpoint.unit = UNIT_TEMP_DEG_F;
+    app_cfg_local.sensor_settings[SENSOR_1].setpoint.value = 72;
 
-    app_cfg_local.probe_settings[PROBE_2].setpoint.unit = UNIT_TEMP_DEG_F;
-    app_cfg_local.probe_settings[PROBE_2].setpoint.value = 72;
+    app_cfg_local.sensor_settings[SENSOR_2].setpoint.unit = UNIT_TEMP_DEG_F;
+    app_cfg_local.sensor_settings[SENSOR_2].setpoint.value = 72;
 
     app_cfg_local.output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
-    app_cfg_local.output_settings[OUTPUT_1].trigger = PROBE_1;
+    app_cfg_local.output_settings[OUTPUT_1].trigger = SENSOR_1;
     app_cfg_local.output_settings[OUTPUT_1].compressor_delay = S2ST(3* 60);
     app_cfg_local.output_settings[OUTPUT_1].setpoint.unit = UNIT_TIME_MIN;
     app_cfg_local.output_settings[OUTPUT_1].setpoint.value = 3;
 
     app_cfg_local.output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
-    app_cfg_local.output_settings[OUTPUT_2].trigger = PROBE_1;
+    app_cfg_local.output_settings[OUTPUT_2].trigger = SENSOR_1;
     app_cfg_local.output_settings[OUTPUT_2].compressor_delay = S2ST(3 * 60);
     app_cfg_local.output_settings[OUTPUT_2].setpoint.unit = UNIT_TIME_MIN;
     app_cfg_local.output_settings[OUTPUT_2].setpoint.value = 3;
@@ -118,30 +118,30 @@ app_cfg_set_touch_calib(matrix_t* touch_calib)
   chMtxUnlock();
 }
 
-const probe_settings_t*
-app_cfg_get_probe_settings(probe_id_t probe)
+const sensor_settings_t*
+app_cfg_get_sensor_settings(sensor_id_t sensor)
 {
-  if (probe >= NUM_PROBES)
+  if (sensor >= NUM_SENSORS)
     return NULL;
 
-  return &app_cfg_local.probe_settings[probe];
+  return &app_cfg_local.sensor_settings[sensor];
 }
 
 void
-app_cfg_set_probe_settings(probe_id_t probe, probe_settings_t* settings)
+app_cfg_set_sensor_settings(sensor_id_t sensor, sensor_settings_t* settings)
 {
-  if (probe >= NUM_PROBES)
+  if (sensor >= NUM_SENSORS)
     return;
 
   chMtxLock(&app_cfg_mtx);
-  app_cfg_local.probe_settings[probe] = *settings;
+  app_cfg_local.sensor_settings[sensor] = *settings;
   chMtxUnlock();
 
-  probe_settings_msg_t msg = {
-      .probe = probe,
+  sensor_settings_msg_t msg = {
+      .sensor = sensor,
       .settings = *settings
   };
-  msg_broadcast(MSG_PROBE_SETTINGS, &msg);
+  msg_broadcast(MSG_SENSOR_SETTINGS, &msg);
 }
 
 const output_settings_t*
