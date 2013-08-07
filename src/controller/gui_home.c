@@ -9,7 +9,7 @@
 #include "gui_output.h"
 #include "gui_settings.h"
 #include "gui_wifi.h"
-#include "temp_widget.h"
+#include "quantity_widget.h"
 #include "chprintf.h"
 #include "app_cfg.h"
 
@@ -27,13 +27,12 @@
 #define TILE_Y(pos) TILE_POS(pos)
 
 typedef struct {
-  widget_t* temp_widget;
+  widget_t* quantity_widget;
   widget_t* button;
 } sensor_info_t;
 
 typedef struct {
-  systime_t temp_timestamp;
-  char temp_unit;
+  systime_t sample_timestamp;
 
   widget_t* screen;
   widget_t* stage_button;
@@ -60,7 +59,7 @@ static void dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg);
 static void dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg);
 
 static void set_output_settings(home_screen_t* s, output_id_t output, output_function_t function);
-static void place_temp_widgets(home_screen_t* s);
+static void place_quantity_widgets(home_screen_t* s);
 
 
 static const widget_class_t home_widget_class = {
@@ -72,8 +71,7 @@ widget_t*
 home_screen_create()
 {
   home_screen_t* s = calloc(1, sizeof(home_screen_t));
-  s->temp_timestamp = chTimeNow();
-  s->temp_unit = 'F';
+  s->sample_timestamp = chTimeNow();
 
   s->screen = widget_create(NULL, &home_widget_class, s, display_rect);
   widget_set_background(s->screen, BLACK, FALSE);
@@ -111,11 +109,11 @@ home_screen_create()
 
   rect.x = 0;
   rect.width = TILE_SPAN(3);
-  s->sensors[SENSOR_1].temp_widget = temp_widget_create(s->stage_button, rect);
+  s->sensors[SENSOR_1].quantity_widget = quantity_widget_create(s->stage_button, rect);
 
-  s->sensors[SENSOR_2].temp_widget = temp_widget_create(s->stage_button, rect);
+  s->sensors[SENSOR_2].quantity_widget = quantity_widget_create(s->stage_button, rect);
 
-  place_temp_widgets(s);
+  place_quantity_widgets(s);
 
   set_output_settings(s, OUTPUT_1,
       app_cfg_get_output_settings(OUTPUT_1)->function);
@@ -167,7 +165,7 @@ home_screen_msg(msg_event_t* event)
 static void
 dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg)
 {
-  /* Update the sensor button icons based on the current temp/setpoint */
+  /* Update the sensor button icons based on the current sample/setpoint */
   widget_t* btn = s->sensors[msg->sensor].button;
   const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(msg->sensor);
   if (msg->sample.value > sensor_settings->setpoint.value)
@@ -177,21 +175,21 @@ dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg)
   else
     button_set_icon(btn, img_temp_med);
 
-  /* Update the temperature display widget */
-  widget_t* w = s->sensors[msg->sensor].temp_widget;
-  temp_widget_set_value(w, &msg->sample);
+  /* Update the quantity display widget */
+  widget_t* w = s->sensors[msg->sensor].quantity_widget;
+  quantity_widget_set_value(w, &msg->sample);
 
-  /* Enable the sensor button and adjust the placement of the temp display widgets */
+  /* Enable the sensor button and adjust the placement of the quantity display widgets */
   if (!widget_is_enabled(s->sensors[msg->sensor].button)) {
     widget_enable(s->sensors[msg->sensor].button, TRUE);
-    place_temp_widgets(s);
+    place_quantity_widgets(s);
   }
 }
 
 static void
 dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg)
 {
-  widget_t* w = s->sensors[msg->sensor].temp_widget;
+  widget_t* w = s->sensors[msg->sensor].quantity_widget;
 
   if (widget_is_enabled(s->sensors[msg->sensor].button)) {
     widget_disable(s->sensors[msg->sensor].button);
@@ -200,13 +198,13 @@ dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg)
         .unit = UNIT_NONE,
         .value = NAN
     };
-    temp_widget_set_value(w, &sample);
-    place_temp_widgets(s);
+    quantity_widget_set_value(w, &sample);
+    place_quantity_widgets(s);
   }
 }
 
 static void
-place_temp_widgets(home_screen_t* s)
+place_quantity_widgets(home_screen_t* s)
 {
   int i;
   rect_t rect = widget_get_rect(s->stage_button);
@@ -215,25 +213,25 @@ place_temp_widgets(home_screen_t* s)
   int num_active_sensors = 0;
   for (i = 0; i < NUM_SENSORS; ++i) {
     if (widget_is_enabled(s->sensors[i].button)) {
-      widget_show(s->sensors[i].temp_widget);
+      widget_show(s->sensors[i].quantity_widget);
       active_sensors[num_active_sensors++] = &s->sensors[i];
     }
     else
-      widget_hide(s->sensors[i].temp_widget);
+      widget_hide(s->sensors[i].quantity_widget);
   }
 
   if (num_active_sensors == 0) {
-    widget_show(s->sensors[SENSOR_1].temp_widget);
+    widget_show(s->sensors[SENSOR_1].quantity_widget);
     active_sensors[num_active_sensors++] = &s->sensors[SENSOR_1];
   }
 
   for (i = 0; i < num_active_sensors; ++i) {
-    rect_t wrect = widget_get_rect(active_sensors[i]->temp_widget);
+    rect_t wrect = widget_get_rect(active_sensors[i]->quantity_widget);
 
     int spacing = (rect.height - (num_active_sensors * wrect.height)) / (num_active_sensors + 1);
     wrect.y = (spacing * (i + 1)) + (wrect.height * i);
 
-    widget_set_rect(active_sensors[i]->temp_widget, wrect);
+    widget_set_rect(active_sensors[i]->quantity_widget, wrect);
   }
 }
 

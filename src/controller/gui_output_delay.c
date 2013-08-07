@@ -4,7 +4,7 @@
 #include "gui/button.h"
 #include "gui/label.h"
 #include "gui.h"
-#include "temp_widget.h"
+#include "quantity_widget.h"
 #include "app_cfg.h"
 
 /* Delays are in minutes */
@@ -17,7 +17,7 @@ typedef struct {
   widget_t* back_button;
   widget_t* up_button;
   widget_t* down_button;
-  widget_t* temp_widget;
+  widget_t* quantity_widget;
   output_id_t output;
   output_settings_t settings;
 } output_delay_screen_t;
@@ -68,7 +68,7 @@ output_delay_screen_create(output_id_t output)
   rect.x = 66;
   rect.y = 130;
   rect.width = 254;
-  s->temp_widget = temp_widget_create(s->widget, rect);
+  s->quantity_widget = quantity_widget_create(s->widget, rect);
 
   s->output = output;
   s->settings = *app_cfg_get_output_settings(output);
@@ -138,5 +138,5 @@ set_delay(output_delay_screen_t* s, quantity_t* setpoint)
 
   s->settings.compressor_delay = S2ST(setpoint->value);
   s->settings.setpoint = *setpoint;
-  temp_widget_set_value(s->temp_widget, setpoint);
+  quantity_widget_set_value(s->quantity_widget, setpoint);
 }

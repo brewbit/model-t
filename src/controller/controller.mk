@@ -35,9 +35,9 @@ PROJECT_CSRC = \
        message.c \
        onewire.c \
        pid.c \
+       quantity_widget.c \
        sensor.c \
        temp_control.c \
-       temp_widget.c \
        touch.c \
        touch_calib.c \
        txn.c \

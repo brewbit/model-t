@@ -4,7 +4,7 @@
 #include "gui/button.h"
 #include "gui/label.h"
 #include "gui.h"
-#include "temp_widget.h"
+#include "quantity_widget.h"
 #include "app_cfg.h"
 
 #define SETPOINT_STEPS_PER_VELOCITY 30
@@ -23,7 +23,7 @@ typedef struct {
   widget_t* back_button;
   widget_t* up_button;
   widget_t* down_button;
-  widget_t* temp_widget;
+  widget_t* quantity_widget;
   sensor_id_t sensor;
   sensor_settings_t settings;
   float setpoint_delta;
@@ -77,7 +77,7 @@ sensor_settings_screen_create(sensor_id_t sensor)
   rect.x = 66;
   rect.y = 130;
   rect.width = 254;
-  s->temp_widget = temp_widget_create(s->widget, rect);
+  s->quantity_widget = quantity_widget_create(s->widget, rect);
 
   s->sensor = sensor;
   s->settings = *app_cfg_get_sensor_settings(sensor);
@@ -173,5 +173,5 @@ set_setpoint(sensor_screen_t* s, quantity_t* setpoint)
   }
 
   s->settings.setpoint = *setpoint;
-  temp_widget_set_value(s->temp_widget, setpoint);
+  quantity_widget_set_value(s->quantity_widget, setpoint);
 }
