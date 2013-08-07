@@ -29,8 +29,6 @@ handle_version(uint8_t* data, uint16_t data_len);
 
 static SerialDriver* sd = &SD3;
 static wspr_parser_t wspr_parser;
-static Thread* wspr_thread;
-static WORKING_AREA(wa_thread_wspr, 2500);
 static wspr_msg_handler_t handlers[NUM_WSPR_MSGS] = {
     [WSPR_OUT_VERSION] = handle_version,
     [WSPR_OUT_DEBUG] = handle_debug,
@@ -64,7 +62,7 @@ wspr_init()
   sdStart(sd, NULL);
   wspr_parser_init(&wspr_parser, recv_wspr_pkt, NULL);
 
-  wspr_thread = chThdCreateStatic(wa_thread_wspr, sizeof(wa_thread_wspr), NORMALPRIO + 1, thread_wspr, NULL);
+  chThdCreateFromHeap(NULL, 1024, HIGHPRIO, thread_wspr, NULL);
 }
 
 void

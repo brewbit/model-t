@@ -63,7 +63,7 @@ main(void)
   /* start stdout port */
   sdStart(&SD4, NULL);
 
-  chThdCreateFromHeap(NULL, 1024, NORMALPRIO - 1, idle_thread, NULL);
+  chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
 
   app_cfg_init();
   gfx_init();

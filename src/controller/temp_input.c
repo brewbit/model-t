@@ -35,7 +35,7 @@ temp_input_init(probe_id_t probe, onewire_bus_t* port)
   tp->bus = port;
   onewire_init(tp->bus);
 
-  tp->thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO+1, temp_input_thread, tp);
+  tp->thread = chThdCreateFromHeap(NULL, 1024, HIGHPRIO, temp_input_thread, tp);
 
   return tp;
 }

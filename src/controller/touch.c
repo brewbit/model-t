@@ -120,7 +120,6 @@ static const axis_cfg_t y_axis = {
     .conv_grp = &xp_conv_grp,
 };
 
-static WORKING_AREA(wa_touch_thread, 1024);
 static uint8_t touch_down;
 static systime_t last_touch_time;
 static point_t touch_coord_raw;
@@ -131,7 +130,7 @@ touch_init()
 {
   adcStart(&ADCD1, NULL);
 
-  chThdCreateStatic(wa_touch_thread, sizeof(wa_touch_thread), NORMALPRIO, touch_thread, NULL);
+  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, touch_thread, NULL);
 }
 
 static void
