@@ -288,7 +288,12 @@ click_sensor_button(button_event_t* event)
 
   const sensor_settings_t* settings = app_cfg_get_sensor_settings(sensor);
 
-  widget_t* settings_screen = quantity_select_screen_create(title, settings->setpoint, update_setpoint, (void*)sensor);
+  float velocity_steps[] = {
+      0.1f, 0.5f, 1.0f
+  };
+
+  widget_t* settings_screen = quantity_select_screen_create(
+      title, settings->setpoint, velocity_steps, 3, update_setpoint, (void*)sensor);
   gui_push_screen(settings_screen);
 }
 

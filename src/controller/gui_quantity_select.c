@@ -7,7 +7,9 @@
 #include "quantity_widget.h"
 #include "app_cfg.h"
 
-#define QUANTITY_STEPS_PER_VELOCITY 30
+#include <string.h>
+
+#define QUANTITY_STEPS_PER_VELOCITY 15
 #define MAX_TEMP_C (110)
 #define MIN_TEMP_C (-10)
 
@@ -30,7 +32,10 @@ typedef struct {
   quantity_select_cb_t cb;
   void* cb_data;
 
-  float quantity_delta;
+  float velocity_steps[4];
+  uint8_t num_velocity_steps;
+
+  uint8_t cur_velocity;
   uint8_t quantity_steps;
 } quantity_select_screen_t;
 
@@ -45,18 +50,27 @@ static void adjust_quantity_velocity(quantity_select_screen_t* s);
 static void set_quantity(quantity_select_screen_t* s, quantity_t quantity);
 
 
-widget_class_t quantity_select_widget_class = {
+static widget_class_t quantity_select_widget_class = {
     .on_destroy = quantity_select_screen_destroy
 };
 
 widget_t*
-quantity_select_screen_create(const char* title, quantity_t quantity, quantity_select_cb_t cb, void* cb_data)
+quantity_select_screen_create(
+    const char* title,
+    quantity_t quantity,
+    float* velocity_steps,
+    uint8_t num_velocity_steps,
+    quantity_select_cb_t cb,
+    void* cb_data)
 {
   quantity_select_screen_t* s = calloc(1, sizeof(quantity_select_screen_t));
   s->widget = widget_create(NULL, &quantity_select_widget_class, s, display_rect);
 
   s->cb = cb;
   s->cb_data = cb_data;
+
+  s->num_velocity_steps = MIN(num_velocity_steps, 4);
+  memcpy(s->velocity_steps, velocity_steps, s->num_velocity_steps * sizeof(float));
 
   rect_t rect = {
       .x = 15,
@@ -88,7 +102,7 @@ quantity_select_screen_create(const char* title, quantity_t quantity, quantity_s
   s->quantity = quantity;
   set_quantity(s, quantity);
 
-  s->quantity_delta = 0.1;
+  s->cur_velocity = 0;
   s->quantity_steps = QUANTITY_STEPS_PER_VELOCITY;
 
   return s->widget;
@@ -120,7 +134,7 @@ up_button_clicked(button_event_t* event)
   quantity_select_screen_t* s = widget_get_instance_data(screen);
   quantity_t new_sp = {
       .unit = s->quantity.unit,
-      .value = s->quantity.value + s->quantity_delta
+      .value = s->quantity.value + s->velocity_steps[s->cur_velocity]
   };
   set_quantity(s, new_sp);
   adjust_quantity_velocity(s);
@@ -133,7 +147,7 @@ down_button_clicked(button_event_t* event)
   quantity_select_screen_t* s = widget_get_instance_data(screen);
   quantity_t new_sp = {
       .unit = s->quantity.unit,
-      .value = s->quantity.value - s->quantity_delta
+      .value = s->quantity.value - s->velocity_steps[s->cur_velocity]
   };
   set_quantity(s, new_sp);
   adjust_quantity_velocity(s);
@@ -144,22 +158,16 @@ up_or_down_released(button_event_t* event)
 {
   widget_t* screen = widget_get_parent(event->widget);
   quantity_select_screen_t* s = widget_get_instance_data(screen);
-  s->quantity_delta = 0.1;
+  s->cur_velocity = 0;
   s->quantity_steps = QUANTITY_STEPS_PER_VELOCITY;
 }
 
 static void
 adjust_quantity_velocity(quantity_select_screen_t* s)
 {
-  if (s->quantity_steps == 0)
-    return;
-
-  if (--s->quantity_steps <= 0 && s->quantity_delta < 1) {
-    if (s->quantity_delta == 0.1)
-      s->quantity_delta = 0.5;
-    else if (s->quantity_delta == 0.5)
-      s->quantity_delta = 1;
-
+  if ((s->cur_velocity < (s->num_velocity_steps-1)) &&
+      (--s->quantity_steps <= 0)) {
+    s->cur_velocity++;
     s->quantity_steps = QUANTITY_STEPS_PER_VELOCITY;
   }
 }

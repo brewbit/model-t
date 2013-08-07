@@ -9,7 +9,7 @@
 #include "app_cfg.h"
 #include "gui_output_function.h"
 #include "gui_output_trigger.h"
-#include "gui_output_delay.h"
+#include "gui_quantity_select.h"
 
 typedef struct {
   widget_t* widget;
@@ -31,6 +31,7 @@ static void back_button_clicked(button_event_t* event);
 static void compressor_delay_button_clicked(button_event_t* event);
 static void function_button_clicked(button_event_t* event);
 static void trigger_button_clicked(button_event_t* event);
+static void update_compressor_delay(quantity_t delay, void* user_data);
 
 
 widget_class_t output_settings_widget_class = {
@@ -168,7 +169,31 @@ compressor_delay_button_clicked(button_event_t* event)
   widget_t* screen = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(screen);
 
-  widget_t* output_delay_screen = output_delay_screen_create(s->output);
+  char* title;
+  if (s->output == OUTPUT_1) {
+    title = "Output 1 Delay";
+  }
+  else {
+    title = "Output 2 Delay";
+  }
+
+  quantity_t delay = {
+      .value = s->settings.compressor_delay / S2ST(60),
+      .unit = UNIT_TIME_MIN
+  };
+  float velocity_steps[] = {
+      1.0f
+  };
+  widget_t* output_delay_screen = quantity_select_screen_create(
+      title, delay, velocity_steps, 1, update_compressor_delay, s);
   gui_push_screen(output_delay_screen);
+}
+
+static void
+update_compressor_delay(quantity_t delay, void* user_data)
+{
+  output_screen_t* s = user_data;
+  s->settings.compressor_delay = delay.value * S2ST(60);
+  app_cfg_set_output_settings(s->output, &s->settings);
 }
 
