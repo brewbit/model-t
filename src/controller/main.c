@@ -49,6 +49,7 @@ idle_thread(void* arg)
   while (1) {
     wspr_idle();
     gui_idle();
+    app_cfg_idle();
   }
 
   return 0;

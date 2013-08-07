@@ -18,9 +18,6 @@ typedef struct {
 } app_cfg_t;
 
 
-static msg_t app_cfg_thread(void* arg);
-
-
 /* app_cfg stored in flash */
 __attribute__ ((section("app_cfg")))
 app_cfg_t app_cfg_stored;
@@ -28,6 +25,7 @@ app_cfg_t app_cfg_stored;
 /* Local RAM copy of app_cfg */
 static app_cfg_t app_cfg_local;
 static Mutex app_cfg_mtx;
+static systime_t last_idle;
 
 
 void
@@ -70,26 +68,20 @@ app_cfg_init()
   }
 
   chMtxInit(&app_cfg_mtx);
-  chThdCreateFromHeap(NULL, 512, NORMALPRIO, app_cfg_thread, NULL);
 }
 
-static msg_t
-app_cfg_thread(void* arg)
+void
+app_cfg_idle()
 {
-  (void)arg;
-
-  while (1) {
+  if ((chTimeNow() - last_idle) > S2ST(2)) {
     chMtxLock(&app_cfg_mtx);
     if (memcmp(&app_cfg_local, &app_cfg_stored, sizeof(app_cfg_local)) != 0) {
       flashSectorErase(1);
       flashWrite((flashaddr_t)&app_cfg_stored, (char*)&app_cfg_local, sizeof(app_cfg_local));
     }
     chMtxUnlock();
-
-    chThdSleepSeconds(2);
+    last_idle = chTimeNow();
   }
-
-  return 0;
 }
 
 unit_t
