@@ -37,16 +37,16 @@ typedef struct {
 } pid_t;
 
 
-void pid_exec(pid_t* pid, sensor_sample_t setpoint, sensor_sample_t sample);
+void pid_exec(pid_t* pid, quantity_t setpoint, quantity_t sample);
 void pid_init(pid_t* pid);
 
 void set_gains(pid_t* pid, float Kp, float Ki, float Kd);
 
 void set_sample_time(pid_t* pid, uint16_t new_sample_time);
 
-void set_mode(pid_t* pid, uint8_t Mode, sensor_sample_t sample);
+void set_mode(pid_t* pid, uint8_t Mode, quantity_t sample);
 
-void pid_reinit(pid_t* pid, sensor_sample_t sample);
+void pid_reinit(pid_t* pid, quantity_t sample);
 
 void set_controller_direction(pid_t* pid, uint8_t direction);
 

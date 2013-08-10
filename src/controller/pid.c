@@ -19,7 +19,7 @@ void pid_init(pid_t* pid)
   pid->pid_turn_relay_on = FALSE;
 }
 
-void pid_exec(pid_t* pid, sensor_sample_t setpoint, sensor_sample_t sample)
+void pid_exec(pid_t* pid, quantity_t setpoint, quantity_t sample)
 {
   if (!pid->in_auto)
     return;
@@ -31,7 +31,7 @@ void pid_exec(pid_t* pid, sensor_sample_t setpoint, sensor_sample_t sample)
   uint32_t time_change = (uint32_t)(current_time - pid->last_time);
 
   if(time_change >= pid->sample_time) {
-    error = setpoint.value.temp - sample.value.temp;
+    error = setpoint.value - sample.value;
 
     pid->integral += (float)(pid->ki * error);
     if (pid->integral > pid->out_max)
@@ -39,7 +39,7 @@ void pid_exec(pid_t* pid, sensor_sample_t setpoint, sensor_sample_t sample)
     else if (pid->integral < pid->out_min)
       pid->integral = pid->out_min;
 
-    dSample = (uint32_t)(sample.value.temp - pid->last_sample);
+    dSample = (uint32_t)(sample.value - pid->last_sample);
 
     /*Compute PID Output*/
     pid->pid_output = (int32_t)((pid->kp * (float)error) + pid->integral - (pid->kd * dSample));
@@ -54,7 +54,7 @@ void pid_exec(pid_t* pid, sensor_sample_t setpoint, sensor_sample_t sample)
       pid->pid_turn_relay_on = FALSE;
 
     /*Remember some variables for next time*/
-    pid->last_sample = sample.value.temp;
+    pid->last_sample = sample.value;
     pid->last_time = current_time;
   }
 }
@@ -97,7 +97,7 @@ void set_output_limits(pid_t* pid, float Min, float Max)
    pid->out_max = Max;
 }
 
-void set_mode(pid_t* pid, uint8_t Mode, sensor_sample_t sample)
+void set_mode(pid_t* pid, uint8_t Mode, quantity_t sample)
 {
   bool new_auto = (Mode == AUTOMATIC);
   if(new_auto && !pid->in_auto) {
@@ -107,9 +107,9 @@ void set_mode(pid_t* pid, uint8_t Mode, sensor_sample_t sample)
   pid->in_auto = new_auto;
 }
 
-void pid_reinit(pid_t* pid, sensor_sample_t sample)
+void pid_reinit(pid_t* pid, quantity_t sample)
 {
-  pid->last_sample = sample.value.temp;
+  pid->last_sample = sample.value;
   pid->integral = pid->pid_output;
 
   if(pid->integral > pid->out_max)
