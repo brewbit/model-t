@@ -1,143 +1,124 @@
 
 #include "pid.h"
 
-/* proportional gain */
-float kp[NUM_SENSORS];
-/* integral gain */
-float ki[NUM_SENSORS];
-/* derivative gain */
-float kd[NUM_SENSORS];
+int32_t window_size = 1000;
 
-/* 1 second */
-uint16_t sampleTime = MS2ST(1000);
-int32_t  lastSample[NUM_SENSORS];
-int16_t  output[NUM_SENSORS];
-int16_t  iTerm[NUM_SENSORS];
-uint16_t  outMin = -200;
-uint16_t  outMax = 200;
-bool      inAuto = FALSE;
-
-#define MANUAL    0
-#define AUTOMATIC 1
-
-#define DIRECT  0
-#define REVERSE 1
-int8_t controllerDirection = DIRECT;
-
-
-int16_t pid_exec(sensor_id_t sensor, quantity_t setpoint, quantity_t sample)
+void pid_init(pid_t* pid)
 {
-  static uint32_t lastTime[NUM_SENSORS];
-  static float  lastSample[NUM_SENSORS];
+  pid->kp = 5;
+  pid->ki = .1;
+  pid->kd = 1;
+
+  pid->sample_time = MS2ST(1000);
+  pid->in_auto = TRUE;
+  pid->out_min = -1000;
+  pid->out_max = 1000;
+  pid->controller_direction = DIRECT;
+
+  pid->window_start_time = chTimeNow();
+  pid->pid_turn_relay_on = FALSE;
+}
+
+void pid_exec(pid_t* pid, sensor_sample_t setpoint, sensor_sample_t sample)
+{
+  if (!pid->in_auto)
+    return;
+
   int32_t error;
-  int32_t dSample;
+  float   dSample;
 
-  if (!inAuto)
-    return output[sensor];
+  int32_t current_time = chTimeNow();
+  uint32_t time_change = (uint32_t)(current_time - pid->last_time);
 
-  /*How long since we last calculated*/
-  uint32_t currentTime = chTimeNow();
-  uint32_t timeChange = (uint32_t)(currentTime - lastTime[sensor]);
+  if(time_change >= pid->sample_time) {
+    error = setpoint.value.temp - sample.value.temp;
 
-  if(timeChange >= sampleTime) {
-    /* P roportional */
-    error = setpoint.value - sample.value;
+    pid->integral += (float)(pid->ki * error);
+    if (pid->integral > pid->out_max)
+      pid->integral = pid->out_max;
+    else if (pid->integral < pid->out_min)
+      pid->integral = pid->out_min;
 
-    /* I ntegral */
-    iTerm[sensor] += (int16_t)(ki[sensor] * error);
-    if (iTerm[sensor] > outMax)
-      iTerm[sensor] = outMax;
-    else if (iTerm[sensor] < outMin)
-      iTerm[sensor] = outMin;
-
-    /* D erivative */
-    dSample = (uint32_t)(sample.value - lastSample[sensor]);
+    dSample = (uint32_t)(sample.value.temp - pid->last_sample);
 
     /*Compute PID Output*/
-    output[sensor] = (int16_t)(kp[sensor] * error) + iTerm[sensor] - (kd[sensor] * dSample);
+    pid->pid_output = (int32_t)((pid->kp * (float)error) + pid->integral - (pid->kd * dSample));
+
+    if(current_time - pid->window_start_time > window_size) {
+      pid->window_start_time += window_size;
+    }
+
+    if((current_time - pid->window_start_time) < pid->pid_output)
+      pid->pid_turn_relay_on = TRUE;
+    else
+      pid->pid_turn_relay_on = FALSE;
 
     /*Remember some variables for next time*/
-    lastSample[sensor] = sample.value;
-    lastTime[sensor] = currentTime;
-
-    /* return output */
-    return output[sensor];
-  }
-  return output[sensor];
-}
-
-
-// void set_gains(sensor_id_t sensor, int16_t Kp, int16_t Ki, int16_t Kd)
-void set_gains(sensor_id_t sensor)
-{
-  //if (Kp[sensor]<0 || Ki[sensor]<0|| Kd[sensor]<0) return;
-
-  float sampleTimeInSec = ((float)sampleTime)/1000;
-
-  inAuto = AUTOMATIC;
-
-  kp[sensor] = .5;
-  ki[sensor] = 0 * sampleTimeInSec;
-  kd[sensor] = 0 / sampleTimeInSec;
-
-  if(controllerDirection == REVERSE) {
-    kp[sensor] = (0 - kp[sensor]);
-    ki[sensor] = (0 - ki[sensor]);
-    kd[sensor] = (0 - kd[sensor]);
+    pid->last_sample = sample.value.temp;
+    pid->last_time = current_time;
   }
 }
 
 
-void set_sample_time(sensor_id_t sensor, uint16_t newSampleTime)
+void set_gains(pid_t* pid, float Kp, float Ki, float Kd)
 {
-   if (newSampleTime > 0) {
-      float ratio  = (double)newSampleTime
-                      / (double)sampleTime;
-      ki[sensor] *= ratio;
-      kd[sensor] /= ratio;
-      sampleTime = (uint16_t)newSampleTime;
+  float sample_time_in_sec = ((float)pid->sample_time)/1000;
+
+  pid->in_auto = AUTOMATIC;
+
+  pid->kp = Kp;
+  pid->ki = Ki * sample_time_in_sec;
+  pid->kd = Kd / sample_time_in_sec;
+
+  if(pid->controller_direction == REVERSE) {
+    pid->kp = (0 - pid->kp);
+    pid->ki = (0 - pid->ki);
+    pid->kd = (0 - pid->kd);
+  }
+}
+
+
+void set_sample_time(pid_t* pid, uint16_t new_sample_time)
+{
+   if (new_sample_time > 0) {
+      float ratio  = (double)new_sample_time / (double)pid->sample_time;
+      pid->ki *= ratio;
+      pid->kd /= ratio;
+      pid->sample_time = new_sample_time;
    }
 }
 
-void SetOutputLimits(sensor_id_t sensor, double Min, double Max)
+void set_output_limits(pid_t* pid, float Min, float Max)
 {
-   if(Min > Max) return;
-   outMin = Min;
-   outMax = Max;
+   if(Min > Max)
+     return;
 
-   if(output[sensor] > outMax)
-     output[sensor] = outMax;
-   else if(output[sensor] < outMin)
-     output[sensor] = outMin;
-
-   if(iTerm[sensor] > outMax)
-     iTerm[sensor] = outMax;
-   else if(iTerm[sensor] < outMin)
-     iTerm[sensor] = outMin;
+   pid->out_min = Min;
+   pid->out_max = Max;
 }
 
-void set_mode(uint8_t Mode, sensor_id_t sensor, quantity_t sample)
+void set_mode(pid_t* pid, uint8_t Mode, sensor_sample_t sample)
 {
-  bool newAuto = (Mode == AUTOMATIC);
-  if(newAuto && !inAuto) {
+  bool new_auto = (Mode == AUTOMATIC);
+  if(new_auto && !pid->in_auto) {
     /*we just went from manual to auto*/
-    pid_reinit(sensor, sample);
+    pid_reinit(pid, sample);
   }
-  inAuto = newAuto;
+  pid->in_auto = new_auto;
 }
 
-void pid_reinit(sensor_id_t sensor, quantity_t sample)
+void pid_reinit(pid_t* pid, sensor_sample_t sample)
 {
-  lastSample[sensor] = sample.value;
-  iTerm[sensor] = output[sensor];
+  pid->last_sample = sample.value.temp;
+  pid->integral = pid->pid_output;
 
-  if(iTerm[sensor] > outMax)
-    iTerm[sensor] = outMax;
-  else if(iTerm[sensor] < outMin)
-    iTerm[sensor]= outMin;
+  if(pid->integral > pid->out_max)
+    pid->integral = pid->out_max;
+  else if(pid->integral < pid->out_min)
+    pid->integral = pid->out_min;
 }
 
-void SetControllerDirection(uint8_t Direction)
+void set_controller_direction(pid_t* pid, uint8_t direction)
 {
-   controllerDirection = Direction;
+   pid->controller_direction = direction;
 }
