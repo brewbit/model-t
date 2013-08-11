@@ -1,20 +1,19 @@
 
 #include "pid.h"
 
-int32_t window_size = 1000;
-
 void pid_init(pid_t* pid, quantity_t sample)
 {
-  pid->sample_time = MS2ST(1000);
+  pid->sample_time = MS2ST(5000);
   pid->last_time   = (chTimeNow() - pid->sample_time);
   pid->window_start_time = chTimeNow();
-  pid->window_size = MS2ST(5000);
+  /* 12 minute window size */
+  pid->window_size = MS2ST(720000);
 
   set_output_limits(pid, 0, pid->window_size);
   set_mode(pid, sample, AUTOMATIC);
 
   pid->controller_direction = DIRECT;
-  set_gains(pid, 2, 4, 1);
+  set_gains(pid, 2, 5, 1);
 }
 
 void pid_exec(pid_t* pid, quantity_t setpoint, quantity_t sample)
@@ -52,6 +51,16 @@ void pid_exec(pid_t* pid, quantity_t setpoint, quantity_t sample)
     pid->last_sample = sample.value;
     pid->last_time   = current_system_time;
   }
+
+  if((current_system_time - pid->window_start_time) > pid->window_size)
+    pid->window_start_time += pid->window_size;
+
+  if(pid->pid_output < (current_system_time - pid->window_start_time))
+    pid->enable_output = TRUE;
+  else
+    pid->enable_output = FALSE;
+
+
 }
 
 void set_gains(pid_t* pid, float Kp, float Ki, float Kd)

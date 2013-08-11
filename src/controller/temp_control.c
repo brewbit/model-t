@@ -81,8 +81,19 @@ static void manage_pid()
   for (i = 0; i < NUM_OUTPUTS; ++i) {
     const output_settings_t* output_settings = app_cfg_get_output_settings(i);
     const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(output_settings->trigger);
+    bool time_expired = compressor_delay_has_expired(output_settings->compressor_delay,
+                                                     outputs[i].delay_startTime);
+    pid_t pid = outputs[i].pid_control;
 
-    pid_exec(&outputs[i].pid_control, sensor_settings->setpoint, inputs[output_settings->trigger].last_sample);
+    pid_exec(&pid, sensor_settings->setpoint, inputs[output_settings->trigger].last_sample);
+
+    if(time_expired && pid.enable_output) {
+      palSetPad(GPIOB, outputs[i].gpio);
+    }
+    else {
+      palClearPad(GPIOB, outputs[i].gpio);
+      start_compressor_delay(&outputs[i].delay_startTime);
+    }
   }
 }
 
@@ -120,10 +131,10 @@ dispatch_sensor_sample(sensor_msg_t* msg)
 
   manage_pid();
 
-  evaluate_setpoint(
-      msg->sensor,
-      sensor_settings->setpoint,
-      msg->sample);
+//  evaluate_setpoint(
+//      msg->sensor,
+//      sensor_settings->setpoint,
+//      msg->sample);
 }
 
 static void
@@ -131,11 +142,12 @@ dispatch_sensor_timeout(sensor_timeout_msg_t* msg)
 {
   const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(msg->sensor);
 
-  /* Set the last temp to the setpoint to disable any active outputs */
-  evaluate_setpoint(
-      msg->sensor,
-      sensor_settings->setpoint,
-      sensor_settings->setpoint);
+  inputs[msg->sensor].last_sample = sensor_settings->setpoint;
+//  /* Set the last temp to the setpoint to disable any active outputs */
+//  evaluate_setpoint(
+//      msg->sensor,
+//      sensor_settings->setpoint,
+//      sensor_settings->setpoint);
 }
 
 static void
@@ -159,18 +171,18 @@ dispatch_output_settings(output_settings_msg_t* msg)
         pid_reinit(&outputs[i].pid_control, inputs[SENSOR_2].last_sample);
   }
 
-  /* Re-evaluate the last temp from both sensors with the new output settings */
-  const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(SENSOR_1);
-  evaluate_setpoint(
-      SENSOR_1,
-      sensor_settings->setpoint,
-      inputs[SENSOR_1].last_sample);
-
-  sensor_settings = app_cfg_get_sensor_settings(SENSOR_2);
-  evaluate_setpoint(
-      SENSOR_2,
-      sensor_settings->setpoint,
-      inputs[SENSOR_2].last_sample);
+//  /* Re-evaluate the last temp from both sensors with the new output settings */
+//  const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(SENSOR_1);
+//  evaluate_setpoint(
+//      SENSOR_1,
+//      sensor_settings->setpoint,
+//      inputs[SENSOR_1].last_sample);
+//
+//  sensor_settings = app_cfg_get_sensor_settings(SENSOR_2);
+//  evaluate_setpoint(
+//      SENSOR_2,
+//      sensor_settings->setpoint,
+//      inputs[SENSOR_2].last_sample);
 }
 
 static void
@@ -189,24 +201,26 @@ dispatch_sensor_settings(sensor_settings_msg_t* msg)
         pid_reinit(&outputs[i].pid_control, inputs[SENSOR_2].last_sample);
   }
 
-  /* Re-evaluate the last temp reading with the new sensor settings */
-  evaluate_setpoint(
-      msg->sensor,
-      msg->settings.setpoint,
-      inputs[msg->sensor].last_sample);
+//  /* Re-evaluate the last temp reading with the new sensor settings */
+//  evaluate_setpoint(
+//      msg->sensor,
+//      msg->settings.setpoint,
+//      inputs[msg->sensor].last_sample);
 }
 
 static void
 evaluate_setpoint(sensor_id_t sensor, quantity_t setpoint, quantity_t sample)
 {
-  int32_t pid =  outputs[sensor].pid_control.pid_output;
+  pid_t pid =  outputs[sensor].pid_control;
   inputs[sensor].last_sample = sample;
 
-  if (sample.value > (setpoint.value + pid)) {
+  if (pid.enable_output) {
     trigger_output(sensor, OUTPUT_FUNC_COOLING);
+    //trigger_output(sensor, OUTPUT_FUNC_HEATING);
   }
-  else if (sample.value < (setpoint.value - pid)) {
-    trigger_output(sensor, OUTPUT_FUNC_HEATING);
+  else {
+    palClearPad(GPIOB, outputs[OUTPUT_2].gpio);
+    start_compressor_delay(&outputs[OUTPUT_2].delay_startTime);
   }
 }
 

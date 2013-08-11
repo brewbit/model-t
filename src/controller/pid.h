@@ -24,6 +24,7 @@ typedef struct {
   float integral;
   float last_sample;
   float pid_output;
+  bool  enable_output;
 
   bool   in_auto;
   float  out_min;
