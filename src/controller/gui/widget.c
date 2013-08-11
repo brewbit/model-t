@@ -164,7 +164,11 @@ widget_hit_test(widget_t* root, point_t p)
   widget_t* w;
 
   for (w = root->first_child; w != NULL; w = w->next_sibling) {
-    widget_t* w_hit = widget_hit_test(w, p);
+    point_t translated_p = {
+        .x = p.x - root->rect.x,
+        .y = p.y - root->rect.y,
+    };
+    widget_t* w_hit = widget_hit_test(w, translated_p);
     if (w_hit != NULL)
       return w_hit;
   }
