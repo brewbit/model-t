@@ -134,6 +134,7 @@ handle_debug(uint8_t* data, uint16_t data_len)
   datastream_t* ds = ds_new(data, data_len);
 
   char* str = ds_read_str(ds);
+  chprintf(SD_STDIO, "WSPR DEBUG: %s\r\n", str);
 
   free(str);
   ds_free(ds);

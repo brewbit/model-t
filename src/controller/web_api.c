@@ -3,6 +3,7 @@
 #include "hal.h"
 
 #include "web_api.h"
+#include "web_api_parser.h"
 #include "wspr_tcp.h"
 #include "wspr_net.h"
 #include "common.h"
@@ -13,18 +14,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-
-typedef enum {
-  WAPI_VERSION,
-  WAPI_ACTIVATION,
-  WAPI_AUTH,
-  WAPI_DEVICE_SETTINGS,
-  WAPI_TEMP_PROFILE,
-  WAPI_UPGRADE,
-  WAPI_ACK,
-  WAPI_NACK,
-  WAPI_SENSOR_SAMPLE
-} web_api_msg_id_t;
 
 typedef enum {
   NOT_CONNECTED,
@@ -57,17 +46,22 @@ web_api_msg_start(web_api_msg_id_t id);
 static void
 web_api_msg_end(void);
 
+static void
+web_api_msg_handler(web_api_msg_id_t id, uint8_t* data, uint32_t data_len);
+
 
 static BaseChannel* wapi_conn;
 static Mutex wapi_tx_mutex;
 static datastream_t* msg_data;
 static uint16_t msg_crc;
 static web_api_state_t state;
+static web_api_parser_t* parser;
 
 
 void
 web_api_init()
 {
+  parser = web_api_parser_new(web_api_msg_handler);
   chMtxInit(&wapi_tx_mutex);
   state = NOT_CONNECTED;
 
@@ -115,7 +109,7 @@ read_conn()
 {
   while (!chIOGetWouldBlock(wapi_conn)) {
     uint8_t c = chIOGet(wapi_conn);
-    chprintf(SD_STDIO, "%d\r\n", c);
+    web_api_parse(parser, c);
   }
 }
 
@@ -129,10 +123,7 @@ web_api_msg_start(web_api_msg_id_t id)
   chIOPut(wapi_conn, 0x17);
   chIOPut(wapi_conn, id);
 
-  msg_crc = crc16(0,       0xB3);
-  msg_crc = crc16(msg_crc, 0xEB);
-  msg_crc = crc16(msg_crc, 0x17);
-  msg_crc = crc16(msg_crc, id);
+  msg_crc = crc16(0, id);
 
   msg_data = ds_new(NULL, 1024);
 
@@ -228,4 +219,10 @@ dispatch_sensor_sample(sensor_msg_t* p)
     ds_write_float(ds, p->sample.value);
     web_api_msg_end();
   }
+}
+
+static void
+web_api_msg_handler(web_api_msg_id_t id, uint8_t* data, uint32_t data_len)
+{
+  chprintf(SD_STDIO, "recvd web api msg %d\r\n", id);
 }

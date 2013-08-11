@@ -228,8 +228,14 @@ static void
 handle_tcp_send_result(uint8_t* data, uint16_t data_len)
 {
   datastream_t* ds = ds_new(data, data_len);
+  uint16_t handle = ds_read_u16(ds);
   int32_t result = ds_read_s32(ds);
-  (void)result;
+
+  tcp_stream_t* s = find_stream(handle);
+  if (s != NULL) {
+//    s->event_handler()
+  }
+
   ds_free(ds);
 }
 

@@ -41,6 +41,7 @@ PROJECT_CSRC = \
        touch_calib.c \
        txn.c \
        web_api.c \
+       web_api_parser.c \
        wspr.c \
        wspr_http.c \
        wspr_net.c \
