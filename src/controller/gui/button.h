@@ -20,10 +20,7 @@ button_create(
     rect_t rect,
     const Image_t* icon,
     uint16_t color,
-    button_event_handler_t down_handler,
-    button_event_handler_t repeat_handler,
-    button_event_handler_t up_handler,
-    button_event_handler_t click_handler);
+    button_event_handler_t evt_handler);
 
 void
 button_set_icon(widget_t* w, const Image_t* icon);

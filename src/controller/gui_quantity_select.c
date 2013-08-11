@@ -43,9 +43,7 @@ typedef struct {
 static void quantity_select_screen_destroy(widget_t* w);
 
 static void back_button_clicked(button_event_t* event);
-static void up_button_clicked(button_event_t* event);
-static void down_button_clicked(button_event_t* event);
-static void up_or_down_released(button_event_t* event);
+static void adjust_button_evt(button_event_t* event);
 static void adjust_quantity_velocity(quantity_select_screen_t* s);
 static void set_quantity(quantity_select_screen_t* s, quantity_t quantity);
 
@@ -78,7 +76,7 @@ quantity_select_screen_create(
       .width = 56,
       .height = 56,
   };
-  s->back_button = button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
+  s->back_button = button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -89,10 +87,10 @@ quantity_select_screen_create(
   rect.y = 95;
   rect.width = 56;
   rect.height = 56;
-  s->up_button = button_create(s->widget, rect, img_up, RED, up_button_clicked, up_button_clicked, up_or_down_released, NULL);
+  s->up_button = button_create(s->widget, rect, img_up, RED, adjust_button_evt);
 
   rect.y = 165;
-  s->down_button = button_create(s->widget, rect, img_down, CYAN, down_button_clicked, down_button_clicked, up_or_down_released, NULL);
+  s->down_button = button_create(s->widget, rect, img_down, CYAN, adjust_button_evt);
 
   rect.x = 66;
   rect.y = 130;
@@ -117,48 +115,44 @@ quantity_select_screen_destroy(widget_t* w)
 static void
 back_button_clicked(button_event_t* event)
 {
-  widget_t* w = widget_get_parent(event->widget);
-  quantity_select_screen_t* s = widget_get_instance_data(w);
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* w = widget_get_parent(event->widget);
+    quantity_select_screen_t* s = widget_get_instance_data(w);
 
-  if (s->cb)
-    s->cb(s->quantity, s->cb_data);
+    if (s->cb)
+      s->cb(s->quantity, s->cb_data);
 
-  gui_pop_screen();
+    gui_pop_screen();
+  }
 }
 
 static void
-up_button_clicked(button_event_t* event)
+adjust_button_evt(button_event_t* event)
 {
-  widget_t* screen = widget_get_parent(event->widget);
-  quantity_select_screen_t* s = widget_get_instance_data(screen);
-  quantity_t new_sp = {
-      .unit = s->quantity.unit,
-      .value = s->quantity.value + s->velocity_steps[s->cur_velocity]
-  };
-  set_quantity(s, new_sp);
-  adjust_quantity_velocity(s);
-}
+  if (event->id == EVT_BUTTON_DOWN ||
+      event->id == EVT_BUTTON_REPEAT) {
+    widget_t* screen = widget_get_parent(event->widget);
+    quantity_select_screen_t* s = widget_get_instance_data(screen);
 
-static void
-down_button_clicked(button_event_t* event)
-{
-  widget_t* screen = widget_get_parent(event->widget);
-  quantity_select_screen_t* s = widget_get_instance_data(screen);
-  quantity_t new_sp = {
-      .unit = s->quantity.unit,
-      .value = s->quantity.value - s->velocity_steps[s->cur_velocity]
-  };
-  set_quantity(s, new_sp);
-  adjust_quantity_velocity(s);
-}
+    float adjustment;
+    if (event->widget == s->up_button)
+      adjustment = s->velocity_steps[s->cur_velocity];
+    else
+      adjustment = -s->velocity_steps[s->cur_velocity];
 
-static void
-up_or_down_released(button_event_t* event)
-{
-  widget_t* screen = widget_get_parent(event->widget);
-  quantity_select_screen_t* s = widget_get_instance_data(screen);
-  s->cur_velocity = 0;
-  s->quantity_steps = QUANTITY_STEPS_PER_VELOCITY;
+    quantity_t new_sp = {
+        .unit = s->quantity.unit,
+        .value = s->quantity.value + adjustment
+    };
+    set_quantity(s, new_sp);
+    adjust_quantity_velocity(s);
+  }
+  else if (event->id == EVT_BUTTON_UP) {
+    widget_t* screen = widget_get_parent(event->widget);
+    quantity_select_screen_t* s = widget_get_instance_data(screen);
+    s->cur_velocity = 0;
+    s->quantity_steps = QUANTITY_STEPS_PER_VELOCITY;
+  }
 }
 
 static void

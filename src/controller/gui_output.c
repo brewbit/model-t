@@ -53,7 +53,7 @@ output_settings_screen_create(output_id_t output)
       .width = 56,
       .height = 56,
   };
-  s->back_button = button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
+  s->back_button = button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -65,13 +65,13 @@ output_settings_screen_create(output_id_t output)
   rect.y = 120;
   rect.width = 56;
   rect.height = 56;
-  s->function_button = button_create(s->widget, rect, img_flame, ORANGE, NULL, NULL, NULL, function_button_clicked);
+  s->function_button = button_create(s->widget, rect, img_flame, ORANGE, function_button_clicked);
 
   rect.x += 84;
-  s->trigger_button = button_create(s->widget, rect, img_temp_38, AMBER, NULL, NULL, NULL, trigger_button_clicked);
+  s->trigger_button = button_create(s->widget, rect, img_temp_38, AMBER, trigger_button_clicked);
 
   rect.x += 84;
-  s->compressor_delay_button = button_create(s->widget, rect, img_stopwatch, GREEN, NULL, NULL, NULL, compressor_delay_button_clicked);
+  s->compressor_delay_button = button_create(s->widget, rect, img_stopwatch, GREEN, compressor_delay_button_clicked);
 
   s->output = output;
   s->settings = *app_cfg_get_output_settings(output);
@@ -138,34 +138,40 @@ set_output_settings(output_screen_t* s, output_function_t function, sensor_id_t 
 static void
 back_button_clicked(button_event_t* event)
 {
-  (void)event;
-
-  gui_pop_screen();
+  if (event->id == EVT_BUTTON_CLICK)
+    gui_pop_screen();
 }
 
 static void
 function_button_clicked(button_event_t* event)
 {
-  widget_t* screen = widget_get_parent(event->widget);
-  output_screen_t* s = widget_get_instance_data(screen);
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* screen = widget_get_parent(event->widget);
+    output_screen_t* s = widget_get_instance_data(screen);
 
-  widget_t* output_function_screen = output_function_screen_create(s->output);
-  gui_push_screen(output_function_screen);
+    widget_t* output_function_screen = output_function_screen_create(s->output);
+    gui_push_screen(output_function_screen);
+  }
 }
 
 static void
 trigger_button_clicked(button_event_t* event)
 {
-  widget_t* screen = widget_get_parent(event->widget);
-  output_screen_t* s = widget_get_instance_data(screen);
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* screen = widget_get_parent(event->widget);
+    output_screen_t* s = widget_get_instance_data(screen);
 
-  widget_t* output_trigger_screen = output_trigger_screen_create(s->output);
-  gui_push_screen(output_trigger_screen);
+    widget_t* output_trigger_screen = output_trigger_screen_create(s->output);
+    gui_push_screen(output_trigger_screen);
+  }
 }
 
 static void
 compressor_delay_button_clicked(button_event_t* event)
 {
+  if (event->id != EVT_BUTTON_CLICK)
+    return;
+
   widget_t* screen = widget_get_parent(event->widget);
   output_screen_t* s = widget_get_instance_data(screen);
 

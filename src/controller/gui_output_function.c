@@ -10,7 +10,6 @@
 
 typedef struct {
   widget_t* widget;
-  widget_t* back_button;
 
   widget_t* function_heat_button;
   widget_t* function_heat_icon;
@@ -51,7 +50,7 @@ output_function_screen_create(output_id_t output)
       .width = 56,
       .height = 56,
   };
-  s->back_button = button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
+  button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -63,10 +62,10 @@ output_function_screen_create(output_id_t output)
   rect.y = 95;
   rect.width = 300;
   rect.height = 66;
-  s->function_heat_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, function_heat_button_clicked);
+  s->function_heat_button = button_create(s->widget, rect, NULL, BLACK, function_heat_button_clicked);
 
   rect.y = 165;
-  s->function_cool_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, function_cool_button_clicked);
+  s->function_cool_button = button_create(s->widget, rect, NULL, BLACK, function_cool_button_clicked);
 
   rect.x = 5;
   rect.y = 5;
@@ -119,34 +118,37 @@ output_function_screen_destroy(widget_t* w)
 static void
 back_button_clicked(button_event_t* event)
 {
-  (void)event;
-
-  gui_pop_screen();
+  if (event->id == EVT_BUTTON_CLICK)
+    gui_pop_screen();
 }
 
 static void
 function_heat_button_clicked(button_event_t* event)
 {
-  widget_t* w = widget_get_parent(event->widget);
-  output_screen_t* s = widget_get_instance_data(w);
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* w = widget_get_parent(event->widget);
+    output_screen_t* s = widget_get_instance_data(w);
 
-  output_settings_t settings = *app_cfg_get_output_settings(s->output);
-  settings.function = OUTPUT_FUNC_HEATING;
-  app_cfg_set_output_settings(s->output, &settings);
+    output_settings_t settings = *app_cfg_get_output_settings(s->output);
+    settings.function = OUTPUT_FUNC_HEATING;
+    app_cfg_set_output_settings(s->output, &settings);
 
-  gui_pop_screen();
+    gui_pop_screen();
+  }
 }
 
 static void
 function_cool_button_clicked(button_event_t* event)
 {
-  widget_t* w = widget_get_parent(event->widget);
-  output_screen_t* s = widget_get_instance_data(w);
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* w = widget_get_parent(event->widget);
+    output_screen_t* s = widget_get_instance_data(w);
 
-  output_settings_t settings = *app_cfg_get_output_settings(s->output);
-  settings.function = OUTPUT_FUNC_COOLING;
-  app_cfg_set_output_settings(s->output, &settings);
+    output_settings_t settings = *app_cfg_get_output_settings(s->output);
+    settings.function = OUTPUT_FUNC_COOLING;
+    app_cfg_set_output_settings(s->output, &settings);
 
-  gui_pop_screen();
+    gui_pop_screen();
+  }
 }
 

@@ -55,7 +55,7 @@ update_screen_create()
       .width = 56,
       .height = 56,
   };
-  button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
+  button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -66,7 +66,7 @@ update_screen_create()
   rect.y = 85;
   rect.width = 300;
   rect.height = 66;
-  s->button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, update_button_clicked);
+  s->button = button_create(s->widget, rect, NULL, BLACK, update_button_clicked);
 
   rect.x = 5;
   rect.y = 5;
@@ -105,20 +105,21 @@ update_screen_destroy(widget_t* w)
 static void
 back_button_clicked(button_event_t* event)
 {
-  (void)event;
-
-  gui_pop_screen();
+  if (event->id == EVT_BUTTON_CLICK)
+    gui_pop_screen();
 }
 
 static void
 update_button_clicked(button_event_t* event)
 {
-  widget_t* w = widget_get_parent(event->widget);
-  update_screen_t* s = widget_get_instance_data(w);
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* w = widget_get_parent(event->widget);
+    update_screen_t* s = widget_get_instance_data(w);
 
-  if (s->state == UPDATE_AVAILABLE) {
-    s->state = UPDATE_DOWNLOADING;
-    update_ui(s);
+    if (s->state == UPDATE_AVAILABLE) {
+      s->state = UPDATE_DOWNLOADING;
+      update_ui(s);
+    }
   }
 }
 

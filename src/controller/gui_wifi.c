@@ -43,7 +43,7 @@ wifi_screen_create()
       .width = 56,
       .height = 56,
   };
-  button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
+  button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -54,7 +54,7 @@ wifi_screen_create()
   rect.y = 95;
   rect.width = 300;
   rect.height = 66;
-  widget_t* nwk_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, NULL);
+  widget_t* nwk_button = button_create(s->widget, rect, NULL, BLACK, NULL);
 
   rect.x = 5;
   rect.y = 5;
@@ -136,7 +136,6 @@ dispatch_wifi_status(wifi_screen_t* s, wspr_wifi_status_t* status)
 static void
 back_button_clicked(button_event_t* event)
 {
-  (void)event;
-
-  gui_pop_screen();
+  if (event->id == EVT_BUTTON_CLICK)
+    gui_pop_screen();
 }

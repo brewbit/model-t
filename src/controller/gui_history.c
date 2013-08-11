@@ -30,7 +30,7 @@ history_screen_create()
       .width = 56,
       .height = 56,
   };
-  button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
+  button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -56,7 +56,6 @@ history_screen_destroy(widget_t* w)
 static void
 back_button_clicked(button_event_t* event)
 {
-  (void)event;
-
-  gui_pop_screen();
+  if (event->id == EVT_BUTTON_CLICK)
+    gui_pop_screen();
 }

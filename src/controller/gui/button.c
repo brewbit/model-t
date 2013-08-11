@@ -16,10 +16,7 @@ typedef struct {
   uint16_t color;
   systime_t next_event_time;
 
-  button_event_handler_t down_handler;
-  button_event_handler_t repeat_handler;
-  button_event_handler_t up_handler;
-  button_event_handler_t click_handler;
+  button_event_handler_t evt_handler;
 } button_t;
 
 
@@ -38,19 +35,13 @@ static const widget_class_t button_widget_class = {
 
 widget_t*
 button_create(widget_t* parent, rect_t rect, const Image_t* icon, uint16_t color,
-    button_event_handler_t down_handler,
-    button_event_handler_t repeat_handler,
-    button_event_handler_t up_handler,
-    button_event_handler_t click_handler)
+    button_event_handler_t evt_handler)
 {
   button_t* b = calloc(1, sizeof(button_t));
 
   b->icon = icon;
   b->color = color;
-  b->down_handler = down_handler;
-  b->repeat_handler = repeat_handler;
-  b->up_handler = up_handler;
-  b->click_handler = click_handler;
+  b->evt_handler = evt_handler;
 
   widget_t* w = widget_create(parent, &button_widget_class, b, rect);
   widget_set_background(w, color, FALSE);
@@ -106,16 +97,16 @@ button_touch(touch_event_t* event)
       gui_acquire_touch_capture(event->widget);
       widget_set_background(event->widget, DARK_GRAY, FALSE);
 
-      if (b->down_handler) {
+      if (b->evt_handler) {
         be.id = EVT_BUTTON_DOWN;
-        b->down_handler(&be);
+        b->evt_handler(&be);
       }
       b->next_event_time = chTimeNow() + BTN_FIRST_REPEAT_DELAY;
     }
     else if (chTimeNow() > b->next_event_time) {
-      if (b->repeat_handler) {
+      if (b->evt_handler) {
         be.id = EVT_BUTTON_REPEAT;
-        b->repeat_handler(&be);
+        b->evt_handler(&be);
       }
       b->next_event_time = chTimeNow() + BTN_REPEAT_DELAY;
     }
@@ -126,14 +117,14 @@ button_touch(touch_event_t* event)
       widget_set_background(event->widget, b->color, FALSE);
       gui_release_touch_capture();
 
-      if (b->up_handler) {
+      if (b->evt_handler) {
         be.id = EVT_BUTTON_UP;
-        b->up_handler(&be);
+        b->evt_handler(&be);
       }
 //      if (rect_inside(widget_get_rect(event->widget), event->pos)) {
-        if (b->click_handler) {
+        if (b->evt_handler) {
           be.id = EVT_BUTTON_CLICK;
-          b->click_handler(&be);
+          b->evt_handler(&be);
         }
 //      }
     }

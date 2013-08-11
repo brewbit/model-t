@@ -52,7 +52,7 @@ output_trigger_screen_create(output_id_t output)
       .width = 56,
       .height = 56,
   };
-  s->back_button = button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
+  s->back_button = button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -64,10 +64,10 @@ output_trigger_screen_create(output_id_t output)
   rect.y = 95;
   rect.width = 300;
   rect.height = 66;
-  s->trigger_sensor1_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, trigger_sensor1_button_clicked);
+  s->trigger_sensor1_button = button_create(s->widget, rect, NULL, BLACK, trigger_sensor1_button_clicked);
 
   rect.y = 165;
-  s->trigger_sensor2_button = button_create(s->widget, rect, NULL, BLACK, NULL, NULL, NULL, trigger_sensor2_button_clicked);
+  s->trigger_sensor2_button = button_create(s->widget, rect, NULL, BLACK, trigger_sensor2_button_clicked);
 
   rect.x = 5;
   rect.y = 5;
@@ -120,33 +120,36 @@ output_trigger_screen_destroy(widget_t* w)
 static void
 back_button_clicked(button_event_t* event)
 {
-  (void)event;
-
-  gui_pop_screen();
+  if (event->id == EVT_BUTTON_CLICK)
+    gui_pop_screen();
 }
 
 static void
 trigger_sensor1_button_clicked(button_event_t* event)
 {
-  widget_t* screen = widget_get_parent(event->widget);
-  output_screen_t* s = widget_get_instance_data(screen);
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* screen = widget_get_parent(event->widget);
+    output_screen_t* s = widget_get_instance_data(screen);
 
-  output_settings_t settings = *app_cfg_get_output_settings(s->output);
-  settings.trigger = SENSOR_1;
-  app_cfg_set_output_settings(s->output, &settings);
+    output_settings_t settings = *app_cfg_get_output_settings(s->output);
+    settings.trigger = SENSOR_1;
+    app_cfg_set_output_settings(s->output, &settings);
 
-  gui_pop_screen();
+    gui_pop_screen();
+  }
 }
 
 static void
 trigger_sensor2_button_clicked(button_event_t* event)
 {
-  widget_t* screen = widget_get_parent(event->widget);
-  output_screen_t* s = widget_get_instance_data(screen);
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* screen = widget_get_parent(event->widget);
+    output_screen_t* s = widget_get_instance_data(screen);
 
-  output_settings_t settings = *app_cfg_get_output_settings(s->output);
-  settings.trigger = SENSOR_2;
-  app_cfg_set_output_settings(s->output, &settings);
+    output_settings_t settings = *app_cfg_get_output_settings(s->output);
+    settings.trigger = SENSOR_2;
+    app_cfg_set_output_settings(s->output, &settings);
 
-  gui_pop_screen();
+    gui_pop_screen();
+  }
 }

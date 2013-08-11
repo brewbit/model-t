@@ -64,12 +64,12 @@ calib_screen_create()
       .width = 56,
       .height = 56,
   };
-  s->complete_button = button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, complete_calib);
+  s->complete_button = button_create(s->widget, rect, img_left, BLACK, complete_calib);
   widget_hide(s->complete_button);
 
   rect.x = 320 - 56 - 15;
   rect.y = 240 - 56 - 15;
-  s->recal_button = button_create(s->widget, rect, img_update, BLACK, NULL, NULL, NULL, restart_calib);
+  s->recal_button = button_create(s->widget, rect, img_update, BLACK, restart_calib);
   widget_hide(s->recal_button);
 
   gui_msg_subscribe(MSG_TOUCH_INPUT, s->widget);
@@ -99,23 +99,24 @@ calib_widget_msg(msg_event_t* event)
 static void
 restart_calib(button_event_t* event)
 {
-  widget_t* screen_widget = widget_get_parent(event->widget);
-  calib_screen_t* s = widget_get_instance_data(screen_widget);
-  s->calib_complete = false;
-  s->sample_idx = 0;
-  s->ref_pt_idx = 0;
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* screen_widget = widget_get_parent(event->widget);
+    calib_screen_t* s = widget_get_instance_data(screen_widget);
+    s->calib_complete = false;
+    s->sample_idx = 0;
+    s->ref_pt_idx = 0;
 
-  widget_hide(s->recal_button);
-  widget_hide(s->complete_button);
-  widget_invalidate(screen_widget);
+    widget_hide(s->recal_button);
+    widget_hide(s->complete_button);
+    widget_invalidate(screen_widget);
+  }
 }
 
 static void
 complete_calib(button_event_t* event)
 {
-  (void)event;
-
-  gui_pop_screen();
+  if (event->id == EVT_BUTTON_CLICK)
+    gui_pop_screen();
 }
 
 static void

@@ -5,7 +5,7 @@
 #include "gui/button.h"
 #include "gui/label.h"
 #include "gui_history.h"
-#include "gui_quantity_select.h"
+#include "gui_sensor.h"
 #include "gui_output.h"
 #include "gui_settings.h"
 #include "gui_wifi.h"
@@ -83,30 +83,30 @@ home_screen_create()
       .width  = TILE_SPAN(3),
       .height = TILE_SPAN(2),
   };
-  s->stage_button = button_create(s->screen, rect, NULL, GREEN, NULL, NULL, NULL, click_stage_button);
+  s->stage_button = button_create(s->screen, rect, NULL, GREEN, click_stage_button);
 
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
   rect.height = TILE_SPAN(1);
-  s->sensors[SENSOR_1].button = button_create(s->screen, rect, img_temp_med, AMBER, NULL, NULL, NULL, click_sensor_button);
+  s->sensors[SENSOR_1].button = button_create(s->screen, rect, img_temp_med, AMBER, click_sensor_button);
   widget_disable(s->sensors[SENSOR_1].button);
 
   rect.y = TILE_Y(1);
-  s->sensors[SENSOR_2].button = button_create(s->screen, rect, img_temp_med, PURPLE, NULL, NULL, NULL, click_sensor_button);
+  s->sensors[SENSOR_2].button = button_create(s->screen, rect, img_temp_med, PURPLE, click_sensor_button);
   widget_disable(s->sensors[SENSOR_2].button);
 
   rect.x = TILE_X(0);
   rect.y = TILE_Y(2);
-  s->output1_button = button_create(s->screen, rect, img_plug, ORANGE, NULL, NULL, NULL, click_output_button);
+  s->output1_button = button_create(s->screen, rect, img_plug, ORANGE, click_output_button);
 
   rect.x = TILE_X(1);
-  s->output2_button = button_create(s->screen, rect, img_plug, CYAN, NULL, NULL, NULL, click_output_button);
+  s->output2_button = button_create(s->screen, rect, img_plug, CYAN, click_output_button);
 
   rect.x = TILE_X(2);
-  s->conn_button = button_create(s->screen, rect, img_signal, STEEL, NULL, NULL, NULL, click_conn_button);
+  s->conn_button = button_create(s->screen, rect, img_signal, STEEL, click_conn_button);
 
   rect.x = TILE_X(3);
-  s->settings_button = button_create(s->screen, rect, img_settings, OLIVE, NULL, NULL, NULL, click_settings_button);
+  s->settings_button = button_create(s->screen, rect, img_settings, OLIVE, click_settings_button);
 
   rect.x = 0;
   rect.width = TILE_SPAN(3);
@@ -272,28 +272,33 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
 static void
 click_sensor_button(button_event_t* event)
 {
+  if (event->id != EVT_BUTTON_CLICK)
+    return;
+
   widget_t* parent = widget_get_parent(event->widget);
   home_screen_t* s = widget_get_instance_data(parent);
 
   sensor_id_t sensor;
-  char* title;
+//  char* title;
   if (event->widget == s->sensors[SENSOR_1].button) {
     sensor = SENSOR_1;
-    title = "Sensor 1 Setup";
+//    title = "Sensor 1 Setup";
   }
   else {
     sensor = SENSOR_2;
-    title = "Sensor 2 Setup";
+//    title = "Sensor 2 Setup";
   }
 
-  const sensor_settings_t* settings = app_cfg_get_sensor_settings(sensor);
+//  const sensor_settings_t* settings = app_cfg_get_sensor_settings(sensor);
+//
+//  float velocity_steps[] = {
+//      0.1f, 0.5f, 1.0f
+//  };
+//
+//  widget_t* settings_screen = quantity_select_screen_create(
+//      title, settings->setpoint, velocity_steps, 3, update_setpoint, (void*)sensor);
 
-  float velocity_steps[] = {
-      0.1f, 0.5f, 1.0f
-  };
-
-  widget_t* settings_screen = quantity_select_screen_create(
-      title, settings->setpoint, velocity_steps, 3, update_setpoint, (void*)sensor);
+  widget_t* settings_screen = sensor_screen_create(sensor);
   gui_push_screen(settings_screen);
 }
 
@@ -309,6 +314,9 @@ update_setpoint(quantity_t setpoint, void* user_data)
 static void
 click_output_button(button_event_t* event)
 {
+  if (event->id != EVT_BUTTON_CLICK)
+    return;
+
   widget_t* parent = widget_get_parent(event->widget);
   home_screen_t* s = widget_get_instance_data(parent);
 
@@ -325,26 +333,26 @@ click_output_button(button_event_t* event)
 static void
 click_conn_button(button_event_t* event)
 {
-  (void)event;
-
-  widget_t* wifi_screen = wifi_screen_create();
-  gui_push_screen(wifi_screen);
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* wifi_screen = wifi_screen_create();
+    gui_push_screen(wifi_screen);
+  }
 }
 
 static void
 click_settings_button(button_event_t* event)
 {
-  (void)event;
-
-  widget_t* settings_screen = settings_screen_create();
-  gui_push_screen(settings_screen);
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* settings_screen = settings_screen_create();
+    gui_push_screen(settings_screen);
+  }
 }
 
 static void
 click_stage_button(button_event_t* event)
 {
   (void)event;
-
+//  if (event->id == EVT_BUTTON_CLICK)
 //  widget_t* history_screen = history_screen_create();
 //  gui_push_screen(history_screen);
 }

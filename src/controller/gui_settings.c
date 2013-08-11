@@ -43,7 +43,7 @@ settings_screen_create()
       .width = 56,
       .height = 56,
   };
-  s->back_button = button_create(s->widget, rect, img_left, BLACK, NULL, NULL, NULL, back_button_clicked);
+  s->back_button = button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -54,13 +54,13 @@ settings_screen_create()
   rect.y = 86;
   rect.width = 56;
   rect.height = 56;
-  s->unit_button = button_create(s->widget, rect, img_deg_f, ORANGE, NULL, NULL, NULL, unit_button_clicked);
+  s->unit_button = button_create(s->widget, rect, img_deg_f, ORANGE, unit_button_clicked);
 
   rect.x += 84;
-  button_create(s->widget, rect, img_hand, STEEL, NULL, NULL, NULL, calibrate_button_clicked);
+  button_create(s->widget, rect, img_hand, STEEL, calibrate_button_clicked);
 
   rect.x += 84;
-  button_create(s->widget, rect, img_update, CYAN, NULL, NULL, NULL, update_button_clicked);
+  button_create(s->widget, rect, img_update, CYAN, update_button_clicked);
 
 //  rect.x = 48;
 //  rect.y += 84;
@@ -88,42 +88,46 @@ settings_screen_destroy(widget_t* w)
 static void
 back_button_clicked(button_event_t* event)
 {
-  widget_t* w = widget_get_parent(event->widget);
-  settings_screen_t* s = widget_get_instance_data(w);
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* w = widget_get_parent(event->widget);
+    settings_screen_t* s = widget_get_instance_data(w);
 
-  app_cfg_set_temp_unit(s->temp_unit);
+    app_cfg_set_temp_unit(s->temp_unit);
 
-  gui_pop_screen();
+    gui_pop_screen();
+  }
 }
 
 static void
 unit_button_clicked(button_event_t* event)
 {
-  widget_t* w = widget_get_parent(event->widget);
-  settings_screen_t* s = widget_get_instance_data(w);
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* w = widget_get_parent(event->widget);
+    settings_screen_t* s = widget_get_instance_data(w);
 
-  if (s->temp_unit == UNIT_TEMP_DEG_C)
-    set_unit(s, UNIT_TEMP_DEG_F);
-  else
-    set_unit(s, UNIT_TEMP_DEG_C);
+    if (s->temp_unit == UNIT_TEMP_DEG_C)
+      set_unit(s, UNIT_TEMP_DEG_F);
+    else
+      set_unit(s, UNIT_TEMP_DEG_C);
+  }
 }
 
 static void
 update_button_clicked(button_event_t* event)
 {
-  (void)event;
-
+  if (event->id == EVT_BUTTON_CLICK) {
 //  widget_t* update_screen = update_screen_create();
 //  gui_push_screen(update_screen);
+  }
 }
 
 static void
 calibrate_button_clicked(button_event_t* event)
 {
-  (void)event;
-
+  if (event->id == EVT_BUTTON_CLICK) {
 //  widget_t* calib_screen = calib_screen_create();
 //  gui_push_screen(calib_screen);
+  }
 }
 
 static void
