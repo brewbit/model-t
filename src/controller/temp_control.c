@@ -29,8 +29,9 @@ static void dispatch_sensor_sample(sensor_msg_t* msg);
 static void dispatch_sensor_timeout(sensor_timeout_msg_t* msg);
 static void trigger_output(sensor_id_t sensor, output_function_t function);
 static void evaluate_setpoint(sensor_id_t sensor, quantity_t setpoint, quantity_t sample);
-static void start_compressor_delay(uint32_t delay_startTime);
+static void start_compressor_delay(uint32_t* delay_startTime);
 static bool compressor_delay_has_expired(uint32_t compressor_delay, uint32_t delay_startTime);
+static void manage_pid(void);
 
 
 static temp_input_t inputs[NUM_SENSORS];
@@ -49,8 +50,8 @@ temp_control_init()
   outputs[OUTPUT_1].gpio = GPIOB_RELAY1;
   outputs[OUTPUT_2].gpio = GPIOB_RELAY2;
 
-  pid_init(&outputs[SENSOR_1].pid_control);
-  pid_init(&outputs[SENSOR_2].pid_control);
+  pid_init(&outputs[OUTPUT_1].pid_control, inputs[SENSOR_1].last_sample);
+  pid_init(&outputs[OUTPUT_2].pid_control, inputs[SENSOR_1].last_sample);
 
   msg_subscribe(MSG_SENSOR_SAMPLE, thread, dispatch_temp_input_msg, NULL);
   msg_subscribe(MSG_SENSOR_TIMEOUT, thread, dispatch_temp_input_msg, NULL);
@@ -68,9 +69,21 @@ temp_control_thread(void* arg)
     thread_msg_t* msg = (thread_msg_t*)chMsgGet(tp);
     dispatch_temp_input_msg(msg->id, msg->msg_data, msg->user_data);
     chMsgRelease(tp, 0);
-  }
+ }
 
   return 0;
+}
+
+static void manage_pid()
+{
+  int i;
+
+  for (i = 0; i < NUM_OUTPUTS; ++i) {
+    const output_settings_t* output_settings = app_cfg_get_output_settings(i);
+    const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(output_settings->trigger);
+
+    pid_exec(&outputs[i].pid_control, sensor_settings->setpoint, inputs[output_settings->trigger].last_sample);
+  }
 }
 
 static void
@@ -105,6 +118,8 @@ dispatch_sensor_sample(sensor_msg_t* msg)
 {
   const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(msg->sensor);
 
+  manage_pid();
+
   evaluate_setpoint(
       msg->sensor,
       sensor_settings->setpoint,
@@ -129,9 +144,23 @@ dispatch_output_settings(output_settings_msg_t* msg)
   if (msg->output >= NUM_OUTPUTS)
     return;
 
+  uint8_t i;
+
+  for (i = 0; i < NUM_OUTPUTS; ++i) {
+      const output_settings_t* output_settings = app_cfg_get_output_settings(i);
+      if (output_settings->function == OUTPUT_FUNC_COOLING)
+        set_controller_direction(&outputs[i].pid_control, REVERSE);
+      else if (output_settings->function == OUTPUT_FUNC_HEATING)
+        set_controller_direction(&outputs[i].pid_control, DIRECT);
+
+      if (output_settings->trigger == SENSOR_1)
+        pid_reinit(&outputs[i].pid_control, inputs[SENSOR_1].last_sample);
+      else if (output_settings->trigger == SENSOR_2)
+        pid_reinit(&outputs[i].pid_control, inputs[SENSOR_2].last_sample);
+  }
+
   /* Re-evaluate the last temp from both sensors with the new output settings */
   const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(SENSOR_1);
-
   evaluate_setpoint(
       SENSOR_1,
       sensor_settings->setpoint,
@@ -150,6 +179,16 @@ dispatch_sensor_settings(sensor_settings_msg_t* msg)
   if (msg->sensor >= NUM_SENSORS)
     return;
 
+  uint8_t i;
+
+  for (i = 0; i < NUM_OUTPUTS; ++i) {
+      const output_settings_t* output_settings = app_cfg_get_output_settings(i);
+      if (output_settings->trigger == SENSOR_1)
+        pid_reinit(&outputs[i].pid_control, inputs[SENSOR_1].last_sample);
+      else if (output_settings->trigger == SENSOR_2)
+        pid_reinit(&outputs[i].pid_control, inputs[SENSOR_2].last_sample);
+  }
+
   /* Re-evaluate the last temp reading with the new sensor settings */
   evaluate_setpoint(
       msg->sensor,
@@ -160,12 +199,13 @@ dispatch_sensor_settings(sensor_settings_msg_t* msg)
 static void
 evaluate_setpoint(sensor_id_t sensor, quantity_t setpoint, quantity_t sample)
 {
+  int32_t pid =  outputs[sensor].pid_control.pid_output;
   inputs[sensor].last_sample = sample;
 
-  if ((sample.value) > setpoint.value) {
+  if (sample.value > (setpoint.value + pid)) {
     trigger_output(sensor, OUTPUT_FUNC_COOLING);
   }
-  else if ((sample.value) < setpoint.value) {
+  else if (sample.value < (setpoint.value - pid)) {
     trigger_output(sensor, OUTPUT_FUNC_HEATING);
   }
 }
@@ -188,7 +228,7 @@ trigger_output(sensor_id_t sensor, output_function_t function)
       }
       else {
         palClearPad(GPIOB, outputs[i].gpio);
-        start_compressor_delay(outputs[i].delay_startTime);
+        start_compressor_delay(&outputs[i].delay_startTime);
       }
     }
   }
@@ -206,9 +246,8 @@ compressor_delay_has_expired(uint32_t compressor_delay, uint32_t delay_startTime
 }
 
 static void
-start_compressor_delay(uint32_t delay_startTime)
+start_compressor_delay(uint32_t* delay_startTime)
 {
-  (void)delay_startTime;
-//  delay_startTime = chTimeNow();
+  *delay_startTime = chTimeNow();
 }
 
