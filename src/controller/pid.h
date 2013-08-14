@@ -24,7 +24,6 @@ typedef struct {
   float integral;
   float last_sample;
   float pid_output;
-  bool  enable_output;
 
   bool   in_auto;
   float  out_min;
@@ -32,16 +31,13 @@ typedef struct {
   int8_t controller_direction;
 
   /* Time is in system ticks */
-  uint16_t sample_time;
-  uint32_t last_time;
-  uint32_t window_size;
-  uint32_t window_start_time;
-
+  systime_t sample_time;
+  systime_t last_time;
 } pid_t;
 
 
 
-void pid_init(pid_t* pid, quantity_t sample);
+void pid_init(pid_t* pid);
 void pid_exec(pid_t* pid, quantity_t setpoint, quantity_t sample);
 void set_gains(pid_t* pid, float Kp, float Ki, float Kd);
 void set_mode(pid_t* pid, quantity_t sample, uint8_t Mode);

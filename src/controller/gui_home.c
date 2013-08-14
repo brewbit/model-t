@@ -5,7 +5,6 @@
 #include "gui/button.h"
 #include "gui/label.h"
 #include "gui_history.h"
-#include "gui_sensor.h"
 #include "gui_output.h"
 #include "gui_settings.h"
 #include "gui_wifi.h"
@@ -279,26 +278,26 @@ click_sensor_button(button_event_t* event)
   home_screen_t* s = widget_get_instance_data(parent);
 
   sensor_id_t sensor;
-//  char* title;
+  char* title;
   if (event->widget == s->sensors[SENSOR_1].button) {
     sensor = SENSOR_1;
-//    title = "Sensor 1 Setup";
+    title = "Sensor 1 Setup";
   }
   else {
     sensor = SENSOR_2;
-//    title = "Sensor 2 Setup";
+    title = "Sensor 2 Setup";
   }
 
-//  const sensor_settings_t* settings = app_cfg_get_sensor_settings(sensor);
-//
-//  float velocity_steps[] = {
-//      0.1f, 0.5f, 1.0f
-//  };
-//
-//  widget_t* settings_screen = quantity_select_screen_create(
-//      title, settings->setpoint, velocity_steps, 3, update_setpoint, (void*)sensor);
+  const sensor_settings_t* settings = app_cfg_get_sensor_settings(sensor);
 
-  widget_t* settings_screen = sensor_screen_create(sensor);
+  float velocity_steps[] = {
+      0.1f, 0.5f, 1.0f
+  };
+
+  widget_t* settings_screen = quantity_select_screen_create(
+      title, settings->setpoint, velocity_steps, 3, update_setpoint, (void*)sensor);
+
+//  widget_t* settings_screen = sensor_screen_create(sensor);
   gui_push_screen(settings_screen);
 }
 

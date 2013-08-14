@@ -15,9 +15,14 @@ typedef struct {
 } temp_input_t;
 
 typedef struct {
+  output_id_t id;
   uint32_t gpio;
-  uint32_t delay_startTime;
   pid_t    pid_control;
+
+  bool sensor_active;
+
+  systime_t window_start_time;
+  systime_t window_time;
 } relay_output_t;
 
 
@@ -27,36 +32,91 @@ static void dispatch_output_settings(output_settings_msg_t* msg);
 static void dispatch_sensor_settings(sensor_settings_msg_t* msg);
 static void dispatch_sensor_sample(sensor_msg_t* msg);
 static void dispatch_sensor_timeout(sensor_timeout_msg_t* msg);
-static void trigger_output(sensor_id_t sensor, output_function_t function);
-static void evaluate_setpoint(sensor_id_t sensor, quantity_t setpoint, quantity_t sample);
-static void start_compressor_delay(uint32_t* delay_startTime);
-static bool compressor_delay_has_expired(uint32_t compressor_delay, uint32_t delay_startTime);
-static void manage_pid(void);
+static void manage_pid(output_id_t output);
+static void output_init(relay_output_t* out, output_id_t id, uint32_t gpio);
+static msg_t output_thread(void* arg);
+static void cycle_delay(output_id_t output);
 
 
 static temp_input_t inputs[NUM_SENSORS];
 static relay_output_t outputs[NUM_OUTPUTS];
-static Thread* thread;
 
 
 void
 temp_control_init()
 {
-  thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, temp_control_thread, NULL);
-
   inputs[SENSOR_1].port = sensor_init(SENSOR_1, SD_OW1);
   inputs[SENSOR_2].port = sensor_init(SENSOR_2, SD_OW2);
 
-  outputs[OUTPUT_1].gpio = GPIOB_RELAY1;
-  outputs[OUTPUT_2].gpio = GPIOB_RELAY2;
+  output_init(&outputs[OUTPUT_1], OUTPUT_1, GPIOB_RELAY1);
+  output_init(&outputs[OUTPUT_2], OUTPUT_2, GPIOB_RELAY2);
 
-  pid_init(&outputs[OUTPUT_1].pid_control, inputs[SENSOR_1].last_sample);
-  pid_init(&outputs[OUTPUT_2].pid_control, inputs[SENSOR_1].last_sample);
+  Thread* thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, temp_control_thread, NULL);
 
   msg_subscribe(MSG_SENSOR_SAMPLE, thread, dispatch_temp_input_msg, NULL);
   msg_subscribe(MSG_SENSOR_TIMEOUT, thread, dispatch_temp_input_msg, NULL);
   msg_subscribe(MSG_SENSOR_SETTINGS, thread, dispatch_temp_input_msg, NULL);
   msg_subscribe(MSG_OUTPUT_SETTINGS, thread, dispatch_temp_input_msg, NULL);
+}
+
+static void
+output_init(relay_output_t* out, output_id_t id, uint32_t gpio)
+{
+  const output_settings_t* settings = app_cfg_get_output_settings(id);
+
+  out->id = id;
+  out->gpio = gpio;
+  out->window_time = settings->compressor_delay * 4;
+
+  pid_init(&out->pid_control);
+  set_output_limits(&out->pid_control, 0, out->window_time);
+
+  if (settings->function == OUTPUT_FUNC_COOLING)
+    set_controller_direction(&out->pid_control, REVERSE);
+  else
+    set_controller_direction(&out->pid_control, DIRECT);
+
+  chThdCreateFromHeap(NULL, 256, NORMALPRIO, output_thread, out);
+}
+
+static msg_t
+output_thread(void* arg)
+{
+  relay_output_t* output = arg;
+
+  /* Wait 1 compressor delay before starting window */
+  cycle_delay(output->id);
+
+  output->window_start_time = chTimeNow();
+  palSetPad(GPIOB, output->gpio);
+
+  while (1) {
+    while (!output->sensor_active) {
+      palClearPad(GPIOB, output->gpio);
+      chThdSleepSeconds(1);
+    }
+
+    if ((chTimeNow() - output->window_start_time) < output->pid_control.pid_output)
+      chThdSleep(1000);
+    else {
+      palClearPad(GPIOB, output->gpio);
+      chThdSleep(output->window_time - output->pid_control.pid_output);
+
+      /* Setup next on window */
+      output->window_start_time = chTimeNow();
+      palSetPad(GPIOB, output->gpio);
+    }
+  }
+
+  return 0;
+}
+
+static void
+cycle_delay(output_id_t output)
+{
+  const output_settings_t* settings = app_cfg_get_output_settings(output);
+  if (settings->compressor_delay > 0)
+    chThdSleep(settings->compressor_delay);
 }
 
 static msg_t
@@ -69,32 +129,19 @@ temp_control_thread(void* arg)
     thread_msg_t* msg = (thread_msg_t*)chMsgGet(tp);
     dispatch_temp_input_msg(msg->id, msg->msg_data, msg->user_data);
     chMsgRelease(tp, 0);
- }
+  }
 
   return 0;
 }
 
-static void manage_pid()
+static void
+manage_pid(output_id_t output)
 {
-  int i;
-
-  for (i = 0; i < NUM_OUTPUTS; ++i) {
-    const output_settings_t* output_settings = app_cfg_get_output_settings(i);
+    const output_settings_t* output_settings = app_cfg_get_output_settings(output);
     const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(output_settings->trigger);
-    bool time_expired = compressor_delay_has_expired(output_settings->compressor_delay,
-                                                     outputs[i].delay_startTime);
-    pid_t pid = outputs[i].pid_control;
 
-    pid_exec(&pid, sensor_settings->setpoint, inputs[output_settings->trigger].last_sample);
-
-    if(time_expired && pid.enable_output) {
-      palSetPad(GPIOB, outputs[i].gpio);
-    }
-    else {
-      palClearPad(GPIOB, outputs[i].gpio);
-      start_compressor_delay(&outputs[i].delay_startTime);
-    }
-  }
+    pid_t* pid = &outputs[output].pid_control;
+    pid_exec(pid, sensor_settings->setpoint, inputs[output_settings->trigger].last_sample);
 }
 
 static void
@@ -127,27 +174,27 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data)
 static void
 dispatch_sensor_sample(sensor_msg_t* msg)
 {
-  const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(msg->sensor);
+  int i;
 
-  manage_pid();
+  inputs[msg->sensor].last_sample = msg->sample;
+  outputs[msg->sensor].sensor_active = true;
 
-//  evaluate_setpoint(
-//      msg->sensor,
-//      sensor_settings->setpoint,
-//      msg->sample);
+  for (i = 0; i < NUM_OUTPUTS; ++i) {
+    const output_settings_t* settings = app_cfg_get_output_settings(i);
+    if (msg->sensor == settings->trigger)
+      manage_pid(i);
+  }
 }
 
 static void
 dispatch_sensor_timeout(sensor_timeout_msg_t* msg)
 {
-  const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(msg->sensor);
-
-  inputs[msg->sensor].last_sample = sensor_settings->setpoint;
-//  /* Set the last temp to the setpoint to disable any active outputs */
-//  evaluate_setpoint(
-//      msg->sensor,
-//      sensor_settings->setpoint,
-//      sensor_settings->setpoint);
+  int i;
+  for (i = 0; i < NUM_OUTPUTS; ++i) {
+    const output_settings_t* settings = app_cfg_get_output_settings(i);
+    if (msg->sensor == settings->trigger)
+      outputs[i].sensor_active = false;
+  }
 }
 
 static void
@@ -159,30 +206,24 @@ dispatch_output_settings(output_settings_msg_t* msg)
   uint8_t i;
 
   for (i = 0; i < NUM_OUTPUTS; ++i) {
-      const output_settings_t* output_settings = app_cfg_get_output_settings(i);
-      if (output_settings->function == OUTPUT_FUNC_COOLING)
-        set_controller_direction(&outputs[i].pid_control, REVERSE);
-      else if (output_settings->function == OUTPUT_FUNC_HEATING)
-        set_controller_direction(&outputs[i].pid_control, DIRECT);
+    relay_output_t* output = &outputs[i];
+
+    const output_settings_t* output_settings = app_cfg_get_output_settings(i);
+    if (output_settings->function == OUTPUT_FUNC_COOLING)
+      set_controller_direction(&output->pid_control, REVERSE);
+    else if (output_settings->function == OUTPUT_FUNC_HEATING)
+      set_controller_direction(&output->pid_control, DIRECT);
+
+      set_output_limits(
+          &output->pid_control,
+          0,
+          output->window_time - msg->settings.compressor_delay);
 
       if (output_settings->trigger == SENSOR_1)
-        pid_reinit(&outputs[i].pid_control, inputs[SENSOR_1].last_sample);
+        pid_reinit(&output->pid_control, inputs[SENSOR_1].last_sample);
       else if (output_settings->trigger == SENSOR_2)
-        pid_reinit(&outputs[i].pid_control, inputs[SENSOR_2].last_sample);
+        pid_reinit(&output->pid_control, inputs[SENSOR_2].last_sample);
   }
-
-//  /* Re-evaluate the last temp from both sensors with the new output settings */
-//  const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(SENSOR_1);
-//  evaluate_setpoint(
-//      SENSOR_1,
-//      sensor_settings->setpoint,
-//      inputs[SENSOR_1].last_sample);
-//
-//  sensor_settings = app_cfg_get_sensor_settings(SENSOR_2);
-//  evaluate_setpoint(
-//      SENSOR_2,
-//      sensor_settings->setpoint,
-//      inputs[SENSOR_2].last_sample);
 }
 
 static void
@@ -200,68 +241,4 @@ dispatch_sensor_settings(sensor_settings_msg_t* msg)
       else if (output_settings->trigger == SENSOR_2)
         pid_reinit(&outputs[i].pid_control, inputs[SENSOR_2].last_sample);
   }
-
-//  /* Re-evaluate the last temp reading with the new sensor settings */
-//  evaluate_setpoint(
-//      msg->sensor,
-//      msg->settings.setpoint,
-//      inputs[msg->sensor].last_sample);
 }
-
-static void
-evaluate_setpoint(sensor_id_t sensor, quantity_t setpoint, quantity_t sample)
-{
-  pid_t pid =  outputs[sensor].pid_control;
-  inputs[sensor].last_sample = sample;
-
-  if (pid.enable_output) {
-    trigger_output(sensor, OUTPUT_FUNC_COOLING);
-    //trigger_output(sensor, OUTPUT_FUNC_HEATING);
-  }
-  else {
-    palClearPad(GPIOB, outputs[OUTPUT_2].gpio);
-    start_compressor_delay(&outputs[OUTPUT_2].delay_startTime);
-  }
-}
-
-static void
-trigger_output(sensor_id_t sensor, output_function_t function)
-{
-  int i;
-
-  for (i = 0; i < NUM_OUTPUTS; ++i) {
-    const output_settings_t* output_settings = app_cfg_get_output_settings(i);
-    bool time_expired = compressor_delay_has_expired(output_settings->compressor_delay,
-                                                     outputs[i].delay_startTime);
-
-     if (output_settings->trigger == sensor) {
-      if (output_settings->function == function) {
-    	if(time_expired) {
-    	  palSetPad(GPIOB, outputs[i].gpio);
-    	}
-      }
-      else {
-        palClearPad(GPIOB, outputs[i].gpio);
-        start_compressor_delay(&outputs[i].delay_startTime);
-      }
-    }
-  }
-}
-
-static bool
-compressor_delay_has_expired(uint32_t compressor_delay, uint32_t delay_startTime)
-{
-  uint32_t current_time = chTimeNow();
-
-  if ((current_time - delay_startTime) > compressor_delay)
-    return TRUE;
-  else
-    return FALSE;
-}
-
-static void
-start_compressor_delay(uint32_t* delay_startTime)
-{
-  *delay_startTime = chTimeNow();
-}
-

@@ -46,10 +46,10 @@ app_cfg_init()
     app_cfg_local.touch_calib.Divider = 205664;
 
     app_cfg_local.sensor_settings[SENSOR_1].setpoint.unit = UNIT_TEMP_DEG_F;
-    app_cfg_local.sensor_settings[SENSOR_1].setpoint.value = 72;
+    app_cfg_local.sensor_settings[SENSOR_1].setpoint.value = 78;
 
     app_cfg_local.sensor_settings[SENSOR_2].setpoint.unit = UNIT_TEMP_DEG_F;
-    app_cfg_local.sensor_settings[SENSOR_2].setpoint.value = 72;
+    app_cfg_local.sensor_settings[SENSOR_2].setpoint.value = 78;
 
     app_cfg_local.output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
     app_cfg_local.output_settings[OUTPUT_1].trigger = SENSOR_1;
