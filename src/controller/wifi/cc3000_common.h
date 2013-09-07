@@ -32,8 +32,8 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
-#ifndef __COMMON_H__
-#define __COMMON_H__
+#ifndef __CC3000_COMMON_H__
+#define __CC3000_COMMON_H__
 
 //******************************************************************************
 // Include files

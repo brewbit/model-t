@@ -2,7 +2,7 @@ PROJECT = controller
 
 BOARD = II-MT-CONTROLLER
 
-PROJECT_INCDIR = util util/json
+PROJECT_INCDIR = util util/json wifi
 
 PROJECT_AUTOGEN_CSRC = \
        image_resources.c \

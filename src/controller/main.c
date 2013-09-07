@@ -14,6 +14,7 @@
 #include "gfx.h"
 #include "app_cfg.h"
 #include "debug_client.h"
+#include "wifi/wlan.h"
 
 void NMIVector(void)
 {
@@ -69,6 +70,7 @@ main(void)
   gfx_init();
   touch_init();
   temp_control_init();
+  wlan_init(NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
   web_api_init();
   gui_init();
 //  debug_client_init();

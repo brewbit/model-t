@@ -175,16 +175,15 @@ static void SimpleLink_Init_Start(unsigned short usPatchesAvailableAtHost)
 //
 //*****************************************************************************
 
-void wlan_init(    tWlanCB     sWlanCB,
-               tFWPatches sFWPatches,
-               tDriverPatches sDriverPatches,
-               tBootLoaderPatches sBootLoaderPatches,
+void wlan_init(tWlanCB               sWlanCB,
+               tFWPatches            sFWPatches,
+               tDriverPatches        sDriverPatches,
+               tBootLoaderPatches    sBootLoaderPatches,
                tWlanReadInteruptPin  sReadWlanInterruptPin,
                tWlanInterruptEnable  sWlanInterruptEnable,
                tWlanInterruptDisable sWlanInterruptDisable,
                tWriteWlanPin         sWriteWlanPin)
 {
-
   tSLInformation.sFWPatches = sFWPatches;
   tSLInformation.sDriverPatches = sDriverPatches;
   tSLInformation.sBootLoaderPatches = sBootLoaderPatches;
@@ -195,7 +194,7 @@ void wlan_init(    tWlanCB     sWlanCB,
   tSLInformation.WlanInterruptDisable = sWlanInterruptDisable;
   tSLInformation.WriteWlanPin = sWriteWlanPin;
 
-  //init asynchronous events callback
+  // init asynchronous events callback
   tSLInformation.sWlanCB= sWlanCB;
 
   // By default TX Complete events are routed to host too

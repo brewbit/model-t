@@ -104,14 +104,16 @@ extern "C" {
 //!  @warning This function must be called before ANY other wlan driver function
 //
 //*****************************************************************************
-extern void wlan_init(    tWlanCB     sWlanCB,
-           tFWPatches sFWPatches,
-           tDriverPatches sDriverPatches,
-           tBootLoaderPatches sBootLoaderPatches,
-                tWlanReadInteruptPin  sReadWlanInterruptPin,
-                tWlanInterruptEnable  sWlanInterruptEnable,
-                tWlanInterruptDisable sWlanInterruptDisable,
-                tWriteWlanPin         sWriteWlanPin);
+void
+wlan_init(
+    tWlanCB               sWlanCB,
+    tFWPatches            sFWPatches,
+    tDriverPatches        sDriverPatches,
+    tBootLoaderPatches    sBootLoaderPatches,
+    tWlanReadInteruptPin  sReadWlanInterruptPin,
+    tWlanInterruptEnable  sWlanInterruptEnable,
+    tWlanInterruptDisable sWlanInterruptDisable,
+    tWriteWlanPin         sWriteWlanPin);
 
 
 
