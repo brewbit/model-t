@@ -62,4 +62,17 @@ void __early_init(void) {
  * Board-specific initialization code.
  */
 void boardInit(void) {
+  rccEnableAHB3(RCC_AHB3ENR_FSMCEN, FALSE);
+  // Bank 1 Control Register
+  FSMC_Bank1->BTCR[0] = FSMC_BCR1_MBKEN | FSMC_BCR1_MWID_0 | FSMC_BCR1_WREN | FSMC_BCR1_EXTMOD;
+  // Bank 1 Read Timing Register
+  FSMC_Bank1->BTCR[1] =
+      FSMC_BTR1_CLKDIV_0 |
+      FSMC_BTR1_ADDSET_0 |
+      FSMC_BTR1_DATAST_0 | FSMC_BTR1_DATAST_1 | FSMC_BTR1_DATAST_2 | FSMC_BTR1_DATAST_3;
+  // Bank 1 Write Timing Register
+  FSMC_Bank1E->BWTR[0] =
+      FSMC_BWTR1_CLKDIV_0 |
+      FSMC_BWTR1_ADDSET_1 |
+      FSMC_BWTR1_DATAST_0 | FSMC_BWTR1_DATAST_2;
 }
