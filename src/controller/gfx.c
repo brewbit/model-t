@@ -27,7 +27,6 @@ typedef enum {
 } BackgroundType;
 
 
-static void set_pixel(uint16_t color);
 static void draw_horiz_line(int x, int y, int l);
 static void draw_vert_line(int x, int y, int l);
 static uint16_t get_tile_color(const Image_t* img, int x, int y);
@@ -120,7 +119,7 @@ fill_rect(rect_t rect, uint16_t color)
 
   gfx_set_cursor(rect.x, rect.y, rect.x + rect.width - 1, rect.y + rect.height - 1);
   for (i = 0; i < (rect.width * rect.height); ++i) {
-    set_pixel(color);
+    lcd_write_data(color);
   }
 }
 
@@ -166,12 +165,6 @@ void
 gfx_set_font(const Font_t* font)
 {
   ctx->cfont = font;
-}
-
-static void
-set_pixel(uint16_t color)
-{
-  lcd_write_data(color);
 }
 
 void
@@ -278,7 +271,7 @@ gfx_print_char(const Glyph_t* g, int x, int y)
   for (j = 0; j < (g->width * g->height); j++) {
     uint8_t alpha = g->data[j];
     if (alpha == 255) {
-      set_pixel(ctx->fcolor);
+      lcd_write_data(ctx->fcolor);
     }
     else {
       uint16_t by = y + (j / g->width);
@@ -286,10 +279,10 @@ gfx_print_char(const Glyph_t* g, int x, int y)
       uint16_t bcolor = get_bg_color(bx, by);
 
       if (alpha == 0) {
-        set_pixel(bcolor);
+        lcd_write_data(bcolor);
       }
       else {
-        set_pixel(BLENDED_COLOR(ctx->fcolor, ctx->bcolor, alpha));
+        lcd_write_data(BLENDED_COLOR(ctx->fcolor, ctx->bcolor, alpha));
       }
     }
   }
@@ -334,7 +327,7 @@ gfx_draw_bitmap(int x, int y, const Image_t* img)
       uint16_t fcolor = img->px[tc];
 
       if (alpha == 255) {
-        set_pixel(fcolor);
+        lcd_write_data(fcolor);
       }
       else {
         uint16_t by = y + (tc / img->width);
@@ -343,11 +336,11 @@ gfx_draw_bitmap(int x, int y, const Image_t* img)
         uint16_t bcolor = get_bg_color(bx, by);
 
         if (alpha == 0) {
-          set_pixel(bcolor);
+          lcd_write_data(bcolor);
         }
         else {
           col = BLENDED_COLOR(fcolor, bcolor, alpha);
-          set_pixel(col);
+          lcd_write_data(col);
         }
       }
     }
@@ -385,7 +378,7 @@ gfx_tile_bitmap(const Image_t* img, rect_t rect)
   gfx_set_cursor(rect.x, rect.y, rect.x + rect.width - 1, rect.y + rect.height - 1);
   for (i = 0; i < rect.height; ++i) {
     for (j = 0; j < rect.width; ++j) {
-      set_pixel(get_tile_color(img, j, i));
+      lcd_write_data(get_tile_color(img, j, i));
     }
   }
   lcd_clr_cursor();
