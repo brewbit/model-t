@@ -125,7 +125,7 @@ void expandKey(unsigned char *expandedKey,
     expandedKey[ii*16 +14] = expandedKey[(ii-1)*16 +14]^expandedKey[ii*16 +10];
     expandedKey[ii*16 +15] = expandedKey[(ii-1)*16 +15]^expandedKey[ii*16 +11];
   }
-	
+
 }
 
 //*****************************************************************************
@@ -142,12 +142,12 @@ void expandKey(unsigned char *expandedKey,
 
 unsigned char galois_mul2(unsigned char value)
 {
-	if (value>>7)
-	{
-		value = value << 1;
-		return (value^0x1b);
-	} else
-		return value<<1;
+  if (value>>7)
+  {
+    value = value << 1;
+    return (value^0x1b);
+  } else
+    return value<<1;
 }
 
 //*****************************************************************************
@@ -170,14 +170,14 @@ unsigned char galois_mul2(unsigned char value)
 //!          round, after that the 10th round without mixcolums
 //!          no further subfunctions to save cycles for function calls
 //!          no structuring with "for (....)" to save cycles.
-//!	 
+//!
 //!
 //*****************************************************************************
 
 void aes_encr(unsigned char *state, unsigned char *expandedKey)
 {
   unsigned char buf1, buf2, buf3, round;
-		
+
   for (round = 0; round < 9; round ++){
     // addroundkey, sbox and shiftrows
     // row 0
@@ -234,7 +234,7 @@ void aes_encr(unsigned char *state, unsigned char *expandedKey)
     buf3 = state[13]^state[14]; buf3=galois_mul2(buf3); state[13] = state[13] ^ buf3 ^ buf1;
     buf3 = state[14]^state[15]; buf3=galois_mul2(buf3); state[14] = state[14] ^ buf3 ^ buf1;
     buf3 = state[15]^buf2;      buf3=galois_mul2(buf3); state[15] = state[15] ^ buf3 ^ buf1;    
-		
+
   }
   // 10th round without mixcols
   state[ 0]  = sbox[(state[ 0] ^ expandedKey[(round*16)     ])];
@@ -306,7 +306,7 @@ void aes_decr(unsigned char *state, unsigned char *expandedKey)
   unsigned char buf1, buf2, buf3;
   signed char round;
   round = 9;
-	
+
   // initial addroundkey
   state[ 0]^=expandedKey[160];
   state[ 1]^=expandedKey[161];
@@ -324,7 +324,7 @@ void aes_decr(unsigned char *state, unsigned char *expandedKey)
   state[13]^=expandedKey[173];
   state[14]^=expandedKey[174]; 
   state[15]^=expandedKey[175];
-	
+
   // 10th round without mixcols
   state[ 0]  = rsbox[state[ 0]] ^ expandedKey[(round*16)     ];
   state[ 4]  = rsbox[state[ 4]] ^ expandedKey[(round*16) +  4];
@@ -349,7 +349,7 @@ void aes_decr(unsigned char *state, unsigned char *expandedKey)
   state[ 7]  = rsbox[state[11]] ^ expandedKey[(round*16) +  7];
   state[11]  = rsbox[state[15]] ^ expandedKey[(round*16) + 11];
   state[15]  = buf1;
-	
+
   for (round = 8; round >= 0; round--){
     // barreto
     //col1
@@ -397,7 +397,7 @@ void aes_decr(unsigned char *state, unsigned char *expandedKey)
     buf3 = state[13]^state[14]; buf3=galois_mul2(buf3); state[13] = state[13] ^ buf3 ^ buf1;
     buf3 = state[14]^state[15]; buf3=galois_mul2(buf3); state[14] = state[14] ^ buf3 ^ buf1;
     buf3 = state[15]^buf2;      buf3=galois_mul2(buf3); state[15] = state[15] ^ buf3 ^ buf1;    
-		
+
     // addroundkey, rsbox and shiftrows
     // row 0
     state[ 0]  = rsbox[state[ 0]] ^ expandedKey[(round*16)     ];
@@ -424,7 +424,7 @@ void aes_decr(unsigned char *state, unsigned char *expandedKey)
     state[11]  = rsbox[state[15]] ^ expandedKey[(round*16) + 11];
     state[15]  = buf1;
   }
-	
+
 } 
 
 //*****************************************************************************
@@ -440,16 +440,16 @@ void aes_decr(unsigned char *state, unsigned char *expandedKey)
 //!           Given AES128 key and  16 bytes plain text, cipher text of 16 bytes
 //!           is computed. The AES implementation is in mode ECB (Electronic 
 //!           Code Book). 
-//!	 
+//!
 //!
 //*****************************************************************************
 
 void aes_encrypt(unsigned char *state,
                  unsigned char *key)
 {
-	// expand the key into 176 bytes
-	expandKey(expandedKey, key);       
-	aes_encr(state, expandedKey);
+  // expand the key into 176 bytes
+  expandKey(expandedKey, key);
+  aes_encr(state, expandedKey);
 }
 
 //*****************************************************************************
@@ -465,7 +465,7 @@ void aes_encrypt(unsigned char *state,
 //!           Given AES128 key and  16 bytes cipher text, plain text of 16 bytes
 //!           is computed The AES implementation is in mode ECB 
 //!           (Electronic Code Book).
-//!	 
+//!
 //!
 //*****************************************************************************
 
@@ -487,17 +487,17 @@ void aes_decrypt(unsigned char *state,
 //!  @brief   Reads AES128 key from EEPROM
 //!           Reads the AES128 key from fileID #12 in EEPROM
 //!           returns an error if the key does not exist. 
-//!	 
+//!
 //!
 //*****************************************************************************
 
 signed long aes_read_key(unsigned char *key)
 {
-	signed long	returnValue;
-	
-	returnValue = nvmem_read(NVMEM_AES128_KEY_FILEID, AES128_KEY_SIZE, 0, key);
+  signed long  returnValue;
 
-	return returnValue;
+  returnValue = nvmem_read(NVMEM_AES128_KEY_FILEID, AES128_KEY_SIZE, 0, key);
+
+  return returnValue;
 }
 
 //*****************************************************************************
@@ -510,17 +510,17 @@ signed long aes_read_key(unsigned char *key)
 //!
 //!  @brief   writes AES128 key from EEPROM
 //!           Writes the AES128 key to fileID #12 in EEPROM
-//!	 
+//!
 //!
 //*****************************************************************************
 
 signed long aes_write_key(unsigned char *key)
 {
-	signed long	returnValue;
+  signed long  returnValue;
 
-	returnValue = nvmem_write(NVMEM_AES128_KEY_FILEID, AES128_KEY_SIZE, 0, key);
+  returnValue = nvmem_write(NVMEM_AES128_KEY_FILEID, AES128_KEY_SIZE, 0, key);
 
-	return returnValue;
+  return returnValue;
 }
 
 #endif //CC3000_UNENCRYPTED_SMART_CONFIG

@@ -33,7 +33,7 @@
 *
 *****************************************************************************/
 #ifndef __WLAN_H__
-#define	__WLAN_H__
+#define  __WLAN_H__
 
 #include "cc3000_common.h"
 
@@ -43,14 +43,14 @@
 // have a C binding.
 //
 //*****************************************************************************
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
 #define      WLAN_SEC_UNSEC (0)
-#define      WLAN_SEC_WEP	(1)
-#define      WLAN_SEC_WPA	(2)
-#define      WLAN_SEC_WPA2	(3)
+#define      WLAN_SEC_WEP  (1)
+#define      WLAN_SEC_WPA  (2)
+#define      WLAN_SEC_WPA2  (3)
 //*****************************************************************************
 //
 //! \addtogroup wlan_api
@@ -104,10 +104,10 @@ extern "C" {
 //!  @warning This function must be called before ANY other wlan driver function
 //
 //*****************************************************************************
-extern void wlan_init(		tWlanCB	 	sWlanCB,
-	   			tFWPatches sFWPatches,
-	   			tDriverPatches sDriverPatches,
-	   			tBootLoaderPatches sBootLoaderPatches,
+extern void wlan_init(    tWlanCB     sWlanCB,
+           tFWPatches sFWPatches,
+           tDriverPatches sDriverPatches,
+           tBootLoaderPatches sBootLoaderPatches,
                 tWlanReadInteruptPin  sReadWlanInterruptPin,
                 tWlanInterruptEnable  sWlanInterruptEnable,
                 tWlanInterruptDisable sWlanInterruptDisable,
@@ -239,8 +239,8 @@ extern long wlan_disconnect(void);
 //*****************************************************************************
 
 extern long wlan_add_profile(unsigned long ulSecType, unsigned char* ucSsid,
-										 unsigned long ulSsidLen, 
-										 unsigned char *ucBssid,
+                     unsigned long ulSsidLen,
+                     unsigned char *ucBssid,
                                          unsigned long ulPriority,
                                          unsigned long ulPairwiseCipher_Or_Key,
                                          unsigned long ulGroupCipher_TxKeyLen,
@@ -280,7 +280,7 @@ extern long wlan_ioctl_del_profile(unsigned long ulIndex);
 //!       HCI_EVNT_WLAN_ASYNC_PING_REPORT ping report
 //!       HCI_EVNT_WLAN_KEEPALIVE keepalive
 //!       HCI_EVNT_WLAN_TX_COMPLETE - disable information on end of transmission
-//!   	  Saved: no.
+//!       Saved: no.
 //!
 //!  @return    On success, zero is returned. On error, -1 is returned        
 //!
@@ -317,7 +317,7 @@ extern long wlan_ioctl_statusget(void);
 //!            to the configuration of item # 1 in the brief description.
 //!  @param    auto_start enable(1), disable(0) auto connect 
 //!            after reset and periodically reconnect if needed. This 
-//!       	   configuration configures option 2 in the above description.
+//!            configuration configures option 2 in the above description.
 //!
 //!  @return     On success, zero is returned. On error, -1 is returned        
 //!
@@ -354,20 +354,20 @@ extern long wlan_ioctl_set_connection_policy(
 //!            The scan results are returned one by one, and each entry 
 //!            represents a single AP found in the area. The following is a 
 //!            format of the scan result: 
-//!        	 - 4 Bytes: number of networks found
+//!           - 4 Bytes: number of networks found
 //!          - 4 Bytes: The status of the scan: 0 - aged results,
 //!                     1 - results valid, 2 - no results
 //!          - 42 bytes: Result entry, where the bytes are arranged as  follows:
 //!              
-//!          				- 1 bit isValid - is result valid or not
-//!         				- 7 bits rssi - RSSI value;	 
+//!                  - 1 bit isValid - is result valid or not
+//!                 - 7 bits rssi - RSSI value;
 //!                 - 2 bits: securityMode - security mode of the AP:
 //!                           0 - Open, 1 - WEP, 2 WPA, 3 WPA2
-//!         				- 6 bits: SSID name length
-//!         				- 2 bytes: the time at which the entry has entered into 
+//!                 - 6 bits: SSID name length
+//!                 - 2 bytes: the time at which the entry has entered into
 //!                            scans result table
-//!         				- 32 bytes: SSID name
-//!                 - 6 bytes:	BSSID 
+//!                 - 32 bytes: SSID name
+//!                 - 6 bytes:  BSSID
 //!
 //!  @Note      scan_timeout, is not supported on this version.
 //!
@@ -416,12 +416,12 @@ extern long wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
 //
 //*****************************************************************************
 extern long wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long 
-											 uiMinDwellTime,unsigned long uiMaxDwellTime,
-										   unsigned long uiNumOfProbeRequests,
-											 unsigned long uiChannelMask,
-										   long iRSSIThreshold,unsigned long uiSNRThreshold,
-										   unsigned long uiDefaultTxPower, 
-											 unsigned long *aiIntervalList);
+                       uiMinDwellTime,unsigned long uiMaxDwellTime,
+                       unsigned long uiNumOfProbeRequests,
+                       unsigned long uiChannelMask,
+                       long iRSSIThreshold,unsigned long uiSNRThreshold,
+                       unsigned long uiDefaultTxPower,
+                       unsigned long *aiIntervalList);
 
                                            
 //*****************************************************************************
@@ -510,8 +510,8 @@ extern long wlan_smart_config_process(void);
 // Mark the end of the C bindings section for C++ compilers.
 //
 //*****************************************************************************
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 }
 #endif // __cplusplus
 
-#endif	// __WLAN_H__
+#endif  // __WLAN_H__

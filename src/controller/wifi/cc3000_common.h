@@ -67,9 +67,9 @@ extern "C" {
 #define WLAN_ENABLE      (1)   
 #define WLAN_DISABLE     (0)
 
-#define	MAC_ADDR_LEN	(6)
+#define  MAC_ADDR_LEN  (6)
 
-#define	SP_PORTION_SIZE	(32)
+#define  SP_PORTION_SIZE  (32)
   
 /*Defines for minimal and maximal RX buffer size. This size includes the spi 
   header and hci header.
@@ -124,8 +124,8 @@ extern "C" {
  
   The 1 is used for the overrun detection */ 
 
-#define	CC3000_MINIMAL_TX_SIZE      (130 + 1)  
-#define	CC3000_MAXIMAL_TX_SIZE      (1519 + 1)
+#define  CC3000_MINIMAL_TX_SIZE      (130 + 1)
+#define  CC3000_MAXIMAL_TX_SIZE      (1519 + 1)
 
 //TX and RX buffer sizes, allow to receive and transmit maximum data at length 8.
 #ifdef CC3000_TINY_DRIVER
@@ -144,13 +144,13 @@ extern "C" {
   
 #ifndef CC3000_TINY_DRIVER
   
-	#define CC3000_RX_BUFFER_SIZE   (CC3000_MINIMAL_RX_SIZE)
-	#define CC3000_TX_BUFFER_SIZE   (CC3000_MINIMAL_TX_SIZE)
+  #define CC3000_RX_BUFFER_SIZE   (CC3000_MINIMAL_RX_SIZE)
+  #define CC3000_TX_BUFFER_SIZE   (CC3000_MINIMAL_TX_SIZE)
   
 //if defined TINY DRIVER we use smaller RX and TX buffer in order to minimize RAM consumption
 #else
-	#define CC3000_RX_BUFFER_SIZE   (TINY_CC3000_MAXIMAL_RX_SIZE)
-	#define CC3000_TX_BUFFER_SIZE   (TINY_CC3000_MAXIMAL_TX_SIZE)
+  #define CC3000_RX_BUFFER_SIZE   (TINY_CC3000_MAXIMAL_RX_SIZE)
+  #define CC3000_TX_BUFFER_SIZE   (TINY_CC3000_MAXIMAL_TX_SIZE)
 
 #endif  
 
@@ -187,30 +187,30 @@ typedef void (*tWriteWlanPin)(unsigned char val);
 
 typedef struct
 {
-	unsigned short	 usRxEventOpcode;
-	unsigned short	 usEventOrDataReceived;
-	unsigned char 	*pucReceivedData;
-	unsigned char 	*pucTxCommandBuffer;
+  unsigned short   usRxEventOpcode;
+  unsigned short   usEventOrDataReceived;
+  unsigned char   *pucReceivedData;
+  unsigned char   *pucTxCommandBuffer;
 
-	tFWPatches 			sFWPatches;
-	tDriverPatches 		sDriverPatches;
-	tBootLoaderPatches 	sBootLoaderPatches;
-	tWlanCB	 			sWlanCB;
+  tFWPatches       sFWPatches;
+  tDriverPatches     sDriverPatches;
+  tBootLoaderPatches   sBootLoaderPatches;
+  tWlanCB         sWlanCB;
     tWlanReadInteruptPin  ReadWlanInterruptPin;
     tWlanInterruptEnable  WlanInterruptEnable;
     tWlanInterruptDisable WlanInterruptDisable;
     tWriteWlanPin         WriteWlanPin;
 
-	signed long		 slTransmitDataError;
-	unsigned short	 usNumberOfFreeBuffers;
-	unsigned short	 usSlBufferLength;
-	unsigned short	 usBufferSize;
-	unsigned short	 usRxDataPending;
+  signed long     slTransmitDataError;
+  unsigned short   usNumberOfFreeBuffers;
+  unsigned short   usSlBufferLength;
+  unsigned short   usBufferSize;
+  unsigned short   usRxDataPending;
 
-	unsigned long    NumberOfSentPackets;
-	unsigned long    NumberOfReleasedPackets;
+  unsigned long    NumberOfSentPackets;
+  unsigned long    NumberOfReleasedPackets;
 
-	unsigned char	 InformHostOnTxComplete;
+  unsigned char   InformHostOnTxComplete;
 }sSimplLinkInformation;
 
 extern volatile sSimplLinkInformation tSLInformation;
@@ -220,7 +220,11 @@ extern volatile sSimplLinkInformation tSLInformation;
 // Prototypes for the APIs.
 //*****************************************************************************
 
-
+typedef void (*gcSpiHandleRx)(void *pvBuffer);
+void SpiOpen(gcSpiHandleRx pfRxHandler);
+void SpiClose(void);
+long SpiWrite(unsigned char *pUserBuffer, unsigned short usLength);
+void  SpiResumeSpi(void);
 
 //*****************************************************************************
 //
@@ -244,13 +248,13 @@ extern void SimpleLinkWaitEvent(unsigned short usOpcode, void *pRetParams);
 //!
 //!  @param  pBuf       data buffer
 //!  @param  from       from information
-//!  @param  fromlen	  from information length
+//!  @param  fromlen    from information length
 //!
 //!  @return               none
 //!
 //!  @brief                Wait for data, pass it to the hci_event_handler
-//! 					   and update in a global variable that there is 
-//!						   data to read.
+//!              and update in a global variable that there is
+//!               data to read.
 //
 //*****************************************************************************
 
@@ -266,7 +270,7 @@ extern void SimpleLinkWaitData(unsigned char *pBuf, unsigned char *from, unsigne
 //!  \return               pointer to the new stream
 //!
 //!  \brief                This function is used for copying 32 bit to stream
-//!						   while converting to little endian format.
+//!               while converting to little endian format.
 //
 //*****************************************************************************
 
@@ -327,20 +331,20 @@ extern unsigned long STREAM_TO_UINT32_f(char* p, unsigned short offset);
 
 
 //This macro is used for copying 8 bit to stream while converting to little endian format.
-#define UINT8_TO_STREAM(_p, _val)	{*(_p)++ = (_val);}
+#define UINT8_TO_STREAM(_p, _val)  {*(_p)++ = (_val);}
 //This macro is used for copying 16 bit to stream while converting to little endian format.
-#define UINT16_TO_STREAM(_p, _u16)	(UINT16_TO_STREAM_f(_p, _u16))
+#define UINT16_TO_STREAM(_p, _u16)  (UINT16_TO_STREAM_f(_p, _u16))
 //This macro is used for copying 32 bit to stream while converting to little endian format.
-#define UINT32_TO_STREAM(_p, _u32)	(UINT32_TO_STREAM_f(_p, _u32))
+#define UINT32_TO_STREAM(_p, _u32)  (UINT32_TO_STREAM_f(_p, _u32))
 //This macro is used for copying a specified value length bits (l) to stream while converting to little endian format.
-#define ARRAY_TO_STREAM(p, a, l) 	{register short _i; for (_i = 0; _i < l; _i++) *(p)++ = ((unsigned char *) a)[_i];}
+#define ARRAY_TO_STREAM(p, a, l)   {register short _i; for (_i = 0; _i < (short)l; _i++) *(p)++ = ((unsigned char *) a)[_i];}
 //This macro is used for copying received stream to 8 bit in little endian format.
-#define STREAM_TO_UINT8(_p, _offset, _u8)	{_u8 = (unsigned char)(*(_p + _offset));}
+#define STREAM_TO_UINT8(_p, _offset, _u8)  {_u8 = (unsigned char)(*(_p + _offset));}
 //This macro is used for copying received stream to 16 bit in little endian format.
-#define STREAM_TO_UINT16(_p, _offset, _u16)	{_u16 = STREAM_TO_UINT16_f(_p, _offset);}
+#define STREAM_TO_UINT16(_p, _offset, _u16)  {_u16 = STREAM_TO_UINT16_f(_p, _offset);}
 //This macro is used for copying received stream to 32 bit in little endian format.
-#define STREAM_TO_UINT32(_p, _offset, _u32)	{_u32 = STREAM_TO_UINT32_f(_p, _offset);}
-#define STREAM_TO_STREAM(p, a, l) 	{register short _i; for (_i = 0; _i < l; _i++) *(a)++= ((unsigned char *) p)[_i];}
+#define STREAM_TO_UINT32(_p, _offset, _u32)  {_u32 = STREAM_TO_UINT32_f(_p, _offset);}
+#define STREAM_TO_STREAM(p, a, l)   {register short _i; for (_i = 0; _i < l; _i++) *(a)++= ((unsigned char *) p)[_i];}
 
 
 

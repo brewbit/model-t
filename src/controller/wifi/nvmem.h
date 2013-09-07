@@ -58,26 +58,26 @@ extern "C" {
 
 /****************************************************************************
 **
-**	Definitions for File IDs
-**	
+**  Definitions for File IDs
+**
 ****************************************************************************/
 /* NVMEM file ID - system files*/
-#define NVMEM_NVS_FILEID 							(0)
-#define NVMEM_NVS_SHADOW_FILEID 					(1)
-#define NVMEM_WLAN_CONFIG_FILEID 					(2)
-#define NVMEM_WLAN_CONFIG_SHADOW_FILEID 			(3)
-#define NVMEM_WLAN_DRIVER_SP_FILEID					(4)
-#define NVMEM_WLAN_FW_SP_FILEID						(5)
-#define NVMEM_MAC_FILEID 							(6)
-#define NVMEM_FRONTEND_VARS_FILEID 					(7)
-#define NVMEM_IP_CONFIG_FILEID 						(8)
-#define NVMEM_IP_CONFIG_SHADOW_FILEID 				(9)
-#define NVMEM_BOOTLOADER_SP_FILEID 					(10)
-#define NVMEM_RM_FILEID			 					(11)
+#define NVMEM_NVS_FILEID               (0)
+#define NVMEM_NVS_SHADOW_FILEID           (1)
+#define NVMEM_WLAN_CONFIG_FILEID           (2)
+#define NVMEM_WLAN_CONFIG_SHADOW_FILEID       (3)
+#define NVMEM_WLAN_DRIVER_SP_FILEID          (4)
+#define NVMEM_WLAN_FW_SP_FILEID            (5)
+#define NVMEM_MAC_FILEID               (6)
+#define NVMEM_FRONTEND_VARS_FILEID           (7)
+#define NVMEM_IP_CONFIG_FILEID             (8)
+#define NVMEM_IP_CONFIG_SHADOW_FILEID         (9)
+#define NVMEM_BOOTLOADER_SP_FILEID           (10)
+#define NVMEM_RM_FILEID                 (11)
 
 /* NVMEM file ID - user files*/
-#define NVMEM_AES128_KEY_FILEID	 					(12)
-#define NVMEM_SHARED_MEM_FILEID	 					(13)
+#define NVMEM_AES128_KEY_FILEID             (12)
+#define NVMEM_SHARED_MEM_FILEID             (13)
 
 /*  max entry in order to invalid nvmem              */
 #define NVMEM_MAX_ENTRY                              (16)
@@ -104,7 +104,7 @@ extern "C" {
 //!  @brief       Reads data from the file referred by the ulFileId parameter. 
 //!               Reads data from file ulOffset till length. Err if the file can't
 //!               be used, is invalid, or if the read is out of bounds. 
-//!	 
+//!
 //*****************************************************************************
 
 extern signed long nvmem_read(unsigned long file_id, unsigned long length, unsigned long offset, unsigned char *buff);
@@ -128,7 +128,7 @@ extern signed long nvmem_read(unsigned long file_id, unsigned long length, unsig
 //!               Writes data to file ulOffset till ulLength.The file id will be 
 //!               marked invalid till the write is done. The file entry doesn't
 //!               need to be valid - only allocated.
-//!	 
+//!
 //*****************************************************************************
 
 extern signed long nvmem_write(unsigned long ulFileId, unsigned long ulLength, unsigned long ulEntryOffset, unsigned char *buff);
@@ -144,9 +144,9 @@ extern signed long nvmem_write(unsigned long ulFileId, unsigned long ulLength, u
 //!
 //!  @brief       Write MAC address to EEPROM. 
 //!               mac address as appears over the air (OUI first)
-//!	 
+//!
 //*****************************************************************************
-extern	unsigned char nvmem_set_mac_address(unsigned char *mac);
+extern  unsigned char nvmem_set_mac_address(unsigned char *mac);
 
 
 //*****************************************************************************
@@ -159,9 +159,9 @@ extern	unsigned char nvmem_set_mac_address(unsigned char *mac);
 //!
 //!  @brief       Read MAC address from EEPROM. 
 //!               mac address as appears over the air (OUI first)
-//!	 
+//!
 //*****************************************************************************
-extern	unsigned char nvmem_get_mac_address(unsigned char *mac);
+extern  unsigned char nvmem_get_mac_address(unsigned char *mac);
 
 
 //*****************************************************************************
@@ -179,9 +179,9 @@ extern	unsigned char nvmem_get_mac_address(unsigned char *mac);
 //!              The SP data is assumed to be organized in 2-dimensional.
 //!              Each line is SP_PORTION_SIZE bytes long. Actual programming is 
 //!              applied in SP_PORTION_SIZE bytes portions.
-//!	 
+//!
 //*****************************************************************************
-extern	unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long spLength, const unsigned char *spData);
+extern  unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long spLength, const unsigned char *spData);
 
 
 //*****************************************************************************
@@ -195,10 +195,10 @@ extern	unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long spL
 //!
 //!  @brief      Read patch version. read package version (WiFi FW patch, 
 //!              driver-supplicant-NS patch, bootloader patch)
-//!	 
+//!
 //*****************************************************************************
 #ifndef CC3000_TINY_DRIVER 
-extern	unsigned char nvmem_read_sp_version(unsigned char* patchVer);
+extern  unsigned char nvmem_read_sp_version(unsigned char* patchVer);
 #endif
 
 //*****************************************************************************
@@ -221,7 +221,7 @@ extern	unsigned char nvmem_read_sp_version(unsigned char* patchVer);
 //!              If it is allocated then deallocate it first.
 //!              To just mark the file as invalid without resizing - 
 //!              set ulNewLen=0.
-//!	 
+//!
 //*****************************************************************************
 extern signed long nvmem_create_entry(unsigned long file_id, unsigned long newlen);
 

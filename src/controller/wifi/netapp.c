@@ -46,10 +46,10 @@
                             }
 
 
-#define NETAPP_DHCP_PARAMS_LEN 				(20)
-#define NETAPP_SET_TIMER_PARAMS_LEN 		(20)
-#define NETAPP_SET_DEBUG_LEVEL_PARAMS_LEN	(4)
-#define NETAPP_PING_SEND_PARAMS_LEN			(16)
+#define NETAPP_DHCP_PARAMS_LEN         (20)
+#define NETAPP_SET_TIMER_PARAMS_LEN     (20)
+#define NETAPP_SET_DEBUG_LEVEL_PARAMS_LEN  (4)
+#define NETAPP_PING_SEND_PARAMS_LEN      (16)
 
 
 //*****************************************************************************
@@ -62,13 +62,13 @@
 //!
 //!  @brief        Configure device MAC address and store it in NVMEM. 
 //!                The value of the MAC address configured through the API will
-//!		             be stored in CC3000 non volatile memory, thus preserved 
+//!                 be stored in CC3000 non volatile memory, thus preserved
 //!                over resets.
 //
 //*****************************************************************************
 long netapp_config_mac_adrress(unsigned char * mac)
 {
-	return  nvmem_set_mac_address(mac);
+  return  nvmem_set_mac_address(mac);
 }
 
 //*****************************************************************************
@@ -88,7 +88,7 @@ long netapp_config_mac_adrress(unsigned char * mac)
 //!               The default mode of CC3000 is DHCP mode.
 //!               Note that the configuration is saved in non volatile memory
 //!               and thus preserved over resets.
-//!	 
+//!
 //! @note         If the mode is altered a reset of CC3000 device is required 
 //!               in order to apply changes.\nAlso note that asynchronous event 
 //!               of DHCP_EVENT, which is generated when an IP address is 
@@ -99,28 +99,28 @@ long netapp_config_mac_adrress(unsigned char * mac)
 //*****************************************************************************
 long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsigned long *aucDefaultGateway, unsigned long *aucDNSServer)
 {
-	signed char scRet;
-	unsigned char *ptr;
-	unsigned char *args;
-	
-	scRet = EFAIL;
-	ptr = tSLInformation.pucTxCommandBuffer;
-	args = (ptr + HEADERS_SIZE_CMD);
-	
-	// Fill in temporary command buffer
-	ARRAY_TO_STREAM(args,aucIP,4);
-	ARRAY_TO_STREAM(args,aucSubnetMask,4);
-	ARRAY_TO_STREAM(args,aucDefaultGateway,4);
-	args = UINT32_TO_STREAM(args, 0);
-	ARRAY_TO_STREAM(args,aucDNSServer,4);
-	
-	// Initiate a HCI command
-	hci_command_send(HCI_NETAPP_DHCP, ptr, NETAPP_DHCP_PARAMS_LEN);
-	
-	// Wait for command complete event
-	SimpleLinkWaitEvent(HCI_NETAPP_DHCP, &scRet);
-	
-	return(scRet);
+  signed char scRet;
+  unsigned char *ptr;
+  unsigned char *args;
+
+  scRet = EFAIL;
+  ptr = tSLInformation.pucTxCommandBuffer;
+  args = (ptr + HEADERS_SIZE_CMD);
+
+  // Fill in temporary command buffer
+  ARRAY_TO_STREAM(args,aucIP,4);
+  ARRAY_TO_STREAM(args,aucSubnetMask,4);
+  ARRAY_TO_STREAM(args,aucDefaultGateway,4);
+  args = UINT32_TO_STREAM(args, 0);
+  ARRAY_TO_STREAM(args,aucDNSServer,4);
+
+  // Initiate a HCI command
+  hci_command_send(HCI_NETAPP_DHCP, ptr, NETAPP_DHCP_PARAMS_LEN);
+
+  // Wait for command complete event
+  SimpleLinkWaitEvent(HCI_NETAPP_DHCP, &scRet);
+
+  return(scRet);
 }
 
 
@@ -136,7 +136,7 @@ long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsigned lon
 //!                     Minimal bound value: MIN_TIMER_VAL_SECONDS - 20 seconds.
 //!                     The parameter is saved into the CC3000 NVMEM. 
 //!                     The default value on CC3000 is 14400 seconds.
-//!	 
+//!
 //!  @param  aucARP     ARP refresh timeout, if ARP entry is not updated by
 //!                     incoming packet, the ARP entry will be  deleted by
 //!                     the end of the timeout. 
@@ -144,7 +144,7 @@ long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsigned lon
 //!                     Resolution: 10 seconds. Influence: on runtime.
 //!                     Minimal bound value: MIN_TIMER_VAL_SECONDS - 20 seconds
 //!                     The parameter is saved into the CC3000 NVMEM. 
-//!	                    The default value on CC3000 is 3600 seconds.
+//!                      The default value on CC3000 is 3600 seconds.
 //!
 //!  @param  aucKeepalive   Keepalive event sent by the end of keepalive timeout
 //!                         Range: [0-0xffffffff] seconds, 0 == infinity timeout
@@ -161,14 +161,14 @@ long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsigned lon
 //!                          Resolution: 10 seconds. Influence: on runtime.
 //!                          Minimal bound value: MIN_TIMER_VAL_SECONDS - 20 sec
 //!                          The parameter is saved into the CC3000 NVMEM. 
-//!	                         The default value on CC3000 is 60 seconds.
+//!                           The default value on CC3000 is 60 seconds.
 //!
 //!  @return       return on success 0, otherwise error.
 //!
 //!  @brief       Set new timeout values. Function set new timeout values for: 
 //!               DHCP lease timeout, ARP  refresh timeout, keepalive event 
 //!               timeout and socket inactivity timeout 
-//!	 
+//!
 //! @note         If a parameter set to non zero value which is less than 20s,
 //!               it will be set automatically to 20s.
 //!
@@ -176,35 +176,35 @@ long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsigned lon
 
 #ifndef CC3000_TINY_DRIVER
 long 
-netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,unsigned long *aucKeepalive,	unsigned long *aucInactivity)
+netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,unsigned long *aucKeepalive,  unsigned long *aucInactivity)
 {
-	signed char scRet;
-	unsigned char *ptr;
-	unsigned char *args;
-	
-	scRet = EFAIL;
-	ptr = tSLInformation.pucTxCommandBuffer;
-	args = (ptr + HEADERS_SIZE_CMD);
-	
-	// Set minimal values of timers 
-	MIN_TIMER_SET(*aucDHCP)
+  signed char scRet;
+  unsigned char *ptr;
+  unsigned char *args;
+
+  scRet = EFAIL;
+  ptr = tSLInformation.pucTxCommandBuffer;
+  args = (ptr + HEADERS_SIZE_CMD);
+
+  // Set minimal values of timers
+  MIN_TIMER_SET(*aucDHCP)
     MIN_TIMER_SET(*aucARP)
-	MIN_TIMER_SET(*aucKeepalive)
-	MIN_TIMER_SET(*aucInactivity)
-					
-	// Fill in temporary command buffer
-	args = UINT32_TO_STREAM(args, *aucDHCP);
-	args = UINT32_TO_STREAM(args, *aucARP);
-	args = UINT32_TO_STREAM(args, *aucKeepalive);
-	args = UINT32_TO_STREAM(args, *aucInactivity);
-	
-	// Initiate a HCI command
-	hci_command_send(HCI_NETAPP_SET_TIMERS, ptr, NETAPP_SET_TIMER_PARAMS_LEN);
-	
-	// Wait for command complete event
-	SimpleLinkWaitEvent(HCI_NETAPP_SET_TIMERS, &scRet);
-	
-	return(scRet);
+  MIN_TIMER_SET(*aucKeepalive)
+  MIN_TIMER_SET(*aucInactivity)
+
+  // Fill in temporary command buffer
+  args = UINT32_TO_STREAM(args, *aucDHCP);
+  args = UINT32_TO_STREAM(args, *aucARP);
+  args = UINT32_TO_STREAM(args, *aucKeepalive);
+  args = UINT32_TO_STREAM(args, *aucInactivity);
+
+  // Initiate a HCI command
+  hci_command_send(HCI_NETAPP_SET_TIMERS, ptr, NETAPP_SET_TIMER_PARAMS_LEN);
+
+  // Wait for command complete event
+  SimpleLinkWaitEvent(HCI_NETAPP_SET_TIMERS, &scRet);
+
+  return(scRet);
 }
 #endif
 
@@ -221,7 +221,7 @@ netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,unsigned lon
 //!  @return       return on success 0, otherwise error.
 //!
 //!  @brief       send ICMP ECHO_REQUEST to network hosts 
-//!	 
+//!
 //! @note         If an operation finished successfully asynchronous ping report 
 //!               event will be generated. The report structure is as defined
 //!               by structure netapp_pingreport_args_t.
@@ -234,26 +234,26 @@ netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,unsigned lon
 long
 netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts, unsigned long ulPingSize, unsigned long ulPingTimeout)
 {
-	signed char scRet;
-	unsigned char *ptr, *args;
-	
-	scRet = EFAIL;
-	ptr = tSLInformation.pucTxCommandBuffer;
-	args = (ptr + HEADERS_SIZE_CMD);
-	
-	// Fill in temporary command buffer
-	args = UINT32_TO_STREAM(args, *ip);
-	args = UINT32_TO_STREAM(args, ulPingAttempts);
-	args = UINT32_TO_STREAM(args, ulPingSize);
-	args = UINT32_TO_STREAM(args, ulPingTimeout);
-	
-	// Initiate a HCI command
-	hci_command_send(HCI_NETAPP_PING_SEND, ptr, NETAPP_PING_SEND_PARAMS_LEN);
-	
-	// Wait for command complete event
-	SimpleLinkWaitEvent(HCI_NETAPP_PING_SEND, &scRet);
-	
-	return(scRet);
+  signed char scRet;
+  unsigned char *ptr, *args;
+
+  scRet = EFAIL;
+  ptr = tSLInformation.pucTxCommandBuffer;
+  args = (ptr + HEADERS_SIZE_CMD);
+
+  // Fill in temporary command buffer
+  args = UINT32_TO_STREAM(args, *ip);
+  args = UINT32_TO_STREAM(args, ulPingAttempts);
+  args = UINT32_TO_STREAM(args, ulPingSize);
+  args = UINT32_TO_STREAM(args, ulPingTimeout);
+
+  // Initiate a HCI command
+  hci_command_send(HCI_NETAPP_PING_SEND, ptr, NETAPP_PING_SEND_PARAMS_LEN);
+
+  // Wait for command complete event
+  SimpleLinkWaitEvent(HCI_NETAPP_PING_SEND, &scRet);
+
+  return(scRet);
 }
 #endif
 
@@ -274,7 +274,7 @@ netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts, unsigned long 
 //!           packets_received - echo reply, min_round_time - minimum
 //!           round time, max_round_time - max round time,
 //!           avg_round_time - average round time
-//!	 
+//!
 //! @note     When a ping operation is not active, the returned structure 
 //!           fields are 0.
 //!
@@ -284,17 +284,17 @@ netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts, unsigned long 
 #ifndef CC3000_TINY_DRIVER
 void netapp_ping_report()
 {
-	unsigned char *ptr;
-	ptr = tSLInformation.pucTxCommandBuffer;
-	signed char scRet;
-	
-	scRet = EFAIL;
-	
-	// Initiate a HCI command
-	hci_command_send(HCI_NETAPP_PING_REPORT, ptr, 0);
-	
-	// Wait for command complete event
-	SimpleLinkWaitEvent(HCI_NETAPP_PING_REPORT, &scRet); 
+  unsigned char *ptr;
+  ptr = tSLInformation.pucTxCommandBuffer;
+  signed char scRet;
+
+  scRet = EFAIL;
+
+  // Initiate a HCI command
+  hci_command_send(HCI_NETAPP_PING_REPORT, ptr, 0);
+
+  // Wait for command complete event
+  SimpleLinkWaitEvent(HCI_NETAPP_PING_REPORT, &scRet);
 }
 #endif
 
@@ -307,26 +307,26 @@ void netapp_ping_report()
 //!  @return  On success, zero is returned. On error, -1 is returned.      
 //!
 //!  @brief   Stop any ping request.
-//!	 
+//!
 //!
 //*****************************************************************************
 
 #ifndef CC3000_TINY_DRIVER
 long netapp_ping_stop()
 {
-	signed char scRet;
-	unsigned char *ptr;
-	
-	scRet = EFAIL;
-	ptr = tSLInformation.pucTxCommandBuffer;
-	
-	// Initiate a HCI command
-	hci_command_send(HCI_NETAPP_PING_STOP, ptr, 0);
-	
-	// Wait for command complete event
-	SimpleLinkWaitEvent(HCI_NETAPP_PING_STOP, &scRet);
-	
-	return(scRet);
+  signed char scRet;
+  unsigned char *ptr;
+
+  scRet = EFAIL;
+  ptr = tSLInformation.pucTxCommandBuffer;
+
+  // Initiate a HCI command
+  hci_command_send(HCI_NETAPP_PING_STOP, ptr, 0);
+
+  // Wait for command complete event
+  SimpleLinkWaitEvent(HCI_NETAPP_PING_STOP, &scRet);
+
+  return(scRet);
 }
 #endif
 
@@ -347,28 +347,28 @@ long netapp_ping_stop()
 //!
 //!  @brief   Obtain the CC3000 Network interface information.
 //!           Note that the information is available only after the WLAN
-//!       		connection was established. Calling this function before
+//!           connection was established. Calling this function before
 //!           associated, will cause non-defined values to be returned.
-//!	 
+//!
 //! @note     The function is useful for figuring out the IP Configuration of
-//!       		the device when DHCP is used and for figuring out the SSID of
-//!       		the Wireless network the device is associated with.
+//!           the device when DHCP is used and for figuring out the SSID of
+//!           the Wireless network the device is associated with.
 //!
 //*****************************************************************************
 
 #ifndef CC3000_TINY_DRIVER
 void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
 {
-	unsigned char *ptr;
-	
-	ptr = tSLInformation.pucTxCommandBuffer;
-	
-	// Initiate a HCI command
-	hci_command_send(HCI_NETAPP_IPCONFIG, ptr, 0);
-	
-	// Wait for command complete event
-	SimpleLinkWaitEvent(HCI_NETAPP_IPCONFIG, ipconfig );
-	
+  unsigned char *ptr;
+
+  ptr = tSLInformation.pucTxCommandBuffer;
+
+  // Initiate a HCI command
+  hci_command_send(HCI_NETAPP_IPCONFIG, ptr, 0);
+
+  // Wait for command complete event
+  SimpleLinkWaitEvent(HCI_NETAPP_IPCONFIG, ipconfig );
+
 }
 #else
 void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
@@ -392,19 +392,19 @@ void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
 #ifndef CC3000_TINY_DRIVER
 long netapp_arp_flush(void)
 {
-	signed char scRet;
-	unsigned char *ptr;
-	
-	scRet = EFAIL;
-	ptr = tSLInformation.pucTxCommandBuffer;
-	
-	// Initiate a HCI command
-	hci_command_send(HCI_NETAPP_ARP_FLUSH, ptr, 0);
-	
-	// Wait for command complete event
-	SimpleLinkWaitEvent(HCI_NETAPP_ARP_FLUSH, &scRet);
-	
-	return(scRet);
+  signed char scRet;
+  unsigned char *ptr;
+
+  scRet = EFAIL;
+  ptr = tSLInformation.pucTxCommandBuffer;
+
+  // Initiate a HCI command
+  hci_command_send(HCI_NETAPP_ARP_FLUSH, ptr, 0);
+
+  // Wait for command complete event
+  SimpleLinkWaitEvent(HCI_NETAPP_ARP_FLUSH, &scRet);
+
+  return(scRet);
 }
 #endif
 
@@ -430,7 +430,7 @@ long netapp_arp_flush(void)
 #ifndef CC3000_TINY_DRIVER
 long netapp_set_debug_level(unsigned long ulLevel)
 {
-	signed char scRet;
+  signed char scRet;
     unsigned char *ptr, *args;
 
     scRet = EFAIL;
@@ -449,11 +449,10 @@ long netapp_set_debug_level(unsigned long ulLevel)
     hci_command_send(HCI_NETAPP_SET_DEBUG_LEVEL, ptr, NETAPP_SET_DEBUG_LEVEL_PARAMS_LEN);
 
     //
-	// Wait for command complete event
-	//
-	SimpleLinkWaitEvent(HCI_NETAPP_SET_DEBUG_LEVEL, &scRet);
+  // Wait for command complete event
+  //
+  SimpleLinkWaitEvent(HCI_NETAPP_SET_DEBUG_LEVEL, &scRet);
 
-    return(scRet);
-
+  return(scRet);
 }
 #endif

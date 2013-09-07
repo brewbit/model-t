@@ -33,7 +33,7 @@
 *
 *****************************************************************************/
 #ifndef __NETAPP_H__
-#define	__NETAPP_H__
+#define  __NETAPP_H__
 
 
 //*****************************************************************************
@@ -42,7 +42,7 @@
 // have a C binding.
 //
 //*****************************************************************************
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 extern "C" {
 #endif
 
@@ -56,32 +56,32 @@ extern "C" {
 typedef struct _netapp_dhcp_ret_args_t
 {
     unsigned char aucIP[4];
-	unsigned char aucSubnetMask[4];
-	unsigned char aucDefaultGateway[4];
-	unsigned char aucDHCPServer[4];
-	unsigned char aucDNSServer[4];
+  unsigned char aucSubnetMask[4];
+  unsigned char aucDefaultGateway[4];
+  unsigned char aucDHCPServer[4];
+  unsigned char aucDNSServer[4];
 }tNetappDhcpParams;
 
 typedef struct _netapp_ipconfig_ret_args_t
 {
     unsigned char aucIP[4];
-	unsigned char aucSubnetMask[4];
-	unsigned char aucDefaultGateway[4];
-	unsigned char aucDHCPServer[4];
-	unsigned char aucDNSServer[4];
-	unsigned char uaMacAddr[6];
-	unsigned char uaSSID[32];
+  unsigned char aucSubnetMask[4];
+  unsigned char aucDefaultGateway[4];
+  unsigned char aucDHCPServer[4];
+  unsigned char aucDNSServer[4];
+  unsigned char uaMacAddr[6];
+  unsigned char uaSSID[32];
 }tNetappIpconfigRetArgs;
 
 
 /*Ping send report parameters*/
 typedef struct _netapp_pingreport_args
 {
-	unsigned long packets_sent;
-	unsigned long packets_received;
-	unsigned long min_round_time;
-	unsigned long max_round_time;
-	unsigned long avg_round_time;
+  unsigned long packets_sent;
+  unsigned long packets_received;
+  unsigned long min_round_time;
+  unsigned long max_round_time;
+  unsigned long avg_round_time;
 } netapp_pingreport_args_t;
 
 
@@ -95,7 +95,7 @@ typedef struct _netapp_pingreport_args
 //!
 //!  @brief        Configure device MAC address and store it in NVMEM. 
 //!                The value of the MAC address configured through the API will
-//!		             be stored in CC3000 non volatile memory, thus preserved 
+//!                 be stored in CC3000 non volatile memory, thus preserved
 //!                over resets.
 //
 //*****************************************************************************
@@ -118,7 +118,7 @@ extern long  netapp_config_mac_adrress( unsigned char *mac );
 //!               The default mode of CC3000 is DHCP mode.
 //!               Note that the configuration is saved in non volatile memory
 //!               and thus preserved over resets.
-//!	 
+//!
 //! @note         If the mode is altered a reset of CC3000 device is required 
 //!               in order to apply changes.\nAlso note that asynchronous event 
 //!               of DHCP_EVENT, which is generated when an IP address is 
@@ -127,7 +127,7 @@ extern long  netapp_config_mac_adrress( unsigned char *mac );
 //!               AP was established. 
 //!
 //*****************************************************************************
-extern 	long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsigned long *aucDefaultGateway, unsigned long *aucDNSServer);
+extern   long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsigned long *aucDefaultGateway, unsigned long *aucDNSServer);
 
 
 
@@ -143,7 +143,7 @@ extern 	long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsi
 //!                     Minimal bound value: MIN_TIMER_VAL_SECONDS - 20 seconds.
 //!                     The parameter is saved into the CC3000 NVMEM. 
 //!                     The default value on CC3000 is 14400 seconds.
-//!	 
+//!
 //!  @param  aucARP     ARP refresh timeout, if ARP entry is not updated by
 //!                     incoming packet, the ARP entry will be  deleted by
 //!                     the end of the timeout. 
@@ -151,7 +151,7 @@ extern 	long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsi
 //!                     Resolution: 10 seconds. Influence: on runtime.
 //!                     Minimal bound value: MIN_TIMER_VAL_SECONDS - 20 seconds
 //!                     The parameter is saved into the CC3000 NVMEM. 
-//!	                    The default value on CC3000 is 3600 seconds.
+//!                      The default value on CC3000 is 3600 seconds.
 //!
 //!  @param  aucKeepalive   Keepalive event sent by the end of keepalive timeout
 //!                         Range: [0-0xffffffff] seconds, 0 == infinity timeout
@@ -168,20 +168,20 @@ extern 	long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsi
 //!                          Resolution: 10 seconds. Influence: on runtime.
 //!                          Minimal bound value: MIN_TIMER_VAL_SECONDS - 20 sec
 //!                          The parameter is saved into the CC3000 NVMEM. 
-//!	                         The default value on CC3000 is 60 seconds.
+//!                           The default value on CC3000 is 60 seconds.
 //!
 //!  @return       return on success 0, otherwise error.
 //!
 //!  @brief       Set new timeout values. Function set new timeout values for: 
 //!               DHCP lease timeout, ARP  refresh timeout, keepalive event 
 //!               timeout and socket inactivity timeout 
-//!	 
+//!
 //! @note         If a parameter set to non zero value which is less than 20s,
 //!               it will be set automatically to 20s.
 //!
 //*****************************************************************************
  #ifndef CC3000_TINY_DRIVER
-extern long netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,unsigned long *aucKeepalive,	unsigned long *aucInactivity);
+extern long netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,unsigned long *aucKeepalive,  unsigned long *aucInactivity);
 #endif
 
 //*****************************************************************************
@@ -196,7 +196,7 @@ extern long netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
 //!  @return       return on success 0, otherwise error.
 //!
 //!  @brief       send ICMP ECHO_REQUEST to network hosts 
-//!	 
+//!
 //! @note         If an operation finished successfully asynchronous ping report 
 //!               event will be generated. The report structure is as defined
 //!               by structure netapp_pingreport_args_t.
@@ -218,12 +218,12 @@ extern long netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts, un
 //!  @return  On success, zero is returned. On error, -1 is returned.      
 //!
 //!  @brief   Stop any ping request.
-//!	 
+//!
 //!
 //*****************************************************************************
 
 #ifndef CC3000_TINY_DRIVER
-extern long netapp_ping_stop();
+extern long netapp_ping_stop(void);
 #endif
 //*****************************************************************************
 //
@@ -242,13 +242,13 @@ extern long netapp_ping_stop();
 //!           packets_received - echo reply, min_round_time - minimum
 //!           round time, max_round_time - max round time,
 //!           avg_round_time - average round time
-//!	 
+//!
 //! @note     When a ping operation is not active, the returned structure 
 //!           fields are 0.
 //!
 //*****************************************************************************
 #ifndef CC3000_TINY_DRIVER
-extern void netapp_ping_report();
+extern void netapp_ping_report(void);
 #endif
 
 
@@ -269,12 +269,12 @@ extern void netapp_ping_report();
 //!
 //!  @brief   Obtain the CC3000 Network interface information.
 //!           Note that the information is available only after the WLAN
-//!       	  connection was established. Calling this function before
+//!           connection was established. Calling this function before
 //!           associated, will cause non-defined values to be returned.
-//!	 
+//!
 //! @note     The function is useful for figuring out the IP Configuration of
-//!       		the device when DHCP is used and for figuring out the SSID of
-//!       		the Wireless network the device is associated with.
+//!           the device when DHCP is used and for figuring out the SSID of
+//!           the Wireless network the device is associated with.
 //!
 //*****************************************************************************
 
@@ -294,7 +294,7 @@ extern void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig );
 //*****************************************************************************
 
 #ifndef CC3000_TINY_DRIVER
-extern long netapp_arp_flush();
+extern long netapp_arp_flush(void);
 #endif
 
 
@@ -334,9 +334,9 @@ long netapp_set_debug_level(unsigned long ulLevel);
 // Mark the end of the C bindings section for C++ compilers.
 //
 //*****************************************************************************
-#ifdef	__cplusplus
+#ifdef  __cplusplus
 }
 #endif // __cplusplus
 
-#endif	// __NETAPP_H__
+#endif  // __NETAPP_H__
 

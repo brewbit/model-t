@@ -83,16 +83,16 @@ extern "C" {
 
 //----------- Socket retunr codes  -----------
 
-#define SOC_ERROR				(-1)		// error 
-#define SOC_IN_PROGRESS			(-2)		// socket in progress
+#define SOC_ERROR        (-1)    // error
+#define SOC_IN_PROGRESS      (-2)    // socket in progress
 
 //----------- Socket Options -----------
-#define  SOL_SOCKET             0xffff		//  socket level
-#define  SOCKOPT_RECV_NONBLOCK         	0	// recv non block mode, set SOCK_ON or SOCK_OFF (default block mode)
-#define  SOCKOPT_RECV_TIMEOUT			1	// optname to configure recv and recvfromtimeout
-#define  SOCKOPT_ACCEPT_NONBLOCK		2	// accept non block mode, set SOCK_ON or SOCK_OFF (default block mode)
-#define  SOCK_ON                0			// socket non-blocking mode	is enabled		
-#define  SOCK_OFF               1			// socket blocking mode is enabled
+#define  SOL_SOCKET             0xffff    //  socket level
+#define  SOCKOPT_RECV_NONBLOCK           0  // recv non block mode, set SOCK_ON or SOCK_OFF (default block mode)
+#define  SOCKOPT_RECV_TIMEOUT      1  // optname to configure recv and recvfromtimeout
+#define  SOCKOPT_ACCEPT_NONBLOCK    2  // accept non block mode, set SOCK_ON or SOCK_OFF (default block mode)
+#define  SOCK_ON                0      // socket non-blocking mode  is enabled
+#define  SOCK_OFF               1      // socket blocking mode is enabled
 
 #define  TCP_NODELAY            0x0001
 #define  TCP_BSDURGENT          0x7000
@@ -102,15 +102,16 @@ extern "C" {
 
 #define  IOCTL_SOCKET_EVENTMASK
 
-#define ENOBUFS                 55          // No buffer space available
+  // TODO this is defined as a different value in the system header errno.h
+//#define ENOBUFS                 55          // No buffer space available
 
 #define __FD_SETSIZE            32
 
 #define  ASIC_ADDR_LEN          8
-	
+
 #define NO_QUERY_RECIVED        -3
-	
-	
+
+
 typedef struct _in_addr_t
 {
     unsigned long s_addr;                   // load with inet_aton()
@@ -183,12 +184,12 @@ typedef struct
 #define ntohs                   htons
 
 // mDNS port - 5353    mDNS multicast address - 224.0.0.251 
-#define SET_mDNS_ADD(sockaddr)     	   	sockaddr.sa_data[0] = 0x14; \
-																								sockaddr.sa_data[1] = 0xe9; \
-																								sockaddr.sa_data[2] = 0xe0; \
-																								sockaddr.sa_data[3] = 0x0; \
-																								sockaddr.sa_data[4] = 0x0; \
-																								sockaddr.sa_data[5] = 0xfb; 
+#define SET_mDNS_ADD(sockaddr)            sockaddr.sa_data[0] = 0x14; \
+                                                sockaddr.sa_data[1] = 0xe9; \
+                                                sockaddr.sa_data[2] = 0xe0; \
+                                                sockaddr.sa_data[3] = 0x0; \
+                                                sockaddr.sa_data[4] = 0x0; \
+                                                sockaddr.sa_data[5] = 0xfb;
 
 
 //*****************************************************************************
@@ -250,11 +251,11 @@ extern long closesocket(long sd);
 //!                       pointed to by addr.
 //!
 //!  @return  For socket in blocking mode:
-//!				      On success, socket handle. on failure negative
-//!			      For socket in non-blocking mode:
-//!				     - On connection establishment, socket handle
-//!				     - On connection pending, SOC_IN_PROGRESS (-2)
-//!			       - On failure, SOC_ERROR	(-1)
+//!              On success, socket handle. on failure negative
+//!            For socket in non-blocking mode:
+//!             - On connection establishment, socket handle
+//!             - On connection pending, SOC_IN_PROGRESS (-2)
+//!             - On failure, SOC_ERROR  (-1)
 //!
 //!  @brief  accept a connection on a socket:
 //!          This function is used with connection-based socket types 
@@ -288,7 +289,7 @@ extern long accept(long sd, sockaddr *addr, socklen_t *addrlen);
 //!                       only AF_INET is supported.
 //!  @param[out] addrlen  contains the size of the structure pointed to by addr.
 //!
-//!  @return  	On success, zero is returned. On error, -1 is returned.
+//!  @return    On success, zero is returned. On error, -1 is returned.
 //!
 //!  @brief  assign a name to a socket
 //!          This function gives the socket the local address addr.
@@ -310,7 +311,7 @@ extern long bind(long sd, const sockaddr *addr, long addrlen);
 //!  @param[in]   sd      socket descriptor (handle)              
 //!  @param[in]  backlog  specifies the listen queue depth. On this version
 //!                       backlog is not supported.
-//!  @return  	On success, zero is returned. On error, -1 is returned.
+//!  @return    On success, zero is returned. On error, -1 is returned.
 //!
 //!  @brief  listen for connections on a socket
 //!          The willingness to accept incoming connections and a queue
@@ -336,13 +337,13 @@ extern long listen(long sd, long backlog);
 //!  @param[out]  out_ip_addr  This parameter is filled in with host IP address. 
 //!                            In case that host name is not resolved, 
 //!                            out_ip_addr is zero.                  
-//!  @return  	On success, positive is returned. On error, negative is returned
+//!  @return    On success, positive is returned. On error, negative is returned
 //!
 //!  @brief  Get host IP by name. Obtain the IP Address of machine on network, 
 //!          by its name.
 //!
 //!  @note  On this version, only blocking mode is supported. Also note that
-//!		     the function requires DNS server to be configured prior to its usage.
+//!         the function requires DNS server to be configured prior to its usage.
 //
 //*****************************************************************************
 #ifndef CC3000_TINY_DRIVER 
@@ -358,7 +359,7 @@ extern int gethostbyname(char * hostname, unsigned short usNameLen, unsigned lon
 //!  @param[in]   addr     specifies the destination addr. On this version
 //!                        only AF_INET is supported.
 //!  @param[out]  addrlen  contains the size of the structure pointed to by addr    
-//!  @return  	On success, zero is returned. On error, -1 is returned
+//!  @return    On success, zero is returned. On error, -1 is returned
 //!
 //!  @brief  initiate a connection on a socket 
 //!          Function connects the socket referred to by the socket descriptor 
@@ -394,7 +395,7 @@ extern long connect(long sd, const sockaddr *addr, long addrlen);
 //!                           timeout. The minimum timeout is 5 milliseconds,
 //!                          less than 5 milliseconds will be set
 //!                           automatically to 5 milliseconds.
-//!  @return  	On success, select() returns the number of file descriptors
+//!  @return    On success, select() returns the number of file descriptors
 //!             contained in the three returned descriptor sets (that is, the
 //!             total number of bits that are set in readfds, writefds,
 //!             exceptfds) which may be zero if the timeout expires before
@@ -429,7 +430,7 @@ extern int select(long nfds, fd_set *readsds, fd_set *writesds,
 //!  @param[in]   optname     defines the option name to Interrogate
 //!  @param[in]   optval      specifies a value for the option
 //!  @param[in]   optlen      specifies the length of the option value
-//!  @return  	On success, zero is returned. On error, -1 is returned
+//!  @return    On success, zero is returned. On error, -1 is returned
 //!
 //!  @brief  set socket options
 //!          This function manipulate the options associated with a socket.
@@ -453,15 +454,15 @@ extern int select(long nfds, fd_set *readsds, fd_set *writesds,
 //!          value is to be supplied or returned, option_value may be NULL.
 //!
 //!  @Note   On this version the following two socket options are enabled:
-//!    			 The only protocol level supported in this version
+//!           The only protocol level supported in this version
 //!          is SOL_SOCKET (level).
-//!		       1. SOCKOPT_RECV_TIMEOUT (optname)
-//!			      SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout 
+//!           1. SOCKOPT_RECV_TIMEOUT (optname)
+//!            SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout
 //!           in milliseconds.
-//!		        In that case optval should be pointer to unsigned long.
-//!		       2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on 
+//!            In that case optval should be pointer to unsigned long.
+//!           2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on
 //!           or off.
-//!		        In that case optval should be SOCK_ON or SOCK_OFF (optval).
+//!            In that case optval should be SOCK_ON or SOCK_OFF (optval).
 //!
 //!  @sa getsockopt
 //
@@ -479,7 +480,7 @@ extern int setsockopt(long sd, long level, long optname, const void *optval,
 //!  @param[in]   optname     defines the option name to Interrogate
 //!  @param[out]   optval      specifies a value for the option
 //!  @param[out]   optlen      specifies the length of the option value
-//!  @return  	On success, zero is returned. On error, -1 is returned
+//!  @return    On success, zero is returned. On error, -1 is returned
 //!
 //!  @brief  set socket options
 //!          This function manipulate the options associated with a socket.
@@ -503,15 +504,15 @@ extern int setsockopt(long sd, long level, long optname, const void *optval,
 //!          value is to be supplied or returned, option_value may be NULL.
 //!
 //!  @Note   On this version the following two socket options are enabled:
-//!    			 The only protocol level supported in this version
+//!           The only protocol level supported in this version
 //!          is SOL_SOCKET (level).
-//!		       1. SOCKOPT_RECV_TIMEOUT (optname)
-//!			      SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout 
+//!           1. SOCKOPT_RECV_TIMEOUT (optname)
+//!            SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout
 //!           in milliseconds.
-//!		        In that case optval should be pointer to unsigned long.
-//!		       2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on 
+//!            In that case optval should be pointer to unsigned long.
+//!           2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on
 //!           or off.
-//!		        In that case optval should be SOCK_ON or SOCK_OFF (optval).
+//!            In that case optval should be SOCK_ON or SOCK_OFF (optval).
 //!
 //!  @sa setsockopt
 //

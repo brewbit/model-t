@@ -48,7 +48,7 @@ extern "C" {
 #endif
 
 
-#define AES128_KEY_SIZE		16
+#define AES128_KEY_SIZE    16
 
 #ifndef CC3000_UNENCRYPTED_SMART_CONFIG
 
@@ -66,7 +66,7 @@ extern "C" {
 //!           Given AES128 key and  16 bytes plain text, cipher text of 16 bytes
 //!           is computed. The AES implementation is in mode ECB (Electronic 
 //!           Code Book). 
-//!	 
+//!
 //!
 //*****************************************************************************
 extern void aes_encrypt(unsigned char *state, unsigned char *key);
@@ -84,7 +84,7 @@ extern void aes_encrypt(unsigned char *state, unsigned char *key);
 //!           Given AES128 key and  16 bytes cipher text, plain text of 16 bytes
 //!           is computed The AES implementation is in mode ECB 
 //!           (Electronic Code Book).
-//!	 
+//!
 //!
 //*****************************************************************************
 extern void aes_decrypt(unsigned char *state, unsigned char *key);
@@ -101,7 +101,7 @@ extern void aes_decrypt(unsigned char *state, unsigned char *key);
 //!  @brief   Reads AES128 key from EEPROM
 //!           Reads the AES128 key from fileID #12 in EEPROM
 //!           returns an error if the key does not exist. 
-//!	 
+//!
 //!
 //*****************************************************************************
 extern signed long aes_read_key(unsigned char *key);
@@ -116,7 +116,7 @@ extern signed long aes_read_key(unsigned char *key);
 //!
 //!  @brief   writes AES128 key from EEPROM
 //!           Writes the AES128 key to fileID #12 in EEPROM
-//!	 
+//!
 //!
 //*****************************************************************************
 extern signed long aes_write_key(unsigned char *key);

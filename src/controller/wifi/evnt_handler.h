@@ -116,7 +116,7 @@ typedef struct _bsd_accept_return_t
 {
     long             iSocketDescriptor;
     long             iStatus;
-    sockaddr   		tSocketAddress;
+    sockaddr       tSocketAddress;
     
 } tBsdReturnParams;
 
@@ -125,26 +125,26 @@ typedef struct _bsd_read_return_t
 {
     long             iSocketDescriptor;
     long             iNumberOfBytes;
-    unsigned long	 uiFlags;
+    unsigned long   uiFlags;
 } tBsdReadReturnParams;
 
-#define BSD_RECV_FROM_FROMLEN_OFFSET	(4)
-#define BSD_RECV_FROM_FROM_OFFSET		(16)
+#define BSD_RECV_FROM_FROMLEN_OFFSET  (4)
+#define BSD_RECV_FROM_FROM_OFFSET    (16)
 
 
 typedef struct _bsd_select_return_t
 {
-    long					iStatus;
-	unsigned long 			uiRdfd;
-	unsigned long 			uiWrfd;
-	unsigned long 			uiExfd;
+    long          iStatus;
+  unsigned long       uiRdfd;
+  unsigned long       uiWrfd;
+  unsigned long       uiExfd;
 } tBsdSelectRecvParams;
 
 
 typedef struct _bsd_getsockopt_return_t
 {
-	unsigned char			ucOptValue[4];
-	char						iStatus;
+  unsigned char      ucOptValue[4];
+  char            iStatus;
 } tBsdGetSockOptReturnParams;
 
 typedef struct _bsd_gethostbyname_return_t
