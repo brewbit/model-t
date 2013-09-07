@@ -42,11 +42,6 @@ PROJECT_CSRC = \
        txn.c \
        web_api.c \
        web_api_parser.c \
-       wspr.c \
-       wspr_http.c \
-       wspr_net.c \
-       wspr_parser.c \
-       wspr_tcp.c \
        gui/button.c \
        gui/icon.c \
        gui/label.c \

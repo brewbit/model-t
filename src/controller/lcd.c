@@ -6,20 +6,11 @@
 #include "common.h"
 
 
-#define wr_low() palClearPad(GPIOA, GPIOA_TFT_WR)
-#define wr_high() palSetPad(GPIOA, GPIOA_TFT_WR)
+#define LCD_REG              (*((volatile uint16_t *) 0x60000000)) /* RS = 0 */
+#define LCD_RAM              (*((volatile uint16_t *) 0x60020000)) /* RS = 1 */
 
-#define rd_low() palClearPad(GPIOA, GPIOA_TFT_RD)
-#define rd_high() palSetPad(GPIOA, GPIOA_TFT_RD)
-
-#define rs_low() palClearPad(GPIOA, GPIOA_TFT_RS)
-#define rs_high() palSetPad(GPIOA, GPIOA_TFT_RS)
-
-#define cs_low() palClearPad(GPIOA, GPIOA_TFT_CS)
-#define cs_high() palSetPad(GPIOA, GPIOA_TFT_CS)
-
-#define rst_low() palClearPad(GPIOA, GPIOA_TFT_RST)
-#define rst_high() palSetPad(GPIOA, GPIOA_TFT_RST)
+#define rst_low() palClearPad(PORT_TFT_RST, PAD_TFT_RST)
+#define rst_high() palSetPad(PORT_TFT_RST, PAD_TFT_RST)
 
 #define swap(type, a, b) { type SWAP_tmp = a; a = b; b = SWAP_tmp; }
 
@@ -34,20 +25,12 @@ const rect_t display_rect = {
 void
 lcd_init()
 {
-  /* Initialize control pins to known state. */
-  rd_high();
-  rs_high();
-  wr_high();
-  cs_high();
-
   rst_high();
   chThdSleepMilliseconds(5);
   rst_low();
   chThdSleepMilliseconds(15);
   rst_high();
   chThdSleepMilliseconds(5);
-
-  cs_low();
 
   lcd_write_param(0xe5, 0x8000);
   lcd_write_param(0x00, 0x0001);
@@ -117,35 +100,18 @@ lcd_init()
   //-----Display on-----------------------
   lcd_write_param(0x07, 0x0173);
   chThdSleepMilliseconds(50);
-
-//  cs_high();
-}
-
-void
-lcd_write(uint16_t val)
-{
-  palWritePort(GPIOC, val);
-
-  // command the LCD to read the latched value
-  wr_low();
-  __asm__("nop");
-  __asm__("nop");
-  __asm__("nop");
-  wr_high();
 }
 
 void
 lcd_write_cmd(uint8_t cmd)
 {
-  rs_low();
-  lcd_write(cmd);
+  LCD_REG = cmd;
 }
 
 void
 lcd_write_data(uint16_t val)
 {
-  rs_high();
-  lcd_write(val);
+  LCD_RAM = val;
 }
 
 void

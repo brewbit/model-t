@@ -7,7 +7,6 @@
 #include "gui/icon.h"
 #include "gfx.h"
 #include "gui.h"
-#include "wspr_net.h"
 #include "chprintf.h"
 
 
@@ -22,7 +21,7 @@ static void wifi_screen_destroy(widget_t* w);
 static void wifi_screen_msg(msg_event_t* event);
 static void back_button_clicked(button_event_t* event);
 
-static void dispatch_wifi_status(wifi_screen_t* s, wspr_wifi_status_t* status);
+//static void dispatch_wifi_status(wifi_screen_t* s, wspr_wifi_status_t* status);
 
 
 static widget_class_t wifi_screen_widget_class = {
@@ -98,7 +97,7 @@ wifi_screen_msg(msg_event_t* event)
 
   switch (event->msg_id) {
   case MSG_WIFI_STATUS:
-    dispatch_wifi_status(s, event->msg_data);
+//    dispatch_wifi_status(s, event->msg_data);
     break;
 
   default:
@@ -106,32 +105,32 @@ wifi_screen_msg(msg_event_t* event)
   }
 }
 
-static void
-dispatch_wifi_status(wifi_screen_t* s, wspr_wifi_status_t* status)
-{
-  if (!status->configured) {
-    label_set_text(s->nwk_status1, "No network configured.");
-    label_set_text(s->nwk_status2, "Connect to AP to configure.");
-  }
-  else {
-    switch (status->state) {
-    case 0:
-      label_set_text(s->nwk_status1, "You are currently connected to:");
-      label_set_text(s->nwk_status2, status->ssid);
-      break;
-
-    case -30:
-      label_set_text(s->nwk_status1, "No networks found");
-      label_set_text(s->nwk_status2, "");
-      break;
-
-    default:
-      label_set_text(s->nwk_status1, "Unknown network status");
-      label_set_text(s->nwk_status2, "");
-      break;
-    }
-  }
-}
+//static void
+//dispatch_wifi_status(wifi_screen_t* s, wspr_wifi_status_t* status)
+//{
+//  if (!status->configured) {
+//    label_set_text(s->nwk_status1, "No network configured.");
+//    label_set_text(s->nwk_status2, "Connect to AP to configure.");
+//  }
+//  else {
+//    switch (status->state) {
+//    case 0:
+//      label_set_text(s->nwk_status1, "You are currently connected to:");
+//      label_set_text(s->nwk_status2, status->ssid);
+//      break;
+//
+//    case -30:
+//      label_set_text(s->nwk_status1, "No networks found");
+//      label_set_text(s->nwk_status2, "");
+//      break;
+//
+//    default:
+//      label_set_text(s->nwk_status1, "Unknown network status");
+//      label_set_text(s->nwk_status2, "");
+//      break;
+//    }
+//  }
+//}
 
 static void
 back_button_clicked(button_event_t* event)

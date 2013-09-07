@@ -3,7 +3,6 @@
 #include "hal.h"
 
 #include "lcd.h"
-#include "wspr.h"
 #include "image.h"
 #include "web_api.h"
 #include "touch.h"
@@ -47,7 +46,7 @@ idle_thread(void* arg)
   (void)arg;
 
   while (1) {
-    wspr_idle();
+//    wspr_idle();
     gui_idle();
     app_cfg_idle();
   }
@@ -70,7 +69,6 @@ main(void)
   gfx_init();
   touch_init();
   temp_control_init();
-  wspr_init();
   web_api_init();
   gui_init();
 //  debug_client_init();
@@ -79,9 +77,9 @@ main(void)
   gui_push_screen(home_screen);
 
   while (TRUE) {
-    palSetPad(GPIOB, GPIOB_LED1);
+    palSetPad(PORT_LED1, PAD_LED1);
     chThdSleepMilliseconds(500);
-    palClearPad(GPIOB, GPIOB_LED1);
+    palClearPad(PORT_LED1, PAD_LED1);
     chThdSleepMilliseconds(500);
   }
 }

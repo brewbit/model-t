@@ -3,8 +3,6 @@
 #include "hal.h"
 #include "debug_client.h"
 #include "message.h"
-#include "wspr_net.h"
-#include "wspr_tcp.h"
 
 
 typedef enum {
@@ -20,8 +18,8 @@ debug_client_dispatch(msg_id_t id, void* msg_data, void* user_data);
 static msg_t
 debug_client_thread(void* arg);
 
-static void
-dispatch_wifi_status(wspr_wifi_status_t* status);
+//static void
+//dispatch_wifi_status(wspr_wifi_status_t* status);
 
 static void
 on_connect(BaseChannel* tcp_channel, void* user_data);
@@ -29,7 +27,7 @@ on_connect(BaseChannel* tcp_channel, void* user_data);
 
 static BaseChannel* dbg_conn;
 static dbg_state_t dbg_state;
-static wifi_state_t wifi_state;
+//static wifi_state_t wifi_state;
 
 
 void
@@ -58,12 +56,12 @@ debug_client_thread(void* arg)
     else {
       switch (dbg_state) {
       case DBG_WAIT_NET_UP:
-        if (wifi_state == WSPR_SUCCESS)
+//        if (wifi_state == WSPR_SUCCESS)
           dbg_state = DBG_CONNECT;
         break;
 
       case DBG_CONNECT:
-        wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 35287, on_connect, NULL);
+//        wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 35287, on_connect, NULL);
 
         dbg_state = DBG_IDLE;
         break;
@@ -102,7 +100,7 @@ debug_client_dispatch(msg_id_t id, void* msg_data, void* user_data)
 
   switch (id) {
   case MSG_WIFI_STATUS:
-    dispatch_wifi_status(msg_data);
+//    dispatch_wifi_status(msg_data);
     break;
 
   default:
@@ -110,8 +108,8 @@ debug_client_dispatch(msg_id_t id, void* msg_data, void* user_data)
   }
 }
 
-static void
-dispatch_wifi_status(wspr_wifi_status_t* status)
-{
-  wifi_state = status->state;
-}
+//static void
+//dispatch_wifi_status(wspr_wifi_status_t* status)
+//{
+//  wifi_state = status->state;
+//}

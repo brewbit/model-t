@@ -4,12 +4,11 @@
 
 #include "web_api.h"
 #include "web_api_parser.h"
-#include "wspr_tcp.h"
-#include "wspr_net.h"
 #include "common.h"
 #include "message.h"
 #include "sensor.h"
 #include "crc.h"
+#include "datastream.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -28,8 +27,8 @@ web_api_thread(void* arg);
 static void
 web_api_dispatch(msg_id_t id, void* msg_data, void* user_data);
 
-static void
-dispatch_wifi_status(wspr_wifi_status_t* p);
+//static void
+//dispatch_wifi_status(wspr_wifi_status_t* p);
 
 static void
 dispatch_sensor_sample(sensor_msg_t* p);
@@ -170,7 +169,7 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* user_data)
 
   switch (id) {
   case MSG_WIFI_STATUS:
-    dispatch_wifi_status(msg_data);
+//    dispatch_wifi_status(msg_data);
     break;
 
   case MSG_SENSOR_SAMPLE:
@@ -182,16 +181,16 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* user_data)
   }
 }
 
-static void
-dispatch_wifi_status(wspr_wifi_status_t* p)
-{
-  if (state == NOT_CONNECTED &&
-      p->state == WSPR_SUCCESS) {
-    chprintf(SD_STDIO, "connecting...\r\n");
-    wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 31337, on_connect, NULL);
-    state = CONNECTING;
-  }
-}
+//static void
+//dispatch_wifi_status(wspr_wifi_status_t* p)
+//{
+//  if (state == NOT_CONNECTED &&
+//      p->state == WSPR_SUCCESS) {
+//    chprintf(SD_STDIO, "connecting...\r\n");
+//    wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 31337, on_connect, NULL);
+//    state = CONNECTING;
+//  }
+//}
 
 static void
 on_connect(BaseChannel* conn, void* user_data)

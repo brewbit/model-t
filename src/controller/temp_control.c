@@ -48,8 +48,8 @@ temp_control_init()
   inputs[SENSOR_1].port = sensor_init(SENSOR_1, SD_OW1);
   inputs[SENSOR_2].port = sensor_init(SENSOR_2, SD_OW2);
 
-  output_init(&outputs[OUTPUT_1], OUTPUT_1, GPIOB_RELAY1);
-  output_init(&outputs[OUTPUT_2], OUTPUT_2, GPIOB_RELAY2);
+  output_init(&outputs[OUTPUT_1], OUTPUT_1, PAD_RELAY1);
+  output_init(&outputs[OUTPUT_2], OUTPUT_2, PAD_RELAY2);
 
   Thread* thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, temp_control_thread, NULL);
 
@@ -88,23 +88,23 @@ output_thread(void* arg)
   cycle_delay(output->id);
 
   output->window_start_time = chTimeNow();
-  palSetPad(GPIOB, output->gpio);
+  palSetPad(GPIOC, output->gpio);
 
   while (1) {
     while (!output->sensor_active) {
-      palClearPad(GPIOB, output->gpio);
+      palClearPad(GPIOC, output->gpio);
       chThdSleepSeconds(1);
     }
 
     if ((chTimeNow() - output->window_start_time) < output->pid_control.pid_output)
       chThdSleep(1000);
     else {
-      palClearPad(GPIOB, output->gpio);
+      palClearPad(GPIOC, output->gpio);
       chThdSleep(output->window_time - output->pid_control.pid_output);
 
       /* Setup next on window */
       output->window_start_time = chTimeNow();
-      palSetPad(GPIOB, output->gpio);
+      palSetPad(GPIOC, output->gpio);
     }
   }
 

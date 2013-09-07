@@ -6,9 +6,6 @@ make_prog = $(MAKE) -f src/$(1)/$(1).mk
 controller:
 	$(call make_prog,controller)
 	
-wifi:
-	$(call make_prog,wifi)
-
 bootloader:
 	$(call make_prog,bootloader)
 
