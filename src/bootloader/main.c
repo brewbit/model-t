@@ -94,9 +94,9 @@ main(void)
   }
 
   while (TRUE) {
-    palSetPad(GPIOB, GPIOB_LED1);
+    palSetPad(PORT_LED1, PAD_LED1);
     chThdSleepMilliseconds(500);
-    palClearPad(GPIOB, GPIOB_LED1);
+    palClearPad(PORT_LED1, PAD_LED1);
     chThdSleepMilliseconds(500);
   }
 }
