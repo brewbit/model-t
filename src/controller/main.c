@@ -111,7 +111,45 @@ idle_thread(void* arg)
 
 void wlan_event(long event_type, char * data, unsigned char length )
 {
-  chprintf(SD_STDIO, "wlan_event(%d)\r\n", event_type);
+  switch (event_type) {
+    // Notification that the first-time configuration process is complete
+  case HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE:
+    break;
+
+    // Periodic keep-alive event between the CC3000 and the host microcontroller unit (MCU)
+  case HCI_EVNT_WLAN_KEEPALIVE:
+    chprintf(SD_STDIO, "wlan keepalive\r\n");
+    break;
+
+    // WLAN-connected event
+  case HCI_EVNT_WLAN_UNSOL_CONNECT:
+    chprintf(SD_STDIO, "wlan connect\r\n");
+    break;
+
+    // Notification that CC3000 device is disconnected from the access point (AP)
+  case HCI_EVNT_WLAN_UNSOL_DISCONNECT:
+    chprintf(SD_STDIO, "wlan disconnect\r\n");
+    break;
+
+    // Notification of a Dynamic Host Configuration Protocol (DHCP) state change
+  case HCI_EVNT_WLAN_UNSOL_DHCP:
+    chprintf(SD_STDIO, "wlan dhcp state change\r\n");
+    break;
+
+    // Notification that the CC3000 device finished the initialization process
+  case HCI_EVNT_WLAN_UNSOL_INIT:
+    chprintf(SD_STDIO, "wlan init complete\r\n");
+    break;
+
+  // Notification of ping results
+  case HCI_EVNT_WLAN_ASYNC_PING_REPORT:
+    chprintf(SD_STDIO, "wlan ping\r\n");
+    break;
+
+  default:
+    chprintf(SD_STDIO, "wlan_event(%d)\r\n", event_type);
+    break;
+  }
 }
 
 long wlan_read_interupt_pin()
@@ -131,7 +169,6 @@ void wlan_interrupt_disable()
 
 void write_wlan_pin(unsigned char val)
 {
-  chprintf(SD_STDIO, "write_wlan_pin(%d)\r\n", val);
   palWritePad(PORT_WIFI_EN, PAD_WIFI_EN, val);
 }
 
@@ -140,7 +177,8 @@ wlan_thread(void* arg)
 {
   wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, wlan_interrupt_enable, wlan_interrupt_disable, write_wlan_pin);
   wlan_start(0);
-  wlan_connect(WLAN_SEC_WPA2, "internets", 9, NULL, "stenretni", 9);
+  long ret = wlan_connect(WLAN_SEC_WPA2, "internets", 9, NULL, "stenretni", 9);
+  chprintf(SD_STDIO, "connect complete %d\r\n", ret);
 }
 
 int

@@ -159,9 +159,7 @@ SpiReadThread(void* arg)
   (void)arg;
 
   while (TRUE) {
-    chprintf(SD_STDIO, "Waiting for IRQ %d\r\n", chTimeNow());
     chSemWait(&irq_sem);
-    chprintf(SD_STDIO, "got it %d\r\n", chTimeNow());
 
     if (spiState == SPI_STATE_POWERUP) {
       //This means IRQ line was low call a callback of HCI Layer to inform
@@ -243,8 +241,6 @@ SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength)
 long
 SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
 {
-  chprintf(SD_STDIO, "SpiWrite(%d)\r\n", usLength);
-
   if((usLength & 1) == 0)
     usLength++;
 
@@ -464,7 +460,6 @@ SSIContReadOperation()
   if (!SpiReadDataCont()) {
     // All the data was read - finalize handling by switching to the task
     //      and calling from task Event Handler
-    chprintf(SD_STDIO, "processing data\r\n");
     SpiTriggerRxProcessing();
   }
 }
