@@ -220,11 +220,6 @@ extern volatile sSimplLinkInformation tSLInformation;
 // Prototypes for the APIs.
 //*****************************************************************************
 
-typedef void (*gcSpiHandleRx)(void *pvBuffer);
-void SpiOpen(gcSpiHandleRx pfRxHandler);
-void SpiClose(void);
-long SpiWrite(unsigned char *pUserBuffer, unsigned short usLength);
-void  SpiResumeSpi(void);
 
 //*****************************************************************************
 //

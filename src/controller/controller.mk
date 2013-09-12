@@ -43,6 +43,7 @@ PROJECT_CSRC = \
        web_api.c \
        web_api_parser.c \
        wifi/cc3000_common.c \
+       wifi/cc3000_spi.c \
        wifi/evnt_handler.c \
        wifi/hci.c \
        wifi/netapp.c \

@@ -42,7 +42,7 @@
 #include <string.h>
 #include "wlan.h"
 #include "hci.h"
-#include "spi.h"
+#include "cc3000_spi.h"
 #include "socket.h"
 #include "nvmem.h"
 #include "security.h"
@@ -250,8 +250,6 @@ void SpiReceiveHandler(void *pvBuffer)
 //!
 //
 //*****************************************************************************
-
-unsigned char wlan_tx_buffer[1500]; // TODO
 
 
 void

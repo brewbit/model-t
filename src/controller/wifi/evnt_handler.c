@@ -50,7 +50,7 @@
 #include "wlan.h"
 #include "socket.h"
 #include "netapp.h"
-#include "spi.h"
+#include "cc3000_spi.h"
 
  
 
@@ -234,7 +234,6 @@ hci_event_handler(void *pRetParams, unsigned char *from, unsigned char *fromlen)
   unsigned long retValue32;
   unsigned char * RecvParams;
   unsigned char *RetParams;
-
 
   while (1)
   {
@@ -478,7 +477,6 @@ hci_event_handler(void *pRetParams, unsigned char *from, unsigned char *fromlen)
       }
     }
   }
-
 }
 
 //*****************************************************************************
