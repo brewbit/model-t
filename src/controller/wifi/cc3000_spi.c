@@ -7,16 +7,16 @@
 
 
 #define ASSERT_CS()    do { \
+                         spiAcquireBus(&SPID2); \
                          palClearPad(PORT_WIFI_CS, PAD_WIFI_CS); \
                        } while (0)
 
-//                         spiAcquireBus(&SPID2);
 
 #define DEASSERT_CS()  do { \
                          palSetPad(PORT_WIFI_CS, PAD_WIFI_CS); \
+                         spiReleaseBus(&SPID2); \
                        } while (0)
 
-//                         spiReleaseBus(&SPID2);
 
 #define HEADERS_SIZE_EVNT       (SPI_HEADER_SIZE + 5)
 
@@ -48,9 +48,6 @@ static void
 wifi_irq_cb(EXTDriver *extp, expchannel_t channel);
 
 static void
-SpiWriteDataSynchronous(unsigned char* pUserBuffer, unsigned short usLength);
-
-static void
 SSIContReadOperation(void);
 
 static long
@@ -59,8 +56,8 @@ SpiReadDataCont(void);
 static void
 SpiTriggerRxProcessing(void);
 
-static void
-SpiIntHandler(SPIDriver *spip);
+static msg_t
+SpiReadThread(void* arg);
 
 
 
@@ -71,12 +68,13 @@ static unsigned char* txPacket;
 static unsigned short txPacketLength;
 static unsigned char* rxPacket;
 static unsigned short rxPacketLength;
+static Semaphore irq_sem;
 
 unsigned char wlan_rx_buffer[CC3000_RX_BUFFER_SIZE];
 unsigned char wlan_tx_buffer[CC3000_TX_BUFFER_SIZE];
 
 static const SPIConfig spi_cfg = {
-    .end_cb = SpiIntHandler,
+    .end_cb = NULL,
     .ssport = 0,
     .sspad = 0,
     .cr1 = SPI_CR1_CPHA
@@ -136,6 +134,8 @@ SpiOpen(gcSpiHandleRx pfRxHandler)
 
   spiStart(&SPID2, &spi_cfg);
 
+  chSemInit(&irq_sem, 0);
+
 
 
   spiState = SPI_STATE_POWERUP;
@@ -149,11 +149,48 @@ SpiOpen(gcSpiHandleRx pfRxHandler)
 
   // Enable interrupt on WLAN IRQ pin
   tSLInformation.WlanInterruptEnable();
+
+  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, SpiReadThread, NULL);
 }
 
-void SpiPoll()
+static msg_t
+SpiReadThread(void* arg)
 {
-  chprintf(SD_STDIO, "spiState = %d\r\n", spiState);
+  (void)arg;
+
+  while (TRUE) {
+    chprintf(SD_STDIO, "Waiting for IRQ %d\r\n", chTimeNow());
+    chSemWait(&irq_sem);
+    chprintf(SD_STDIO, "got it %d\r\n", chTimeNow());
+
+    if (spiState == SPI_STATE_POWERUP) {
+      //This means IRQ line was low call a callback of HCI Layer to inform
+      //on event
+      spiState = SPI_STATE_INITIALIZED;
+    }
+    else if (spiState == SPI_STATE_IDLE) {
+      spiState = SPI_STATE_READ_IRQ;
+
+      /* IRQ line goes down - we are start reception */
+      ASSERT_CS();
+
+      // Wait for TX/RX Compete which will come as DMA interrupt
+      spiExchange(&SPID2, 10, tSpiReadHeader, rxPacket);
+
+      spiState = SPI_STATE_READ_EOT;
+
+      SSIContReadOperation();
+    }
+    else if (spiState == SPI_STATE_WRITE_IRQ) {
+      spiSend(&SPID2, txPacketLength, txPacket);
+
+      spiState = SPI_STATE_IDLE;
+
+      DEASSERT_CS();
+    }
+  }
+
+  return 0;
 }
 
 //*****************************************************************************
@@ -177,11 +214,11 @@ SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength)
   chThdSleepMicroseconds(50);
 
   // SPI writes first 4 bytes of data
-  SpiWriteDataSynchronous(ucBuf, 4);
+  spiSend(&SPID2, 4, ucBuf);
 
   chThdSleepMicroseconds(50);
 
-  SpiWriteDataSynchronous(ucBuf + 4, usLength - 4);
+  spiSend(&SPID2, usLength - 4, ucBuf + 4);
 
   // From this point on - operate in a regular way
   spiState = SPI_STATE_IDLE;
@@ -249,7 +286,7 @@ SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
 
     // check for a missing interrupt between the CS assertion and enabling back the interrupts
     if (tSLInformation.ReadWlanInterruptPin() == 0) {
-      SpiWriteDataSynchronous(pUserBuffer, usLength);
+      spiSend(&SPID2, usLength, pUserBuffer);
 
       spiState = SPI_STATE_IDLE;
 
@@ -266,27 +303,6 @@ SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
 
 //*****************************************************************************
 //
-//!  SpiWriteDataSynchronous
-//!
-//!  @param  data  buffer to write
-//!  @param  size  buffer's size
-//!
-//!  @return none
-//!
-//!  @brief  Spi write operation
-//
-//*****************************************************************************
-static void
-SpiWriteDataSynchronous(unsigned char* pUserBuffer, unsigned short usLength)
-{
-  chSysLock();
-  spiStartSendI(&SPID2, usLength, pUserBuffer);
-  _spi_wait_s(&SPID2);
-  chSysUnlock();
-}
-
-//*****************************************************************************
-//
 //!  SpiReadDataCont
 //!
 //!  @param  None
@@ -297,8 +313,8 @@ SpiWriteDataSynchronous(unsigned char* pUserBuffer, unsigned short usLength)
 //!              it - continues reading the packet
 //
 //*****************************************************************************
-static long
-SpiReadDataCont()
+long
+SpiReadDataCont(void)
 {
   long data_to_recv;
   unsigned char *evnt_buff, type;
@@ -306,25 +322,26 @@ SpiReadDataCont()
   //determine what type of packet we have
   evnt_buff =  rxPacket;
   data_to_recv = 0;
-  STREAM_TO_UINT8((char *)(evnt_buff + SPI_HEADER_SIZE), HCI_PACKET_TYPE_OFFSET, type);
+  STREAM_TO_UINT8((char *)(evnt_buff + SPI_HEADER_SIZE), HCI_PACKET_TYPE_OFFSET,
+      type);
 
-  switch(type) {
+  switch(type)
+  {
   case HCI_TYPE_DATA:
-    STREAM_TO_UINT16((char *)(evnt_buff + SPI_HEADER_SIZE), HCI_DATA_LENGTH_OFFSET, data_to_recv);
-
     // We need to read the rest of data..
+    STREAM_TO_UINT16((char *)(evnt_buff + SPI_HEADER_SIZE),
+        HCI_DATA_LENGTH_OFFSET, data_to_recv);
     if (!((HEADERS_SIZE_EVNT + data_to_recv) & 1))
       data_to_recv++;
 
     if (data_to_recv)
-      spiStartReceiveI(&SPID2, data_to_recv, evnt_buff + 10);
-
-    spiState = SPI_STATE_READ_EOT;
+      spiReceive(&SPID2, data_to_recv, evnt_buff + 10);
     break;
 
   case HCI_TYPE_EVNT:
     // Calculate the rest length of the data
-    STREAM_TO_UINT8((char *)(evnt_buff + SPI_HEADER_SIZE), HCI_EVENT_LENGTH_OFFSET, data_to_recv);
+    STREAM_TO_UINT8((char *)(evnt_buff + SPI_HEADER_SIZE),
+        HCI_EVENT_LENGTH_OFFSET, data_to_recv);
     data_to_recv -= 1;
 
     // Add padding byte if needed
@@ -332,13 +349,13 @@ SpiReadDataCont()
       data_to_recv++;
 
     if (data_to_recv)
-      spiStartReceiveI(&SPID2, data_to_recv, evnt_buff + 10);
+      spiReceive(&SPID2, data_to_recv, evnt_buff + 10);
 
     spiState = SPI_STATE_READ_EOT;
     break;
   }
 
-  return data_to_recv;
+  return 0;
 }
 
 //*****************************************************************************
@@ -424,82 +441,9 @@ wifi_irq_cb(EXTDriver *extp, expchannel_t channel)
   (void)extp;
   (void)channel;
 
-  if (spiState == SPI_STATE_POWERUP) {
-    //This means IRQ line was low call a callback of HCI Layer to inform
-    //on event
-    spiState = SPI_STATE_INITIALIZED;
-  }
-  else if (spiState == SPI_STATE_IDLE) {
-    spiState = SPI_STATE_READ_IRQ;
-
-    /* IRQ line goes down - we are start reception */
-    ASSERT_CS();
-
-    // Start header read
-    chSysLockFromIsr();
-    spiStartExchangeI(&SPID2, 10, tSpiReadHeader, rxPacket);
-    chSysUnlockFromIsr();
-  }
-  else if (spiState == SPI_STATE_WRITE_IRQ) {
-    spiState = SPI_STATE_WRITE_EOT;
-
-    chSysLockFromIsr();
-    spiStartSendI(&SPID2, txPacketLength, txPacket);
-    chSysUnlockFromIsr();
-  }
-}
-
-//*****************************************************************************
-//
-//! SpiIntHandler
-//!
-//! @param  none
-//!
-//! @return none
-//!
-//! @brief  SSI interrupt handler. Get command/data packet from the external
-//!         WLAN device and pass it through the UART to the PC
-//
-//*****************************************************************************
-static void
-SpiIntHandler(SPIDriver *spip)
-{
-  (void)spip;
-
-  unsigned short data_to_recv;
-  unsigned char *evnt_buff;
-  evnt_buff =  rxPacket;
-  data_to_recv = 0;
-  if (spiState == SPI_STATE_READ_IRQ) {
-    SSIContReadOperation();
-  }
-  else if (spiState == SPI_STATE_READ_FIRST_PORTION) {
-    STREAM_TO_UINT16((char *)(evnt_buff + SPI_HEADER_SIZE), HCI_DATA_LENGTH_OFFSET, data_to_recv);
-
-    if (!((HEADERS_SIZE_EVNT + data_to_recv) & 1)) {
-      data_to_recv++;
-    }
-
-    chSysLockFromIsr();
-    spiStartExchangeI(&SPID2, data_to_recv, tSpiReadHeader, rxPacket + 10);
-    chSysUnlockFromIsr();
-
-    spiState = SPI_STATE_READ_EOT;
-  }
-  else if (spiState == SPI_STATE_READ_EOT) {
-    SpiTriggerRxProcessing();
-  }
-  else if (spiState == SPI_STATE_WRITE_EOT) {
-    DEASSERT_CS();
-    spiState = SPI_STATE_IDLE;
-  }
-  else if (spiState == SPI_STATE_WRITE_FIRST_PORTION) {
-    spiState = SPI_STATE_WRITE_EOT;
-
-    chSysLockFromIsr();
-    spiStartSendI(&SPID2, txPacketLength, txPacket);
-    chSysUnlockFromIsr();
-  }
+  chSysLockFromIsr();
+  chSemSignalI(&irq_sem);
+  chSysUnlockFromIsr();
 }
 
 //*****************************************************************************
@@ -520,6 +464,7 @@ SSIContReadOperation()
   if (!SpiReadDataCont()) {
     // All the data was read - finalize handling by switching to the task
     //      and calling from task Event Handler
+    chprintf(SD_STDIO, "processing data\r\n");
     SpiTriggerRxProcessing();
   }
 }

@@ -73,12 +73,6 @@ unsigned char profileArray[SMART_CONFIG_PROFILE_SIZE];
 #define SL_PATCHES_REQUEST_FORCE_NONE  (2)
 
 
-#define      WLAN_SEC_UNSEC (0)
-#define      WLAN_SEC_WEP  (1)
-#define      WLAN_SEC_WPA  (2)
-#define      WLAN_SEC_WPA2  (3)
-
-
 #define WLAN_SL_INIT_START_PARAMS_LEN      (1)
 #define WLAN_PATCH_PARAMS_LENGTH        (8)
 #define WLAN_SET_CONNECTION_POLICY_PARAMS_LEN  (12)
@@ -376,7 +370,7 @@ wlan_stop(void)
   
 #ifndef CC3000_TINY_DRIVER
 long
-wlan_connect(unsigned long ulSecType, char *ssid, long ssid_len,
+wlan_connect(WlanSecurityType secType, char *ssid, long ssid_len,
              unsigned char *bssid, unsigned char *key, long key_len)
 {
   long ret;
@@ -391,7 +385,7 @@ wlan_connect(unsigned long ulSecType, char *ssid, long ssid_len,
   // Fill in command buffer
   args = UINT32_TO_STREAM(args, 0x0000001c);
   args = UINT32_TO_STREAM(args, ssid_len);
-  args = UINT32_TO_STREAM(args, ulSecType);
+  args = UINT32_TO_STREAM(args, secType);
   args = UINT32_TO_STREAM(args, 0x00000010 + ssid_len);
   args = UINT32_TO_STREAM(args, key_len);
   args = UINT16_TO_STREAM(args, 0);

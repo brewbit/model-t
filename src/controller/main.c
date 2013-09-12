@@ -111,7 +111,7 @@ idle_thread(void* arg)
 
 void wlan_event(long event_type, char * data, unsigned char length )
 {
-//  chprintf(SD_STDIO, "wlan_event(%d)\r\n", event_type);
+  chprintf(SD_STDIO, "wlan_event(%d)\r\n", event_type);
 }
 
 long wlan_read_interupt_pin()
@@ -131,6 +131,7 @@ void wlan_interrupt_disable()
 
 void write_wlan_pin(unsigned char val)
 {
+  chprintf(SD_STDIO, "write_wlan_pin(%d)\r\n", val);
   palWritePad(PORT_WIFI_EN, PAD_WIFI_EN, val);
 }
 
@@ -139,6 +140,7 @@ wlan_thread(void* arg)
 {
   wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, wlan_interrupt_enable, wlan_interrupt_disable, write_wlan_pin);
   wlan_start(0);
+  wlan_connect(WLAN_SEC_WPA2, "internets", 9, NULL, "stenretni", 9);
 }
 
 int
