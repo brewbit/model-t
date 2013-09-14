@@ -166,7 +166,11 @@ msg_t
 wlan_thread(void* arg)
 {
   wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, write_wlan_pin);
+  chprintf(SD_STDIO, "stopping...\r\n");
+  wlan_stop();
+  chprintf(SD_STDIO, "starting...\r\n");
   wlan_start(0);
+  chprintf(SD_STDIO, "connecting...\r\n");
   long ret = wlan_connect(WLAN_SEC_WPA2, "internets", 9, NULL, "stenretni", 9);
   chprintf(SD_STDIO, "connect complete %d\r\n", ret);
 }

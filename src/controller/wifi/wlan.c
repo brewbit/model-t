@@ -39,6 +39,8 @@
 //! @{
 //
 //*****************************************************************************
+#include "ch.h"
+#include "hal.h"
 #include <string.h>
 #include "wlan.h"
 #include "hci.h"
@@ -241,9 +243,6 @@ void SpiReceiveHandler(void *pvBuffer)
 void
 wlan_start(unsigned short usPatchesAvailableAtHost)
 {
-
-  unsigned long ulSpiIRQState;
-
   tSLInformation.NumberOfSentPackets = 0;
   tSLInformation.NumberOfReleasedPackets = 0;
   tSLInformation.usRxEventOpcode = 0;
@@ -261,30 +260,8 @@ wlan_start(unsigned short usPatchesAvailableAtHost)
   // init spi
   SpiOpen(SpiReceiveHandler);
 
-  // Check the IRQ line
-  ulSpiIRQState = tSLInformation.ReadWlanInterruptPin();
-
   // ASIC 1273 chip enable: toggle WLAN EN line
   tSLInformation.WriteWlanPin( WLAN_ENABLE );
-
-  if (ulSpiIRQState)
-  {
-    // wait till the IRQ line goes low
-    while(tSLInformation.ReadWlanInterruptPin() != 0)
-    {
-    }
-  }
-  else
-  {
-    // wait till the IRQ line goes high and than low
-    while(tSLInformation.ReadWlanInterruptPin() == 0)
-    {
-    }
-
-    while(tSLInformation.ReadWlanInterruptPin() != 0)
-    {
-    }
-  }
 
   SimpleLink_Init_Start(usPatchesAvailableAtHost);
 
@@ -316,14 +293,10 @@ wlan_stop(void)
 
   // Wait till IRQ line goes high...
   while(tSLInformation.ReadWlanInterruptPin() == 0)
-  {
-  }
+    chThdSleepMilliseconds(10);
 
   // Free the used by WLAN Driver memory
-  if (tSLInformation.pucTxCommandBuffer)
-  {
-    tSLInformation.pucTxCommandBuffer = 0;
-  }
+  tSLInformation.pucTxCommandBuffer = NULL;
 
   SpiClose();
 }

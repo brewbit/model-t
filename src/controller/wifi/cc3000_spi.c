@@ -107,7 +107,8 @@ SpiClose(void)
   rxPacket = NULL;
 
   // Disable Interrupt
-  extChannelDisable(&EXTD1, 12);
+  if (EXTD1.state == EXT_ACTIVE)
+    extChannelDisable(&EXTD1, 12);
 }
 
 //*****************************************************************************
