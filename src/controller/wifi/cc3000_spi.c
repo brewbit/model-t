@@ -33,17 +33,13 @@
 
 typedef enum {
   SPI_STATE_POWERUP,
-  SPI_STATE_INITIALIZED,
   SPI_STATE_IDLE,
-  SPI_STATE_WRITE_IRQ,
+  SPI_STATE_WRITE,
 } spi_state_t;
 
 
 static void
 wifi_irq_cb(EXTDriver *extp, expchannel_t channel);
-
-static void
-SSIContReadOperation(void);
 
 static void
 SpiReadDataCont(void);
@@ -54,6 +50,9 @@ SpiTriggerRxProcessing(void);
 static msg_t
 SpiReadThread(void* arg);
 
+static void
+SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength);
+
 
 
 
@@ -63,7 +62,9 @@ static unsigned char* txPacket;
 static unsigned short txPacketLength;
 static unsigned char* rxPacket;
 static unsigned short rxPacketLength;
-static Semaphore irq_sem;
+static Semaphore sem_init;
+static Semaphore sem_read;
+static Semaphore sem_write;
 
 unsigned char wlan_rx_buffer[CC3000_RX_BUFFER_SIZE];
 unsigned char wlan_tx_buffer[CC3000_TX_BUFFER_SIZE];
@@ -129,9 +130,9 @@ SpiOpen(gcSpiHandleRx pfRxHandler)
 
   spiStart(&SPID2, &spi_cfg);
 
-  chSemInit(&irq_sem, 0);
-
-
+  chSemInit(&sem_init, 0);
+  chSemInit(&sem_read, 0);
+  chSemInit(&sem_write, 0);
 
   spiState = SPI_STATE_POWERUP;
   SPIRxHandler = pfRxHandler;
@@ -154,28 +155,19 @@ SpiReadThread(void* arg)
   (void)arg;
 
   while (TRUE) {
-    chSemWait(&irq_sem);
+    chSemWait(&sem_read);
 
-    if (spiState == SPI_STATE_POWERUP) {
-      //This means IRQ line was low call a callback of HCI Layer to inform
-      //on event
-      spiState = SPI_STATE_INITIALIZED;
-    }
-    else if (spiState == SPI_STATE_IDLE) {
-      /* IRQ line goes down - we are start reception */
-      ASSERT_CS();
+    /* IRQ line goes down - we are start reception */
+    ASSERT_CS();
 
-      spiExchange(&SPID2, 10, tSpiReadHeader, rxPacket);
+    spiExchange(&SPID2, 10, tSpiReadHeader, rxPacket);
 
-      SSIContReadOperation();
-    }
-    else if (spiState == SPI_STATE_WRITE_IRQ) {
-      spiSend(&SPID2, txPacketLength, txPacket);
+    // The header was read - continue with  the payload read
+    SpiReadDataCont();
 
-      spiState = SPI_STATE_IDLE;
-
-      DEASSERT_CS();
-    }
+    // All the data was read - finalize handling by switching to the task
+    // and calling from task Event Handler
+    SpiTriggerRxProcessing();
   }
 
   return 0;
@@ -193,7 +185,7 @@ SpiReadThread(void* arg)
 //!  @brief  enter point for first write flow
 //
 //*****************************************************************************
-long
+static void
 SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength)
 {
   // workaround for first transaction
@@ -212,8 +204,6 @@ SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength)
   spiState = SPI_STATE_IDLE;
 
   DEASSERT_CS();
-
-  return 0;
 }
 
 //*****************************************************************************
@@ -228,7 +218,7 @@ SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength)
 //!  @brief  Spi write operation
 //
 //*****************************************************************************
-long
+void
 SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
 {
   if((usLength & 1) == 0)
@@ -243,48 +233,30 @@ SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
   usLength += SPI_HEADER_SIZE;
 
   if (spiState == SPI_STATE_POWERUP) {
-    while (spiState != SPI_STATE_INITIALIZED);
-  }
+    chSemWait(&sem_init);
 
-  if (spiState == SPI_STATE_INITIALIZED) {
     // This is time for first TX/RX transactions over SPI: the IRQ is down -
     // so need to send read buffer size command
     SpiFirstWrite(pUserBuffer, usLength);
   }
   else {
-    // We need to prevent here race that can occur in case 2 back to back
-    // packets are sent to the  device, so the state will move to IDLE and once
-    //again to not IDLE due to IRQ
-    tSLInformation.WlanInterruptDisable();
-
-    while (spiState != SPI_STATE_IDLE);
-
-    spiState = SPI_STATE_WRITE_IRQ;
+    spiState = SPI_STATE_WRITE;
     txPacket = pUserBuffer;
     txPacketLength = usLength;
 
-    // Assert the CS line and wait till SSI IRQ line is active and then
-    // initialize write operation
+    // Assert the CS line
     ASSERT_CS();
 
-    // Re-enable IRQ - if it was not disabled - this is not a problem...
-    tSLInformation.WlanInterruptEnable();
+    // Wait for the CC3000 to respond by asserting the IRQ line
+    chSemWait(&sem_write);
 
-    // check for a missing interrupt between the CS assertion and enabling back the interrupts
-    if (tSLInformation.ReadWlanInterruptPin() == 0) {
-      spiSend(&SPID2, usLength, pUserBuffer);
+    // Commence write operation
+    spiSend(&SPID2, usLength, pUserBuffer);
 
-      spiState = SPI_STATE_IDLE;
+    spiState = SPI_STATE_IDLE;
 
-      DEASSERT_CS();
-    }
+    DEASSERT_CS();
   }
-
-  // Due to the fact that we are currently implementing a blocking situation
-  // here we will wait till end of transaction
-  while (SPI_STATE_IDLE != spiState);
-
-  return 0;
 }
 
 //*****************************************************************************
@@ -353,7 +325,6 @@ SpiReadDataCont(void)
 void
 SpiPauseSpi(void)
 {
-  //SPI_IRQ_IE &= ~SPI_IRQ_PIN;
 }
 
 //*****************************************************************************
@@ -423,28 +394,23 @@ wifi_irq_cb(EXTDriver *extp, expchannel_t channel)
   (void)channel;
 
   chSysLockFromIsr();
-  chSemSignalI(&irq_sem);
+
+  switch (spiState) {
+  case SPI_STATE_POWERUP:
+    chSemSignalI(&sem_init);
+    break;
+
+  case SPI_STATE_IDLE:
+    chSemSignalI(&sem_read);
+    break;
+
+  case SPI_STATE_WRITE:
+    chSemSignalI(&sem_write);
+    break;
+
+  default:
+    break;
+  }
+
   chSysUnlockFromIsr();
-}
-
-//*****************************************************************************
-//
-//! SSIContReadOperation
-//!
-//!  @param  none
-//!
-//!  @return none
-//!
-//!  @brief  SPI read operation
-//
-//*****************************************************************************
-static void
-SSIContReadOperation()
-{
-  // The header was read - continue with  the payload read
-  SpiReadDataCont();
-
-  // All the data was read - finalize handling by switching to the task
-  //      and calling from task Event Handler
-  SpiTriggerRxProcessing();
 }
