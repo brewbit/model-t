@@ -183,7 +183,7 @@ void wlan_init(tWlanCB               sWlanCB,
   tSLInformation.WriteWlanPin = sWriteWlanPin;
 
   // init asynchronous events callback
-  tSLInformation.sWlanCB= sWlanCB;
+  tSLInformation.sWlanCB = sWlanCB;
 
   // By default TX Complete events are routed to host too
   tSLInformation.InformHostOnTxComplete = 1;
@@ -205,8 +205,8 @@ void wlan_init(tWlanCB               sWlanCB,
 //*****************************************************************************
 void SpiReceiveHandler(void *pvBuffer)
 {
-  tSLInformation.usEventOrDataReceived = 1;
   tSLInformation.pucReceivedData = (unsigned char   *)pvBuffer;
+  chSemSignal(&tSLInformation.sem_recv);
 
   hci_unsolicited_event_handler();
 }
@@ -251,8 +251,9 @@ wlan_start(unsigned short usPatchesAvailableAtHost)
   tSLInformation.usBufferSize = 0;
   tSLInformation.usRxDataPending = 0;
   tSLInformation.slTransmitDataError = 0;
-  tSLInformation.usEventOrDataReceived = 0;
   tSLInformation.pucReceivedData = 0;
+
+  chSemInit(&tSLInformation.sem_recv, 0);
 
   // Allocate the memory for the RX/TX data transactions
   tSLInformation.pucTxCommandBuffer = (unsigned char *)wlan_tx_buffer;

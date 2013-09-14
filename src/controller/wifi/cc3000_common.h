@@ -38,6 +38,8 @@
 //******************************************************************************
 // Include files
 //******************************************************************************
+#include "ch.h"
+#include "hal.h"
 #include <stdlib.h>
 #include <errno.h>
 #include <stdint.h>
@@ -183,8 +185,8 @@ typedef void (*tWriteWlanPin)(unsigned char val);
 
 typedef struct
 {
+  Semaphore        sem_recv;
   unsigned short   usRxEventOpcode;
-  unsigned short   usEventOrDataReceived;
   unsigned char   *pucReceivedData;
   unsigned char   *pucTxCommandBuffer;
 
