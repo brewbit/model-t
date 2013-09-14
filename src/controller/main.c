@@ -16,6 +16,7 @@
 #include "debug_client.h"
 #include "wifi/wlan.h"
 #include "wifi/evnt_handler.h"
+#include "wifi/nvmem.h"
 
 void NMIVector(void)
 {
@@ -134,6 +135,13 @@ void wlan_event(long event_type, char * data, unsigned char length )
     // Notification of a Dynamic Host Configuration Protocol (DHCP) state change
   case HCI_EVNT_WLAN_UNSOL_DHCP:
     chprintf(SD_STDIO, "wlan dhcp state change\r\n");
+
+    chprintf(SD_STDIO, "  Status: %d\r\n", data[20]);
+    chprintf(SD_STDIO, "  IP Address: %d.%d.%d.%d\r\n", data[3], data[2], data[1], data[0]);
+    chprintf(SD_STDIO, "  Subnet Mask: %d.%d.%d.%d\r\n", data[7], data[6], data[5], data[4]);
+    chprintf(SD_STDIO, "  Default Gateway: %d.%d.%d.%d\r\n", data[11], data[10], data[9], data[8]);
+    chprintf(SD_STDIO, "  DHCP Server: %d.%d.%d.%d\r\n", data[15], data[14], data[13], data[12]);
+    chprintf(SD_STDIO, "  DNS Server: %d.%d.%d.%d\r\n", data[19], data[18], data[17], data[16]);
     break;
 
     // Notification that the CC3000 device finished the initialization process
@@ -168,8 +176,15 @@ wlan_thread(void* arg)
   wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, write_wlan_pin);
   chprintf(SD_STDIO, "stopping...\r\n");
   wlan_stop();
+
   chprintf(SD_STDIO, "starting...\r\n");
   wlan_start(0);
+
+  chprintf(SD_STDIO, "getting MAC... ");
+  unsigned char mac[6];
+  nvmem_get_mac_address(mac);
+  chprintf(SD_STDIO, "%02x:%02x:%02x:%02x:%02x:%02x\r\n", mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
+
   chprintf(SD_STDIO, "connecting... ");
   long ret = wlan_connect(WLAN_SEC_WPA2, "internets", 9, NULL, "stenretni", 9);
   chprintf(SD_STDIO, "%d\r\n", ret);
