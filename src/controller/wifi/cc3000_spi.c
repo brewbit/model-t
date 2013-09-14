@@ -36,11 +36,6 @@ typedef enum {
   SPI_STATE_INITIALIZED,
   SPI_STATE_IDLE,
   SPI_STATE_WRITE_IRQ,
-  SPI_STATE_WRITE_FIRST_PORTION,
-  SPI_STATE_WRITE_EOT,
-  SPI_STATE_READ_IRQ,
-  SPI_STATE_READ_FIRST_PORTION,
-  SPI_STATE_READ_EOT,
 } spi_state_t;
 
 
@@ -50,7 +45,7 @@ wifi_irq_cb(EXTDriver *extp, expchannel_t channel);
 static void
 SSIContReadOperation(void);
 
-static long
+static void
 SpiReadDataCont(void);
 
 static void
@@ -167,15 +162,10 @@ SpiReadThread(void* arg)
       spiState = SPI_STATE_INITIALIZED;
     }
     else if (spiState == SPI_STATE_IDLE) {
-      spiState = SPI_STATE_READ_IRQ;
-
       /* IRQ line goes down - we are start reception */
       ASSERT_CS();
 
-      // Wait for TX/RX Compete which will come as DMA interrupt
       spiExchange(&SPID2, 10, tSpiReadHeader, rxPacket);
-
-      spiState = SPI_STATE_READ_EOT;
 
       SSIContReadOperation();
     }
@@ -309,7 +299,7 @@ SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
 //!              it - continues reading the packet
 //
 //*****************************************************************************
-long
+static void
 SpiReadDataCont(void)
 {
   long data_to_recv;
@@ -321,8 +311,7 @@ SpiReadDataCont(void)
   STREAM_TO_UINT8((char *)(evnt_buff + SPI_HEADER_SIZE), HCI_PACKET_TYPE_OFFSET,
       type);
 
-  switch(type)
-  {
+  switch(type) {
   case HCI_TYPE_DATA:
     // We need to read the rest of data..
     STREAM_TO_UINT16((char *)(evnt_buff + SPI_HEADER_SIZE),
@@ -346,12 +335,8 @@ SpiReadDataCont(void)
 
     if (data_to_recv)
       spiReceive(&SPID2, data_to_recv, evnt_buff + 10);
-
-    spiState = SPI_STATE_READ_EOT;
     break;
   }
-
-  return 0;
 }
 
 //*****************************************************************************
@@ -457,9 +442,9 @@ static void
 SSIContReadOperation()
 {
   // The header was read - continue with  the payload read
-  if (!SpiReadDataCont()) {
-    // All the data was read - finalize handling by switching to the task
-    //      and calling from task Event Handler
-    SpiTriggerRxProcessing();
-  }
+  SpiReadDataCont();
+
+  // All the data was read - finalize handling by switching to the task
+  //      and calling from task Event Handler
+  SpiTriggerRxProcessing();
 }
