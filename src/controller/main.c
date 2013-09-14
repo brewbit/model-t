@@ -157,16 +157,6 @@ long wlan_read_interupt_pin()
   return palReadPad(PORT_WIFI_IRQ, PAD_WIFI_IRQ);
 }
 
-void wlan_interrupt_enable()
-{
-  extChannelEnable(&EXTD1, 12);
-}
-
-void wlan_interrupt_disable()
-{
-  extChannelDisable(&EXTD1, 12);
-}
-
 void write_wlan_pin(unsigned char val)
 {
   palWritePad(PORT_WIFI_EN, PAD_WIFI_EN, val);
@@ -175,7 +165,7 @@ void write_wlan_pin(unsigned char val)
 msg_t
 wlan_thread(void* arg)
 {
-  wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, wlan_interrupt_enable, wlan_interrupt_disable, write_wlan_pin);
+  wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, write_wlan_pin);
   wlan_start(0);
   long ret = wlan_connect(WLAN_SEC_WPA2, "internets", 9, NULL, "stenretni", 9);
   chprintf(SD_STDIO, "connect complete %d\r\n", ret);

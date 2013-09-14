@@ -179,10 +179,6 @@ typedef void (*tWlanCB)(long event_type, char * data, unsigned char length );
 
 typedef long (*tWlanReadInteruptPin)(void);
 
-typedef void (*tWlanInterruptEnable)(void);
-
-typedef void (*tWlanInterruptDisable)(void);
-
 typedef void (*tWriteWlanPin)(unsigned char val);
 
 typedef struct
@@ -196,10 +192,8 @@ typedef struct
   tDriverPatches     sDriverPatches;
   tBootLoaderPatches   sBootLoaderPatches;
   tWlanCB         sWlanCB;
-    tWlanReadInteruptPin  ReadWlanInterruptPin;
-    tWlanInterruptEnable  WlanInterruptEnable;
-    tWlanInterruptDisable WlanInterruptDisable;
-    tWriteWlanPin         WriteWlanPin;
+  tWlanReadInteruptPin  ReadWlanInterruptPin;
+  tWriteWlanPin         WriteWlanPin;
 
   signed long     slTransmitDataError;
   unsigned short   usNumberOfFreeBuffers;

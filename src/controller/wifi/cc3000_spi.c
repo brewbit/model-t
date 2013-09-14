@@ -106,8 +106,8 @@ SpiClose(void)
 {
   rxPacket = NULL;
 
-  //      Disable Interrupt
-  tSLInformation.WlanInterruptDisable();
+  // Disable Interrupt
+  extChannelDisable(&EXTD1, 12);
 }
 
 //*****************************************************************************
@@ -144,7 +144,7 @@ SpiOpen(gcSpiHandleRx pfRxHandler)
   wlan_tx_buffer[CC3000_TX_BUFFER_SIZE - 1] = CC3000_BUFFER_MAGIC_NUMBER;
 
   // Enable interrupt on WLAN IRQ pin
-  tSLInformation.WlanInterruptEnable();
+  extChannelEnable(&EXTD1, 12);
 
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, SpiReadThread, NULL);
 }

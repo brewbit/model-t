@@ -152,10 +152,6 @@ static void SimpleLink_Init_Start(unsigned short usPatchesAvailableAtHost)
 //!  @param    sBootLoaderPatches  0 no patch or pointer to bootloader patches
 //!  @param    sReadWlanInterruptPin    init callback. the callback read wlan 
 //!            interrupt status.
-//!  @param    sWlanInterruptEnable   init callback. the callback enable wlan 
-//!            interrupt.
-//!  @param    sWlanInterruptDisable   init callback. the callback disable wlan
-//!            interrupt.
 //!  @param    sWriteWlanPin      init callback. the callback write value 
 //!            to device pin.  
 //!
@@ -174,8 +170,6 @@ void wlan_init(tWlanCB               sWlanCB,
                tDriverPatches        sDriverPatches,
                tBootLoaderPatches    sBootLoaderPatches,
                tWlanReadInteruptPin  sReadWlanInterruptPin,
-               tWlanInterruptEnable  sWlanInterruptEnable,
-               tWlanInterruptDisable sWlanInterruptDisable,
                tWriteWlanPin         sWriteWlanPin)
 {
   tSLInformation.sFWPatches = sFWPatches;
@@ -184,8 +178,6 @@ void wlan_init(tWlanCB               sWlanCB,
 
   // init io callback
   tSLInformation.ReadWlanInterruptPin = sReadWlanInterruptPin;
-  tSLInformation.WlanInterruptEnable  = sWlanInterruptEnable;
-  tSLInformation.WlanInterruptDisable = sWlanInterruptDisable;
   tSLInformation.WriteWlanPin = sWriteWlanPin;
 
   // init asynchronous events callback

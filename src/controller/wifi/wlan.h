@@ -91,10 +91,6 @@ typedef enum {
 //!  @param    sBootLoaderPatches  0 no patch or pointer to bootloader patches
 //!  @param    sReadWlanInterruptPin    init callback. the callback read wlan 
 //!            interrupt status.
-//!  @param    sWlanInterruptEnable   init callback. the callback enable wlan 
-//!            interrupt.
-//!  @param    sWlanInterruptDisable   init callback. the callback disable wlan
-//!            interrupt.
 //!  @param    sWriteWlanPin      init callback. the callback write value 
 //!            to device pin.  
 //!
@@ -114,8 +110,6 @@ wlan_init(
     tDriverPatches        sDriverPatches,
     tBootLoaderPatches    sBootLoaderPatches,
     tWlanReadInteruptPin  sReadWlanInterruptPin,
-    tWlanInterruptEnable  sWlanInterruptEnable,
-    tWlanInterruptDisable sWlanInterruptDisable,
     tWriteWlanPin         sWriteWlanPin);
 
 
