@@ -98,8 +98,8 @@ idle_thread(void* arg)
   (void)arg;
 
   while (1) {
-//    gui_idle();
-//    app_cfg_idle();
+    gui_idle();
+    app_cfg_idle();
 
     hci_unsolicited_event_handler();
   }
@@ -187,19 +187,18 @@ main(void)
   // Disable flash chip
   palSetPad(PORT_SFLASH_CS, PAD_SFLASH_CS);
 
+  app_cfg_init();
+  gfx_init();
+  touch_init();
+  temp_control_init();
+  web_api_init();
+  gui_init();
+//  debug_client_init();
+
+  widget_t* home_screen = home_screen_create();
+  gui_push_screen(home_screen);
+
   chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
-
-//  app_cfg_init();
-//  gfx_init();
-//  touch_init();
-//  temp_control_init();
-//  web_api_init();
-//  gui_init();
-////  debug_client_init();
-//
-//  widget_t* home_screen = home_screen_create();
-//  gui_push_screen(home_screen);
-
   chThdCreateFromHeap(NULL, 2048, NORMALPRIO, wlan_thread, NULL);
 
   while (TRUE) {
