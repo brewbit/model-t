@@ -170,9 +170,47 @@ wlan_thread(void* arg)
   wlan_stop();
   chprintf(SD_STDIO, "starting...\r\n");
   wlan_start(0);
-  chprintf(SD_STDIO, "connecting...\r\n");
+  chprintf(SD_STDIO, "connecting... ");
   long ret = wlan_connect(WLAN_SEC_WPA2, "internets", 9, NULL, "stenretni", 9);
-  chprintf(SD_STDIO, "connect complete %d\r\n", ret);
+  chprintf(SD_STDIO, "%d\r\n", ret);
+
+
+  unsigned long aiIntervalList[16] = {
+      2000,
+      2000,
+      2000,
+      2000,
+      2000,
+      2000,
+      2000,
+      2000,
+      2000,
+      2000,
+      2000,
+      2000,
+      2000,
+      2000,
+      2000,
+      2000
+  };
+  chprintf(SD_STDIO, "scanning... ");
+  ret = wlan_ioctl_set_scan_params(1,
+      100,
+      100,
+      5,
+      0x7ff,
+      -110,
+      0,
+      205,
+      aiIntervalList);
+  chprintf(SD_STDIO, "%d\r\n", ret);
+
+  unsigned char res[64];
+  chprintf(SD_STDIO, "result... ");
+  wlan_ioctl_get_scan_results(0, res);
+  unsigned long count = STREAM_TO_UINT32_f(res, 0);
+  unsigned long status = STREAM_TO_UINT32_f(res, 4);
+  chprintf(SD_STDIO, "%d %d\r\n", count, status);
 }
 
 int
