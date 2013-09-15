@@ -214,19 +214,46 @@ wlan_thread(void* arg)
       100,
       100,
       5,
-      0x7ff,
+      0x1fff,
       -110,
       0,
       205,
       aiIntervalList);
   chprintf(SD_STDIO, "%d\r\n", ret);
 
-  unsigned char res[64];
-  chprintf(SD_STDIO, "result... ");
-  wlan_ioctl_get_scan_results(0, res);
-  unsigned long count = STREAM_TO_UINT32_f(res, 0);
-  unsigned long status = STREAM_TO_UINT32_f(res, 4);
-  chprintf(SD_STDIO, "%d %d\r\n", count, status);
+  while (1) {
+    unsigned char res[64];
+    chprintf(SD_STDIO, "result... ");
+    wlan_ioctl_get_scan_results(0, res);
+    unsigned long count = STREAM_TO_UINT32_f(res, 0);
+    unsigned long status = STREAM_TO_UINT32_f(res, 4);
+    uint8_t results_valid = res[8] & 0x01;
+    uint8_t rssi = res[8] >> 1;
+    uint8_t security = res[9] & 0x03;
+    uint8_t ssid_len = res[9] >> 2;
+    uint16_t timestamp = STREAM_TO_UINT16_f(res, 10);
+
+    char ssid[33];
+    memcpy(ssid, &res[12], 32);
+    ssid[32] = 0;
+
+    char bssid[7];
+    memcpy(bssid, &res[44], 6);
+    bssid[6] = 0;
+
+
+    chprintf(SD_STDIO, "scan status: %d\r\n", status);
+    chprintf(SD_STDIO, "  results left: %d\r\n", count);
+    chprintf(SD_STDIO, "  valid: %d\r\n", results_valid);
+    chprintf(SD_STDIO, "  rssi: %d\r\n", rssi);
+    chprintf(SD_STDIO, "  security: %d\r\n", security);
+    chprintf(SD_STDIO, "  ssid_len: %d\r\n", ssid_len);
+    chprintf(SD_STDIO, "  timestamp: %d\r\n", timestamp);
+    chprintf(SD_STDIO, "  ssid: %s\r\n", ssid);
+    chprintf(SD_STDIO, "  bssid: %x:%x:%x:%x:%x:%x\r\n", bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
+
+    chThdSleepSeconds(1);
+  }
 }
 
 int
