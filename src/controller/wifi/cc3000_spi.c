@@ -7,14 +7,15 @@
 
 
 #define ASSERT_CS()    do { \
-                         spiAcquireBus(&SPID2); \
-                         palClearPad(PORT_WIFI_CS, PAD_WIFI_CS); \
+                         spiAcquireBus(SPI_WLAN); \
+                         spiStart(SPI_WLAN, &wlan_spi_cfg); \
+                         spiSelect(SPI_WLAN); \
                        } while (0)
 
 
 #define DEASSERT_CS()  do { \
-                         palSetPad(PORT_WIFI_CS, PAD_WIFI_CS); \
-                         spiReleaseBus(&SPID2); \
+                         spiUnselect(SPI_WLAN); \
+                         spiReleaseBus(SPI_WLAN); \
                        } while (0)
 
 
@@ -69,10 +70,10 @@ static Semaphore sem_write;
 unsigned char wlan_rx_buffer[CC3000_RX_BUFFER_SIZE];
 unsigned char wlan_tx_buffer[CC3000_TX_BUFFER_SIZE];
 
-static const SPIConfig spi_cfg = {
+static const SPIConfig wlan_spi_cfg = {
     .end_cb = NULL,
-    .ssport = 0,
-    .sspad = 0,
+    .ssport = PORT_WIFI_CS,
+    .sspad = PAD_WIFI_CS,
     .cr1 = SPI_CR1_CPHA
 };
 
@@ -125,11 +126,7 @@ SpiClose(void)
 void
 SpiOpen(gcSpiHandleRx pfRxHandler)
 {
-  palSetPad(PORT_WIFI_CS, PAD_WIFI_CS);
-
   extStart(&EXTD1, &extcfg);
-
-  spiStart(&SPID2, &spi_cfg);
 
   chSemInit(&sem_init, 0);
   chSemInit(&sem_read, 0);
@@ -161,7 +158,7 @@ SpiReadThread(void* arg)
     /* IRQ line goes down - we are start reception */
     ASSERT_CS();
 
-    spiExchange(&SPID2, 10, tSpiReadHeader, rxPacket);
+    spiExchange(SPI_WLAN, 10, tSpiReadHeader, rxPacket);
 
     // The header was read - continue with  the payload read
     SpiReadDataCont();
@@ -195,11 +192,11 @@ SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength)
   chThdSleepMicroseconds(50);
 
   // SPI writes first 4 bytes of data
-  spiSend(&SPID2, 4, ucBuf);
+  spiSend(SPI_WLAN, 4, ucBuf);
 
   chThdSleepMicroseconds(50);
 
-  spiSend(&SPID2, usLength - 4, ucBuf + 4);
+  spiSend(SPI_WLAN, usLength - 4, ucBuf + 4);
 
   // From this point on - operate in a regular way
   spiState = SPI_STATE_IDLE;
@@ -252,7 +249,7 @@ SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
     chSemWait(&sem_write);
 
     // Commence write operation
-    spiSend(&SPID2, usLength, pUserBuffer);
+    spiSend(SPI_WLAN, usLength, pUserBuffer);
 
     spiState = SPI_STATE_IDLE;
 
@@ -293,7 +290,7 @@ SpiReadDataCont(void)
       data_to_recv++;
 
     if (data_to_recv)
-      spiReceive(&SPID2, data_to_recv, evnt_buff + 10);
+      spiReceive(SPI_WLAN, data_to_recv, evnt_buff + 10);
     break;
 
   case HCI_TYPE_EVNT:
@@ -307,7 +304,7 @@ SpiReadDataCont(void)
       data_to_recv++;
 
     if (data_to_recv)
-      spiReceive(&SPID2, data_to_recv, evnt_buff + 10);
+      spiReceive(SPI_WLAN, data_to_recv, evnt_buff + 10);
     break;
   }
 }

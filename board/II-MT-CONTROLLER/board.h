@@ -92,6 +92,12 @@
 #define SD_STDIO ((void*)&SD3)
 
 /*
+ * SPI bus assignments.
+ */
+#define SPI_FLASH (&SPID2)
+#define SPI_WLAN  (&SPID2)
+
+/*
  * I/O ports initial setup, this configuration is established soon after reset
  * in the initialization code.
  * Please refer to the STM32 Reference Manual for details.
@@ -223,7 +229,7 @@
                                      PIN_OTYPE_PUSHPULL(15))
 #define VAL_GPIOB_OSPEEDR           0xFFFFFFFF // all 100 MHz
 #define VAL_GPIOB_PUPDR             0xFFFFFFFF // all pulled-up
-#define VAL_GPIOB_ODR               0x00000000 // all low by default
+#define VAL_GPIOB_ODR               0x00001000 // all low by default except flash CS
 #define VAL_GPIOB_AFRL              (PIN_AFIO_AF(6, 7))
 #define VAL_GPIOB_AFRH              (PIN_AFIO_AF(10, 7)       | \
                                      PIN_AFIO_AF(11, 7)       | \
@@ -343,7 +349,7 @@
                                      PIN_OTYPE_PUSHPULL(15))
 #define VAL_GPIOD_OSPEEDR           0xFFFFFFFF // all 100 MHz
 #define VAL_GPIOD_PUPDR             0xFFFFFFFF // all pulled-up
-#define VAL_GPIOD_ODR               0x00000000 // all low by default
+#define VAL_GPIOD_ODR               0x00002000 // all low by default except wlan CS
 #define VAL_GPIOD_AFRL              (PIN_AFIO_AF(0, 12)  | \
                                      PIN_AFIO_AF(1, 12)  | \
                                      PIN_AFIO_AF(4, 12)  | \

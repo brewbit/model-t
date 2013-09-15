@@ -17,6 +17,7 @@
 #include "wifi/wlan.h"
 #include "wifi/evnt_handler.h"
 #include "wifi/nvmem.h"
+#include "xflash.h"
 
 void NMIVector(void)
 {
@@ -237,9 +238,6 @@ main(void)
   /* start stdout port */
   sdStart(SD_STDIO, NULL);
 
-  // Disable flash chip
-  palSetPad(PORT_SFLASH_CS, PAD_SFLASH_CS);
-
   app_cfg_init();
   gfx_init();
   touch_init();
@@ -247,6 +245,8 @@ main(void)
   web_api_init();
   gui_init();
 //  debug_client_init();
+
+  xflash_write();
 
   widget_t* home_screen = home_screen_create();
   gui_push_screen(home_screen);

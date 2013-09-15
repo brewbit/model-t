@@ -42,6 +42,7 @@ PROJECT_CSRC = \
        txn.c \
        web_api.c \
        web_api_parser.c \
+       xflash.c \
        wifi/cc3000_common.c \
        wifi/cc3000_spi.c \
        wifi/evnt_handler.c \
