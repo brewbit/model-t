@@ -17,6 +17,7 @@
 #include "wifi/wlan.h"
 #include "wifi/evnt_handler.h"
 #include "wifi/nvmem.h"
+#include "wifi/socket.h"
 #include "xflash.h"
 
 #include <string.h>
@@ -113,7 +114,7 @@ idle_thread(void* arg)
 
 #include "wifi/cc3000_common.h"
 
-static Semaphore connected;
+static int connected;
 void wlan_event(long event_type, char * data, unsigned char length )
 {
   switch (event_type) {
@@ -147,7 +148,7 @@ void wlan_event(long event_type, char * data, unsigned char length )
     chprintf(SD_STDIO, "  DHCP Server: %d.%d.%d.%d\r\n", data[15], data[14], data[13], data[12]);
     chprintf(SD_STDIO, "  DNS Server: %d.%d.%d.%d\r\n", data[19], data[18], data[17], data[16]);
 
-    chSemSignal(&connected);
+    connected = 1;
     break;
 
     // Notification that the CC3000 device finished the initialization process
@@ -176,10 +177,27 @@ void write_wlan_pin(unsigned char val)
   palWritePad(PORT_WIFI_EN, PAD_WIFI_EN, val);
 }
 
+#define SERVICE_NAME "brewbit-model-t"
+
+msg_t
+mdns_thread(void* arg)
+{
+  (void)arg;
+
+  while (1) {
+    if (connected) {
+      chprintf(SD_STDIO, "advertising... ");
+      int ret = mdnsAdvertiser(1, SERVICE_NAME, strlen(SERVICE_NAME));
+      chprintf(SD_STDIO, "%d\r\n", ret);
+    }
+    chThdSleepSeconds(5);
+  }
+}
+
 msg_t
 wlan_thread(void* arg)
 {
-  chSemInit(&connected, 0);
+  (void)arg;
 
   wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, write_wlan_pin);
   chprintf(SD_STDIO, "stopping...\r\n");
@@ -197,19 +215,56 @@ wlan_thread(void* arg)
   long ret = wlan_connect(WLAN_SEC_WPA2, "internets", 9, NULL, "stenretni", 9);
   chprintf(SD_STDIO, "%d\r\n", ret);
 
-  chprintf(SD_STDIO, "waiting for connection... ");
-  chSemWait(&connected);
+  chprintf(SD_STDIO, "waiting for DHCP... ");
+  while (!connected)
+    chThdSleepMilliseconds(100);
   chprintf(SD_STDIO, "OK\r\n");
 
-  while (1) {
-    chprintf(SD_STDIO, "advertising... ");
-    char* service_name = "brewbit-model-t";
-    ret = mdnsAdvertiser(1, service_name, strlen(service_name));
-    chprintf(SD_STDIO, "%d\r\n", ret);
+
+
+  sockaddr_in serv_addr;
+
+
+  chprintf(SD_STDIO, "creating socket... ");
+  int s = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  chprintf(SD_STDIO, "%d\r\n", s);
+
+  memset(&serv_addr, '0', sizeof(serv_addr));
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_addr.s_addr = 0; // INADDR_ANY
+  serv_addr.sin_port = htons(5000);
+
+  chprintf(SD_STDIO, "binding... ");
+  ret = bind(s, (sockaddr*)&serv_addr, sizeof(serv_addr));
+  chprintf(SD_STDIO, "%d\r\n", ret);
+
+  chprintf(SD_STDIO, "listening... ");
+  ret = listen(s, 10);
+  chprintf(SD_STDIO, "%d\r\n", ret);
+
+  while(1) {
+    chprintf(SD_STDIO, "accepting... ");
+    sockaddr conn_addr;
+    socklen_t conn_addr_len;
+    int connfd = accept(s, &conn_addr, &conn_addr_len);
+    chprintf(SD_STDIO, "%d\r\n", connfd);
+
+    if (connfd > 0) {
+      while (1) {
+        char data[16];
+        chprintf(SD_STDIO, "receiving... ");
+        ret = recv(connfd, data, sizeof(data)-1, 0);
+        chprintf(SD_STDIO, "%d\r\n", ret);
+
+        if (ret > 0) {
+          data[ret] = 0;
+          chprintf(SD_STDIO, "recv: %s", data);
+        }
+      }
+    }
+
     chThdSleepSeconds(5);
   }
-
-
 //  unsigned long aiIntervalList[16] = {
 //      2000,
 //      2000,
@@ -299,6 +354,7 @@ main(void)
 
   chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
   chThdCreateFromHeap(NULL, 2048, NORMALPRIO, wlan_thread, NULL);
+//  chThdCreateFromHeap(NULL, 256, NORMALPRIO, mdns_thread, NULL);
 
   while (TRUE) {
     palSetPad(PORT_LED1, PAD_LED1);
