@@ -19,6 +19,8 @@
 #include "wifi/nvmem.h"
 #include "xflash.h"
 
+#include <string.h>
+
 void NMIVector(void)
 {
   chDbgPanic("NMI Vector\r\n");
@@ -111,6 +113,7 @@ idle_thread(void* arg)
 
 #include "wifi/cc3000_common.h"
 
+static Semaphore connected;
 void wlan_event(long event_type, char * data, unsigned char length )
 {
   switch (event_type) {
@@ -143,6 +146,8 @@ void wlan_event(long event_type, char * data, unsigned char length )
     chprintf(SD_STDIO, "  Default Gateway: %d.%d.%d.%d\r\n", data[11], data[10], data[9], data[8]);
     chprintf(SD_STDIO, "  DHCP Server: %d.%d.%d.%d\r\n", data[15], data[14], data[13], data[12]);
     chprintf(SD_STDIO, "  DNS Server: %d.%d.%d.%d\r\n", data[19], data[18], data[17], data[16]);
+
+    chSemSignal(&connected);
     break;
 
     // Notification that the CC3000 device finished the initialization process
@@ -174,6 +179,8 @@ void write_wlan_pin(unsigned char val)
 msg_t
 wlan_thread(void* arg)
 {
+  chSemInit(&connected, 0);
+
   wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, write_wlan_pin);
   chprintf(SD_STDIO, "stopping...\r\n");
   wlan_stop();
@@ -190,70 +197,82 @@ wlan_thread(void* arg)
   long ret = wlan_connect(WLAN_SEC_WPA2, "internets", 9, NULL, "stenretni", 9);
   chprintf(SD_STDIO, "%d\r\n", ret);
 
-
-  unsigned long aiIntervalList[16] = {
-      2000,
-      2000,
-      2000,
-      2000,
-      2000,
-      2000,
-      2000,
-      2000,
-      2000,
-      2000,
-      2000,
-      2000,
-      2000,
-      2000,
-      2000,
-      2000
-  };
-  chprintf(SD_STDIO, "scanning... ");
-  ret = wlan_ioctl_set_scan_params(1,
-      100,
-      100,
-      5,
-      0x1fff,
-      -110,
-      0,
-      205,
-      aiIntervalList);
-  chprintf(SD_STDIO, "%d\r\n", ret);
+  chprintf(SD_STDIO, "waiting for connection... ");
+  chSemWait(&connected);
+  chprintf(SD_STDIO, "OK\r\n");
 
   while (1) {
-    unsigned char res[64];
-    chprintf(SD_STDIO, "result... ");
-    wlan_ioctl_get_scan_results(0, res);
-    unsigned long count = STREAM_TO_UINT32_f(res, 0);
-    unsigned long status = STREAM_TO_UINT32_f(res, 4);
-    uint8_t results_valid = res[8] & 0x01;
-    uint8_t rssi = res[8] >> 1;
-    uint8_t security = res[9] & 0x03;
-    uint8_t ssid_len = res[9] >> 2;
-    uint16_t timestamp = STREAM_TO_UINT16_f(res, 10);
-
-    char ssid[33];
-    memcpy(ssid, &res[12], 32);
-    ssid[32] = 0;
-
-    char bssid[7];
-    memcpy(bssid, &res[44], 6);
-    bssid[6] = 0;
-
-
-    chprintf(SD_STDIO, "scan status: %d\r\n", status);
-    chprintf(SD_STDIO, "  results left: %d\r\n", count);
-    chprintf(SD_STDIO, "  valid: %d\r\n", results_valid);
-    chprintf(SD_STDIO, "  rssi: %d\r\n", rssi);
-    chprintf(SD_STDIO, "  security: %d\r\n", security);
-    chprintf(SD_STDIO, "  ssid_len: %d\r\n", ssid_len);
-    chprintf(SD_STDIO, "  timestamp: %d\r\n", timestamp);
-    chprintf(SD_STDIO, "  ssid: %s\r\n", ssid);
-    chprintf(SD_STDIO, "  bssid: %x:%x:%x:%x:%x:%x\r\n", bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
-
-    chThdSleepSeconds(1);
+    chprintf(SD_STDIO, "advertising... ");
+    char* service_name = "brewbit-model-t";
+    ret = mdnsAdvertiser(1, service_name, strlen(service_name));
+    chprintf(SD_STDIO, "%d\r\n", ret);
+    chThdSleepSeconds(5);
   }
+
+
+//  unsigned long aiIntervalList[16] = {
+//      2000,
+//      2000,
+//      2000,
+//      2000,
+//      2000,
+//      2000,
+//      2000,
+//      2000,
+//      2000,
+//      2000,
+//      2000,
+//      2000,
+//      2000,
+//      2000,
+//      2000,
+//      2000
+//  };
+//  chprintf(SD_STDIO, "scanning... ");
+//  ret = wlan_ioctl_set_scan_params(1,
+//      100,
+//      100,
+//      5,
+//      0x1fff,
+//      -110,
+//      0,
+//      205,
+//      aiIntervalList);
+//  chprintf(SD_STDIO, "%d\r\n", ret);
+//
+//  while (1) {
+//    unsigned char res[64];
+//    chprintf(SD_STDIO, "result... ");
+//    wlan_ioctl_get_scan_results(0, res);
+//    unsigned long count = STREAM_TO_UINT32_f(res, 0);
+//    unsigned long status = STREAM_TO_UINT32_f(res, 4);
+//    uint8_t results_valid = res[8] & 0x01;
+//    uint8_t rssi = res[8] >> 1;
+//    uint8_t security = res[9] & 0x03;
+//    uint8_t ssid_len = res[9] >> 2;
+//    uint16_t timestamp = STREAM_TO_UINT16_f(res, 10);
+//
+//    char ssid[33];
+//    memcpy(ssid, &res[12], 32);
+//    ssid[32] = 0;
+//
+//    char bssid[7];
+//    memcpy(bssid, &res[44], 6);
+//    bssid[6] = 0;
+//
+//
+//    chprintf(SD_STDIO, "scan status: %d\r\n", status);
+//    chprintf(SD_STDIO, "  results left: %d\r\n", count);
+//    chprintf(SD_STDIO, "  valid: %d\r\n", results_valid);
+//    chprintf(SD_STDIO, "  rssi: %d\r\n", rssi);
+//    chprintf(SD_STDIO, "  security: %d\r\n", security);
+//    chprintf(SD_STDIO, "  ssid_len: %d\r\n", ssid_len);
+//    chprintf(SD_STDIO, "  timestamp: %d\r\n", timestamp);
+//    chprintf(SD_STDIO, "  ssid: %s\r\n", ssid);
+//    chprintf(SD_STDIO, "  bssid: %x:%x:%x:%x:%x:%x\r\n", bssid[0], bssid[1], bssid[2], bssid[3], bssid[4], bssid[5]);
+//
+//    chThdSleepSeconds(1);
+//  }
 }
 
 int
@@ -273,7 +292,7 @@ main(void)
   gui_init();
 //  debug_client_init();
 
-  xflash_write();
+//  xflash_write();
 
   widget_t* home_screen = home_screen_create();
   gui_push_screen(home_screen);
