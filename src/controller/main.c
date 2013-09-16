@@ -409,7 +409,7 @@ main(void)
 
   chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
   chThdCreateFromHeap(NULL, 2048, NORMALPRIO, wlan_thread, NULL);
-//  chThdCreateFromHeap(NULL, 256, NORMALPRIO, mdns_thread, NULL);
+  chThdCreateFromHeap(NULL, 512, NORMALPRIO, mdns_thread, NULL);
 
   while (TRUE) {
     palSetPad(PORT_LED1, PAD_LED1);

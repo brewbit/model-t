@@ -15,15 +15,16 @@ def find_service_addr():
 
         if svc:
             r.close()
-            return svc.address
+            return socket.inet_ntoa(svc.address)
 
 def transfer_file(addr):
     s = socket.create_connection((addr, 5000))
     while True:
-        s.send("hello world!")
-        time.sleep(3)
+        s.send("hello world!\r\n")
+        time.sleep(1)
 
-print "Waiting for Model-T Service Advertisement..."
-# addr = find_service_addr()
-transfer_file("192.168.1.132")
-print "Received Model-T Service Advertisement from", socket.inet_ntoa(addr)
+print "Waiting for Model-T service announcement..."
+addr = find_service_addr()
+print "  Received announcement from", addr
+print "Starting file upload"
+transfer_file(addr)
