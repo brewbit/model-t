@@ -128,8 +128,10 @@ gui_dispatch(msg_id_t id, void* msg_data, void* user_data)
       break;
 
     case MSG_GUI_PAINT:
+      chThdSetPriority(HIGHPRIO);
       if (screen_stack != NULL)
         widget_paint(screen_stack->widget);
+      chThdSetPriority(NORMALPRIO);
       break;
 
     default:
