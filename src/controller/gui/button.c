@@ -4,6 +4,7 @@
 #include "gfx.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 
 #define BTN_FIRST_REPEAT_DELAY MS2ST(500)
@@ -37,7 +38,8 @@ widget_t*
 button_create(widget_t* parent, rect_t rect, const Image_t* icon, uint16_t color,
     button_event_handler_t evt_handler)
 {
-  button_t* b = calloc(1, sizeof(button_t));
+  button_t* b = chHeapAlloc(NULL, sizeof(button_t));
+  memset(b, 0, sizeof(button_t));
 
   b->icon = icon;
   b->color = color;
@@ -75,7 +77,7 @@ static void
 button_destroy(widget_t* w)
 {
   button_t* b = widget_get_instance_data(w);
-  free(b);
+  chHeapFree(b);
 }
 
 static void

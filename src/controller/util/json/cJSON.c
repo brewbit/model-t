@@ -23,6 +23,7 @@
 /* cJSON */
 /* JSON parser in C. */
 
+#include <ch.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
@@ -40,7 +41,7 @@ const char *cJSON_GetErrorPtr() {return ep;}
 /* Internal constructor. */
 static cJSON *cJSON_New_Item(void)
 {
-    cJSON* node = (cJSON*)malloc(sizeof(cJSON));
+    cJSON* node = (cJSON*)chHeapAlloc(NULL, sizeof(cJSON));
     if (node) memset(node,0,sizeof(cJSON));
     return node;
 }
@@ -53,9 +54,9 @@ void cJSON_Delete(cJSON *c)
     {
         next=c->next;
         if (!(c->type&cJSON_IsReference) && c->child) cJSON_Delete(c->child);
-        if (!(c->type&cJSON_IsReference) && c->valuestring) free(c->valuestring);
-        if (c->string) free(c->string);
-        free(c);
+        if (!(c->type&cJSON_IsReference) && c->valuestring) chHeapFree(c->valuestring);
+        if (c->string) chHeapFree(c->string);
+        chHeapFree(c);
         c=next;
     }
 }
@@ -90,12 +91,12 @@ static char *print_number(cJSON *item)
     double d=item->valuedouble;
     if (fabs(((double)item->valueint)-d)<=DBL_EPSILON && d<=INT_MAX && d>=INT_MIN)
     {
-        str=(char*)malloc(21);    /* 2^64+1 can be represented in 21 chars. */
+        str=(char*)chHeapAlloc(NULL, 21);    /* 2^64+1 can be represented in 21 chars. */
         if (str) sprintf(str,"%d",item->valueint);
     }
     else
     {
-        str=(char*)malloc(64);    /* This is a nice tradeoff. */
+        str=(char*)chHeapAlloc(NULL, 64);    /* This is a nice tradeoff. */
         if (str)
         {
             if (fabs(floor(d)-d)<=DBL_EPSILON)            sprintf(str,"%.0f",d);
@@ -115,7 +116,7 @@ static const char *parse_string(cJSON *item,const char *str)
 
     while (*ptr!='\"' && *ptr && ++len) if (*ptr++ == '\\') ptr++;    /* Skip escaped quotes. */
 
-    out=(char*)malloc(len+1);    /* This is how long we need for the string, roughly. */
+    out=(char*)chHeapAlloc(NULL, len+1);    /* This is how long we need for the string, roughly. */
     if (!out) return 0;
 
     ptr=str+1;ptr2=out;
@@ -175,7 +176,7 @@ static char *print_string_ptr(const char *str)
     if (!str) return strdup("");
     ptr=str;while ((token=*ptr) && ++len) {if (strchr("\"\\\b\f\n\r\t",token)) len++; else if (token<32) len+=5;ptr++;}
 
-    out=(char*)malloc(len+3);
+    out=(char*)chHeapAlloc(NULL, len+3);
     if (!out) return 0;
 
     ptr2=out;ptr=str;
@@ -303,7 +304,7 @@ static char *print_array(cJSON *item,int depth,int fmt)
     /* How many entries in the array? */
     while (child) numentries++,child=child->next;
     /* Allocate an array to hold the values for each */
-    entries=(char**)malloc(numentries*sizeof(char*));
+    entries=(char**)chHeapAlloc(NULL, numentries*sizeof(char*));
     if (!entries) return 0;
     memset(entries,0,numentries*sizeof(char*));
     /* Retrieve all the results: */
@@ -317,15 +318,15 @@ static char *print_array(cJSON *item,int depth,int fmt)
     }
 
     /* If we didn't fail, try to malloc the output string */
-    if (!fail) out=(char*)malloc(len);
+    if (!fail) out=(char*)chHeapAlloc(NULL, len);
     /* If that fails, we fail. */
     if (!out) fail=1;
 
     /* Handle failure. */
     if (fail)
     {
-        for (i=0;i<numentries;i++) if (entries[i]) free(entries[i]);
-        free(entries);
+        for (i=0;i<numentries;i++) if (entries[i]) chHeapFree(entries[i]);
+        chHeapFree(entries);
         return 0;
     }
 
@@ -336,9 +337,9 @@ static char *print_array(cJSON *item,int depth,int fmt)
     {
         strcpy(ptr,entries[i]);ptr+=strlen(entries[i]);
         if (i!=numentries-1) {*ptr++=',';if(fmt)*ptr++=' ';*ptr=0;}
-        free(entries[i]);
+        chHeapFree(entries[i]);
     }
-    free(entries);
+    chHeapFree(entries);
     *ptr++=']';*ptr++=0;
     return out;
 }
@@ -389,10 +390,10 @@ static char *print_object(cJSON *item,int depth,int fmt)
     /* Count the number of entries. */
     while (child) numentries++,child=child->next;
     /* Allocate space for the names and the objects */
-    entries=(char**)malloc(numentries*sizeof(char*));
+    entries=(char**)chHeapAlloc(NULL, numentries*sizeof(char*));
     if (!entries) return 0;
-    names=(char**)malloc(numentries*sizeof(char*));
-    if (!names) {free(entries);return 0;}
+    names=(char**)chHeapAlloc(NULL, numentries*sizeof(char*));
+    if (!names) {chHeapFree(entries);return 0;}
     memset(entries,0,sizeof(char*)*numentries);
     memset(names,0,sizeof(char*)*numentries);
 
@@ -407,14 +408,14 @@ static char *print_object(cJSON *item,int depth,int fmt)
     }
 
     /* Try to allocate the output string */
-    if (!fail) out=(char*)malloc(len);
+    if (!fail) out=(char*)chHeapAlloc(NULL, len);
     if (!out) fail=1;
 
     /* Handle failure */
     if (fail)
     {
-        for (i=0;i<numentries;i++) {if (names[i]) free(names[i]);if (entries[i]) free(entries[i]);}
-        free(names);free(entries);
+        for (i=0;i<numentries;i++) {if (names[i]) chHeapFree(names[i]);if (entries[i]) chHeapFree(entries[i]);}
+        chHeapFree(names);chHeapFree(entries);
         return 0;
     }
 
@@ -428,10 +429,10 @@ static char *print_object(cJSON *item,int depth,int fmt)
         strcpy(ptr,entries[i]);ptr+=strlen(entries[i]);
         if (i!=numentries-1) *ptr++=',';
         if (fmt) *ptr++='\n';*ptr=0;
-        free(names[i]);free(entries[i]);
+        chHeapFree(names[i]);chHeapFree(entries[i]);
     }
 
-    free(names);free(entries);
+    chHeapFree(names);chHeapFree(entries);
     if (fmt) for (i=0;i<depth-1;i++) *ptr++='\t';
     *ptr++='}';*ptr++=0;
     return out;
@@ -449,7 +450,7 @@ static cJSON *create_reference(cJSON *item) {cJSON *ref=cJSON_New_Item();if (!re
 
 /* Add item to array/object. */
 void   cJSON_AddItemToArray(cJSON *array, cJSON *item)                        {cJSON *c=array->child;if (!item) return; if (!c) {array->child=item;} else {while (c && c->next) c=c->next; suffix_object(c,item);}}
-void   cJSON_AddItemToObject(cJSON *object,const char *string,cJSON *item)    {if (!item) return; if (item->string) free(item->string);item->string=strdup(string);cJSON_AddItemToArray(object,item);}
+void   cJSON_AddItemToObject(cJSON *object,const char *string,cJSON *item)    {if (!item) return; if (item->string) chHeapFree(item->string);item->string=strdup(string);cJSON_AddItemToArray(object,item);}
 void    cJSON_AddItemReferenceToArray(cJSON *array, cJSON *item)                        {cJSON_AddItemToArray(array,create_reference(item));}
 void    cJSON_AddItemReferenceToObject(cJSON *object,const char *string,cJSON *item)    {cJSON_AddItemToObject(object,string,create_reference(item));}
 

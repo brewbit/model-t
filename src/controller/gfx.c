@@ -4,6 +4,7 @@
 #include "common.h"
 
 #include <limits.h>
+#include <string.h>
 
 
 // Alpha blending support
@@ -53,7 +54,9 @@ gfx_init()
 {
   lcd_init();
 
-  ctx = calloc(1, sizeof(gfx_ctx_t));
+  ctx = chHeapAlloc(NULL, sizeof(gfx_ctx_t));
+  memset(ctx, 0, sizeof(gfx_ctx_t));
+
   ctx->fcolor = GREEN;
   ctx->bcolor = BLACK;
   ctx->bg_type = BG_COLOR;
@@ -64,7 +67,9 @@ gfx_init()
 void
 gfx_ctx_push()
 {
-  gfx_ctx_t* new_ctx = calloc(1, sizeof(gfx_ctx_t));
+  gfx_ctx_t* new_ctx = chHeapAlloc(NULL, sizeof(gfx_ctx_t));
+  memset(new_ctx, 0, sizeof(gfx_ctx_t));
+
   *new_ctx = *ctx;
   new_ctx->next = ctx;
   ctx = new_ctx;
@@ -76,7 +81,7 @@ gfx_ctx_pop()
   gfx_ctx_t* old_ctx = ctx;
   if (old_ctx->next != NULL) {
     ctx = old_ctx->next;
-    free(old_ctx);
+    chHeapFree(old_ctx);
   }
 }
 

@@ -1,20 +1,23 @@
 
+#include "ch.h"
 #include "linked_list.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 
 linked_list_t*
 linked_list_new()
 {
-  linked_list_t* l = calloc(1, sizeof(linked_list_t));
+  linked_list_t* l = chHeapAlloc(NULL, sizeof(linked_list_t));
+  memset(l, 0, sizeof(linked_list_t));
   return l;
 }
 
 void
 linked_list_prepend(linked_list_t* l, void* data)
 {
-  linked_list_node_t* node = malloc(sizeof(linked_list_node_t));
+  linked_list_node_t* node = chHeapAlloc(NULL, sizeof(linked_list_node_t));
   node->data = data;
 
   node->next = l->head;
@@ -32,7 +35,7 @@ linked_list_prepend(linked_list_t* l, void* data)
 void
 linked_list_append(linked_list_t* l, void* data)
 {
-  linked_list_node_t* node = malloc(sizeof(linked_list_node_t));
+  linked_list_node_t* node = chHeapAlloc(NULL, sizeof(linked_list_node_t));
   node->data = data;
 
   node->next = NULL;
@@ -63,7 +66,7 @@ linked_list_remove(linked_list_t* l, void* data)
       else
         l->tail = node->prev;
 
-      free(node);
+      chHeapFree(node);
       break;
     }
   }

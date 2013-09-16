@@ -51,7 +51,8 @@ dispatch_msg(widget_t* w, msg_event_t* event);
 widget_t*
 widget_create(widget_t* parent, const widget_class_t* widget_class, void* instance_data, rect_t rect)
 {
-  widget_t* w = calloc(1, sizeof(widget_t));
+  widget_t* w = chHeapAlloc(NULL, sizeof(widget_t));
+  memset(w, 0, sizeof(widget_t));
 
   w->widget_class = widget_class;
   w->instance_data = instance_data;
@@ -80,7 +81,7 @@ widget_destroy_predicate(widget_t* w, widget_traversal_event_t event)
 {
   if (event == WIDGET_TRAVERSAL_AFTER_CHILDREN) {
     CALL_WC(w, on_destroy)(w);
-    free(w);
+    chHeapFree(w);
   }
 }
 

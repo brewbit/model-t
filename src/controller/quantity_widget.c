@@ -8,6 +8,7 @@
 #include "app_cfg.h"
 
 #include <stdio.h>
+#include <string.h>
 
 
 #define SPACE 8
@@ -31,7 +32,8 @@ static const widget_class_t quantity_widget_class = {
 widget_t*
 quantity_widget_create(widget_t* parent, rect_t rect)
 {
-  quantity_widget_t* s = calloc(1, sizeof(quantity_widget_t));
+  quantity_widget_t* s = chHeapAlloc(NULL, sizeof(quantity_widget_t));
+  memset(s, 0, sizeof(quantity_widget_t));
 
   rect.height = font_opensans_62->base;
   s->widget = widget_create(parent, &quantity_widget_class, s, rect);
@@ -47,7 +49,7 @@ quantity_widget_destroy(widget_t* w)
 {
   quantity_widget_t* s = widget_get_instance_data(w);
 
-  free(s);
+  chHeapFree(s);
 }
 
 static void

@@ -7,6 +7,8 @@
 #include "gui.h"
 #include "gfx.h"
 
+#include <string.h>
+
 
 typedef enum {
   UPDATE_CHECKING_VERSION,
@@ -44,7 +46,9 @@ widget_class_t update_screen_widget_class = {
 widget_t*
 update_screen_create()
 {
-  update_screen_t* s = calloc(1, sizeof(update_screen_t));
+  update_screen_t* s = chHeapAlloc(NULL, sizeof(update_screen_t));
+  memset(s, 0, sizeof(update_screen_t));
+
   s->state = UPDATE_CHECKING_VERSION;
 
   s->widget = widget_create(NULL, &update_screen_widget_class, s, display_rect);
@@ -99,7 +103,7 @@ update_screen_destroy(widget_t* w)
 {
   update_screen_t* s = widget_get_instance_data(w);
 
-  free(s);
+  chHeapFree(s);
 }
 
 static void

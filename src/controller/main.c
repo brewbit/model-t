@@ -21,25 +21,46 @@
 
 #include <string.h>
 
+void port_halt(void)
+{
+  __asm("BKPT #0\n") ; // Break into the debugger
+
+  port_disable();
+  while (TRUE) {
+  }
+}
+
 void NMIVector(void)
 {
   chDbgPanic("NMI Vector\r\n");
 }
 
+volatile uint32_t r0;
+volatile uint32_t r1;
+volatile uint32_t r2;
+volatile uint32_t r3;
+volatile uint32_t r12;
+volatile uint32_t lr; /* Link register. */
+volatile uint32_t pc; /* Program counter. */
+volatile uint32_t psr;/* Program status register. */
+volatile unsigned long _CFSR ;
+volatile unsigned long _HFSR ;
+volatile unsigned long _DFSR ;
+volatile unsigned long _AFSR ;
+volatile unsigned long _BFAR ;
+volatile unsigned long _MMAR ;
+volatile unsigned long _SCB_SHCSR;
+volatile size_t core;
+volatile uint32_t fake;
+
 void prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
 {
-  /* These are volatile to try and prevent the compiler/linker optimising them
-  away as the variables never actually get used.  If the debugger won't show the
-  values of the variables, make them global my moving their declaration outside
-  of this function. */
-  volatile uint32_t r0;
-  volatile uint32_t r1;
-  volatile uint32_t r2;
-  volatile uint32_t r3;
-  volatile uint32_t r12;
-  volatile uint32_t lr; /* Link register. */
-  volatile uint32_t pc; /* Program counter. */
-  volatile uint32_t psr;/* Program status register. */
+/* These are volatile to try and prevent the compiler/linker optimising them
+away as the variables never actually get used.  If the debugger won't show the
+values of the variables, make them global my moving their declaration outside
+of this function. */
+
+  uint32_t fake;
 
   r0 = pulFaultStackAddress[0];
   r1 = pulFaultStackAddress[1];
@@ -51,34 +72,67 @@ void prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
   pc = pulFaultStackAddress[6];
   psr = pulFaultStackAddress[7];
 
-  chprintf(SD_STDIO, "Hard Fault:\r\n");
-  chprintf(SD_STDIO, "  r0: %08x\r\n", r0);
-  chprintf(SD_STDIO, "  r1: %08x\r\n", r1);
-  chprintf(SD_STDIO, "  r2: %08x\r\n", r2);
-  chprintf(SD_STDIO, "  r3: %08x\r\n", r3);
-  chprintf(SD_STDIO, "  r12: %08x\r\n", r12);
-  chprintf(SD_STDIO, "  lr: %08x\r\n", lr);
-  chprintf(SD_STDIO, "  pc: %08x\r\n", pc);
-  chprintf(SD_STDIO, "  psr: %08x\r\n", psr);
-  chThdSleepSeconds(5);
+  // Configurable Fault Status Register
+  // Consists of MMSR, BFSR and UFSR
+  _CFSR = (*((volatile unsigned long *)(0xE000ED28))) ;
 
+  // Hard Fault Status Register
+  _HFSR = (*((volatile unsigned long *)(0xE000ED2C))) ;
+
+  // Debug Fault Status Register
+  _DFSR = (*((volatile unsigned long *)(0xE000ED30))) ;
+
+  // Auxiliary Fault Status Register
+  _AFSR = (*((volatile unsigned long *)(0xE000ED3C))) ;
+
+  // Read the Fault Address Registers. These may not contain valid values.
+  // Check BFARVALID/MMARVALID to see if they are valid values
+  // MemManage Fault Address Register
+  _MMAR = (*((volatile unsigned long *)(0xE000ED34))) ;
+  // Bus Fault Address Register
+  _BFAR = (*((volatile unsigned long *)(0xE000ED38))) ;
   /* When the following line is hit, the variables contain the register values. */
-  chSysHalt();
+  _SCB_SHCSR = SCB->SHCSR;
+
+  core = chCoreStatus();
+
+  __asm("BKPT #0\n") ; // Break into the debugger
+
+  while(1){
+    fake += r0;
+    fake += r1;
+    fake += r2;
+    fake += r3;
+    fake += r12;
+    fake += lr;
+    fake += pc;
+    fake += psr;
+    fake += _CFSR ;
+    fake += _HFSR ;
+    fake += _DFSR ;
+    fake += _AFSR ;
+    fake += _BFAR ;
+    fake += _MMAR ;
+    fake += _SCB_SHCSR;
+    fake += core;
+  }
 }
 
+/* The fault handler implementation calls a function called
+prvGetRegistersFromStack(). */
 void HardFaultVector(void)
 {
-  __asm volatile
-  (
-      " tst lr, #4                                                \n"
-      " ite eq                                                    \n"
-      " mrseq r0, msp                                             \n"
-      " mrsne r0, psp                                             \n"
-      " ldr r1, [r0, #24]                                         \n"
-      " ldr r2, handler2_address_const                            \n"
-      " bx r2                                                     \n"
-      " handler2_address_const: .word prvGetRegistersFromStack    \n"
-  );
+    __asm volatile
+    (
+        " tst lr, #4                                                \n"
+        " ite eq                                                    \n"
+        " mrseq r0, msp                                             \n"
+        " mrsne r0, psp                                             \n"
+        " ldr r1, [r0, #24]                                         \n"
+        " ldr r2, handler2_address_const                            \n"
+        " bx r2                                                     \n"
+        " handler2_address_const: .word prvGetRegistersFromStack    \n"
+    );
 }
 
 void MemManageVector(void)
@@ -340,20 +394,20 @@ main(void)
   /* start stdout port */
   sdStart(SD_STDIO, NULL);
 
-//  app_cfg_init();
-//  gfx_init();
-//  touch_init();
-//  temp_control_init();
-//  web_api_init();
-//  gui_init();
-////  debug_client_init();
-//
-////  xflash_write();
-//
-//  widget_t* home_screen = home_screen_create();
-//  gui_push_screen(home_screen);
-//
-//  chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
+  app_cfg_init();
+  gfx_init();
+  touch_init();
+  temp_control_init();
+  web_api_init();
+  gui_init();
+//  debug_client_init();
+
+//  xflash_write();
+
+  widget_t* home_screen = home_screen_create();
+  gui_push_screen(home_screen);
+
+  chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
   chThdCreateFromHeap(NULL, 2048, NORMALPRIO, wlan_thread, NULL);
 //  chThdCreateFromHeap(NULL, 256, NORMALPRIO, mdns_thread, NULL);
 

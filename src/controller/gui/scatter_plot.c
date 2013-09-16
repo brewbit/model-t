@@ -2,6 +2,8 @@
 #include "scatter_plot.h"
 #include "gfx.h"
 
+#include <string.h>
+
 
 typedef struct {
   widget_t* widget;
@@ -24,7 +26,9 @@ static widget_class_t scatter_plot_widget_class = {
 widget_t*
 scatter_plot_create(widget_t* parent, rect_t rect)
 {
-  scatter_plot_t* s = calloc(1, sizeof(scatter_plot_t));
+  scatter_plot_t* s = chHeapAlloc(NULL, sizeof(scatter_plot_t));
+  memset(s, 0, sizeof(scatter_plot_t));
+
   s->widget = widget_create(parent, &scatter_plot_widget_class, s, rect);
 
   return s->widget;
@@ -34,7 +38,7 @@ static void
 scatter_plot_destroy(widget_t* w)
 {
   scatter_plot_t* s = widget_get_instance_data(w);
-  free(s);
+  chHeapFree(s);
 }
 
 static void

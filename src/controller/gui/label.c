@@ -27,7 +27,8 @@ static const widget_class_t label_widget_class = {
 widget_t*
 label_create(widget_t* parent, rect_t rect, const char* text, const Font_t* font, color_t color, uint8_t rows)
 {
-  label_t* l = calloc(1, sizeof(label_t));
+  label_t* l = chHeapAlloc(NULL, sizeof(label_t));
+  memset(l, 0, sizeof(label_t));
 
   if (text != NULL)
     l->text = strdup(text);
@@ -45,7 +46,7 @@ label_set_text(widget_t* w, char* text)
   label_t* l = widget_get_instance_data(w);
   if (strcmp(l->text, text) != 0) {
     if (l->text != NULL)
-      free(l->text);
+      chHeapFree(l->text);
     l->text = strdup(text);
     widget_invalidate(w);
   }
@@ -55,7 +56,7 @@ static void
 label_destroy(widget_t* w)
 {
   label_t* l = widget_get_instance_data(w);
-  free(l);
+  chHeapFree(l);
 }
 
 static void

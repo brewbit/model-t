@@ -9,6 +9,8 @@
 #include "gui.h"
 #include "chprintf.h"
 
+#include <string.h>
+
 
 typedef struct {
   widget_t* widget;
@@ -33,7 +35,9 @@ static widget_class_t wifi_screen_widget_class = {
 widget_t*
 wifi_screen_create()
 {
-  wifi_screen_t* s = calloc(1, sizeof(wifi_screen_t));
+  wifi_screen_t* s = chHeapAlloc(NULL, sizeof(wifi_screen_t));
+  memset(s, 0, sizeof(wifi_screen_t));
+
   s->widget = widget_create(NULL, &wifi_screen_widget_class, s, display_rect);
 
   rect_t rect = {
@@ -87,7 +91,7 @@ wifi_screen_destroy(widget_t* w)
   gui_msg_unsubscribe(MSG_SCAN_RESULT, w);
   gui_msg_unsubscribe(MSG_SCAN_COMPLETE, w);
 
-  free(s);
+  chHeapFree(s);
 }
 
 static void

@@ -22,7 +22,7 @@ msg_subscribe(msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatch, void*
   if (id >= NUM_THREAD_MSGS)
     return;
 
-  msg_listener_t* listener = malloc(sizeof(msg_listener_t));
+  msg_listener_t* listener = chHeapAlloc(NULL, sizeof(msg_listener_t));
   listener->thread = thread;
   listener->dispatch = dispatch;
   listener->user_data = user_data;
@@ -51,7 +51,7 @@ msg_unsubscribe(msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatch, voi
       else {
         listeners[id] = listener->next;
       }
-      free(listener);
+      chHeapFree(listener);
       break;
     }
     prev_listener = listener;

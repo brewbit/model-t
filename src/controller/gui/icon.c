@@ -4,6 +4,7 @@
 #include "gfx.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 
 typedef struct {
@@ -23,7 +24,8 @@ static const widget_class_t icon_widget_class = {
 widget_t*
 icon_create(widget_t* parent, rect_t rect, const Image_t* image, uint16_t color)
 {
-  icon_t* i = calloc(1, sizeof(icon_t));
+  icon_t* i = chHeapAlloc(NULL, sizeof(icon_t));
+  memset(i, 0, sizeof(icon_t));
 
   i->image = image;
 
@@ -37,7 +39,7 @@ static void
 icon_destroy(widget_t* w)
 {
   icon_t* i = widget_get_instance_data(w);
-  free(i);
+  chHeapFree(i);
 }
 
 void

@@ -9,7 +9,7 @@
 txn_cache_t*
 txn_cache_new()
 {
-  txn_cache_t* tc = malloc(sizeof(txn_cache_t));
+  txn_cache_t* tc = chHeapAlloc(NULL, sizeof(txn_cache_t));
   memset(tc, 0, sizeof(txn_cache_t));
   return tc;
 }
@@ -18,7 +18,7 @@ txn_cache_new()
 txn_t*
 txn_new(txn_cache_t* tc, txn_callback_t callback, void* callback_data)
 {
-  txn_t* txn = malloc(sizeof(txn_t));
+  txn_t* txn = chHeapAlloc(NULL, sizeof(txn_t));
 
   txn->txn_id = tc->last_id++;
   txn->callback = callback;
@@ -57,7 +57,7 @@ txn_free(txn_cache_t* tc, txn_t* txn)
     }
   }
 
-  free(txn);
+  chHeapFree(txn);
 }
 
 void

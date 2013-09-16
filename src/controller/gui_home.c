@@ -70,7 +70,9 @@ static const widget_class_t home_widget_class = {
 widget_t*
 home_screen_create()
 {
-  home_screen_t* s = calloc(1, sizeof(home_screen_t));
+  home_screen_t* s = chHeapAlloc(NULL, sizeof(home_screen_t));
+  memset(s, 0, sizeof(home_screen_t));
+
   s->sample_timestamp = chTimeNow();
 
   s->screen = widget_create(NULL, &home_widget_class, s, display_rect);
@@ -136,7 +138,7 @@ home_screen_destroy(widget_t* w)
   gui_msg_unsubscribe(MSG_SENSOR_TIMEOUT, s->screen);
   gui_msg_unsubscribe(MSG_OUTPUT_SETTINGS, s->screen);
 
-  free(s);
+  chHeapFree(s);
 }
 
 static void

@@ -1,11 +1,14 @@
 
 #include "web_api_parser.h"
 
+#include <string.h>
+
 
 web_api_parser_t*
 web_api_parser_new(web_api_msg_handler_t msg_handler)
 {
-  web_api_parser_t* p = calloc(1, sizeof(web_api_parser_t));
+  web_api_parser_t* p = chHeapAlloc(NULL, sizeof(web_api_parser_t));
+  memset(p, 0, sizeof(web_api_parser_t));
 
   p->state = WAPI_PARSE_SYNC1;
   p->msg_handler = msg_handler;

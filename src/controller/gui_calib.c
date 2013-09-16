@@ -7,6 +7,8 @@
 #include "image.h"
 #include "gui/button.h"
 
+#include <string.h>
+
 
 #define MARKER_SIZE           50
 #define NUM_SAMPLES_PER_POINT 128
@@ -54,7 +56,9 @@ static const widget_class_t calib_widget_class = {
 widget_t*
 calib_screen_create()
 {
-  calib_screen_t* s = calloc(1, sizeof(calib_screen_t));
+  calib_screen_t* s = chHeapAlloc(NULL, sizeof(calib_screen_t));
+  memset(s, 0, sizeof(calib_screen_t));
+
   s->widget = widget_create(NULL, &calib_widget_class, s, display_rect);
   widget_set_background(s->widget, BLACK, FALSE);
 
@@ -82,7 +86,7 @@ calib_widget_destroy(widget_t* w)
 {
   calib_screen_t* s = widget_get_instance_data(w);
   gui_msg_unsubscribe(MSG_TOUCH_INPUT, s->widget);
-  free(s);
+  chHeapFree(s);
 }
 
 static void

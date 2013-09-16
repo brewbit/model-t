@@ -4,6 +4,8 @@
 #include "message.h"
 #include "app_cfg.h"
 
+#include <string.h>
+
 
 #define SENSOR_TIMEOUT S2ST(2)
 
@@ -29,7 +31,8 @@ static bool read_bb(sensor_port_t* tp, quantity_t* sample);
 sensor_port_t*
 sensor_init(sensor_id_t sensor, onewire_bus_t* port)
 {
-  sensor_port_t* tp = calloc(1, sizeof(sensor_port_t));
+  sensor_port_t* tp = chHeapAlloc(NULL, sizeof(sensor_port_t));
+  memset(tp, 0, sizeof(sensor_port_t));
 
   tp->sensor = sensor;
   tp->bus = port;

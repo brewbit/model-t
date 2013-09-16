@@ -1,4 +1,6 @@
 
+#include <ch.h>
+
 #include "datastream.h"
 
 #include <stdlib.h>
@@ -18,7 +20,7 @@
 datastream_t*
 ds_new(uint8_t* buf, uint32_t len)
 {
-  datastream_t* ds = malloc(sizeof(datastream_t));
+  datastream_t* ds = chHeapAlloc(NULL, sizeof(datastream_t));
 
   memset(ds, 0, sizeof(datastream_t));
 
@@ -27,7 +29,7 @@ ds_new(uint8_t* buf, uint32_t len)
     ds->free_buf = 0;
   }
   else {
-    ds->buf = malloc(len);
+    ds->buf = chHeapAlloc(NULL, len);
     ds->free_buf = 1;
   }
   ds->len = len;
@@ -39,8 +41,8 @@ void
 ds_free(datastream_t* ds)
 {
   if (ds->free_buf)
-    free(ds->buf);
-  free(ds);
+    chHeapFree(ds->buf);
+  chHeapFree(ds);
 }
 
 uint8_t
@@ -135,7 +137,7 @@ ds_read_str(datastream_t* ds)
 
   CHECK_SIZE(len);
 
-  char* str = malloc(len + 1);
+  char* str = chHeapAlloc(NULL, len + 1);
   memcpy(str, &ds->buf[ds->idx], len);
   str[len] = 0;
 
