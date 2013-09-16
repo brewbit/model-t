@@ -110,8 +110,6 @@ idle_thread(void* arg)
   return 0;
 }
 
-#include "wifi/cc3000_common.h"
-
 static int connected;
 void wlan_event(long event_type, char * data, unsigned char length )
 {

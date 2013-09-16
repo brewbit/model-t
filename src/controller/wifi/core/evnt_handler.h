@@ -55,22 +55,6 @@ extern "C" {
 
 //*****************************************************************************
 //
-//!  hci_event_handler
-//!
-//!  @param  pRetParams     incoming data buffer
-//!  @param  from           from information (in case of data received)
-//!  @param  fromlen        from information length (in case of data received)
-//!
-//!  @return         none
-//!
-//!  @brief          Parse the incoming events packets and issues corresponding
-//!                  event handler from global array of handlers pointers
-//
-//*****************************************************************************
-extern void hci_event_handler(void *pRetParams, unsigned char *from, unsigned char *fromlen);
-
-//*****************************************************************************
-//
 //!  hci_unsolicited_event_handler
 //!
 //!  @param None

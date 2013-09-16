@@ -69,7 +69,7 @@ extern "C" {
 #define WLAN_ENABLE      (1)
 #define WLAN_DISABLE     (0)
 
-#define MAC_ADDR_LEN    (6)
+#define MAC_ADDR_LEN     (6)
 
   
 /*Defines for minimal and maximal RX buffer size. This size includes the spi 
@@ -579,7 +579,7 @@ typedef struct
 
 
 
-extern volatile sSimplLinkInformation tSLInformation;
+extern sSimplLinkInformation tSLInformation;
 
 
 //*****************************************************************************

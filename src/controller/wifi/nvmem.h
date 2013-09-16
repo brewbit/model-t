@@ -35,7 +35,7 @@
 #ifndef __NVRAM_H__
 #define __NVRAM_H__
 
-#include "cc3000_common.h"
+#include "core/cc3000_common.h"
 
 
 //*****************************************************************************

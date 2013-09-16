@@ -51,7 +51,7 @@
 #include "evnt_handler.h"
 
 
-volatile sSimplLinkInformation tSLInformation;
+sSimplLinkInformation tSLInformation;
 
 #define SMART_CONFIG_PROFILE_SIZE       67      // 67 = 32 (max ssid) + 32 (max key) + 1 (SSID length) + 1 (security type) + 1 (key length)
 

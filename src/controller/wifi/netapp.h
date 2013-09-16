@@ -35,7 +35,7 @@
 #ifndef __NETAPP_H__
 #define __NETAPP_H__
 
-#include "cc3000_common.h"
+#include "core/cc3000_common.h"
 
 //*****************************************************************************
 //

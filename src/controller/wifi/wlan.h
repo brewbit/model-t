@@ -35,7 +35,8 @@
 #ifndef __WLAN_H__
 #define __WLAN_H__
 
-#include "cc3000_common.h"
+#include "core/cc3000_common.h"
+#include "core/wlan.h"
 
 //*****************************************************************************
 //
@@ -46,11 +47,6 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-#define      WLAN_SEC_UNSEC (0)
-#define      WLAN_SEC_WEP   (1)
-#define      WLAN_SEC_WPA   (2)
-#define      WLAN_SEC_WPA2  (3)
 
 #define      SOC_NOT_INITED (-3)   /* socket in progress */
 //*****************************************************************************
