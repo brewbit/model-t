@@ -71,20 +71,6 @@ extern void hci_event_handler(void *pRetParams, unsigned char *from, unsigned ch
 
 //*****************************************************************************
 //
-//!  hci_unsol_event_handler
-//!
-//!  @param  event_hdr   event header
-//!
-//!  @return             1 if event supported and handled
-//!                      0 if event is not supported
-//!
-//!  @brief              Handle unsolicited events
-//
-//*****************************************************************************
-extern long hci_unsol_event_handler(char *event_hdr);
-
-//*****************************************************************************
-//
 //!  hci_unsolicited_event_handler
 //!
 //!  @param None

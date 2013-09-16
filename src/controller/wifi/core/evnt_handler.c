@@ -122,6 +122,12 @@ unsigned long socket_active_status = SOCKET_STATUS_INIT_VAL;
 //            Prototypes for the static functions
 //*****************************************************************************
 
+static void hci_unsol_handle_patch_request(char *event_hdr);
+
+static void hci_event_handler(void *pRetParams, unsigned char *from, unsigned char *fromlen);
+
+static long hci_unsol_event_handler(char *event_hdr);
+
 static long hci_event_unsol_flowcontrol_handler(char *pEvent);
 
 static void update_socket_active_status(char *resp_params);
@@ -138,7 +144,8 @@ static void update_socket_active_status(char *resp_params);
 //!  @brief   Handle unsolicited event from type patch request
 //
 //*****************************************************************************
-void hci_unsol_handle_patch_request(char *event_hdr)
+static void
+hci_unsol_handle_patch_request(char *event_hdr)
 {
   char *params = (char *)(event_hdr) + HCI_EVENT_HEADER_SIZE;
   unsigned long ucLength = 0;
@@ -222,7 +229,7 @@ void hci_unsol_handle_patch_request(char *event_hdr)
 //!                  event handler from global array of handlers pointers
 //
 //*****************************************************************************
-void
+static void
 hci_event_handler(void *pRetParams, unsigned char *from, unsigned char *fromlen)
 {
   unsigned char *pucReceivedData, ucArgsize;
@@ -483,7 +490,7 @@ hci_event_handler(void *pRetParams, unsigned char *from, unsigned char *fromlen)
 //!  @brief              Handle unsolicited events
 //
 //*****************************************************************************
-long
+static long
 hci_unsol_event_handler(char *event_hdr)
 {
   char * data = NULL;
@@ -669,7 +676,8 @@ hci_unsolicited_event_handler(void)
 //!                  accordingly  the global socket status
 //
 //*****************************************************************************
-void set_socket_active_status(long Sd, long Status)
+void
+set_socket_active_status(long Sd, long Status)
 {
   if(M_IS_VALID_SD(Sd) && M_IS_VALID_STATUS(Status))
   {
@@ -692,7 +700,7 @@ void set_socket_active_status(long Sd, long Status)
 //!           number of free buffer in the SL device.
 //
 //*****************************************************************************
-long
+static long
 hci_event_unsol_flowcontrol_handler(char *pEvent)
 {
 
@@ -729,7 +737,6 @@ hci_event_unsol_flowcontrol_handler(char *pEvent)
 //!  @brief  Retrieve socket status
 //
 //*****************************************************************************
-
 long
 get_socket_active_status(long Sd)
 {
@@ -778,7 +785,6 @@ update_socket_active_status(char *resp_params)
 //!                        update the event opcode in a global variable.
 //
 //*****************************************************************************
-
 void 
 SimpleLinkWaitEvent(unsigned short usOpcode, void *pRetParams)
 {
@@ -803,7 +809,6 @@ SimpleLinkWaitEvent(unsigned short usOpcode, void *pRetParams)
 //!               data to read.
 //
 //*****************************************************************************
-
 void 
 SimpleLinkWaitData(unsigned char *pBuf, unsigned char *from, 
                    unsigned char *fromlen)
