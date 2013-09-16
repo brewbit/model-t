@@ -43,10 +43,15 @@ PROJECT_CSRC = \
        web_api.c \
        web_api_parser.c \
        xflash.c \
-       wifi/cc3000_common.c \
-       wifi/cc3000_spi.c \
-       wifi/evnt_handler.c \
-       wifi/hci.c \
+       wifi/core/cc3000_common.c \
+       wifi/core/cc3000_spi.c \
+       wifi/core/evnt_handler.c \
+       wifi/core/hci.c \
+       wifi/core/c_netapp.c \
+       wifi/core/c_nvmem.c \
+       wifi/core/c_security.c \
+       wifi/core/c_socket.c \
+       wifi/core/c_wlan.c \
        wifi/netapp.c \
        wifi/nvmem.c \
        wifi/security.c \

@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  netapp.h  - CC3000 Host Driver Implementation.
+*  netapp.c  - CC3000 Host Driver Implementation.
 *  Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -32,27 +32,14 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
-#ifndef __C_NETAPP_H__
-#define __C_NETAPP_H__
+#include "netapp.h"
+#include "core/netapp.h"
 
-#include "cc3000_common.h"
+#define MIN_TIMER_VAL_SECONDS      20
 
-//*****************************************************************************
-//
-// If building with a C++ compiler, make all of the definitions in this header
-// have a C binding.
-//
-//*****************************************************************************
-#ifdef  __cplusplus
-extern "C" {
-#endif
+/* Handles for making the APIs asychronous and thread-safe */
+extern Mutex             g_main_mutex;
 
-//*****************************************************************************
-//
-//! \addtogroup netapp_api
-//! @{
-//
-//*****************************************************************************
 
 
 //*****************************************************************************
@@ -69,7 +56,16 @@ extern "C" {
 //!                over resets.
 //
 //*****************************************************************************
-extern long  c_netapp_config_mac_adrress( unsigned char *mac );
+long netapp_config_mac_adrress(unsigned char * mac)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_netapp_config_mac_adrress(mac);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -97,9 +93,16 @@ extern long  c_netapp_config_mac_adrress( unsigned char *mac );
 //!               AP was established.
 //!
 //*****************************************************************************
-extern  long c_netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,
-                           unsigned long *aucDefaultGateway, unsigned long *aucDNSServer);
+long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsigned long *aucDefaultGateway, unsigned long *aucDNSServer)
+{
+    long ret;
 
+    chMtxLock(&g_main_mutex);
+    ret = c_netapp_dhcp(aucIP, aucSubnetMask, aucDefaultGateway, aucDNSServer);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 
 //*****************************************************************************
@@ -151,10 +154,22 @@ extern  long c_netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,
 //!               it will be set automatically to 20s.
 //!
 //*****************************************************************************
+
 #ifndef CC3000_TINY_DRIVER
-extern long c_netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
-                        unsigned long *aucKeepalive, unsigned long *aucInactivity);
+long
+netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
+                      unsigned long *aucKeepalive,    unsigned long *aucInactivity)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_netapp_timeout_values(aucDHCP, aucARP, aucKeepalive, aucInactivity);
+    chMtxUnlock();
+
+    return(ret);
+}
 #endif
+
 
 //*****************************************************************************
 //
@@ -176,25 +191,18 @@ extern long c_netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucAR
 //! @warning      Calling this function while a previous Ping Requests are in
 //!               progress will stop the previous ping request.
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
-extern long c_netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
-                               unsigned long ulPingSize, unsigned long ulPingTimeout);
-#endif
 
-//*****************************************************************************
-//
-//!  netapp_ping_stop
-//!
-//!  @param  none
-//!
-//!  @return  On success, zero is returned. On error, -1 is returned.
-//!
-//!  @brief   Stop any ping request.
-//!
-//!
-//*****************************************************************************
 #ifndef CC3000_TINY_DRIVER
-extern long c_netapp_ping_stop(void);
+long
+netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
+                 unsigned long ulPingSize, unsigned long ulPingTimeout)
+{
+    long ret;
+    chMtxLock(&g_main_mutex);
+    ret = c_netapp_ping_send(ip, ulPingAttempts, ulPingSize, ulPingTimeout);
+    chMtxUnlock();
+    return(ret);
+}
 #endif
 
 //*****************************************************************************
@@ -219,8 +227,41 @@ extern long c_netapp_ping_stop(void);
 //!           fields are 0.
 //!
 //*****************************************************************************
+
+
 #ifndef CC3000_TINY_DRIVER
-extern void c_netapp_ping_report(void);
+void netapp_ping_report()
+{
+    chMtxLock(&g_main_mutex);
+    c_netapp_ping_report();
+    chMtxUnlock();
+}
+#endif
+
+//*****************************************************************************
+//
+//!  netapp_ping_stop
+//!
+//!  @param  none
+//!
+//!  @return  On success, zero is returned. On error, -1 is returned.
+//!
+//!  @brief   Stop any ping request.
+//!
+//!
+//*****************************************************************************
+
+#ifndef CC3000_TINY_DRIVER
+long netapp_ping_stop()
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_netapp_ping_stop();
+    chMtxUnlock();
+
+    return(ret);
+}
 #endif
 
 //*****************************************************************************
@@ -240,7 +281,7 @@ extern void c_netapp_ping_report(void);
 //!
 //!  @brief   Obtain the CC3000 Network interface information.
 //!           Note that the information is available only after the WLAN
-//!           connection was established. Calling this function before
+//!             connection was established. Calling this function before
 //!           associated, will cause non-defined values to be returned.
 //!
 //! @note     The function is useful for figuring out the IP Configuration of
@@ -248,8 +289,20 @@ extern void c_netapp_ping_report(void);
 //!             the Wireless network the device is associated with.
 //!
 //*****************************************************************************
-extern void c_netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig );
 
+#ifndef CC3000_TINY_DRIVER
+void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
+{
+    chMtxLock(&g_main_mutex);
+    c_netapp_ipconfig(ipconfig);
+    chMtxUnlock();
+}
+#else
+void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
+{
+
+}
+#endif
 
 //*****************************************************************************
 //
@@ -262,10 +315,19 @@ extern void c_netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig );
 //!  @brief  Flushes ARP table
 //!
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
-extern long c_netapp_arp_flush(void);
-#endif
 
+#ifndef CC3000_TINY_DRIVER
+long netapp_arp_flush(void)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_netapp_arp_flush();
+    chMtxUnlock();
+
+    return(ret);
+}
+#endif
 
 //*****************************************************************************
 //
@@ -284,27 +346,17 @@ extern long c_netapp_arp_flush(void);
 //!              enable/disable the debug level
 //!
 //*****************************************************************************
+
+
 #ifndef CC3000_TINY_DRIVER
-extern long c_netapp_set_debug_level(unsigned long ulLevel);
-#endif
+long netapp_set_debug_level(unsigned long ulLevel)
+{
+    long ret;
 
-//*****************************************************************************
-//
-// Close the Doxygen group.
-//! @}
-//
-//*****************************************************************************
+    chMtxLock(&g_main_mutex);
+    ret = c_netapp_set_debug_level(ulLevel);
+    chMtxUnlock();
 
-
-
-//*****************************************************************************
-//
-// Mark the end of the C bindings section for C++ compilers.
-//
-//*****************************************************************************
-#ifdef  __cplusplus
+    return(ret);
 }
-#endif // __cplusplus
-
-#endif  // __C_NETAPP_H__
-
+#endif

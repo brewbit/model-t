@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  socket.h  - CC3000 Host Driver Implementation.
+*  socket.c  - CC3000 Host Driver Implementation.
 *  Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -32,10 +32,6 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
-#ifndef __C_SOCKET_H__
-#define __C_SOCKET_H__
-
-#include "cc3000_common.h"
 
 //*****************************************************************************
 //
@@ -43,32 +39,62 @@
 //! @{
 //
 //*****************************************************************************
+#include "socket.h"
+#include "wlan.h"
 
+#include "core/socket.h"
 
-//*****************************************************************************
-//
-// If building with a C++ compiler, make all of the definitions in this header
-// have a C binding.
-//
-//*****************************************************************************
-#ifdef  __cplusplus
-extern "C" {
+#include <string.h>
+
+extern wlan_socket_t           g_sockets[MAX_NUM_OF_SOCKETS];
+
+/* Handles for making the APIs asychronous and thread-safe */
+extern Semaphore         g_accept_semaphore;
+extern Semaphore         g_select_sleep_semaphore;
+extern Mutex             g_main_mutex;
+
+extern sockaddr                g_accept_sock_addr;
+
+extern int                     g_wlan_stopped;
+extern int                     g_accept_new_sd;
+extern int                     g_accept_socket;
+extern int                     g_accept_addrlen;
+extern int                     g_should_poll_accept;
+
+//Enable this flag if and only if you must comply with BSD socket close() function
+#ifdef _API_USE_BSD_CLOSE
+    #define close(sd) closesocket(sd)
 #endif
 
-#define MAX_NUM_OF_SOCKETS 4
+//Enable this flag if and only if you must comply with BSD socket read() and write() functions
+#ifdef _API_USE_BSD_READ_WRITE
+    #define read(sd, buf, len, flags) recv(sd, buf, len, flags)
+    #define write(sd, buf, len, flags) send(sd, buf, len, flags)
+#endif
 
-typedef struct _wlan_socket_t
+
+static void find_add_next_free_socket(int sd)
 {
-  int sd;
-  long status;
-  Semaphore sd_semaphore;
-}wlan_socket_t;
+    int index = 0;
+    for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
+        if (g_sockets[index].status == SOC_NOT_INITED){
+            g_sockets[index].status = SOCK_ON;
+            g_sockets[index].sd = sd;
+            return;
+        }
+    }
+}
 
-//*****************************************************************************
-//
-// Prototypes for the APIs.
-//
-//*****************************************************************************
+static void find_clear_socket(int sd)
+{
+    int index = 0;
+    for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
+        if (g_sockets[index].sd == sd){
+            g_sockets[index].status = SOC_NOT_INITED;
+            g_sockets[index].sd = -1;
+        }
+    }
+}
 
 //*****************************************************************************
 //
@@ -91,7 +117,21 @@ typedef struct _wlan_socket_t
 //!          application layer to obtain a socket handle.
 //
 //*****************************************************************************
-extern int c_socket(long domain, long type, long protocol);
+
+int
+socket(long domain, long type, long protocol)
+{
+    int ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_socket(domain, type, protocol);
+    /*if the value is not error then add to our array for later reference */
+    if (-1 != ret)
+        find_add_next_free_socket(ret);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -104,7 +144,26 @@ extern int c_socket(long domain, long type, long protocol);
 //!  @brief  The socket function closes a created socket.
 //
 //*****************************************************************************
-extern long c_closesocket(long sd);
+
+long
+closesocket(long sd)
+{
+    int ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_closesocket(sd);
+    /* remove from our array if no error */
+    if (0 == ret){
+        find_clear_socket(sd);
+        /* if this is a listeningsocket then reset
+           the global variable pointing to it*/
+        if (sd == g_accept_socket)
+            g_accept_socket = -1;
+    }
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -150,7 +209,39 @@ extern long c_closesocket(long sd);
 //! @sa     socket ; bind ; listen
 //
 //*****************************************************************************
-extern long c_accept(long sd, sockaddr *addr, socklen_t *addrlen);
+
+long
+accept(long sd, sockaddr *addr, socklen_t *addrlen)
+{
+    char val;
+
+    g_accept_socket = sd; /* save the accepting socket globally */
+
+    /* set socket options to non blocking for accept polling purposes */
+    val = SOCK_ON;
+    setsockopt( sd, SOL_SOCKET, SOCKOPT_NONBLOCK, &val, sizeof(val));
+
+    g_should_poll_accept = 1;
+    chSemSignal(&g_select_sleep_semaphore); /* wakeup select thread if needed */
+    chSemWait(&g_accept_semaphore); /* go to sleep until polling succeeds */
+    chSemWait(&g_select_sleep_semaphore); /* suspend select thread until waiting for more data */
+
+    if (g_wlan_stopped) { /* if wlan_stop then return */
+        g_should_poll_accept = 0;
+        return -1;
+    }
+
+    /* New socket created and accept success or SOC_ERROR
+       If sock error do not take an empty place in the sockets array */
+    if (g_accept_new_sd != SOC_ERROR)
+        find_add_next_free_socket(g_accept_new_sd);
+
+    memcpy(addr, &g_accept_sock_addr, g_accept_addrlen);
+    memcpy(addrlen, &g_accept_addrlen, sizeof(socklen_t));
+    g_should_poll_accept = 0;
+
+    return g_accept_new_sd;
+}
 
 //*****************************************************************************
 //
@@ -174,7 +265,18 @@ extern long c_accept(long sd, sockaddr *addr, socklen_t *addrlen);
 //! @sa     socket ; accept ; listen
 //
 //*****************************************************************************
-extern long c_bind(long sd, const sockaddr *addr, long addrlen);
+
+long
+bind(long sd, const sockaddr *addr, long addrlen)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_bind(sd, addr, addrlen);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -198,7 +300,18 @@ extern long c_bind(long sd, const sockaddr *addr, long addrlen);
 //! @note   On this version, backlog is not supported
 //
 //*****************************************************************************
-extern long c_listen(long sd, long backlog);
+
+long
+listen(long sd, long backlog)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_listen(sd, backlog);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -218,10 +331,20 @@ extern long c_listen(long sd, long backlog);
 //!          the function requires DNS server to be configured prior to its usage.
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
-extern int c_gethostbyname(char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr);
-#endif
 
+#ifndef CC3000_TINY_DRIVER
+int
+gethostbyname(char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr)
+{
+    int ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_gethostbyname(hostname, usNameLen, out_ip_addr);
+    chMtxUnlock();
+
+    return(ret);
+}
+#endif
 
 //*****************************************************************************
 //
@@ -251,7 +374,19 @@ extern int c_gethostbyname(char * hostname, unsigned short usNameLen, unsigned l
 //!  @sa socket
 //
 //*****************************************************************************
-extern long c_connect(long sd, const sockaddr *addr, long addrlen);
+
+long
+connect(long sd, const sockaddr *addr, long addrlen)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_connect(sd, addr, addrlen);
+    chMtxUnlock();
+
+    return(ret);
+}
+
 
 //*****************************************************************************
 //
@@ -290,8 +425,18 @@ extern long c_connect(long sd, const sockaddr *addr, long addrlen);
 //!  @sa socket
 //
 //*****************************************************************************
-extern int c_select(long nfds, fd_set *readsds, fd_set *writesds,
-                    fd_set *exceptsds, struct timeval *timeout);
+
+int
+select(long nfds, fd_set *readsds, fd_set *writesds, fd_set *exceptsds, struct timeval *timeout)
+{
+    int ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_select(nfds, readsds, writesds, exceptsds, timeout);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -339,9 +484,19 @@ extern int c_select(long nfds, fd_set *readsds, fd_set *writesds,
 //!  @sa getsockopt
 //
 //*****************************************************************************
+
 #ifndef CC3000_TINY_DRIVER
-extern int c_setsockopt(long sd, long level, long optname, const void *optval,
-                      socklen_t optlen);
+int
+setsockopt(long sd, long level, long optname, const void *optval, socklen_t optlen)
+{
+    int ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_setsockopt(sd, level, optname, optval, optlen);
+    chMtxUnlock();
+
+    return(ret);
+}
 #endif
 
 //*****************************************************************************
@@ -390,8 +545,18 @@ extern int c_setsockopt(long sd, long level, long optname, const void *optval,
 //!  @sa setsockopt
 //
 //*****************************************************************************
-extern int c_getsockopt(long sd, long level, long optname, void *optval,
-                         socklen_t *optlen);
+
+int
+getsockopt(long sd, long level, long optname, void *optval, socklen_t *optlen)
+{
+    int ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_getsockopt(sd, level, optname, optval, optlen);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -414,7 +579,37 @@ extern int c_getsockopt(long sd, long level, long optname, void *optval,
 //!  @Note On this version, only blocking mode is supported.
 //
 //*****************************************************************************
-extern int c_recv(long sd, void *buf, long len, long flags);
+
+int
+recv(long sd, void *buf, long len, long flags)
+{
+    int ret;
+    int index = 0;
+
+    chSemSignal(&g_select_sleep_semaphore); //wakeup select thread if needed
+
+    for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
+        if (g_sockets[index].sd == sd){
+            /* wait for data to become available */
+            chSemWait(&g_sockets[index].sd_semaphore);
+        }
+    }
+
+    /* suspend select thread until waiting for more data */
+    chSemWait(&g_select_sleep_semaphore);
+
+    if (g_wlan_stopped){ //if wlan_stop then return
+        return -1;
+    }
+
+    /* call the original recv knowing there is available data
+       and it's a non-blocking call */
+    chMtxLock(&g_main_mutex);
+    ret = c_recv(sd, buf, len, flags);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -429,7 +624,7 @@ extern int c_recv(long sd, void *buf, long len, long flags);
 //!  @param[in] from   pointer to an address structure indicating the source
 //!                    address: sockaddr. On this version only AF_INET is
 //!                    supported.
-//!  @param[in] fromlen   source address structure size
+//!  @param[in] fromlen   source address tructure size
 //!
 //!  @return         Return the number of bytes received, or -1 if an error
 //!                  occurred
@@ -444,8 +639,34 @@ extern int c_recv(long sd, void *buf, long len, long flags);
 //!  @Note On this version, only blocking mode is supported.
 //
 //*****************************************************************************
-extern int c_recvfrom(long sd, void *buf, long len, long flags, sockaddr *from,
-                      socklen_t *fromlen);
+int
+recvfrom(long sd, void *buf, long len, long flags,
+         sockaddr *from, socklen_t *fromlen)
+{
+    int index = 0;
+    int ret;
+
+    chSemSignal(&g_select_sleep_semaphore); //wakeup select thread if needed
+    for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
+        if (g_sockets[index].sd == sd){
+            /* wait for data to become available */
+            chSemWait(&g_sockets[index].sd_semaphore);
+        }
+    }
+    chSemWait(&g_select_sleep_semaphore); //suspend select thread until waiting for more data
+
+    if (g_wlan_stopped){ //if wlan_stop then return
+        return -1;
+    }
+
+    /* Call the original recv knowing there is available data
+       and it's a non-blocking call */
+    chMtxLock(&g_main_mutex);
+    ret = c_recvfrom(sd, buf, len, flags, from, fromlen);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -468,7 +689,18 @@ extern int c_recvfrom(long sd, void *buf, long len, long flags, sockaddr *from,
 //!  @sa             sendto
 //
 //*****************************************************************************
-extern int c_send(long sd, const void *buf, long len, long flags);
+
+int
+send(long sd, const void *buf, long len, long flags)
+{
+    int ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_send(sd, buf, len, flags);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -495,8 +727,19 @@ extern int c_send(long sd, const void *buf, long len, long flags);
 //!  @sa             send
 //
 //*****************************************************************************
-extern int c_sendto(long sd, const void *buf, long len, long flags,
-                  const sockaddr *to, socklen_t tolen);
+
+int
+sendto(long sd, const void *buf, long len, long flags,
+       const sockaddr *to, socklen_t tolen)
+{
+    int ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_sendto(sd, buf, len, flags, to, tolen);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -514,23 +757,15 @@ extern int c_sendto(long sd, const void *buf, long len, long flags,
 //!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
 //
 //*****************************************************************************
-extern int c_mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsigned short deviceServiceNameLength);
 
-//*****************************************************************************
-//
-// Close the Doxygen group.
-//! @}
-//
-//*****************************************************************************
+int
+mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsigned short deviceServiceNameLength)
+{
+    int ret;
 
+    chMtxLock(&g_main_mutex);
+    ret = c_mdnsAdvertiser(mdnsEnabled, deviceServiceName, deviceServiceNameLength);
+    chMtxUnlock();
 
-//*****************************************************************************
-//
-// Mark the end of the C bindings section for C++ compilers.
-//
-//*****************************************************************************
-#ifdef  __cplusplus
+    return(ret);
 }
-#endif // __cplusplus
-
-#endif // __C_SOCKET_H__

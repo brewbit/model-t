@@ -32,8 +32,8 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
-#ifndef __C_SOCKET_H__
-#define __C_SOCKET_H__
+#ifndef __SOCKET_H__
+#define __SOCKET_H__
 
 #include "cc3000_common.h"
 
@@ -54,15 +54,6 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
-
-#define MAX_NUM_OF_SOCKETS 4
-
-typedef struct _wlan_socket_t
-{
-  int sd;
-  long status;
-  Semaphore sd_semaphore;
-}wlan_socket_t;
 
 //*****************************************************************************
 //
@@ -91,7 +82,7 @@ typedef struct _wlan_socket_t
 //!          application layer to obtain a socket handle.
 //
 //*****************************************************************************
-extern int c_socket(long domain, long type, long protocol);
+extern int socket(long domain, long type, long protocol);
 
 //*****************************************************************************
 //
@@ -104,7 +95,7 @@ extern int c_socket(long domain, long type, long protocol);
 //!  @brief  The socket function closes a created socket.
 //
 //*****************************************************************************
-extern long c_closesocket(long sd);
+extern long closesocket(long sd);
 
 //*****************************************************************************
 //
@@ -150,7 +141,7 @@ extern long c_closesocket(long sd);
 //! @sa     socket ; bind ; listen
 //
 //*****************************************************************************
-extern long c_accept(long sd, sockaddr *addr, socklen_t *addrlen);
+extern long accept(long sd, sockaddr *addr, socklen_t *addrlen);
 
 //*****************************************************************************
 //
@@ -174,7 +165,7 @@ extern long c_accept(long sd, sockaddr *addr, socklen_t *addrlen);
 //! @sa     socket ; accept ; listen
 //
 //*****************************************************************************
-extern long c_bind(long sd, const sockaddr *addr, long addrlen);
+extern long bind(long sd, const sockaddr *addr, long addrlen);
 
 //*****************************************************************************
 //
@@ -198,7 +189,7 @@ extern long c_bind(long sd, const sockaddr *addr, long addrlen);
 //! @note   On this version, backlog is not supported
 //
 //*****************************************************************************
-extern long c_listen(long sd, long backlog);
+extern long listen(long sd, long backlog);
 
 //*****************************************************************************
 //
@@ -219,7 +210,7 @@ extern long c_listen(long sd, long backlog);
 //
 //*****************************************************************************
 #ifndef CC3000_TINY_DRIVER
-extern int c_gethostbyname(char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr);
+extern int gethostbyname(char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr);
 #endif
 
 
@@ -251,7 +242,7 @@ extern int c_gethostbyname(char * hostname, unsigned short usNameLen, unsigned l
 //!  @sa socket
 //
 //*****************************************************************************
-extern long c_connect(long sd, const sockaddr *addr, long addrlen);
+extern long connect(long sd, const sockaddr *addr, long addrlen);
 
 //*****************************************************************************
 //
@@ -290,8 +281,7 @@ extern long c_connect(long sd, const sockaddr *addr, long addrlen);
 //!  @sa socket
 //
 //*****************************************************************************
-extern int c_select(long nfds, fd_set *readsds, fd_set *writesds,
-                    fd_set *exceptsds, struct timeval *timeout);
+extern int select(long nfds, fd_set *readsds, fd_set *writesds, fd_set *exceptsds, struct timeval *timeout);
 
 //*****************************************************************************
 //
@@ -340,10 +330,9 @@ extern int c_select(long nfds, fd_set *readsds, fd_set *writesds,
 //
 //*****************************************************************************
 #ifndef CC3000_TINY_DRIVER
-extern int c_setsockopt(long sd, long level, long optname, const void *optval,
+extern int setsockopt(long sd, long level, long optname, const void *optval,
                       socklen_t optlen);
 #endif
-
 //*****************************************************************************
 //
 //! getsockopt
@@ -390,8 +379,8 @@ extern int c_setsockopt(long sd, long level, long optname, const void *optval,
 //!  @sa setsockopt
 //
 //*****************************************************************************
-extern int c_getsockopt(long sd, long level, long optname, void *optval,
-                         socklen_t *optlen);
+extern int getsockopt(long sd, long level, long optname, void *optval,
+                      socklen_t *optlen);
 
 //*****************************************************************************
 //
@@ -414,7 +403,7 @@ extern int c_getsockopt(long sd, long level, long optname, void *optval,
 //!  @Note On this version, only blocking mode is supported.
 //
 //*****************************************************************************
-extern int c_recv(long sd, void *buf, long len, long flags);
+extern int recv(long sd, void *buf, long len, long flags);
 
 //*****************************************************************************
 //
@@ -444,8 +433,8 @@ extern int c_recv(long sd, void *buf, long len, long flags);
 //!  @Note On this version, only blocking mode is supported.
 //
 //*****************************************************************************
-extern int c_recvfrom(long sd, void *buf, long len, long flags, sockaddr *from,
-                      socklen_t *fromlen);
+extern int recvfrom(long sd, void *buf, long len, long flags, sockaddr *from,
+                    socklen_t *fromlen);
 
 //*****************************************************************************
 //
@@ -468,7 +457,8 @@ extern int c_recvfrom(long sd, void *buf, long len, long flags, sockaddr *from,
 //!  @sa             sendto
 //
 //*****************************************************************************
-extern int c_send(long sd, const void *buf, long len, long flags);
+
+extern int send(long sd, const void *buf, long len, long flags);
 
 //*****************************************************************************
 //
@@ -495,7 +485,8 @@ extern int c_send(long sd, const void *buf, long len, long flags);
 //!  @sa             send
 //
 //*****************************************************************************
-extern int c_sendto(long sd, const void *buf, long len, long flags,
+
+extern int sendto(long sd, const void *buf, long len, long flags,
                   const sockaddr *to, socklen_t tolen);
 
 //*****************************************************************************
@@ -514,7 +505,7 @@ extern int c_sendto(long sd, const void *buf, long len, long flags,
 //!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
 //
 //*****************************************************************************
-extern int c_mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsigned short deviceServiceNameLength);
+extern int mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsigned short deviceServiceNameLength);
 
 //*****************************************************************************
 //
@@ -533,4 +524,4 @@ extern int c_mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName
 }
 #endif // __cplusplus
 
-#endif // __C_SOCKET_H__
+#endif // __SOCKET_H__

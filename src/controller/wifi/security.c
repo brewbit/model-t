@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  security.h  - CC3000 Host Driver Implementation.
+*  security.c  - CC3000 Host Driver Implementation.
 *  Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -32,23 +32,20 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
-#ifndef __C_SECURITY__
-#define __C_SECURITY__
-
-#include "nvmem.h"
-#include "cc3000_common.h"
 
 //*****************************************************************************
 //
-// If building with a C++ compiler, make all of the definitions in this header
-// have a C binding.
+//! \addtogroup security_api
+//! @{
 //
 //*****************************************************************************
-#ifdef  __cplusplus
-extern "C" {
-#endif
+
+#include "security.h"
+#include "core/security.h"
 
 #ifndef CC3000_UNENCRYPTED_SMART_CONFIG
+/* Handles for making the APIs asychronous and thread-safe */
+extern Mutex             g_main_mutex;
 
 
 //*****************************************************************************
@@ -67,7 +64,14 @@ extern "C" {
 //!
 //!
 //*****************************************************************************
-extern void c_aes_encrypt(unsigned char *state, unsigned char *key);
+
+void aes_encrypt(unsigned char *state,
+                 unsigned char *key)
+{
+    chMtxLock(&g_main_mutex);
+    c_aes_encrypt(state, key);
+    chMtxUnlock();
+}
 
 //*****************************************************************************
 //
@@ -85,7 +89,14 @@ extern void c_aes_encrypt(unsigned char *state, unsigned char *key);
 //!
 //!
 //*****************************************************************************
-extern void c_aes_decrypt(unsigned char *state, unsigned char *key);
+
+void aes_decrypt(unsigned char *state,
+                 unsigned char *key)
+{
+    chMtxLock(&g_main_mutex);
+    c_aes_decrypt(state, key);
+    chMtxUnlock();
+}
 
 //*****************************************************************************
 //
@@ -101,7 +112,15 @@ extern void c_aes_decrypt(unsigned char *state, unsigned char *key);
 //!
 //!
 //*****************************************************************************
-extern signed long c_aes_read_key(unsigned char *key);
+
+signed long aes_read_key(unsigned char *key)
+{
+    long ret;
+    chMtxLock(&g_main_mutex);
+    ret = c_aes_read_key(key);
+    chMtxUnlock();
+    return (ret);
+}
 
 //*****************************************************************************
 //
@@ -116,8 +135,21 @@ extern signed long c_aes_read_key(unsigned char *key);
 //!
 //!
 //*****************************************************************************
-extern signed long c_aes_write_key(unsigned char *key);
+
+signed long aes_write_key(unsigned char *key)
+{
+    long ret;
+    chMtxLock(&g_main_mutex);
+    ret = c_aes_write_key(key);
+    chMtxUnlock();
+    return (ret);
+}
 
 #endif //CC3000_UNENCRYPTED_SMART_CONFIG
 
-#endif /* __C_SECURITY__ */
+//*****************************************************************************
+//
+// Close the Doxygen group.
+//! @}
+//
+//*****************************************************************************

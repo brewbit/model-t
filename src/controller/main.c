@@ -15,7 +15,6 @@
 #include "app_cfg.h"
 #include "debug_client.h"
 #include "wifi/wlan.h"
-#include "wifi/evnt_handler.h"
 #include "wifi/nvmem.h"
 #include "wifi/socket.h"
 #include "xflash.h"
@@ -52,16 +51,16 @@ void prvGetRegistersFromStack( uint32_t *pulFaultStackAddress )
   pc = pulFaultStackAddress[6];
   psr = pulFaultStackAddress[7];
 
-//  chprintf(SD_STDIO, "Hard Fault:\r\n");
-//  chprintf(SD_STDIO, "  r0: %08x\r\n", r0);
-//  chprintf(SD_STDIO, "  r1: %08x\r\n", r1);
-//  chprintf(SD_STDIO, "  r2: %08x\r\n", r2);
-//  chprintf(SD_STDIO, "  r3: %08x\r\n", r3);
-//  chprintf(SD_STDIO, "  r12: %08x\r\n", r12);
-//  chprintf(SD_STDIO, "  lr: %08x\r\n", lr);
-//  chprintf(SD_STDIO, "  pc: %08x\r\n", pc);
-//  chprintf(SD_STDIO, "  psr: %08x\r\n", psr);
-//  chThdSleepSeconds(5);
+  chprintf(SD_STDIO, "Hard Fault:\r\n");
+  chprintf(SD_STDIO, "  r0: %08x\r\n", r0);
+  chprintf(SD_STDIO, "  r1: %08x\r\n", r1);
+  chprintf(SD_STDIO, "  r2: %08x\r\n", r2);
+  chprintf(SD_STDIO, "  r3: %08x\r\n", r3);
+  chprintf(SD_STDIO, "  r12: %08x\r\n", r12);
+  chprintf(SD_STDIO, "  lr: %08x\r\n", lr);
+  chprintf(SD_STDIO, "  pc: %08x\r\n", pc);
+  chprintf(SD_STDIO, "  psr: %08x\r\n", psr);
+  chThdSleepSeconds(5);
 
   /* When the following line is hit, the variables contain the register values. */
   chSysHalt();
@@ -101,12 +100,11 @@ msg_t
 idle_thread(void* arg)
 {
   (void)arg;
+  chRegSetThreadName("idle");
 
   while (1) {
     gui_idle();
     app_cfg_idle();
-
-    hci_unsolicited_event_handler();
   }
 
   return 0;
@@ -117,6 +115,8 @@ idle_thread(void* arg)
 static int connected;
 void wlan_event(long event_type, char * data, unsigned char length )
 {
+  (void)length;
+
   switch (event_type) {
     // Notification that the first-time configuration process is complete
   case HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE:
@@ -174,6 +174,7 @@ long wlan_read_interupt_pin()
 
 void write_wlan_pin(unsigned char val)
 {
+  chprintf(SD_STDIO, "write wlan pin %d\r\n", val);
   palWritePad(PORT_WIFI_EN, PAD_WIFI_EN, val);
 }
 
@@ -192,16 +193,17 @@ mdns_thread(void* arg)
     }
     chThdSleepSeconds(5);
   }
+
+  return 0;
 }
 
 msg_t
 wlan_thread(void* arg)
 {
   (void)arg;
+  chRegSetThreadName("wlan");
 
   wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, write_wlan_pin);
-  chprintf(SD_STDIO, "stopping...\r\n");
-  wlan_stop();
 
   chprintf(SD_STDIO, "starting...\r\n");
   wlan_start(0);
@@ -328,6 +330,8 @@ wlan_thread(void* arg)
 //
 //    chThdSleepSeconds(1);
 //  }
+
+  return 0;
 }
 
 int
@@ -339,20 +343,20 @@ main(void)
   /* start stdout port */
   sdStart(SD_STDIO, NULL);
 
-  app_cfg_init();
-  gfx_init();
-  touch_init();
-  temp_control_init();
-  web_api_init();
-  gui_init();
-//  debug_client_init();
-
-//  xflash_write();
-
-  widget_t* home_screen = home_screen_create();
-  gui_push_screen(home_screen);
-
-  chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
+//  app_cfg_init();
+//  gfx_init();
+//  touch_init();
+//  temp_control_init();
+//  web_api_init();
+//  gui_init();
+////  debug_client_init();
+//
+////  xflash_write();
+//
+//  widget_t* home_screen = home_screen_create();
+//  gui_push_screen(home_screen);
+//
+//  chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
   chThdCreateFromHeap(NULL, 2048, NORMALPRIO, wlan_thread, NULL);
 //  chThdCreateFromHeap(NULL, 256, NORMALPRIO, mdns_thread, NULL);
 

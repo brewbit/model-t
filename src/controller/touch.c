@@ -184,6 +184,7 @@ static msg_t
 touch_thread(void* arg)
 {
   (void)arg;
+  chRegSetThreadName("touch");
 
   while (1) {
     uint32_t z1 = read_axis(&z1_axis);

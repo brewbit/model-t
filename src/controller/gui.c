@@ -84,6 +84,8 @@ gui_thread_func(void* arg)
 {
   (void)arg;
 
+  chRegSetThreadName("gui");
+
   while (1) {
     Thread* tp = chMsgWait();
     thread_msg_t* msg = (thread_msg_t*)chMsgGet(tp);

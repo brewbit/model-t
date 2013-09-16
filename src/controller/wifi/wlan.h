@@ -32,8 +32,8 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
-#ifndef __C_WLAN_H__
-#define __C_WLAN_H__
+#ifndef __WLAN_H__
+#define __WLAN_H__
 
 #include "cc3000_common.h"
 
@@ -47,12 +47,12 @@
 extern "C" {
 #endif
 
+#define      WLAN_SEC_UNSEC (0)
+#define      WLAN_SEC_WEP   (1)
+#define      WLAN_SEC_WPA   (2)
+#define      WLAN_SEC_WPA2  (3)
 
-#define WLAN_SEC_UNSEC 0
-#define WLAN_SEC_WEP   1
-#define WLAN_SEC_WPA   2
-#define WLAN_SEC_WPA2  3
-
+#define      SOC_NOT_INITED (-3)   /* socket in progress */
 //*****************************************************************************
 //
 //! \addtogroup wlan_api
@@ -90,6 +90,10 @@ extern "C" {
 //!  @param    sBootLoaderPatches  0 no patch or pointer to bootloader patches
 //!  @param    sReadWlanInterruptPin    init callback. the callback read wlan
 //!            interrupt status.
+//!  @param    sWlanInterruptEnable   init callback. the callback enable wlan
+//!            interrupt.
+//!  @param    sWlanInterruptDisable   init callback. the callback disable wlan
+//!            interrupt.
 //!  @param    sWriteWlanPin      init callback. the callback write value
 //!            to device pin.
 //!
@@ -102,12 +106,14 @@ extern "C" {
 //!  @warning This function must be called before ANY other wlan driver function
 //
 //*****************************************************************************
-extern void c_wlan_init(tWlanCB sWlanCB,
-                        tFWPatches sFWPatches,
-                        tDriverPatches sDriverPatches,
-                        tBootLoaderPatches sBootLoaderPatches,
-                        tWlanReadInteruptPin  sReadWlanInterruptPin,
-                        tWriteWlanPin sWriteWlanPin);
+extern void wlan_init(tWlanCB sWlanCB,
+                      tFWPatches sFWPatches,
+                      tDriverPatches sDriverPatches,
+                      tBootLoaderPatches sBootLoaderPatches,
+                      tWlanReadInteruptPin  sReadWlanInterruptPin,
+                      tWriteWlanPin         sWriteWlanPin);
+
+
 
 //*****************************************************************************
 //
@@ -135,7 +141,7 @@ extern void c_wlan_init(tWlanCB sWlanCB,
 //!
 //
 //*****************************************************************************
-extern void c_wlan_start(unsigned short usPatchesAvailableAtHost);
+extern void wlan_start(unsigned short usPatchesAvailableAtHost);
 
 //*****************************************************************************
 //
@@ -150,7 +156,7 @@ extern void c_wlan_start(unsigned short usPatchesAvailableAtHost);
 //!  @sa            wlan_start
 //
 //*****************************************************************************
-extern void c_wlan_stop(void);
+extern void wlan_stop(void);
 
 //*****************************************************************************
 //
@@ -183,12 +189,12 @@ extern void c_wlan_stop(void);
 //
 //*****************************************************************************
 #ifndef CC3000_TINY_DRIVER
-extern long c_wlan_connect(unsigned long ulSecType, char *ssid, long ssid_len,
-                           unsigned char *bssid, unsigned char *key, long key_len);
+extern long wlan_connect(unsigned long ulSecType, char *ssid, long ssid_len,
+                        unsigned char *bssid, unsigned char *key, long key_len);
 #else
-extern long c_wlan_connect(char *ssid, long ssid_len);
-#endif
+extern long wlan_connect(char *ssid, long ssid_len);
 
+#endif
 
 //*****************************************************************************
 //
@@ -201,7 +207,8 @@ extern long c_wlan_connect(char *ssid, long ssid_len);
 //!  @sa         wlan_connect
 //
 //*****************************************************************************
-extern long c_wlan_disconnect(void);
+
+extern long wlan_disconnect(void);
 
 //*****************************************************************************
 //
@@ -230,15 +237,16 @@ extern long c_wlan_disconnect(void);
 //!  @sa        wlan_ioctl_del_profile
 //
 //*****************************************************************************
-extern long c_wlan_add_profile(unsigned long ulSecType, unsigned char* ucSsid,
-                                         unsigned long ulSsidLen,
-                                         unsigned char *ucBssid,
-                                         unsigned long ulPriority,
-                                         unsigned long ulPairwiseCipher_Or_Key,
-                                         unsigned long ulGroupCipher_TxKeyLen,
-                                         unsigned long ulKeyMgmt,
-                                         unsigned char* ucPf_OrKey,
-                                         unsigned long ulPassPhraseLen);
+
+extern long wlan_add_profile(unsigned long ulSecType, unsigned char* ucSsid,
+                             unsigned long ulSsidLen,
+                             unsigned char *ucBssid,
+                             unsigned long ulPriority,
+                             unsigned long ulPairwiseCipher_Or_Key,
+                             unsigned long ulGroupCipher_TxKeyLen,
+                             unsigned long ulKeyMgmt,
+                             unsigned char* ucPf_OrKey,
+                             unsigned long ulPassPhraseLen);
 
 
 
@@ -257,7 +265,7 @@ extern long c_wlan_add_profile(unsigned long ulSecType, unsigned char* ucSsid,
 //!  @sa        wlan_add_profile
 //
 //*****************************************************************************
-extern long c_wlan_ioctl_del_profile(unsigned long ulIndex);
+extern long wlan_ioctl_del_profile(unsigned long ulIndex);
 
 //*****************************************************************************
 //
@@ -280,7 +288,7 @@ extern long c_wlan_ioctl_del_profile(unsigned long ulIndex);
 //!            masked (1), the device will not send the masked event to host.
 //
 //*****************************************************************************
-extern long c_wlan_set_event_mask(unsigned long ulMask);
+extern long wlan_set_event_mask(unsigned long ulMask);
 
 //*****************************************************************************
 //
@@ -294,7 +302,7 @@ extern long c_wlan_set_event_mask(unsigned long ulMask);
 //!  @brief    get wlan status: disconnected, scanning, connecting or connected
 //
 //*****************************************************************************
-extern long c_wlan_ioctl_statusget(void);
+extern long wlan_ioctl_statusget(void);
 
 
 //*****************************************************************************
@@ -328,9 +336,10 @@ extern long c_wlan_ioctl_statusget(void);
 //!  @sa         wlan_add_profile , wlan_ioctl_del_profile
 //
 //*****************************************************************************
-extern long c_wlan_ioctl_set_connection_policy(unsigned long should_connect_to_open_ap,
-                                               unsigned long should_use_fast_connect,
-                                               unsigned long ulUseProfiles);
+extern long wlan_ioctl_set_connection_policy(
+                                        unsigned long should_connect_to_open_ap,
+                                        unsigned long should_use_fast_connect,
+                                        unsigned long ulUseProfiles);
 
 //*****************************************************************************
 //
@@ -365,8 +374,10 @@ extern long c_wlan_ioctl_set_connection_policy(unsigned long should_connect_to_o
 //!  @sa        wlan_ioctl_set_scan_params
 //
 //*****************************************************************************
-extern long c_wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
-                                          unsigned char *ucResults);
+
+
+extern long wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
+                                       unsigned char *ucResults);
 
 //*****************************************************************************
 //
@@ -404,11 +415,11 @@ extern long c_wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
 //!  @sa        wlan_ioctl_get_scan_results
 //
 //*****************************************************************************
-extern long c_wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwellTime,
-                                         unsigned long uiMaxDwellTime, unsigned long uiNumOfProbeRequests,
-                                         unsigned long uiChannelMask, long iRSSIThreshold,
-                                         unsigned long uiSNRThreshold, unsigned long uiDefaultTxPower,
-                                         unsigned long *aiIntervalList);
+extern long wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwellTime,
+                                       unsigned long uiMaxDwellTime, unsigned long uiNumOfProbeRequests,
+                                       unsigned long uiChannelMask, long iRSSIThreshold,
+                                       unsigned long uiSNRThreshold, unsigned long uiDefaultTxPower,
+                                       unsigned long *aiIntervalList);
 
 
 //*****************************************************************************
@@ -431,7 +442,8 @@ extern long c_wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long u
 //!  @sa      wlan_smart_config_set_prefix , wlan_smart_config_stop
 //
 //*****************************************************************************
-extern long c_wlan_smart_config_start(unsigned long algoEncryptedFlag);
+extern long wlan_smart_config_start(unsigned long algoEncryptedFlag);
+
 
 //*****************************************************************************
 //
@@ -446,7 +458,7 @@ extern long c_wlan_smart_config_start(unsigned long algoEncryptedFlag);
 //!  @sa      wlan_smart_config_start , wlan_smart_config_set_prefix
 //
 //*****************************************************************************
-extern long c_wlan_smart_config_stop(void);
+extern long wlan_smart_config_stop(void);
 
 //*****************************************************************************
 //
@@ -464,7 +476,7 @@ extern long c_wlan_smart_config_stop(void);
 //!  @sa      wlan_smart_config_start , wlan_smart_config_stop
 //
 //*****************************************************************************
-extern long c_wlan_smart_config_set_prefix(char* cNewPrefix);
+extern long wlan_smart_config_set_prefix(char* cNewPrefix);
 
 //*****************************************************************************
 //
@@ -480,7 +492,7 @@ extern long c_wlan_smart_config_set_prefix(char* cNewPrefix);
 //!           behavior is as defined by connection policy.
 //
 //*****************************************************************************
-extern long c_wlan_smart_config_process(void);
+extern long wlan_smart_config_process(void);
 
 //*****************************************************************************
 //
@@ -500,4 +512,4 @@ extern long c_wlan_smart_config_process(void);
 }
 #endif // __cplusplus
 
-#endif  // __C_WLAN_H__
+#endif  // __WLAN_H__

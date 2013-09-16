@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  wlan.h  - CC3000 Host Driver Implementation.
+*  wlan.c  - CC3000 Host Driver Implementation.
 *  Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -32,26 +32,6 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
-#ifndef __C_WLAN_H__
-#define __C_WLAN_H__
-
-#include "cc3000_common.h"
-
-//*****************************************************************************
-//
-// If building with a C++ compiler, make all of the definitions in this header
-// have a C binding.
-//
-//*****************************************************************************
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
-
-#define WLAN_SEC_UNSEC 0
-#define WLAN_SEC_WEP   1
-#define WLAN_SEC_WPA   2
-#define WLAN_SEC_WPA2  3
 
 //*****************************************************************************
 //
@@ -60,6 +40,38 @@ extern "C" {
 //
 //*****************************************************************************
 
+#include "ch.h"
+#include "hal.h"
+
+#include <stdlib.h>
+#include <string.h>
+
+#include "wlan.h"
+#include "socket.h"
+
+#include "core/wlan.h"
+#include "core/socket.h"
+
+wlan_socket_t           g_sockets[MAX_NUM_OF_SOCKETS];
+
+/* Handles for making the APIs asychronous and thread-safe */
+Semaphore         g_accept_semaphore;
+Semaphore         g_select_sleep_semaphore;
+Semaphore         g_spi_semaphore;
+Mutex             g_main_mutex;
+Thread*           g_select_thread;
+
+sockaddr                g_accept_sock_addr;
+
+int                     g_wlan_stopped;
+int                     g_accept_new_sd;
+int                     g_accept_socket;
+int                     g_accept_addrlen;
+int                     g_should_poll_accept;
+
+//char                    selectThreadStack[512];
+
+static msg_t SelectThread(void* arg);
 
 //*****************************************************************************
 //
@@ -90,6 +102,10 @@ extern "C" {
 //!  @param    sBootLoaderPatches  0 no patch or pointer to bootloader patches
 //!  @param    sReadWlanInterruptPin    init callback. the callback read wlan
 //!            interrupt status.
+//!  @param    sWlanInterruptEnable   init callback. the callback enable wlan
+//!            interrupt.
+//!  @param    sWlanInterruptDisable   init callback. the callback disable wlan
+//!            interrupt.
 //!  @param    sWriteWlanPin      init callback. the callback write value
 //!            to device pin.
 //!
@@ -102,12 +118,24 @@ extern "C" {
 //!  @warning This function must be called before ANY other wlan driver function
 //
 //*****************************************************************************
-extern void c_wlan_init(tWlanCB sWlanCB,
-                        tFWPatches sFWPatches,
-                        tDriverPatches sDriverPatches,
-                        tBootLoaderPatches sBootLoaderPatches,
-                        tWlanReadInteruptPin  sReadWlanInterruptPin,
-                        tWriteWlanPin sWriteWlanPin);
+
+void wlan_init(tWlanCB               sWlanCB,
+               tFWPatches            sFWPatches,
+               tDriverPatches        sDriverPatches,
+               tBootLoaderPatches    sBootLoaderPatches,
+               tWlanReadInteruptPin  sReadWlanInterruptPin,
+               tWriteWlanPin         sWriteWlanPin)
+{
+  chMtxInit(&g_main_mutex);
+  chSemInit(&g_spi_semaphore, 0);
+
+  chMtxLock(&g_main_mutex);
+  g_select_thread = NULL;
+  c_wlan_init(sWlanCB, sFWPatches, sDriverPatches,
+      sBootLoaderPatches, sReadWlanInterruptPin,
+      sWriteWlanPin);
+  chMtxUnlock();
+}
 
 //*****************************************************************************
 //
@@ -135,7 +163,34 @@ extern void c_wlan_init(tWlanCB sWlanCB,
 //!
 //
 //*****************************************************************************
-extern void c_wlan_start(unsigned short usPatchesAvailableAtHost);
+
+void wlan_start(unsigned short usPatchesAvailableAtHost)
+{
+  chMtxLock(&g_main_mutex);
+  chprintf(SD_STDIO, "locked\r\n");
+
+  int index = 0;
+
+  for(index = 0; index < MAX_NUM_OF_SOCKETS; index++){
+    g_sockets[index].sd = -1;
+    g_sockets[index].status = SOC_NOT_INITED;
+    chSemInit(&g_sockets[index].sd_semaphore, 0);
+  }
+
+  chSemInit(&g_accept_semaphore, 0);
+  chSemInit(&g_select_sleep_semaphore, 0);
+
+  c_wlan_start(usPatchesAvailableAtHost);
+
+  g_wlan_stopped = 0;
+  g_should_poll_accept = 0;
+  g_accept_socket = -1;
+
+  g_select_thread = chThdCreateFromHeap(NULL, 512, NORMALPRIO, SelectThread, NULL);
+
+  chMtxUnlock();
+}
+
 
 //*****************************************************************************
 //
@@ -150,7 +205,27 @@ extern void c_wlan_start(unsigned short usPatchesAvailableAtHost);
 //!  @sa            wlan_start
 //
 //*****************************************************************************
-extern void c_wlan_stop(void);
+
+void wlan_stop(void)
+{
+    int index = 0;
+
+    chMtxLock(&g_main_mutex);
+
+    c_wlan_stop();
+
+    chThdTerminate(g_select_thread);
+    chThdWait(g_select_thread);
+    g_wlan_stopped = 1;
+
+    for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
+        g_sockets[index].sd = 1;
+        g_sockets[index].status = SOC_NOT_INITED;
+    }
+
+    chMtxUnlock();
+}
+
 
 //*****************************************************************************
 //
@@ -182,13 +257,31 @@ extern void c_wlan_stop(void);
 //!  @sa         wlan_disconnect
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
-extern long c_wlan_connect(unsigned long ulSecType, char *ssid, long ssid_len,
-                           unsigned char *bssid, unsigned char *key, long key_len);
-#else
-extern long c_wlan_connect(char *ssid, long ssid_len);
-#endif
 
+#ifndef CC3000_TINY_DRIVER
+long wlan_connect(unsigned long ulSecType, char *ssid, long ssid_len,
+             unsigned char *bssid, unsigned char *key, long key_len)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_wlan_connect(ulSecType, ssid, ssid_len, bssid, key, key_len);
+    chMtxUnlock();
+
+    return(ret);
+}
+#else
+long wlan_connect(char *ssid, long ssid_len)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_wlan_connect(ssid, ssid_len);
+    chMtxUnlock();
+
+    return(ret);
+}
+#endif
 
 //*****************************************************************************
 //
@@ -201,101 +294,17 @@ extern long c_wlan_connect(char *ssid, long ssid_len);
 //!  @sa         wlan_connect
 //
 //*****************************************************************************
-extern long c_wlan_disconnect(void);
 
-//*****************************************************************************
-//
-//!  wlan_add_profile
-//!
-//!  @param    ulSecType  WLAN_SEC_UNSEC,WLAN_SEC_WEP,WLAN_SEC_WPA,WLAN_SEC_WPA2
-//!  @param    ucSsid    ssid  SSID up to 32 bytes
-//!  @param    ulSsidLen ssid length
-//!  @param    ucBssid   bssid  6 bytes
-//!  @param    ulPriority ulPriority profile priority. Lowest priority:0.
-//!  @param    ulPairwiseCipher_Or_TxKeyLen  key length for WEP security
-//!  @param    ulGroupCipher_TxKeyIndex  key index
-//!  @param    ulKeyMgmt        KEY management
-//!  @param    ucPf_OrKey       security key
-//!  @param    ulPassPhraseLen  security key length for WPA\WPA2
-//!
-//!  @return    On success, zero is returned. On error, -1 is returned
-//!
-//!  @brief     When auto start is enabled, the device connects to
-//!             station from the profiles table. Up to 7 profiles are supported.
-//!             If several profiles configured the device choose the highest
-//!             priority profile, within each priority group, device will choose
-//!             profile based on security policy, signal strength, etc
-//!             parameters. All the profiles are stored in CC3000 NVMEM.
-//!
-//!  @sa        wlan_ioctl_del_profile
-//
-//*****************************************************************************
-extern long c_wlan_add_profile(unsigned long ulSecType, unsigned char* ucSsid,
-                                         unsigned long ulSsidLen,
-                                         unsigned char *ucBssid,
-                                         unsigned long ulPriority,
-                                         unsigned long ulPairwiseCipher_Or_Key,
-                                         unsigned long ulGroupCipher_TxKeyLen,
-                                         unsigned long ulKeyMgmt,
-                                         unsigned char* ucPf_OrKey,
-                                         unsigned long ulPassPhraseLen);
+long wlan_disconnect()
+{
+    long ret;
 
+    chMtxLock(&g_main_mutex);
+    ret = c_wlan_disconnect();
+    chMtxUnlock();
 
-
-//*****************************************************************************
-//
-//!  wlan_ioctl_del_profile
-//!
-//!  @param    index   number of profile to delete
-//!
-//!  @return    On success, zero is returned. On error, -1 is returned
-//!
-//!  @brief     Delete WLAN profile
-//!
-//!  @Note      In order to delete all stored profile, set index to 255.
-//!
-//!  @sa        wlan_add_profile
-//
-//*****************************************************************************
-extern long c_wlan_ioctl_del_profile(unsigned long ulIndex);
-
-//*****************************************************************************
-//
-//!  wlan_set_event_mask
-//!
-//!  @param    mask   mask option:
-//!       HCI_EVNT_WLAN_UNSOL_CONNECT connect event
-//!       HCI_EVNT_WLAN_UNSOL_DISCONNECT disconnect event
-//!       HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE  smart config done
-//!       HCI_EVNT_WLAN_UNSOL_INIT init done
-//!       HCI_EVNT_WLAN_UNSOL_DHCP dhcp event report
-//!       HCI_EVNT_WLAN_ASYNC_PING_REPORT ping report
-//!       HCI_EVNT_WLAN_KEEPALIVE keepalive
-//!       HCI_EVNT_WLAN_TX_COMPLETE - disable information on end of transmission
-//!       Saved: no.
-//!
-//!  @return    On success, zero is returned. On error, -1 is returned
-//!
-//!  @brief    Mask event according to bit mask. In case that event is
-//!            masked (1), the device will not send the masked event to host.
-//
-//*****************************************************************************
-extern long c_wlan_set_event_mask(unsigned long ulMask);
-
-//*****************************************************************************
-//
-//!  wlan_ioctl_statusget
-//!
-//!  @param none
-//!
-//!  @return    WLAN_STATUS_DISCONNECTED, WLAN_STATUS_SCANING,
-//!             STATUS_CONNECTING or WLAN_STATUS_CONNECTED
-//!
-//!  @brief    get wlan status: disconnected, scanning, connecting or connected
-//
-//*****************************************************************************
-extern long c_wlan_ioctl_statusget(void);
-
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -328,16 +337,105 @@ extern long c_wlan_ioctl_statusget(void);
 //!  @sa         wlan_add_profile , wlan_ioctl_del_profile
 //
 //*****************************************************************************
-extern long c_wlan_ioctl_set_connection_policy(unsigned long should_connect_to_open_ap,
-                                               unsigned long should_use_fast_connect,
-                                               unsigned long ulUseProfiles);
+
+long
+wlan_ioctl_set_connection_policy(unsigned long should_connect_to_open_ap,
+                                 unsigned long ulShouldUseFastConnect,
+                                 unsigned long ulUseProfiles)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_wlan_ioctl_set_connection_policy(should_connect_to_open_ap,\
+                                             ulShouldUseFastConnect,\
+                                             ulUseProfiles);
+    chMtxUnlock();
+
+    return(ret);
+}
+
+//*****************************************************************************
+//
+//!  wlan_add_profile
+//!
+//!  @param    ulSecType  WLAN_SEC_UNSEC,WLAN_SEC_WEP,WLAN_SEC_WPA,WLAN_SEC_WPA2
+//!  @param    ucSsid    ssid  SSID up to 32 bytes
+//!  @param    ulSsidLen ssid length
+//!  @param    ucBssid   bssid  6 bytes
+//!  @param    ulPriority ulPriority profile priority. Lowest priority:0.
+//!  @param    ulPairwiseCipher_Or_TxKeyLen  key length for WEP security
+//!  @param    ulGroupCipher_TxKeyIndex  key index
+//!  @param    ulKeyMgmt        KEY management
+//!  @param    ucPf_OrKey       security key
+//!  @param    ulPassPhraseLen  security key length for WPA\WPA2
+//!
+//!  @return    On success, zero is returned. On error, -1 is returned
+//!
+//!  @brief     When auto start is enabled, the device connects to
+//!             station from the profiles table. Up to 7 profiles are supported.
+//!             If several profiles configured the device choose the highest
+//!             priority profile, within each priority group, device will choose
+//!             profile based on security policy, signal strength, etc
+//!             parameters. All the profiles are stored in CC3000 NVMEM.
+//!
+//!  @sa        wlan_ioctl_del_profile
+//
+//*****************************************************************************
+long wlan_add_profile(unsigned long ulSecType,
+                      unsigned char* ucSsid,
+                      unsigned long ulSsidLen,
+                      unsigned char *ucBssid,
+                      unsigned long ulPriority,
+                      unsigned long ulPairwiseCipher_Or_TxKeyLen,
+                      unsigned long ulGroupCipher_TxKeyIndex,
+                      unsigned long ulKeyMgmt,
+                      unsigned char* ucPf_OrKey,
+                      unsigned long ulPassPhraseLen)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_wlan_add_profile(ulSecType, ucSsid, ulSsidLen, ucBssid, ulPriority,
+                             ulPairwiseCipher_Or_TxKeyLen, ulGroupCipher_TxKeyIndex,
+                             ulKeyMgmt, ucPf_OrKey, ulPassPhraseLen);
+    chMtxUnlock();
+
+    return(ret);
+}
+
+
+//*****************************************************************************
+//
+//!  wlan_ioctl_del_profile
+//!
+//!  @param    index   number of profile to delete
+//!
+//!  @return    On success, zero is returned. On error, -1 is returned
+//!
+//!  @brief     Delete WLAN profile
+//!
+//!  @Note      In order to delete all stored profile, set index to 255.
+//!
+//!  @sa        wlan_add_profile
+//
+//*****************************************************************************
+long wlan_ioctl_del_profile(unsigned long ulIndex)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_wlan_ioctl_del_profile(ulIndex);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
 //!  wlan_ioctl_get_scan_results
 //!
 //!  @param[in]    scan_timeout   parameter not supported
-//!  @param[out]   ucResults  scan result (_wlan_full_scan_results_args_t)
+//!  @param[out]   ucResults  scan results (_wlan_full_scan_results_args_t)
 //!
 //!  @return    On success, zero is returned. On error, -1 is returned
 //!
@@ -365,8 +463,19 @@ extern long c_wlan_ioctl_set_connection_policy(unsigned long should_connect_to_o
 //!  @sa        wlan_ioctl_set_scan_params
 //
 //*****************************************************************************
-extern long c_wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
-                                          unsigned char *ucResults);
+#ifndef CC3000_TINY_DRIVER
+long wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
+                                 unsigned char *ucResults)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_wlan_ioctl_get_scan_results(ulScanTimeout, ucResults);
+    chMtxUnlock();
+
+    return(ret);
+}
+#endif
 
 //*****************************************************************************
 //
@@ -393,7 +502,7 @@ extern long c_wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
 //!  @param   uiDefaultTxPower  probe Tx power. Saved: yes (Default: 205)
 //!  @param   aiIntervalList    pointer to array with 16 entries (16 channels)
 //!           each entry (unsigned long) holds timeout between periodic scan
-//!           (connection scan) - in milliseconds. Saved: yes. Default 2000ms.
+//!           (connection scan) - in millisecond. Saved: yes. Default 2000ms.
 //!
 //!  @return    On success, zero is returned. On error, -1 is returned
 //!
@@ -404,12 +513,84 @@ extern long c_wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
 //!  @sa        wlan_ioctl_get_scan_results
 //
 //*****************************************************************************
-extern long c_wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwellTime,
-                                         unsigned long uiMaxDwellTime, unsigned long uiNumOfProbeRequests,
-                                         unsigned long uiChannelMask, long iRSSIThreshold,
-                                         unsigned long uiSNRThreshold, unsigned long uiDefaultTxPower,
-                                         unsigned long *aiIntervalList);
 
+#ifndef CC3000_TINY_DRIVER
+long wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwellTime,
+                                unsigned long uiMaxDwellTime, unsigned long uiNumOfProbeRequests,
+                                unsigned long uiChannelMask, long iRSSIThreshold,
+                                unsigned long uiSNRThreshold, unsigned long uiDefaultTxPower,
+                                unsigned long *aiIntervalList)
+{
+    unsigned long  uiRes;
+
+    chMtxLock(&g_main_mutex);
+    uiRes = c_wlan_ioctl_set_scan_params(uiEnable, uiMinDwellTime, uiMaxDwellTime,\
+                                         uiNumOfProbeRequests, uiChannelMask, iRSSIThreshold,\
+                                         uiSNRThreshold, uiDefaultTxPower, aiIntervalList);
+    chMtxUnlock();
+
+    return (uiRes);
+}
+#endif
+
+//*****************************************************************************
+//
+//!  wlan_set_event_mask
+//!
+//!  @param    mask   mask option:
+//!       HCI_EVNT_WLAN_UNSOL_CONNECT connect event
+//!       HCI_EVNT_WLAN_UNSOL_DISCONNECT disconnect event
+//!       HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE  smart config done
+//!       HCI_EVNT_WLAN_UNSOL_INIT init done
+//!       HCI_EVNT_WLAN_UNSOL_DHCP dhcp event report
+//!       HCI_EVNT_WLAN_ASYNC_PING_REPORT ping report
+//!       HCI_EVNT_WLAN_KEEPALIVE keepalive
+//!       HCI_EVNT_WLAN_TX_COMPLETE - disable information on end of transmission
+//!       Saved: no.
+//!
+//!  @return    On success, zero is returned. On error, -1 is returned
+//!
+//!  @brief    Mask event according to bit mask. In case that event is
+//!            masked (1), the device will not send the masked event to host.
+//
+//*****************************************************************************
+
+long wlan_set_event_mask(unsigned long ulMask)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_wlan_set_event_mask(ulMask);
+    chMtxUnlock();
+
+    return(ret);
+}
+
+//*****************************************************************************
+//
+//!  wlan_ioctl_statusget
+//!
+//!  @param none
+//!
+//!  @return    WLAN_STATUS_DISCONNECTED, WLAN_STATUS_SCANING,
+//!             STATUS_CONNECTING or WLAN_STATUS_CONNECTED
+//!
+//!  @brief    get wlan status: disconnected, scanning, connecting or connected
+//
+//*****************************************************************************
+
+#ifndef CC3000_TINY_DRIVER
+long wlan_ioctl_statusget(void)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_wlan_ioctl_statusget();
+    chMtxUnlock();
+
+    return(ret);
+}
+#endif
 
 //*****************************************************************************
 //
@@ -431,7 +612,16 @@ extern long c_wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long u
 //!  @sa      wlan_smart_config_set_prefix , wlan_smart_config_stop
 //
 //*****************************************************************************
-extern long c_wlan_smart_config_start(unsigned long algoEncryptedFlag);
+long wlan_smart_config_start(unsigned long algoEncryptedFlag)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_wlan_smart_config_start(algoEncryptedFlag);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -446,7 +636,16 @@ extern long c_wlan_smart_config_start(unsigned long algoEncryptedFlag);
 //!  @sa      wlan_smart_config_start , wlan_smart_config_set_prefix
 //
 //*****************************************************************************
-extern long c_wlan_smart_config_stop(void);
+long wlan_smart_config_stop(void)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_wlan_smart_config_stop();
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -464,7 +663,16 @@ extern long c_wlan_smart_config_stop(void);
 //!  @sa      wlan_smart_config_start , wlan_smart_config_stop
 //
 //*****************************************************************************
-extern long c_wlan_smart_config_set_prefix(char* cNewPrefix);
+long wlan_smart_config_set_prefix(char* cNewPrefix)
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_wlan_smart_config_set_prefix(cNewPrefix);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -480,7 +688,89 @@ extern long c_wlan_smart_config_set_prefix(char* cNewPrefix);
 //!           behavior is as defined by connection policy.
 //
 //*****************************************************************************
-extern long c_wlan_smart_config_process(void);
+
+#ifndef CC3000_UNENCRYPTED_SMART_CONFIG
+long wlan_smart_config_process()
+{
+    long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_wlan_smart_config_process();
+    chMtxUnlock();
+
+    return(ret);
+}
+#endif //CC3000_UNENCRYPTED_SMART_CONFIG
+
+static msg_t
+SelectThread(void *arg)
+{
+  (void)arg;
+
+  struct timeval timeout;
+  fd_set readsds;
+
+  int ret = 0;
+  int maxFD = 0;
+  int index = 0;
+
+  chRegSetThreadName("SelectThread");
+
+  memset(&timeout, 0, sizeof(struct timeval));
+  timeout.tv_sec = 0;
+  timeout.tv_usec = (500 * 1000);          /* 500 msecs */
+
+  while (1) //run until closed by wlan_stop
+  {
+    /* first check if recv/recvfrom/accept was called */
+    chSemWait(&g_select_sleep_semaphore);
+    /* increase the count back by one to be decreased by the original caller */
+    chSemSignal(&g_select_sleep_semaphore);
+
+    FD_ZERO(&readsds);
+
+    /* ping correct socket descriptor param for select */
+    for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
+      if (g_sockets[index].status == SOCK_ON){
+        FD_SET(g_sockets[index].sd, &readsds);
+        if (maxFD <= g_sockets[index].sd)
+          maxFD = g_sockets[index].sd + 1;
+      }
+    }
+
+    ret = select(maxFD, &readsds, NULL, NULL, &timeout); /* Polling instead of blocking here\
+                                                              to process "accept" below */
+    //System_printf("SelectThread: Running..!! \n");
+    //System_flush();
+
+    if (chThdShouldTerminate()) {
+      /* Wlan_stop will terminate the thread and by that all
+         sync objects owned by it will be released */
+      return 0;
+    }
+
+    if (ret>0) {
+      for (index = 0; index < MAX_NUM_OF_SOCKETS; index++) {
+        if (g_sockets[index].status != SOC_NOT_INITED && //check that the socket is valid
+            g_sockets[index].sd != g_accept_socket &&    //verify this is not an accept socket
+            FD_ISSET(g_sockets[index].sd, &readsds)) {    //and has pending data
+          chSemSignal(&g_sockets[index].sd_semaphore); //release the semaphore
+        }
+      }
+    }
+
+    if (g_should_poll_accept) {
+      chMtxLock(&g_main_mutex);
+      g_accept_new_sd = c_accept(g_accept_socket, &g_accept_sock_addr, (socklen_t*)&g_accept_addrlen);
+      chMtxUnlock();
+
+      if (g_accept_new_sd != SOC_IN_PROGRESS)
+        chSemSignal(&g_accept_semaphore);
+    }
+  }
+
+  return 0;
+}
 
 //*****************************************************************************
 //
@@ -488,16 +778,3 @@ extern long c_wlan_smart_config_process(void);
 //! @}
 //
 //*****************************************************************************
-
-
-
-//*****************************************************************************
-//
-// Mark the end of the C bindings section for C++ compilers.
-//
-//*****************************************************************************
-#ifdef  __cplusplus
-}
-#endif // __cplusplus
-
-#endif  // __C_WLAN_H__

@@ -67,7 +67,7 @@ extern "C" {
 //!                  event handler from global array of handlers pointers
 //
 //*****************************************************************************
-extern unsigned char *hci_event_handler(void *pRetParams, unsigned char *from, unsigned char *fromlen);
+extern void hci_event_handler(void *pRetParams, unsigned char *from, unsigned char *fromlen);
 
 //*****************************************************************************
 //

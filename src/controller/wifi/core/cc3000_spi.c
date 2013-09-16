@@ -1,6 +1,7 @@
 
 #include "ch.h"
 #include "hal.h"
+#include "chprintf.h"
 
 #include "hci.h"
 #include "cc3000_spi.h"
@@ -144,13 +145,15 @@ SpiOpen(gcSpiHandleRx pfRxHandler)
   // Enable interrupt on WLAN IRQ pin
   extChannelEnable(&EXTD1, 12);
 
-  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, SpiReadThread, NULL);
+  chThdCreateFromHeap(NULL, 1024, HIGHPRIO, SpiReadThread, NULL);
 }
 
 static msg_t
 SpiReadThread(void* arg)
 {
   (void)arg;
+
+  chRegSetThreadName("spi_read");
 
   while (TRUE) {
     chSemWait(&sem_read);

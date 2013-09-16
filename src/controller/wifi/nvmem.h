@@ -32,8 +32,8 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
-#ifndef __C_NVRAM_H__
-#define __C_NVRAM_H__
+#ifndef __NVRAM_H__
+#define __NVRAM_H__
 
 #include "cc3000_common.h"
 
@@ -106,8 +106,9 @@ extern "C" {
 //!               be used, is invalid, or if the read is out of bounds.
 //!
 //*****************************************************************************
-extern signed long c_nvmem_read(unsigned long ulFileId, unsigned long ulLength,
-                                unsigned long ulOffset, unsigned char *buff);
+
+extern signed long nvmem_read(unsigned long file_id, unsigned long length,
+                              unsigned long offset, unsigned char *buff);
 
 //*****************************************************************************
 //
@@ -130,7 +131,8 @@ extern signed long c_nvmem_read(unsigned long ulFileId, unsigned long ulLength,
 //!               need to be valid - only allocated.
 //!
 //*****************************************************************************
-extern signed long c_nvmem_write(unsigned long ulFileId, unsigned long ulLength, unsigned long ulEntryOffset, unsigned char *buff);
+
+extern signed long nvmem_write(unsigned long ulFileId, unsigned long ulLength, unsigned long ulEntryOffset, unsigned char *buff);
 
 
 //*****************************************************************************
@@ -145,7 +147,8 @@ extern signed long c_nvmem_write(unsigned long ulFileId, unsigned long ulLength,
 //!               mac address as appears over the air (OUI first)
 //!
 //*****************************************************************************
-extern  unsigned char c_nvmem_set_mac_address(unsigned char *mac);
+extern  unsigned char nvmem_set_mac_address(unsigned char *mac);
+
 
 //*****************************************************************************
 //
@@ -159,7 +162,7 @@ extern  unsigned char c_nvmem_set_mac_address(unsigned char *mac);
 //!               mac address as appears over the air (OUI first)
 //!
 //*****************************************************************************
-extern  unsigned char c_nvmem_get_mac_address(unsigned char *mac);
+extern  unsigned char nvmem_get_mac_address(unsigned char *mac);
 
 
 //*****************************************************************************
@@ -179,8 +182,7 @@ extern  unsigned char c_nvmem_get_mac_address(unsigned char *mac);
 //!              applied in SP_PORTION_SIZE bytes portions.
 //!
 //*****************************************************************************
-extern  unsigned char c_nvmem_write_patch(unsigned long ulFileId, unsigned long spLength,
-                                          const unsigned char *spData);
+extern  unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long spLength, const unsigned char *spData);
 
 
 //*****************************************************************************
@@ -197,7 +199,7 @@ extern  unsigned char c_nvmem_write_patch(unsigned long ulFileId, unsigned long 
 //!
 //*****************************************************************************
 #ifndef CC3000_TINY_DRIVER
-extern  unsigned char c_nvmem_read_sp_version(unsigned char* patchVer);
+extern  unsigned char nvmem_read_sp_version(unsigned char* patchVer);
 #endif
 
 //*****************************************************************************
@@ -222,7 +224,7 @@ extern  unsigned char c_nvmem_read_sp_version(unsigned char* patchVer);
 //!              set ulNewLen=0.
 //!
 //*****************************************************************************
-extern signed long c_nvmem_create_entry(unsigned long file_id, unsigned long newlen);
+extern signed long nvmem_create_entry(unsigned long file_id, unsigned long newlen);
 
 
 //*****************************************************************************
@@ -244,4 +246,4 @@ extern signed long c_nvmem_create_entry(unsigned long file_id, unsigned long new
 }
 #endif // __cplusplus
 
-#endif // __C_NVRAM_H__
+#endif // __NVRAM_H__

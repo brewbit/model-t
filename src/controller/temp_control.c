@@ -83,6 +83,7 @@ static msg_t
 output_thread(void* arg)
 {
   relay_output_t* output = arg;
+  chRegSetThreadName("output");
 
   /* Wait 1 compressor delay before starting window */
   cycle_delay(output->id);
@@ -123,6 +124,7 @@ static msg_t
 temp_control_thread(void* arg)
 {
   (void)arg;
+  chRegSetThreadName("temp_control");
 
   while (1) {
     Thread* tp = chMsgWait();

@@ -74,6 +74,7 @@ static msg_t
 web_api_thread(void* arg)
 {
   (void)arg;
+  chRegSetThreadName("web");
 
   while (1) {
     if (chMsgIsPendingI(chThdSelf())) {

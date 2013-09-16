@@ -32,10 +32,9 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
-#ifndef __C_SECURITY__
-#define __C_SECURITY__
+#ifndef __SECURITY__
+#define __SECURITY__
 
-#include "nvmem.h"
 #include "cc3000_common.h"
 
 //*****************************************************************************
@@ -47,6 +46,8 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
+
+
 
 #ifndef CC3000_UNENCRYPTED_SMART_CONFIG
 
@@ -67,7 +68,7 @@ extern "C" {
 //!
 //!
 //*****************************************************************************
-extern void c_aes_encrypt(unsigned char *state, unsigned char *key);
+extern void aes_encrypt(unsigned char *state, unsigned char *key);
 
 //*****************************************************************************
 //
@@ -85,7 +86,8 @@ extern void c_aes_encrypt(unsigned char *state, unsigned char *key);
 //!
 //!
 //*****************************************************************************
-extern void c_aes_decrypt(unsigned char *state, unsigned char *key);
+extern void aes_decrypt(unsigned char *state, unsigned char *key);
+
 
 //*****************************************************************************
 //
@@ -101,7 +103,7 @@ extern void c_aes_decrypt(unsigned char *state, unsigned char *key);
 //!
 //!
 //*****************************************************************************
-extern signed long c_aes_read_key(unsigned char *key);
+extern signed long aes_read_key(unsigned char *key);
 
 //*****************************************************************************
 //
@@ -116,8 +118,8 @@ extern signed long c_aes_read_key(unsigned char *key);
 //!
 //!
 //*****************************************************************************
-extern signed long c_aes_write_key(unsigned char *key);
+extern signed long aes_write_key(unsigned char *key);
 
 #endif //CC3000_UNENCRYPTED_SMART_CONFIG
 
-#endif /* __C_SECURITY__ */
+#endif

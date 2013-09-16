@@ -45,6 +45,8 @@ sensor_thread(void* arg)
 {
   sensor_port_t* tp = arg;
 
+  chRegSetThreadName("sensor");
+
   while (1) {
     quantity_t sample;
 

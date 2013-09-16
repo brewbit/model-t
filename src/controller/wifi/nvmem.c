@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  nvmem.h  - CC3000 Host Driver Implementation.
+*  nvmem.c  - CC3000 Host Driver Implementation.
 *  Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -32,22 +32,6 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
-#ifndef __C_NVRAM_H__
-#define __C_NVRAM_H__
-
-#include "cc3000_common.h"
-
-
-//*****************************************************************************
-//
-// If building with a C++ compiler, make all of the definitions in this header
-// have a C binding.
-//
-//*****************************************************************************
-#ifdef  __cplusplus
-extern "C" {
-#endif
-
 
 //*****************************************************************************
 //
@@ -56,32 +40,15 @@ extern "C" {
 //
 //*****************************************************************************
 
-/****************************************************************************
-**
-**  Definitions for File IDs
-**
-****************************************************************************/
-/* NVMEM file ID - system files*/
-#define NVMEM_NVS_FILEID                            (0)
-#define NVMEM_NVS_SHADOW_FILEID                     (1)
-#define NVMEM_WLAN_CONFIG_FILEID                    (2)
-#define NVMEM_WLAN_CONFIG_SHADOW_FILEID             (3)
-#define NVMEM_WLAN_DRIVER_SP_FILEID                 (4)
-#define NVMEM_WLAN_FW_SP_FILEID                     (5)
-#define NVMEM_MAC_FILEID                            (6)
-#define NVMEM_FRONTEND_VARS_FILEID                  (7)
-#define NVMEM_IP_CONFIG_FILEID                      (8)
-#define NVMEM_IP_CONFIG_SHADOW_FILEID               (9)
-#define NVMEM_BOOTLOADER_SP_FILEID                  (10)
-#define NVMEM_RM_FILEID                             (11)
+#include <string.h>
 
-/* NVMEM file ID - user files*/
-#define NVMEM_AES128_KEY_FILEID                     (12)
-#define NVMEM_SHARED_MEM_FILEID                     (13)
+#include "nvmem.h"
 
-/*  max entry in order to invalid nvmem              */
-#define NVMEM_MAX_ENTRY                              (16)
+#include "core/wlan.h"
+#include "core/nvmem.h"
 
+/* Handles for making the APIs asychronous and thread-safe */
+extern Mutex             g_main_mutex;
 
 //*****************************************************************************
 //
@@ -106,8 +73,19 @@ extern "C" {
 //!               be used, is invalid, or if the read is out of bounds.
 //!
 //*****************************************************************************
-extern signed long c_nvmem_read(unsigned long ulFileId, unsigned long ulLength,
-                                unsigned long ulOffset, unsigned char *buff);
+
+signed long
+nvmem_read(unsigned long ulFileId, unsigned long ulLength,
+           unsigned long ulOffset, unsigned char *buff)
+{
+    signed long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_nvmem_read(ulFileId, ulLength, ulOffset, buff);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -130,7 +108,19 @@ extern signed long c_nvmem_read(unsigned long ulFileId, unsigned long ulLength,
 //!               need to be valid - only allocated.
 //!
 //*****************************************************************************
-extern signed long c_nvmem_write(unsigned long ulFileId, unsigned long ulLength, unsigned long ulEntryOffset, unsigned char *buff);
+
+signed long
+nvmem_write(unsigned long ulFileId, unsigned long ulLength,
+            unsigned long ulEntryOffset, unsigned char *buff)
+{
+    signed long ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_nvmem_write(ulFileId, ulLength, ulEntryOffset, buff);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 
 //*****************************************************************************
@@ -145,7 +135,17 @@ extern signed long c_nvmem_write(unsigned long ulFileId, unsigned long ulLength,
 //!               mac address as appears over the air (OUI first)
 //!
 //*****************************************************************************
-extern  unsigned char c_nvmem_set_mac_address(unsigned char *mac);
+
+unsigned char nvmem_set_mac_address(unsigned char *mac)
+{
+    unsigned char ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_nvmem_set_mac_address(mac);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -159,8 +159,17 @@ extern  unsigned char c_nvmem_set_mac_address(unsigned char *mac);
 //!               mac address as appears over the air (OUI first)
 //!
 //*****************************************************************************
-extern  unsigned char c_nvmem_get_mac_address(unsigned char *mac);
 
+unsigned char nvmem_get_mac_address(unsigned char *mac)
+{
+    unsigned char ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_nvmem_get_mac_address(mac);
+    chMtxUnlock();
+
+    return(ret);
+}
 
 //*****************************************************************************
 //
@@ -179,8 +188,19 @@ extern  unsigned char c_nvmem_get_mac_address(unsigned char *mac);
 //!              applied in SP_PORTION_SIZE bytes portions.
 //!
 //*****************************************************************************
-extern  unsigned char c_nvmem_write_patch(unsigned long ulFileId, unsigned long spLength,
-                                          const unsigned char *spData);
+
+unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long spLength,
+                                const unsigned char *spData)
+{
+    unsigned char ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_nvmem_write_patch(ulFileId, spLength, spData);
+    chMtxUnlock();
+
+    return(ret);
+}
+
 
 
 //*****************************************************************************
@@ -190,14 +210,24 @@ extern  unsigned char c_nvmem_write_patch(unsigned long ulFileId, unsigned long 
 //!  @param[out]  patchVer    first number indicates package ID and the second
 //!                           number indicates package build number
 //!
-//!  @return       on success 0, error otherwise.
+//!  @return       on success  0, error otherwise.
 //!
 //!  @brief      Read patch version. read package version (WiFi FW patch,
 //!              driver-supplicant-NS patch, bootloader patch)
 //!
 //*****************************************************************************
+
 #ifndef CC3000_TINY_DRIVER
-extern  unsigned char c_nvmem_read_sp_version(unsigned char* patchVer);
+unsigned char nvmem_read_sp_version(unsigned char* patchVer)
+{
+    unsigned char ret;
+
+    chMtxLock(&g_main_mutex);
+    ret = c_nvmem_read_sp_version(patchVer);
+    chMtxUnlock();
+
+    return(ret);
+}
 #endif
 
 //*****************************************************************************
@@ -222,14 +252,19 @@ extern  unsigned char c_nvmem_read_sp_version(unsigned char* patchVer);
 //!              set ulNewLen=0.
 //!
 //*****************************************************************************
-extern signed long c_nvmem_create_entry(unsigned long file_id, unsigned long newlen);
 
+signed long
+nvmem_create_entry(unsigned long ulFileId, unsigned long ulNewLen)
+{
+    unsigned char ret;
 
-//*****************************************************************************
-//
-// Mark the end of the C bindings section for C++ compilers.
-//
-//*****************************************************************************
+    chMtxLock(&g_main_mutex);
+    ret = c_nvmem_create_entry(ulFileId, ulNewLen);
+    chMtxUnlock();
+
+    return(ret);
+}
+
 
 
 //*****************************************************************************
@@ -239,9 +274,3 @@ extern signed long c_nvmem_create_entry(unsigned long file_id, unsigned long new
 //
 //*****************************************************************************
 
-
-#ifdef  __cplusplus
-}
-#endif // __cplusplus
-
-#endif // __C_NVRAM_H__
