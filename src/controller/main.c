@@ -174,7 +174,6 @@ long wlan_read_interupt_pin()
 
 void write_wlan_pin(unsigned char val)
 {
-  chprintf(SD_STDIO, "write wlan pin %d\r\n", val);
   palWritePad(PORT_WIFI_EN, PAD_WIFI_EN, val);
 }
 

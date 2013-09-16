@@ -118,13 +118,8 @@ static void SimpleLink_Init_Start(unsigned short usPatchesAvailableAtHost)
     UINT8_TO_STREAM(args, ((usPatchesAvailableAtHost) ? SL_PATCHES_REQUEST_FORCE_HOST : SL_PATCHES_REQUEST_DEFAULT));
 
     // IRQ Line asserted - send HCI_CMND_SIMPLE_LINK_START to CC3000
-    chprintf(SD_STDIO, "send_Start\r\n");
     hci_command_send(HCI_CMND_SIMPLE_LINK_START, ptr, WLAN_SL_INIT_START_PARAMS_LEN);
-    chprintf(SD_STDIO, "OK\r\n");
-
-    chprintf(SD_STDIO, "wait evt\r\n");
     SimpleLinkWaitEvent(HCI_CMND_SIMPLE_LINK_START, 0);
-    chprintf(SD_STDIO, "OK\r\n");
 }
 
 
@@ -270,17 +265,11 @@ void c_wlan_start(unsigned short usPatchesAvailableAtHost)
     // ASIC 1273 chip enable: toggle WLAN EN line
     tSLInformation.WriteWlanPin( WLAN_ENABLE );
 
-    chprintf(SD_STDIO, "init_Start\r\n");
     SimpleLink_Init_Start(usPatchesAvailableAtHost);
-    chprintf(SD_STDIO, "OK\r\n");
 
     // Read Buffer's size and finish
-    chprintf(SD_STDIO, "send\r\n");
     hci_command_send(HCI_CMND_READ_BUFFER_SIZE, tSLInformation.pucTxCommandBuffer, 0);
-    chprintf(SD_STDIO, "OK\r\n");
-    chprintf(SD_STDIO, "wait\r\n");
     SimpleLinkWaitEvent(HCI_CMND_READ_BUFFER_SIZE, 0);
-    chprintf(SD_STDIO, "OK\r\n");
 }
 
 

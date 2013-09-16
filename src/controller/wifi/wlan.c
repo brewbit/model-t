@@ -167,7 +167,6 @@ void wlan_init(tWlanCB               sWlanCB,
 void wlan_start(unsigned short usPatchesAvailableAtHost)
 {
   chMtxLock(&g_main_mutex);
-  chprintf(SD_STDIO, "locked\r\n");
 
   int index = 0;
 
