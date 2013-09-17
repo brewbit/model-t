@@ -179,6 +179,10 @@ dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg)
 
   /* Update the quantity display widget */
   widget_t* w = s->sensors[msg->sensor].quantity_widget;
+  if (msg->sample.value > 999.9)
+    msg->sample.value = 999.9;
+  else if (msg->sample.value < -99.9)
+    msg->sample.value = -99.9;
   quantity_widget_set_value(w, msg->sample);
 
   /* Enable the sensor button and adjust the placement of the quantity display widgets */
