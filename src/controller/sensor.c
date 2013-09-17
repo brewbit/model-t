@@ -223,45 +223,111 @@ read_ds2762(sensor_port_t* tp, quantity_t* sample)
   return true;
 }
 
-// Conversion algorithm from Agilent:
-// http://www.home.agilent.com/upload/cmc_upload/All/5306OSKR-MXD-5501-040107_2.htm
+// NIST ITS-90 Thermocouple Conversion Algorithm
+// http://srdata.nist.gov/its90/download/type_k.tab
 // vmeas = mV
 // tref = deg C
 float
 tc_convert(float vmeas, float tref)
 {
-  const float c_ref[10] = {
-      -1.7600413686e-2f,
-      3.8921204975e-2f,
-      1.8558770032e-5f,
-      -9.9457592874e-8f,
-      3.1840945719e-10f,
-      -5.6072844889e-13f,
-      5.6075059059e-16f,
-      -3.2020720003e-19f,
-      9.7151147152e-23f,
-      -1.2104721275e-26f
+  // coefficients for converting a temperature in the range 0 to 1372 deg C
+  // into the corresponding K type thermocouple voltage
+  const float c_v_hi[10] = {
+      -0.176004136860E-01f,
+       0.389212049750E-01f,
+       0.185587700320E-04f,
+      -0.994575928740E-07f,
+       0.318409457190E-09f,
+      -0.560728448890E-12f,
+       0.560750590590E-15f,
+      -0.320207200030E-18f,
+       0.971511471520E-22f,
+      -0.121047212750E-25f
   };
-  const float c_conv_0_500[10] = {
-      0.0f,
-      2.508355e1f,
-      7.860106e-2f,
-      -2.503131e-1f,
-      8.315270e-2f,
-      -1.228034e-2f,
-      9.804036e-4f,
-      -4.413030e-5f,
-      1.057734e-6f,
-      -1.052755e-8f
+  const float a0 = 0.118597600000;
+  const float a1 = -0.118343200000e-03;
+  const float a2 = 0.126968600000e+03;
+
+  // coefficients for converting a temperature in the range -270 to 0 deg C
+  // into the corresponding K type thermocouple voltage
+  const float c_v_lo[11] = {
+      0.000000000000E+00f,
+      0.394501280250E-01f,
+      0.236223735980E-04f,
+     -0.328589067840E-06f,
+     -0.499048287770E-08f,
+     -0.675090591730E-10f,
+     -0.574103274280E-12f,
+     -0.310888728940E-14f,
+     -0.104516093650E-16f,
+     -0.198892668780E-19f,
+     -0.163226974860E-22f
   };
+
+  // coefficients for converting a thermocouple voltage in the range
+  // -5.891 to 0.000 mV to the corresponding temperature
+  const float c_t_lo[9] = {
+      0.0000000E+00f,
+      2.5173462E+01f,
+     -1.1662878E+00f,
+     -1.0833638E+00f,
+     -8.9773540E-01f,
+     -3.7342377E-01f,
+     -8.6632643E-02f,
+     -1.0450598E-02f,
+     -5.1920577E-04f
+  };
+
+  // coefficients for converting a thermocouple voltage in the range
+  // 0.000 to 20.644 mV to the corresponding temperature
+   const float c_t_mid[10] = {
+       0.000000E+00f,
+       2.508355E+01f,
+       7.860106E-02f,
+      -2.503131E-01f,
+       8.315270E-02f,
+      -1.228034E-02f,
+       9.804036E-04f,
+      -4.413030E-05f,
+       1.057734E-06f,
+      -1.052755E-08f
+   };
+
+   // coefficients for converting a thermocouple voltage in the range
+   // 20.644 to 54.886 mV to the corresponding temperature
+   const float c_t_hi[7] = {
+      -1.318058E+02f,
+       4.830222E+01f,
+      -1.646031E+00f,
+       5.464731E-02f,
+      -9.650715E-04f,
+       8.802193E-06f,
+      -3.110810E-08f
+   };
 
   // Calculate the thermocouple voltage corresponding to the measured
   // cold junction temp
-  float vref = calc_polynomial(tref, c_ref, 10);
+  float vref;
+  if (tref > 0) {
+    float tref_a2 = (tref - a2);
+    vref = calc_polynomial(tref, c_v_hi, 10) + (a0 * exp(a1 * (tref_a2 * tref_a2)));
+  }
+  else {
+    vref = calc_polynomial(tref, c_v_lo, 11);
+  }
+
   // Calculate the compensated thermocouple voltage
   float v_comp = vmeas + vref;
+
   // Calculate the hot junction temperature from the compensated voltage
-  float t = calc_polynomial(v_comp, c_conv_0_500, 10);
+  float t;
+  if (v_comp < 0.0f)
+    t = calc_polynomial(v_comp, c_t_lo, 9);
+  else if (v_comp < 20.644f)
+    t = calc_polynomial(v_comp, c_t_mid, 10);
+  else
+    t = calc_polynomial(v_comp, c_t_hi, 7);
+
   return t;
 }
 
