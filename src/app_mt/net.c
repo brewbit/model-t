@@ -1,14 +1,15 @@
 
 #include "ch.h"
 #include "hal.h"
-
 #include "net.h"
-
 #include "wifi/wlan.h"
 #include "wifi/nvmem.h"
 #include "wifi/socket.h"
-
+#include "xflash.h"
 #include "chprintf.h"
+#include "app_hdr.h"
+#include "common.h"
+#include "crc/crc32.h"
 
 #include <string.h>
 
@@ -187,15 +188,71 @@ ota_update_mgr()
     int connfd = accept(s, &conn_addr, &conn_addr_len);
 
     if (connfd > 0) {
-      while (1) {
-        char data[16];
-        ret = recv(connfd, data, sizeof(data)-1, 0);
+      app_hdr_t app_hdr;
+      uint8_t* p = (uint8_t*)&app_hdr;
+      int left_to_recv = sizeof(app_hdr);
+      while (left_to_recv > 0) {
+        ret = recv(connfd, p, left_to_recv, 0);
 
-        if (ret > 0) {
-          data[ret] = 0;
-          chprintf(SD_STDIO, "recv: %s", data);
+        if (ret < 0) {
+          chprintf(SD_STDIO, "error receiving app header: %d\r\n", ret);
+        }
+        else {
+          p += ret;
+          left_to_recv -= ret;
         }
       }
+
+      chprintf(SD_STDIO, "Received app header:\r\n");
+      chprintf(SD_STDIO, "  Magic: %s\r\n",
+          (memcmp(_app_hdr.magic, "BBMT-APP", 8) == 0) ?
+              "OK" : "ERROR");
+      chprintf(SD_STDIO, "  Version: %d.%d.%d\r\n",
+          app_hdr.major_version,
+          app_hdr.minor_version,
+          app_hdr.patch_version);
+      chprintf(SD_STDIO, "  Image Size: %d\r\n", app_hdr.img_size);
+      chprintf(SD_STDIO, "  CRC: 0x%x\r\n", app_hdr.crc);
+
+      xflash_erase_sectors(
+          XFLASH_OTA_UPDATE_FIRST_SECTOR,
+          XFLASH_OTA_UPDATE_LAST_SECTOR);
+      chprintf(SD_STDIO, "flash erase complete\r\n");
+
+      uint8_t confirm = 1;
+      send(connfd, &confirm, 1, 0);
+
+#define IMG_CHUNK_SIZE 128
+      uint32_t crc = 0xFFFFFFFF;
+      uint8_t img_data[IMG_CHUNK_SIZE];
+      left_to_recv = app_hdr.img_size;
+      uint32_t store_addr = XFLASH_OTA_UPDATE_FIRST_SECTOR * XFLASH_SECTOR_SIZE;
+
+      while (left_to_recv > 0) {
+        uint32_t nrecv = MIN(left_to_recv, IMG_CHUNK_SIZE);
+        ret = recv(connfd, img_data, nrecv, 0);
+        chprintf(SD_STDIO, "recv %d %d\r\n", ret, left_to_recv);
+
+        if (ret < 0) {
+          chprintf(SD_STDIO, "error receiving app image: %d\r\n", ret);
+        }
+        else {
+          crc = crc32_block(crc, img_data, ret);
+          xflash_write(store_addr, img_data, ret);
+
+          left_to_recv -= ret;
+          store_addr += ret;
+        }
+      }
+      crc ^= 0xFFFFFFFF;
+
+      chprintf(SD_STDIO, "CRC of received data: 0x%x\r\n", crc);
+      // TODO
+//      chprintf(SD_STDIO, "Checking CRC of data written to xflash: 0x%x\r\n", crc);
+
+      send(connfd, &confirm, 1, 0);
+
+      closesocket(connfd);
     }
 
     chThdSleepSeconds(5);

@@ -17,14 +17,31 @@ def find_service_addr():
             r.close()
             return socket.inet_ntoa(svc.address)
 
-def transfer_file(addr):
-    s = socket.create_connection((addr, 5000))
-    while True:
-        s.send("hello world!\r\n")
-        time.sleep(1)
+def transfer_file(s, filename):
+    f = open(filename, "rb")
+    s.sendall(f.read(256))
+    
 
-print "Waiting for Model-T service announcement..."
+print "Waiting for Model-T service announcement...",
 addr = find_service_addr()
-print "  Received announcement from", addr
-print "Starting file upload"
-transfer_file(addr)
+print addr
+
+print "Connecting to Model-T service...",
+s = socket.create_connection((addr, 5000))
+print "OK"
+
+print "Sending app header...",
+transfer_file(s, "build/app_mt/app_mt_hdr.bin")
+print "OK"
+
+print "Waiting for header download confirmation...",
+s.recv(1)
+print "OK"
+
+print "Sending app image...",
+transfer_file(s, "build/app_mt/app_mt_app.bin")
+print "OK"
+
+print "Waiting for image download confirmation...",
+s.recv(1)
+print "OK"

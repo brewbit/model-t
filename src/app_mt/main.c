@@ -14,6 +14,7 @@
 #include "gfx.h"
 #include "app_cfg.h"
 #include "debug_client.h"
+#include "net.h"
 
 #include <string.h>
 
