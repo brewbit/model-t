@@ -32,9 +32,6 @@ lcd_init()
   rst_high();
   chThdSleepMilliseconds(5);
 
-  LCD_REG = 0;
-  chprintf(SD_STDIO, "LCD R00h = %x\r\n", LCD_RAM);
-
   lcd_write_param(0xe5, 0x8000);
   lcd_write_param(0x00, 0x0001);
   lcd_write_param(0x01, 0x0100);
