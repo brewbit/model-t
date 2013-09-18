@@ -17,6 +17,7 @@ PROJECT_CSRC = \
        app_hdr.c \
        datastream.c \
        debug_client.c \
+       fault.c \
        font.c \
        gfx.c \
        gui.c \
@@ -34,6 +35,7 @@ PROJECT_CSRC = \
        lcd.c \
        main.c \
        message.c \
+       net.c \
        onewire.c \
        pid.c \
        quantity_widget.c \
