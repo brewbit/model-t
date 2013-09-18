@@ -185,13 +185,13 @@ class FontConverter:
         self.out_c.write(font_def_epilogue % {'font_name': self.font_name})
         
 if __name__ == "__main__":
-    out_h = open('build/controller/autogen/font_resources.h', 'w')
-    out_c = open('build/controller/autogen/font_resources.c', 'w')
+    out_h = open('build/app_mt/autogen/font_resources.h', 'w')
+    out_c = open('build/app_mt/autogen/font_resources.c', 'w')
     
     out_c.write(c_prologue)
     out_h.write(h_prologue)
     
-    font_working_dir = os.path.join('build', 'controller', 'fonts')
+    font_working_dir = os.path.join('build', 'app_mt', 'fonts')
     if os.path.exists(font_working_dir):
         shutil.rmtree(font_working_dir)
     os.mkdir(font_working_dir)

@@ -104,8 +104,8 @@ def convert_image(in_file, out_h, out_c):
 				.replace('##IMAGE_ALPHA##', img_alpha_var))
 
 if __name__ == "__main__":
-	out_h = open('build/controller/autogen/image_resources.h', 'w')
-	out_c = open('build/controller/autogen/image_resources.c', 'w')
+	out_h = open('build/app_mt/autogen/image_resources.h', 'w')
+	out_c = open('build/app_mt/autogen/image_resources.c', 'w')
 	
 	out_h.write(h_prologue)
 	out_c.write(c_prologue)

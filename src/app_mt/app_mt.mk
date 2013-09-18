@@ -1,4 +1,4 @@
-PROJECT = controller
+PROJECT = app_mt
 
 MAJOR_VERSION = 1
 MINOR_VERSION = 0
