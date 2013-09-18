@@ -1,5 +1,6 @@
 
 #include "web_api_parser.h"
+#include "crc/crc16.h"
 
 #include <string.h>
 
@@ -43,35 +44,35 @@ web_api_parse(web_api_parser_t* p, uint8_t c)
 
   case WAPI_PARSE_ID:
     p->id = c;
-    p->crc_calc = crc16(0, c);
+    p->crc_calc = crc16_update(0, c);
 
     p->state = WAPI_PARSE_LEN1;
     break;
 
   case WAPI_PARSE_LEN1:
     p->data_len = c;
-    p->crc_calc = crc16(p->crc_calc, c);
+    p->crc_calc = crc16_update(p->crc_calc, c);
 
     p->state = WAPI_PARSE_LEN2;
     break;
 
   case WAPI_PARSE_LEN2:
     p->data_len |= (c << 8);
-    p->crc_calc = crc16(p->crc_calc, c);
+    p->crc_calc = crc16_update(p->crc_calc, c);
 
     p->state = WAPI_PARSE_LEN3;
     break;
 
   case WAPI_PARSE_LEN3:
     p->data_len |= (c << 16);
-    p->crc_calc = crc16(p->crc_calc, c);
+    p->crc_calc = crc16_update(p->crc_calc, c);
 
     p->state = WAPI_PARSE_LEN4;
     break;
 
   case WAPI_PARSE_LEN4:
     p->data_len |= (c << 24);
-    p->crc_calc = crc16(p->crc_calc, c);
+    p->crc_calc = crc16_update(p->crc_calc, c);
 
     if (p->data_len == 0)
       p->state = WAPI_PARSE_CRC1;
@@ -85,7 +86,7 @@ web_api_parse(web_api_parser_t* p, uint8_t c)
 
   case WAPI_PARSE_DATA:
     p->data[p->data_idx++] = c;
-    p->crc_calc = crc16(p->crc_calc, c);
+    p->crc_calc = crc16_update(p->crc_calc, c);
 
     if (p->data_idx >= p->data_len)
       p->state = WAPI_PARSE_CRC1;

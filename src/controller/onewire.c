@@ -1,7 +1,7 @@
 
 #include "onewire.h"
 #include "common.h"
-#include "crc.h"
+#include "crc/crc8.h"
 
 static const SerialConfig cfg_115k = {
     .sc_speed = 115200,
@@ -58,7 +58,7 @@ onewire_read_rom(onewire_bus_t* ob, uint8_t* addr)
       return false;
   }
 
-  uint8_t crc = crc8(addr, 7);
+  uint8_t crc = crc8_block(0, addr, 7);
   return (crc == addr[7]);
 }
 

@@ -2,7 +2,7 @@ PROJECT = controller
 
 BOARD = II-MT-CONTROLLER
 
-PROJECT_INCDIR = util util/json wifi
+PROJECT_INCDIR = util wifi
 
 PROJECT_AUTOGEN_CSRC = \
        image_resources.c \
@@ -11,7 +11,6 @@ PROJECT_AUTOGEN_CSRC = \
 PROJECT_CSRC = \
        app_cfg.c \
        app_hdr.c \
-       crc.c \
        datastream.c \
        debug_client.c \
        font.c \
@@ -64,6 +63,8 @@ PROJECT_CSRC = \
        gui/scatter_plot.c \
        gui/widget.c \
        util/linked_list.c \
-       util/json/cJSON.c
+       ../common/crc/crc8.c \
+       ../common/crc/crc16.c \
+       ../common/crc/crc32.c
 
 include make-bin.mk

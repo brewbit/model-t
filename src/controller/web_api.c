@@ -7,7 +7,7 @@
 #include "common.h"
 #include "message.h"
 #include "sensor.h"
-#include "crc.h"
+#include "crc/crc16.h"
 #include "datastream.h"
 
 #include <stdlib.h>
@@ -123,7 +123,7 @@ web_api_msg_start(web_api_msg_id_t id)
   chIOPut(wapi_conn, 0x17);
   chIOPut(wapi_conn, id);
 
-  msg_crc = crc16(0, id);
+  msg_crc = crc16_update(0, id);
 
   msg_data = ds_new(NULL, 1024);
 
@@ -145,13 +145,13 @@ web_api_msg_end()
   if (data_len > 0)
     chSequentialStreamWrite(wapi_conn, msg_data->buf, data_len);
 
-  msg_crc = crc16(msg_crc, data_len);
-  msg_crc = crc16(msg_crc, data_len >> 8);
-  msg_crc = crc16(msg_crc, data_len >> 16);
-  msg_crc = crc16(msg_crc, data_len >> 24);
+  msg_crc = crc16_update(msg_crc, data_len);
+  msg_crc = crc16_update(msg_crc, data_len >> 8);
+  msg_crc = crc16_update(msg_crc, data_len >> 16);
+  msg_crc = crc16_update(msg_crc, data_len >> 24);
 
   for (i = 0; i < data_len; ++i) {
-    msg_crc = crc16(msg_crc, msg_data->buf[i]);
+    msg_crc = crc16_update(msg_crc, msg_data->buf[i]);
   }
 
   chIOPut(wapi_conn, msg_crc);
