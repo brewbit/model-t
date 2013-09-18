@@ -4,13 +4,16 @@
 
 #include "chprintf.h"
 #include "app_hdr.h"
+#include "crc/crc32.h"
+
+#include <string.h>
+
+
+extern uint8_t __app_start__[];
 
 
 static void
 jump_to_app(uint32_t address);
-
-static void
-check_reset_source(void);
 
 
 static void
@@ -37,37 +40,6 @@ jump_to_app(uint32_t address)
     usrMain();
 }
 
-static void
-check_reset_source()
-{
-  int csr = RCC->CSR;
-
-  chprintf(SD_STDIO, "  Reset source: ");
-
-  if (csr & RCC_CSR_BORRSTF)
-    chprintf(SD_STDIO, "BORRSTF\r\n");
-
-  if (csr & RCC_CSR_PADRSTF)
-    chprintf(SD_STDIO, "PADRSTF\r\n");
-
-  if (csr & RCC_CSR_PORRSTF)
-    chprintf(SD_STDIO, "PORRSTF\r\n");
-
-  if (csr & RCC_CSR_SFTRSTF)
-    chprintf(SD_STDIO, "SFTRSTF\r\n");
-
-  if (csr & RCC_CSR_WDGRSTF)
-    chprintf(SD_STDIO, "WDGRSTF\r\n");
-
-  if (csr & RCC_CSR_WWDGRSTF)
-    chprintf(SD_STDIO, "WWDGRSTF\r\n");
-
-  if (csr & RCC_CSR_LPWRRSTF)
-    chprintf(SD_STDIO, "LPWRRSTF\r\n");
-
-  RCC->CSR |= RCC_CSR_RMVF;
-}
-
 int
 main(void)
 {
@@ -77,20 +49,39 @@ main(void)
   /* start stdout port */
   sdStart(SD_STDIO, NULL);
 
-  chprintf(SD_STDIO, "Started bootloader\r\n");
+  chprintf(SD_STDIO, "BrewBit Model-T Bootloader v%d.%d.%d\r\n",
+      MAJOR_VERSION,
+      MINOR_VERSION,
+      PATCH_VERSION);
 
-  check_reset_source();
+  chprintf(SD_STDIO, "Searching for app... ");
+  if (memcmp(_app_hdr.magic, "BBMT-APP", 8) == 0) {
+    chprintf(SD_STDIO, "OK\r\n");
+    chprintf(SD_STDIO, "  Version: %d.%d.%d\r\n",
+        _app_hdr.major_version,
+        _app_hdr.minor_version,
+        _app_hdr.patch_version);
+    chprintf(SD_STDIO, "  Image Size: %d bytes\r\n", _app_hdr.img_size);
+    chprintf(SD_STDIO, "  CRC: 0x%08x\r\n", _app_hdr.crc);
 
-  chprintf(SD_STDIO, "  app_hdr.magic = 0x%x\r\n", _app_hdr.magic);
+    chprintf(SD_STDIO, "Verifying CRC... ");
+    uint32_t crc_calc = crc32_block(0xffffffff, __app_start__, _app_hdr.img_size) ^ 0xffffffff;
 
+    if (crc_calc == _app_hdr.crc) {
+      chprintf(SD_STDIO, "OK\r\n");
 
-  if (_app_hdr.magic == 0xDEADBEEF) {
-    chprintf(SD_STDIO, "Valid app header found.  Jumping to app.\r\n");
-    chThdSleepMilliseconds(100);
-    jump_to_app(0x08008200);
+      chprintf(SD_STDIO, "Starting app.\r\n");
+      chThdSleepMilliseconds(100);
+      jump_to_app(0x08008200);
+    }
+    else {
+      chprintf(SD_STDIO, "ERROR\r\n");
+      chprintf(SD_STDIO, "  Calculated CRC: 0x%08x\r\n", crc_calc);
+    }
   }
   else {
-    chprintf(SD_STDIO, "Invalid app header found...\r\n");
+    chprintf(SD_STDIO, "ERROR\r\n");
+    chprintf(SD_STDIO, "  No valid app found.\r\n");
   }
 
   while (TRUE) {

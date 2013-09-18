@@ -43,6 +43,7 @@ MEMORY
 __ram_start__           = ORIGIN(ram);
 __ram_size__            = LENGTH(ram);
 __ram_end__             = __ram_start__ + __ram_size__;
+__app_start__           = ORIGIN(app);
 
 SECTIONS
 {
@@ -54,7 +55,7 @@ SECTIONS
         KEEP(*(vectors))
     } > bootloader
 
-    app_startup : ALIGN(16) SUBALIGN(16)
+    header : ALIGN(16) SUBALIGN(16)
     {
         PROVIDE(_app_hdr = .);
     } > app_hdr

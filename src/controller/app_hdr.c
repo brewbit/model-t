@@ -1,17 +1,10 @@
 
-#ifndef APP_HDR_H
-#define APP_HDR_H
-
-#include <stdint.h>
-
-typedef struct {
-  uint32_t magic;
-} app_hdr_t;
-
+#include "app_hdr.h"
 
 __attribute__ ((section("app_hdr")))
-app_hdr_t _app_hdr = {
-    .magic = 0xDEADBEEF
+const app_hdr_t _app_hdr = {
+    .magic = "BBMT-APP",
+    .major_version = MAJOR_VERSION,
+    .minor_version = MINOR_VERSION,
+    .patch_version = PATCH_VERSION
 };
-
-#endif

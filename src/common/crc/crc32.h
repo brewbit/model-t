@@ -32,7 +32,7 @@ extern uint32_t crc32_tbl[256];
 /*                  All-caps version is a macro for stuff that can use it.  */
 /* ======================================================================== */
 uint32_t crc32_update(uint32_t crc, uint8_t  data);
-#define CRC32_UPDATE(c, d) ((c) >> 8 ^ crc32_tbl[((c) ^ (d)) & 0xFF])
+#define CRC32_UPDATE(c, d) (((c) >> 8) ^ crc32_tbl[((c) ^ (d)) & 0xFF])
 
 /* ======================================================================== */
 /*  CRC32_UPD16  -- Updates a 32-bit CRC using the lookup table above.      */

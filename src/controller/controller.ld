@@ -54,7 +54,7 @@ SECTIONS
         KEEP(*(app_cfg))
     } > app_cfg
 
-    app_startup : ALIGN(16) SUBALIGN(16)
+    header : ALIGN(16) SUBALIGN(16)
     {
         KEEP(*(app_hdr))
     } > app_hdr
@@ -83,7 +83,7 @@ SECTIONS
     .text : ALIGN(16) SUBALIGN(16)
     {
         *(.text.startup.*)
-        *(.text.app_startup.*)
+        *(.text.header.*)
         *(.text)
         *(.text.*)
         *(.rodata)

@@ -82,7 +82,7 @@ uint32_t crc32_tbl[256] =
 /* ======================================================================== */
 uint32_t crc32_update(uint32_t crc, uint8_t data)
 {
-  return CRC32_UPDATE(crc, data);
+  return (crc >> 8) ^ crc32_tbl[(crc ^ data) & 0xFF];
 }
 
 /* ======================================================================== */
@@ -125,7 +125,7 @@ uint32_t crc32_block(uint32_t crc, uint8_t *data, uint32_t len)
   for (i = 0; i < len; i++)
     crc = (crc >> 8) ^ crc32_tbl[(crc ^ data[i]) & 0xFF];
 
-    return crc;
+  return crc;
 }
 
 /* ======================================================================== */

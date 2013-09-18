@@ -183,7 +183,9 @@ DLIBS = -lm
 #
 
 # List all user C define here, like -D_DEBUG=1
-UDEFS ?=
+UDEFS = -DMAJOR_VERSION=$(MAJOR_VERSION) \
+        -DMINOR_VERSION=$(MINOR_VERSION) \
+        -DPATCH_VERSION=$(PATCH_VERSION)
 
 # Define ASM defines here
 UADEFS =

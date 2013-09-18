@@ -5,9 +5,14 @@
 #include <stdint.h>
 
 typedef struct {
-  uint32_t magic;
+  char magic[8];
+  uint32_t major_version;
+  uint32_t minor_version;
+  uint32_t patch_version;
+  uint32_t img_size;
+  uint32_t crc;
 } app_hdr_t;
 
-extern app_hdr_t _app_hdr;
+extern const app_hdr_t _app_hdr;
 
 #endif
