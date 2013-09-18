@@ -60,18 +60,11 @@
 #define SR_SRWD  0x80
 
 
-#define ASSERT_CS()    do { \
-                         spiAcquireBus(SPI_FLASH); \
-                         spiStart(SPI_FLASH, &flash_spi_cfg); \
-                         spiSelect(SPI_FLASH); \
-                       } while (0)
+static void
+xflash_txn_begin(void);
 
-
-#define DEASSERT_CS()  do { \
-                         spiUnselect(SPI_FLASH); \
-                         spiReleaseBus(SPI_FLASH); \
-                       } while (0)
-
+static void
+xflash_txn_end(void);
 
 static void
 send_cmd(uint8_t cmd, uint8_t* cmd_tx_buf, uint32_t cmd_tx_len, uint8_t* cmd_rx_buf, uint32_t cmd_rx_len);
@@ -92,16 +85,36 @@ static const SPIConfig flash_spi_cfg = {
 
 uint8_t rx_buf[256];
 
+
+static void
+xflash_txn_begin()
+{
+#if SPI_USE_MUTUAL_EXCLUSION
+  spiAcquireBus(SPI_FLASH);
+#endif
+  spiStart(SPI_FLASH, &flash_spi_cfg);
+  spiSelect(SPI_FLASH);
+}
+
+static void
+xflash_txn_end()
+{
+  spiUnselect(SPI_FLASH);
+#if SPI_USE_MUTUAL_EXCLUSION
+  spiReleaseBus(SPI_FLASH);
+#endif
+}
+
 static void
 send_cmd(uint8_t cmd, uint8_t* cmd_tx_buf, uint32_t cmd_tx_len, uint8_t* cmd_rx_buf, uint32_t cmd_rx_len)
 {
-  ASSERT_CS();
+  xflash_txn_begin();
   spiSend(SPI_FLASH, 1, &cmd);
   if (cmd_tx_len > 0)
     spiSend(SPI_FLASH, cmd_tx_len, cmd_tx_buf);
   if (cmd_rx_len > 0)
     spiReceive(SPI_FLASH, cmd_rx_len, cmd_rx_buf);
-  DEASSERT_CS();
+  xflash_txn_end();
 }
 
 static uint8_t

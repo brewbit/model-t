@@ -30,7 +30,6 @@ PROJECT_CSRC = \
        gui_settings.c \
        gui_update.c \
        gui_wifi.c \
-       iflash.c \
        image.c \
        lcd.c \
        main.c \
@@ -45,7 +44,6 @@ PROJECT_CSRC = \
        txn.c \
        web_api.c \
        web_api_parser.c \
-       xflash.c \
        wifi/core/cc3000_common.c \
        wifi/core/cc3000_spi.c \
        wifi/core/evnt_handler.c \
@@ -69,6 +67,8 @@ PROJECT_CSRC = \
        util/linked_list.c \
        ../common/crc/crc8.c \
        ../common/crc/crc16.c \
-       ../common/crc/crc32.c
+       ../common/crc/crc32.c \
+       ../common/iflash.c \
+       ../common/xflash.c
 
 include make-bin.mk
