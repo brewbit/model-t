@@ -94,7 +94,7 @@
 /*
  * SPI bus assignments.
  */
-#define SPI_FLASH (&SPID2)
+#define SPI_FLASH (&SPID3)
 #define SPI_WLAN  (&SPID2)
 
 /*
@@ -267,9 +267,9 @@
                                      PIN_MODE_INPUT(7)       | \
                                      PIN_MODE_OUTPUT(8)      | \
                                      PIN_MODE_INPUT(9)       | \
-                                     PIN_MODE_INPUT(10)      | \
-                                     PIN_MODE_INPUT(11)      | \
-                                     PIN_MODE_INPUT(12)      | \
+                                     PIN_MODE_ALTERNATE(10)  | \
+                                     PIN_MODE_ALTERNATE(11)  | \
+                                     PIN_MODE_ALTERNATE(12)  | \
                                      PIN_MODE_INPUT(13)      | \
                                      PIN_MODE_INPUT(14)      | \
                                      PIN_MODE_INPUT(15))
@@ -293,7 +293,9 @@
 #define VAL_GPIOC_PUPDR             0xFFFFFFFF // all pulled-up
 #define VAL_GPIOC_ODR               0x00000000 // all low by default
 #define VAL_GPIOC_AFRL              0x00000000
-#define VAL_GPIOC_AFRH              0x00000000
+#define VAL_GPIOC_AFRH              (PIN_AFIO_AF(10, 6) | \
+                                     PIN_AFIO_AF(11, 6) | \
+                                     PIN_AFIO_AF(12, 6))
 
 /*
  * Port D setup.
