@@ -40,7 +40,6 @@ PROJECT_CSRC = \
        pid.c \
        quantity_widget.c \
        sensor.c \
-       sxfs.c \
        temp_control.c \
        touch.c \
        touch_calib.c \
@@ -73,6 +72,7 @@ PROJECT_CSRC = \
        ../common/crc/crc16.c \
        ../common/crc/crc32.c \
        ../common/iflash.c \
-       ../common/xflash.c
+       ../common/xflash.c \
+       ../common/sxfs.c
 
 include make-bin.mk

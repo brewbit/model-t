@@ -10,6 +10,7 @@ PROJECT_CSRC = \
        main.c \
        ../common/crc/crc32.c \
        ../common/iflash.c \
-       ../common/xflash.c
+       ../common/xflash.c \
+       ../common/sxfs.c
 
 include make-bin.mk

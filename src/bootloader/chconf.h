@@ -194,7 +194,7 @@
  * @note    The default is @p TRUE.
  */
 #if !defined(CH_USE_MUTEXES) || defined(__DOXYGEN__)
-#define CH_USE_MUTEXES                  FALSE
+#define CH_USE_MUTEXES                  TRUE
 #endif
 
 /**
@@ -296,7 +296,7 @@
  * @note    The default is @p TRUE.
  */
 #if !defined(CH_USE_MEMCORE) || defined(__DOXYGEN__)
-#define CH_USE_MEMCORE                  FALSE
+#define CH_USE_MEMCORE                  TRUE
 #endif
 
 /**
@@ -310,7 +310,7 @@
  * @note    Mutexes are recommended.
  */
 #if !defined(CH_USE_HEAP) || defined(__DOXYGEN__)
-#define CH_USE_HEAP                     FALSE
+#define CH_USE_HEAP                     TRUE
 #endif
 
 /**
