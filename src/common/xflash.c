@@ -3,6 +3,7 @@
 #include "hal.h"
 #include "chprintf.h"
 #include "common.h"
+#include "crc/crc32.h"
 
 #include "xflash.h"
 
@@ -190,4 +191,27 @@ void
 xflash_read(uint32_t addr, uint8_t* buf, uint32_t buf_len)
 {
   send_cmd(CMD_READ, addr, NULL, 0, buf, buf_len);
+}
+
+uint32_t
+xflash_crc(uint32_t addr, uint32_t size)
+{
+  uint8_t* buf = chHeapAlloc(NULL, 256);
+  uint32_t crc = 0xFFFFFFFF;
+
+  while (size > 0) {
+    uint32_t nrecv = MIN(size, 256);
+
+    xflash_read(addr, buf, nrecv);
+
+    crc = crc32_block(crc, buf, nrecv);
+
+    addr += nrecv;
+    size -= nrecv;
+  }
+  crc ^= 0xFFFFFFFF;
+
+  chHeapFree(buf);
+
+  return crc;
 }

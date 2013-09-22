@@ -30,16 +30,8 @@ print "Connecting to Model-T service...",
 s = socket.create_connection((addr, 5000))
 print "OK"
 
-print "Sending app header...",
-transfer_file(s, "build/app_mt/app_mt_hdr.bin")
-print "OK"
-
-print "Waiting for header download confirmation...",
-s.recv(1)
-print "OK"
-
 print "Sending app image...",
-transfer_file(s, "build/app_mt/app_mt_app.bin")
+transfer_file(s, "build/app_mt/app_mt_update.bin")
 print "OK"
 
 print "Waiting for image download confirmation...",

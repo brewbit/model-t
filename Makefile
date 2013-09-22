@@ -22,7 +22,7 @@ prog_download = @openocd \
 download_app_mt: app_mt
 	arm-none-eabi-objcopy -O binary --only-section header build/app_mt/app_mt.elf build/app_mt/app_mt_hdr.bin
 	arm-none-eabi-objcopy -O binary --remove-section cfg --remove-section header build/app_mt/app_mt.elf build/app_mt/app_mt_app.bin
-	python scripts/complete_app_hdr.py build/app_mt/app_mt_hdr.bin build/app_mt/app_mt_app.bin
+	python scripts/build_app_image.py build/app_mt/app_mt_hdr.bin build/app_mt/app_mt_app.bin build/app_mt/app_mt_update.bin
 	@openocd \
 	-f interface/$(JTAG).cfg \
 	-f target/stm32f2x.cfg \

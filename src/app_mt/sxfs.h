@@ -45,13 +45,16 @@ typedef struct {
 
 
 bool
-sxfs_part_open(sxfs_part_t* part, sxfs_part_id_t part_id);
+sxfs_part_clear(sxfs_part_id_t part_id);
 
 bool
-sxfs_part_clear(sxfs_part_id_t part_id);
+sxfs_part_open(sxfs_part_t* part, sxfs_part_id_t part_id);
 
 void
 sxfs_part_write(sxfs_part_t* part, uint8_t* data, uint32_t data_len);
+
+bool
+sxfs_part_verify(sxfs_part_id_t part_id);
 
 bool
 sxfs_file_open(sxfs_file_t* file, sxfs_part_id_t part_id, uint32_t file_id);

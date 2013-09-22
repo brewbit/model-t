@@ -63,27 +63,54 @@ sxfs_part_write(sxfs_part_t* part, uint8_t* data, uint32_t data_len)
   }
 }
 
-uint32_t
-xflash_crc(uint32_t addr, uint32_t size)
+bool
+sxfs_part_verify(sxfs_part_id_t part_id)
 {
-  uint8_t* buf = chHeapAlloc(NULL, 256);
-  uint32_t crc = 0xFFFFFFFF;
+  uint32_t i;
+  sxfs_part_rec_t part_rec;
+  sxfs_file_rec_t file_rec;
 
-  while (size > 0) {
-    uint32_t nrecv = MIN(size, 256);
+  if (part_id >= NUM_SXFS_PARTS)
+    return false;
 
-    xflash_read(addr, buf, nrecv);
+  /* Lookup the partition record address */
+  uint32_t part_rec_addr = part_info[part_id].offset;
 
-    crc = crc32_block(crc, buf, nrecv);
+  /* Read the partition record */
+  xflash_read(part_rec_addr, (uint8_t*)&part_rec, sizeof(sxfs_part_rec_t));
 
-    addr += nrecv;
-    size -= nrecv;
+  /* Verify that the magic number is correct */
+  if (memcmp(part_rec.magic, "SXFS", 4) != 0)
+    return false;
+
+  /* Verify that the size is valid */
+  if ((sizeof(sxfs_part_rec_t) + part_rec.size) > part_info[part_id].size)
+    return false;
+
+  /* Verify that the overall partition CRC is valid */
+  if (xflash_crc(part_rec_addr + sizeof(sxfs_part_rec_t), part_rec.size) != part_rec.crc)
+    return false;
+
+  /* Verify each individual file */
+  for (i = 0; i < part_rec.num_files; ++i) {
+    /* Calculate the file record address */
+    uint32_t file_rec_addr =
+        part_rec_addr +
+        sizeof(sxfs_part_rec_t) +
+        (sizeof(sxfs_file_rec_t) * i);
+
+    /* Read the file record */
+    xflash_read(file_rec_addr, (uint8_t*)&file_rec, sizeof(sxfs_part_rec_t));
+
+    /* Calculate the file data address */
+    uint32_t file_data_addr = part_rec_addr + file_rec.offset;
+
+    /* Verify that the file data CRC is valid */
+    if (xflash_crc(file_data_addr, file_rec.size) != file_rec.crc)
+      return false;
   }
-  crc ^= 0xFFFFFFFF;
 
-  chHeapFree(buf);
-
-  return crc;
+  return true;
 }
 
 bool

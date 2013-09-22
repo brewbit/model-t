@@ -11,6 +11,7 @@
 #include "app_hdr.h"
 #include "common.h"
 #include "crc/crc32.h"
+#include "sxfs.h"
 
 #include <string.h>
 
@@ -197,9 +198,9 @@ ota_update_mgr()
     int connfd = accept(s, &conn_addr, &conn_addr_len);
 
     if (connfd > 0) {
-      app_hdr_t app_hdr;
-      uint8_t* p = (uint8_t*)&app_hdr;
-      int left_to_recv = sizeof(app_hdr);
+      sxfs_part_rec_t part_rec;
+      uint8_t* p = (uint8_t*)&part_rec;
+      int left_to_recv = sizeof(part_rec);
       while (left_to_recv > 0) {
         ret = recv(connfd, p, left_to_recv, 0);
 
@@ -212,30 +213,26 @@ ota_update_mgr()
         }
       }
 
-      chprintf(SD_STDIO, "Received app header:\r\n");
+      chprintf(SD_STDIO, "Received image part rec:\r\n");
       chprintf(SD_STDIO, "  Magic: %s\r\n",
-          (memcmp(_app_hdr.magic, "BBMT-APP", 8) == 0) ?
+          (memcmp(part_rec.magic, "SXFS", 4) == 0) ?
               "OK" : "ERROR");
-      chprintf(SD_STDIO, "  Version: %d.%d.%d\r\n",
-          app_hdr.major_version,
-          app_hdr.minor_version,
-          app_hdr.patch_version);
-      chprintf(SD_STDIO, "  Image Size: %d\r\n", app_hdr.img_size);
-      chprintf(SD_STDIO, "  CRC: 0x%x\r\n", app_hdr.crc);
+      chprintf(SD_STDIO, "  # Files: %d\r\n", part_rec.num_files);
+      chprintf(SD_STDIO, "  Size: %d\r\n", part_rec.size);
+      chprintf(SD_STDIO, "  CRC: 0x%x\r\n", part_rec.crc);
 
-      xflash_erase_sectors(
-          XFLASH_OTA_UPDATE_FIRST_SECTOR,
-          XFLASH_OTA_UPDATE_LAST_SECTOR);
-
-      uint8_t ack = 1;
-      send(connfd, &ack, 1, 0);
+      if (!sxfs_part_clear(SP_OTA_UPDATE_IMG))
+        chprintf(SD_STDIO, "part clear failed\r\n");
 
 #define IMG_CHUNK_SIZE 1408
       uint8_t* img_data = chHeapAlloc(NULL, IMG_CHUNK_SIZE);
+      left_to_recv = part_rec.size;
 
-      uint32_t crc = 0xFFFFFFFF;
-      left_to_recv = app_hdr.img_size;
-      uint32_t xflash_addr = XFLASH_OTA_UPDATE_FIRST_SECTOR * XFLASH_SECTOR_SIZE;
+      sxfs_part_t part;
+      if (!sxfs_part_open(&part, SP_OTA_UPDATE_IMG))
+        chprintf(SD_STDIO, "part open failed\r\n");
+
+      sxfs_part_write(&part, (uint8_t*)&part_rec, sizeof(part_rec));
 
       while (left_to_recv > 0) {
         uint32_t nrecv = MIN(left_to_recv, IMG_CHUNK_SIZE);
@@ -245,35 +242,20 @@ ota_update_mgr()
           chprintf(SD_STDIO, "error receiving app image: %d\r\n", ret);
         }
         else {
-          crc = crc32_block(crc, img_data, ret);
-          xflash_write(xflash_addr, img_data, ret);
+          sxfs_part_write(&part, img_data, ret);
 
           left_to_recv -= ret;
-          xflash_addr += ret;
 
-          chprintf(SD_STDIO, "recv %d of %d\r", xflash_addr, app_hdr.img_size);
+          chprintf(SD_STDIO, "%d of %d left\r", left_to_recv, part_rec.size);
         }
       }
-      crc ^= 0xFFFFFFFF;
 
-      chprintf(SD_STDIO, "CRC of received data: 0x%x\r\n", crc);
+      if (!sxfs_part_verify(SP_OTA_UPDATE_IMG))
+        chprintf(SD_STDIO, "sxfs verify failed\r\n");
+      else
+        chprintf(SD_STDIO, "image verified\r\n");
 
-      crc = 0xFFFFFFFF;
-      left_to_recv = app_hdr.img_size;
-      xflash_addr = XFLASH_OTA_UPDATE_FIRST_SECTOR * XFLASH_SECTOR_SIZE;
-
-      while (left_to_recv > 0) {
-        uint32_t nrecv = MIN(left_to_recv, IMG_CHUNK_SIZE);
-        xflash_read(xflash_addr, img_data, nrecv);
-
-        crc = crc32_block(crc, img_data, nrecv);
-
-        xflash_addr += nrecv;
-        left_to_recv -= nrecv;
-      }
-      crc ^= 0xFFFFFFFF;
-      chprintf(SD_STDIO, "Checking CRC of data written to xflash: 0x%x\r\n", crc);
-
+      uint8_t ack = 1;
       send(connfd, &ack, 1, 0);
 
       closesocket(connfd);
