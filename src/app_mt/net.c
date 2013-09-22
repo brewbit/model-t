@@ -227,8 +227,8 @@ ota_update_mgr()
           XFLASH_OTA_UPDATE_FIRST_SECTOR,
           XFLASH_OTA_UPDATE_LAST_SECTOR);
 
-      uint8_t confirm = 1;
-      send(connfd, &confirm, 1, 0);
+      uint8_t ack = 1;
+      send(connfd, &ack, 1, 0);
 
 #define IMG_CHUNK_SIZE 1408
       uint8_t* img_data = chHeapAlloc(NULL, IMG_CHUNK_SIZE);
@@ -274,7 +274,7 @@ ota_update_mgr()
       crc ^= 0xFFFFFFFF;
       chprintf(SD_STDIO, "Checking CRC of data written to xflash: 0x%x\r\n", crc);
 
-      send(connfd, &confirm, 1, 0);
+      send(connfd, &ack, 1, 0);
 
       closesocket(connfd);
 

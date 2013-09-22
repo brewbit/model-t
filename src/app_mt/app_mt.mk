@@ -40,6 +40,7 @@ PROJECT_CSRC = \
        pid.c \
        quantity_widget.c \
        sensor.c \
+       sxfs.c \
        temp_control.c \
        touch.c \
        touch_calib.c \
