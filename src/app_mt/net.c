@@ -61,7 +61,6 @@ wlan_event(long event_type, char * data, unsigned char length)
 
     // Periodic keep-alive event between the CC3000 and the host microcontroller unit (MCU)
   case HCI_EVNT_WLAN_KEEPALIVE:
-    chprintf(SD_STDIO, "wlan keepalive\r\n");
     break;
 
     // WLAN-connected event
@@ -99,7 +98,7 @@ wlan_event(long event_type, char * data, unsigned char length)
     break;
 
   default:
-    chprintf(SD_STDIO, "wlan_event(%d)\r\n", event_type);
+    chprintf(SD_STDIO, "wlan_event(0x%x)\r\n", event_type);
     break;
   }
 }
@@ -227,42 +226,59 @@ ota_update_mgr()
       xflash_erase_sectors(
           XFLASH_OTA_UPDATE_FIRST_SECTOR,
           XFLASH_OTA_UPDATE_LAST_SECTOR);
-      chprintf(SD_STDIO, "flash erase complete\r\n");
 
       uint8_t confirm = 1;
       send(connfd, &confirm, 1, 0);
 
-#define IMG_CHUNK_SIZE 128
+#define IMG_CHUNK_SIZE 1408
+      uint8_t* img_data = chHeapAlloc(NULL, IMG_CHUNK_SIZE);
+
       uint32_t crc = 0xFFFFFFFF;
-      uint8_t img_data[IMG_CHUNK_SIZE];
       left_to_recv = app_hdr.img_size;
-      uint32_t store_addr = XFLASH_OTA_UPDATE_FIRST_SECTOR * XFLASH_SECTOR_SIZE;
+      uint32_t xflash_addr = XFLASH_OTA_UPDATE_FIRST_SECTOR * XFLASH_SECTOR_SIZE;
 
       while (left_to_recv > 0) {
         uint32_t nrecv = MIN(left_to_recv, IMG_CHUNK_SIZE);
         ret = recv(connfd, img_data, nrecv, 0);
-        chprintf(SD_STDIO, "recv %d %d\r\n", ret, left_to_recv);
 
         if (ret < 0) {
           chprintf(SD_STDIO, "error receiving app image: %d\r\n", ret);
         }
         else {
           crc = crc32_block(crc, img_data, ret);
-          xflash_write(store_addr, img_data, ret);
+          xflash_write(xflash_addr, img_data, ret);
 
           left_to_recv -= ret;
-          store_addr += ret;
+          xflash_addr += ret;
+
+          chprintf(SD_STDIO, "recv %d of %d\r", xflash_addr, app_hdr.img_size);
         }
       }
       crc ^= 0xFFFFFFFF;
 
       chprintf(SD_STDIO, "CRC of received data: 0x%x\r\n", crc);
-      // TODO
-//      chprintf(SD_STDIO, "Checking CRC of data written to xflash: 0x%x\r\n", crc);
+
+      crc = 0xFFFFFFFF;
+      left_to_recv = app_hdr.img_size;
+      xflash_addr = XFLASH_OTA_UPDATE_FIRST_SECTOR * XFLASH_SECTOR_SIZE;
+
+      while (left_to_recv > 0) {
+        uint32_t nrecv = MIN(left_to_recv, IMG_CHUNK_SIZE);
+        xflash_read(xflash_addr, img_data, nrecv);
+
+        crc = crc32_block(crc, img_data, nrecv);
+
+        xflash_addr += nrecv;
+        left_to_recv -= nrecv;
+      }
+      crc ^= 0xFFFFFFFF;
+      chprintf(SD_STDIO, "Checking CRC of data written to xflash: 0x%x\r\n", crc);
 
       send(connfd, &confirm, 1, 0);
 
       closesocket(connfd);
+
+      chHeapFree(img_data);
     }
 
     chThdSleepSeconds(5);

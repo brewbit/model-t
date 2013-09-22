@@ -19,7 +19,7 @@ def find_service_addr():
 
 def transfer_file(s, filename):
     f = open(filename, "rb")
-    s.sendall(f.read(256))
+    s.sendall(f.read())
     
 
 print "Waiting for Model-T service announcement...",
