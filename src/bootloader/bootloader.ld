@@ -36,7 +36,7 @@ MEMORY
     bootloader : org = 0x08000000, len = 16k
     app_cfg    : org = 0x08004000, len = 16k
     app_hdr    : org = 0x08008000, len = 512
-    app        : org = 0x08008200, len = 0x77E00 /* 479.5k */
+    app        : org = 0x08008200, len = 0xBFE00 /* 735.5k */
     ram        : org = 0x20000000, len = 128k
 }
 

@@ -261,6 +261,9 @@ ota_update_mgr()
       closesocket(connfd);
 
       chHeapFree(img_data);
+
+      chThdSleepSeconds(1);
+      NVIC_SystemReset();
     }
 
     chThdSleepSeconds(5);

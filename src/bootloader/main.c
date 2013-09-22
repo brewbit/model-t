@@ -5,6 +5,8 @@
 #include "chprintf.h"
 #include "app_hdr.h"
 #include "crc/crc32.h"
+#include "sxfs.h"
+#include "iflash.h"
 
 #include <string.h>
 
@@ -40,6 +42,59 @@ jump_to_app(uint32_t address)
     usrMain();
 }
 
+void
+copy_app_image(uint32_t addr, sxfs_file_t* file)
+{
+  uint8_t* buf = chHeapAlloc(NULL, 1024);
+
+  while (1) {
+    uint32_t nread = sxfs_file_read(file, buf, 1024);
+
+    if (nread == 0)
+      break;
+
+    flashWrite(addr, buf, nread);
+    addr += nread;
+  }
+
+  chHeapFree(buf);
+}
+
+void
+apply_updates(void)
+{
+  chprintf(SD_STDIO, "Checking for pending updates... ");
+  if (sxfs_part_verify(SP_OTA_UPDATE_IMG)) {
+    chprintf(SD_STDIO, "FOUND\r\n");
+    chprintf(SD_STDIO, "Applying update... ");
+
+    flashErase(0x08008000, 0xB0000);
+
+    sxfs_file_t app_hdr_file;
+    if (!sxfs_file_open(&app_hdr_file, SP_OTA_UPDATE_IMG, 0xAA)) {
+      chprintf(SD_STDIO, "ERROR - app header\r\n");
+      return;
+    }
+
+    sxfs_file_t app_img_file;
+    if (!sxfs_file_open(&app_img_file, SP_OTA_UPDATE_IMG, 0xBB)) {
+      chprintf(SD_STDIO, "ERROR - app image\r\n");
+      return;
+    }
+
+    copy_app_image(0x08008200, &app_img_file);
+    copy_app_image(0x08008000, &app_hdr_file);
+
+    /* Clear the update image from xflash */
+    sxfs_part_clear(SP_OTA_UPDATE_IMG);
+
+    chprintf(SD_STDIO, "OK\r\n");
+  }
+  else {
+    chprintf(SD_STDIO, "NOT FOUND\r\n");
+  }
+}
+
 int
 main(void)
 {
@@ -53,6 +108,8 @@ main(void)
       MAJOR_VERSION,
       MINOR_VERSION,
       PATCH_VERSION);
+
+  apply_updates();
 
   chprintf(SD_STDIO, "Searching for app... ");
   if (memcmp(_app_hdr.magic, "BBMT-APP", 8) == 0) {

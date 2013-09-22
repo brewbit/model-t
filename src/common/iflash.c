@@ -1,6 +1,7 @@
 
 #include "iflash.h"
 #include <string.h>
+#include "chprintf.h"
 
 static bool_t flashUnlock(void);
 
@@ -115,19 +116,19 @@ int flashSectorErase(flashsector_t sector)
     return FLASH_RETURN_SUCCESS;
 }
 
-int flashErase(flashaddr_t address, size_t size)
+int flashErase(flashaddr_t address, size_t s)
 {
-    while (size > 0)
-    {
-        flashsector_t sector = flashSectorAt(address);
-        int err = flashSectorErase(sector);
-        if (err != FLASH_RETURN_SUCCESS)
-            return err;
-        address = flashSectorEnd(sector);
-        size -= flashSectorSize(sector);
-    }
+  int32_t size = s;
+  while (size > 0) {
+    flashsector_t sector = flashSectorAt(address);
+    int err = flashSectorErase(sector);
+    if (err != FLASH_RETURN_SUCCESS)
+      return err;
+    address = flashSectorEnd(sector);
+    size -= flashSectorSize(sector);
+  }
 
-    return FLASH_RETURN_SUCCESS;
+  return FLASH_RETURN_SUCCESS;
 }
 
 bool_t flashIsErased(flashaddr_t address, size_t size)
