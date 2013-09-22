@@ -57,6 +57,7 @@ PROJECT_CSRC = \
        wifi/core/c_wlan.c \
        wifi/netapp.c \
        wifi/nvmem.c \
+       wifi/patch.c \
        wifi/security.c \
        wifi/socket.c \
        wifi/wlan.c \

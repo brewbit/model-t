@@ -5,6 +5,7 @@
 #include "wifi/wlan.h"
 #include "wifi/nvmem.h"
 #include "wifi/socket.h"
+#include "wifi/patch.h"
 #include "xflash.h"
 #include "chprintf.h"
 #include "app_hdr.h"
@@ -139,9 +140,18 @@ wlan_thread(void* arg)
 
   wlan_start(0);
 
+  unsigned char patchVer[2];
+  nvmem_read_sp_version(patchVer);
+  chprintf(SD_STDIO, "CC3000 Service Pack Version: %d.%d\r\n", patchVer[0], patchVer[1]);
+
+  if (patchVer[0] != 1 || patchVer[1] != 24) {
+    chprintf(SD_STDIO, "  Not up to date. Applying patch.\r\n");
+    wlan_apply_patch();
+  }
+
   long ret = wlan_connect(WLAN_SEC_WPA2, "internets", 9, NULL, (unsigned char*)"stenretni", 9);
   if (ret != 0) {
-    chprintf(SD_STDIO, "Could not connect to network\r\n");
+    chprintf(SD_STDIO, "Could not connect to network %d\r\n", ret);
   }
 
   while (!connected)

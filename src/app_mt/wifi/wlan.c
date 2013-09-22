@@ -52,6 +52,7 @@
 #include "core/wlan.h"
 #include "core/socket.h"
 
+
 wlan_socket_t           g_sockets[MAX_NUM_OF_SOCKETS];
 
 /* Handles for making the APIs asychronous and thread-safe */
@@ -214,7 +215,9 @@ void wlan_stop(void)
     c_wlan_stop();
 
     chThdTerminate(g_select_thread);
+    chSemSignal(&g_select_sleep_semaphore);
     chThdWait(g_select_thread);
+    g_select_thread = NULL;
     g_wlan_stopped = 1;
 
     for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
@@ -726,6 +729,12 @@ SelectThread(void *arg)
     /* increase the count back by one to be decreased by the original caller */
     chSemSignal(&g_select_sleep_semaphore);
 
+    if (chThdShouldTerminate()) {
+      /* Wlan_stop will terminate the thread and by that all
+         sync objects owned by it will be released */
+      return 0;
+    }
+
     FD_ZERO(&readsds);
 
     /* ping correct socket descriptor param for select */
@@ -739,14 +748,6 @@ SelectThread(void *arg)
 
     ret = select(maxFD, &readsds, NULL, NULL, &timeout); /* Polling instead of blocking here\
                                                               to process "accept" below */
-    //System_printf("SelectThread: Running..!! \n");
-    //System_flush();
-
-    if (chThdShouldTerminate()) {
-      /* Wlan_stop will terminate the thread and by that all
-         sync objects owned by it will be released */
-      return 0;
-    }
 
     if (ret>0) {
       for (index = 0; index < MAX_NUM_OF_SOCKETS; index++) {
