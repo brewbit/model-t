@@ -20,17 +20,20 @@ static const SerialConfig cfg_9600 = {
 void
 onewire_init(onewire_bus_t* ob)
 {
+  sdStop(ob);
   sdStart(ob, &cfg_115k);
 }
 
 bool
 onewire_reset(onewire_bus_t* ob)
 {
+  sdStop(ob);
   sdStart(ob, &cfg_9600);
 
   sdPut(ob, 0xF0);
   msg_t recv = sdGetTimeout(ob, MS2ST(100));
 
+  sdStop(ob);
   sdStart(ob, &cfg_115k);
 
   if (recv < 0) {
