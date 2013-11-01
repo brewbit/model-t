@@ -57,15 +57,18 @@ sensor_thread(void* arg)
     quantity_t sample;
 
     if (sensor_get_sample(tp, &sample)) {
-        tp->connected = true;
-        tp->last_sample_time = chTimeNow();
-        send_sensor_msg(tp, &sample);
+      tp->connected = true;
+      tp->last_sample_time = chTimeNow();
+      send_sensor_msg(tp, &sample);
     }
-    else if ((chTimeNow() - tp->last_sample_time) > SENSOR_TIMEOUT) {
-      if (tp->connected) {
-        tp->connected = false;
-        send_timeout_msg(tp);
+    else {
+      if ((chTimeNow() - tp->last_sample_time) > SENSOR_TIMEOUT) {
+        if (tp->connected) {
+          tp->connected = false;
+          send_timeout_msg(tp);
+        }
       }
+      chThdSleepMilliseconds(100);
     }
   }
 
