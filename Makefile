@@ -1,4 +1,6 @@
 
+-include chibios.mk
+
 JTAG ?= ftdi/olimex-arm-usb-tiny-h
 
 all: bootloader app_mt
