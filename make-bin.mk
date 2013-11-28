@@ -59,7 +59,7 @@ BUILDDIR   = build/$(PROJECT)
 AUTOGEN_DIR = $(BUILDDIR)/autogen
 
 # Imported source files and paths
-CHIBIOS = ../ChibiOS
+CHIBIOS ?= ../ChibiOS
 include board/board.mk
 include $(CHIBIOS)/os/hal/platforms/STM32F2xx/platform.mk
 include $(CHIBIOS)/os/hal/hal.mk
@@ -224,4 +224,4 @@ $(AUTOGEN_DIR)/font_resources.c $(AUTOGEN_DIR)/font_resources.h: $(AUTOGEN_DIR) 
 $(AUTOGEN_DIR)/image_resources.c $(AUTOGEN_DIR)/image_resources.h: $(AUTOGEN_DIR) $(wildcard images/*.png)
 	python scripts/imgconv images/*.png
 
-	
+

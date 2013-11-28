@@ -37,5 +37,15 @@ dropdown.
 
 # Building
 
-Change into b2tc-ChibiOS and run make
+* Check out ChibiOS from the svn repo: (http://svn.code.sf.net/p/chibios/svn/tags/ver_2.4.3)[http://svn.code.sf.net/p/chibios/svn/tags/ver_2.4.3]
+  * Place it at the same level as this codebase in ChibiOS
+  * Alternatively, you can create a `chibios.mk` the following format:
+```
+CHIBIOS ?= <path to your ChibiOS dir>
+
+export CHIBIOS
+```
+  * Run `make` to build the software
+  * To load the binaries on the board, connect JTAG to the board and run
+    `make download`
 
