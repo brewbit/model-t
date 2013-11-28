@@ -24,6 +24,8 @@ typedef enum {
   MSG_SCAN_RESULT,
   MSG_SCAN_COMPLETE,
 
+  MSG_SHOW_ACTIVATION_TOKEN,
+
   NUM_THREAD_MSGS
 } msg_id_t;
 
