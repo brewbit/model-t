@@ -49,7 +49,10 @@ main(void)
   net_init();
   web_api_init();
   gui_init();
-//  debug_client_init();
+
+#ifdef DEBUG
+  debug_client_init();
+#endif
 
   widget_t* home_screen = home_screen_create();
   gui_push_screen(home_screen);
