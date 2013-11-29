@@ -49,3 +49,36 @@ export CHIBIOS
   * To load the binaries on the board, connect JTAG to the board and run
     `make download`
 
+# Debugging
+
+* At the top of the directory
+* Run the following in terminal
+```
+openocd -f interface/olimex-arm-usb-tiny-h.cfg      \
+        -f target/stm32f2x.cfg                      \
+        -f stm32f2x-setup.cfg                       \
+        -c init                                     \
+        -c "reset init"                             \
+        -c halt                                     \
+        -c "stm32f2x.cpu configure -rtos auto"
+```
+* In another terminal run:
+```
+arm-none-eabi-gdb.exe build/app_mt/app_mt.elf               \
+                      --eval-command "target remote:3333"   \
+                      --eval-command "monitor poll"         \
+                      --eval-command "monitor reset halt"
+```
+* You can now debug in the gdb window
+
+## Some usefull commands
+
+* `monitor reset halt` resets the device and stops it so you can setup a new session
+* `info threads` shows a list of the current chibios threads, their states and current program counters
+* `thread <#>` where `<#>` is the thread id from the 'info threads' list - switches to that thread context
+* `thread apply <#> bt` shows a backtrace for a given thread
+* printing `dbg_panic_msg` should help narrow down which error happened
+* if a hard fault exception is generated, you can inspect the registers that are dumped to stack variables in the handler
+  * `PC` (program counter) and `LR` (link register) will most likely be of most interest
+  * Information on those registers is in the .map file
+
