@@ -92,21 +92,23 @@ output_thread(void* arg)
   palSetPad(GPIOC, output->gpio);
 
   while (1) {
-    while (!output->sensor_active) {
+    if (!output->sensor_active) {
       palClearPad(GPIOC, output->gpio);
-      chThdSleepSeconds(1);
     }
-
-    if ((chTimeNow() - output->window_start_time) < output->pid_control.pid_output)
-      chThdSleep(1000);
     else {
-      palClearPad(GPIOC, output->gpio);
-      chThdSleep(output->window_time - output->pid_control.pid_output);
+      if ((chTimeNow() - output->window_start_time) >= output->pid_control.pid_output) {
+        palClearPad(GPIOC, output->gpio);
+        // TODO: MAKE SURE THE TIME IS >= 0
+        chThdSleepSeconds(1);
+//        chThdSleep(output->window_time - output->pid_control.pid_output);
 
-      /* Setup next on window */
-      output->window_start_time = chTimeNow();
-      palSetPad(GPIOC, output->gpio);
+        /* Setup next on window */
+        output->window_start_time = chTimeNow();
+        palSetPad(GPIOC, output->gpio);
+      }
     }
+
+    chThdSleepSeconds(1);
   }
 
   return 0;
