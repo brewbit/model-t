@@ -7,6 +7,7 @@
 #include "gui.h"
 #include "temp_control.h"
 #include "app_cfg.h"
+#include "sensor.h"
 
 #include <string.h>
 
@@ -32,10 +33,15 @@ static void output_trigger_screen_destroy(widget_t* w);
 static void back_button_clicked(button_event_t* event);
 static void trigger_sensor1_button_clicked(button_event_t* event);
 static void trigger_sensor2_button_clicked(button_event_t* event);
+static void dispatch_sensor_sample(output_screen_t* s, sensor_msg_t* msg);
+static void dispatch_sensor_timeout(output_screen_t* s, sensor_timeout_msg_t* msg);
+
+static void output_trigger_screen_msg(msg_event_t* event);
 
 
 widget_class_t output_trigger_widget_class = {
-    .on_destroy = output_trigger_screen_destroy
+    .on_destroy = output_trigger_screen_destroy,
+    .on_msg     = output_trigger_screen_msg
 };
 
 
@@ -46,6 +52,8 @@ output_trigger_screen_create(output_id_t output)
   char* desc;
   output_screen_t* s = chHeapAlloc(NULL, sizeof(output_screen_t));
   memset(s, 0, sizeof(output_screen_t));
+  bool sensor1_is_connected = sensor_is_connected(SENSOR_1);
+  bool sensor2_is_connected = sensor_is_connected(SENSOR_2);
 
   s->widget = widget_create(NULL, &output_trigger_widget_class, s, display_rect);
   widget_set_background(s->widget, BLACK, FALSE);
@@ -109,7 +117,16 @@ output_trigger_screen_create(output_id_t output)
   label_set_text(s->trigger_sensor2_header_label, header);
   label_set_text(s->trigger_sensor2_desc_label, desc);
 
+  if (!sensor1_is_connected)
+    widget_disable(s->trigger_sensor1_button);
+
+  if (!sensor2_is_connected)
+    widget_disable(s->trigger_sensor2_button);
+
   s->output = output;
+
+  gui_msg_subscribe(MSG_SENSOR_TIMEOUT, s->widget);
+  gui_msg_subscribe(MSG_SENSOR_SAMPLE, s->widget);
 
   return s->widget;
 }
@@ -118,7 +135,46 @@ static void
 output_trigger_screen_destroy(widget_t* w)
 {
   output_screen_t* s = widget_get_instance_data(w);
+  gui_msg_unsubscribe(MSG_SENSOR_SAMPLE, s->widget);
+  gui_msg_unsubscribe(MSG_SENSOR_TIMEOUT, s->widget);
   chHeapFree(s);
+}
+
+static void
+output_trigger_screen_msg(msg_event_t* event)
+{
+  output_screen_t* s = widget_get_instance_data(event->widget);
+
+  switch (event->msg_id) {
+    case MSG_SENSOR_SAMPLE:
+      dispatch_sensor_sample(s, event->msg_data);
+      break;
+
+    case MSG_SENSOR_TIMEOUT:
+      dispatch_sensor_timeout(s, event->msg_data);
+      break;
+
+    default:
+      break;
+  }
+}
+
+static void
+dispatch_sensor_sample(output_screen_t* s, sensor_msg_t* msg)
+{
+  if (msg->sensor == SENSOR_1)
+    widget_enable(s->trigger_sensor1_button, true);
+  else if (msg->sensor == SENSOR_2)
+    widget_enable(s->trigger_sensor2_button, true);
+}
+
+static void
+dispatch_sensor_timeout(output_screen_t* s, sensor_timeout_msg_t* msg)
+{
+  if (msg->sensor == SENSOR_1)
+    widget_disable(s->trigger_sensor1_button);
+  else if (msg->sensor == SENSOR_2)
+    widget_disable(s->trigger_sensor2_button);
 }
 
 static void

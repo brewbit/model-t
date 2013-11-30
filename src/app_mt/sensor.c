@@ -18,6 +18,8 @@ typedef struct sensor_port_s {
   bool connected;
 } sensor_port_t;
 
+static bool connected_sensor[NUM_SENSORS];
+
 
 static msg_t sensor_thread(void* arg);
 static bool sensor_get_sample(sensor_port_t* tp, quantity_t* sample);
@@ -30,6 +32,12 @@ static bool read_bb(sensor_port_t* tp, quantity_t* sample);
 
 float tc_convert(float vmeas, float tref);
 float calc_polynomial(float x, const float* coeffs, int num_coeffs);
+
+
+bool sensor_is_connected(sensor_id_t sensor)
+{
+  return(connected_sensor[sensor]);
+}
 
 sensor_port_t*
 sensor_init(sensor_id_t sensor, onewire_bus_t* port)
@@ -57,14 +65,14 @@ sensor_thread(void* arg)
     quantity_t sample;
 
     if (sensor_get_sample(tp, &sample)) {
-      tp->connected = true;
+      tp->connected = connected_sensor[tp->sensor] = true;
       tp->last_sample_time = chTimeNow();
       send_sensor_msg(tp, &sample);
     }
     else {
       if ((chTimeNow() - tp->last_sample_time) > SENSOR_TIMEOUT) {
         if (tp->connected) {
-          tp->connected = false;
+          tp->connected = connected_sensor[tp->sensor] = false;
           send_timeout_msg(tp);
         }
       }

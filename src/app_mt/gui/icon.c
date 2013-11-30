@@ -58,6 +58,11 @@ icon_paint(paint_event_t* event)
   rect_t rect = widget_get_rect(event->widget);
   point_t center = rect_center(rect);
 
+  if (!widget_is_enabled(event->widget)) {
+    gfx_set_bg_color(DARK_GRAY);
+    gfx_clear_rect(rect);
+  }
+
   /* draw icon */
   if (i->image != NULL) {
     gfx_draw_bitmap(

@@ -33,13 +33,16 @@ typedef struct widget_s {
 
 
 static void
-widget_invalidate_predicate(widget_t* w, widget_traversal_event_t event);
+widget_invalidate_predicate(widget_t* w, widget_traversal_event_t event, void* data);
 
 static void
-widget_paint_predicate(widget_t* w, widget_traversal_event_t event);
+widget_paint_predicate(widget_t* w, widget_traversal_event_t event, void* data);
 
 static void
-widget_destroy_predicate(widget_t* w, widget_traversal_event_t event);
+widget_destroy_predicate(widget_t* w, widget_traversal_event_t event, void* data);
+
+static void
+widget_enable_predicate(widget_t* w, widget_traversal_event_t event, void* data);
 
 static void
 dispatch_touch(widget_t* w, touch_event_t* event);
@@ -73,12 +76,14 @@ widget_create(widget_t* parent, const widget_class_t* widget_class, void* instan
 void
 widget_destroy(widget_t* w)
 {
-  widget_for_each(w, widget_destroy_predicate);
+  widget_for_each(w, widget_destroy_predicate, NULL);
 }
 
 static void
-widget_destroy_predicate(widget_t* w, widget_traversal_event_t event)
+widget_destroy_predicate(widget_t* w, widget_traversal_event_t event, void* data)
 {
+  (void)data;
+
   if (event == WIDGET_TRAVERSAL_AFTER_CHILDREN) {
     CALL_WC(w, on_destroy)(w);
     chHeapFree(w);
@@ -141,22 +146,22 @@ widget_unparent(widget_t* w)
 }
 
 void
-widget_for_each(widget_t* w, widget_predicate_t pred)
+widget_for_each(widget_t* w, widget_predicate_t pred, void* data)
 {
   widget_t* child;
   widget_t* next_child = NULL;
 
-  pred(w, WIDGET_TRAVERSAL_BEFORE_CHILDREN);
+  pred(w, WIDGET_TRAVERSAL_BEFORE_CHILDREN, data);
 
   for (child = w->first_child; child != NULL; child = next_child) {
     /*  Save the next child locally because this child might be destroyed
      *  inside the predicate...
      */
     next_child = child->next_sibling;
-    widget_for_each(child, pred);
+    widget_for_each(child, pred, data);
   }
 
-  pred(w, WIDGET_TRAVERSAL_AFTER_CHILDREN);
+  pred(w, WIDGET_TRAVERSAL_AFTER_CHILDREN, data);
 }
 
 widget_t*
@@ -225,12 +230,14 @@ dispatch_touch(widget_t* w, touch_event_t* event)
 void
 widget_paint(widget_t* w)
 {
-  widget_for_each(w, widget_paint_predicate);
+  widget_for_each(w, widget_paint_predicate, NULL);
 }
 
 static void
-widget_paint_predicate(widget_t* w, widget_traversal_event_t event)
+widget_paint_predicate(widget_t* w, widget_traversal_event_t event, void* data)
 {
+  (void)data;
+
   if (event == WIDGET_TRAVERSAL_BEFORE_CHILDREN) {
     gfx_ctx_push();
 
@@ -263,12 +270,14 @@ widget_invalidate(widget_t* w)
   if (w == NULL)
     return;
 
-  widget_for_each(w, widget_invalidate_predicate);
+  widget_for_each(w, widget_invalidate_predicate, NULL);
 }
 
 static void
-widget_invalidate_predicate(widget_t* w, widget_traversal_event_t event)
+widget_invalidate_predicate(widget_t* w, widget_traversal_event_t event, void* data)
 {
+  (void)data;
+
   if (event == WIDGET_TRAVERSAL_BEFORE_CHILDREN)
     w->invalid = true;
 }
@@ -297,19 +306,27 @@ widget_is_visible(widget_t* w)
   return w->visible && (w->parent == NULL || widget_is_visible(w->parent));
 }
 
-void
-widget_enable(widget_t* w, bool enabled)
+void widget_enable(widget_t* w, bool enabled)
 {
-  if (w->enabled != enabled) {
-    w->enabled = enabled;
-    widget_invalidate(w);
+  widget_for_each(w, widget_enable_predicate, &enabled);
+}
 
-    enable_event_t event = {
-        .id = EVT_ENABLE,
-        .widget = w,
-        .enabled = enabled
-    };
-    CALL_WC(w, on_enable)(&event);
+static void
+widget_enable_predicate(widget_t* w, widget_traversal_event_t event, void* data)
+{
+  if (event == WIDGET_TRAVERSAL_BEFORE_CHILDREN) {
+    bool enabled = *(bool*)data;
+    if (w->enabled != enabled) {
+      w->enabled = enabled;
+      widget_invalidate(w);
+
+      enable_event_t event = {
+          .id = EVT_ENABLE,
+          .widget = w,
+          .enabled = enabled
+      };
+      CALL_WC(w, on_enable)(&event);
+    }
   }
 }
 

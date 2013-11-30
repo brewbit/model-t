@@ -30,4 +30,7 @@ typedef struct {
 sensor_port_t*
 sensor_init(sensor_id_t sensor, onewire_bus_t* port);
 
+bool
+sensor_is_connected(sensor_id_t sensor);
+
 #endif

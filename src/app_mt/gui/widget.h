@@ -18,7 +18,7 @@ typedef struct {
   void (*on_destroy)(widget_t* w);
 } widget_class_t;
 
-typedef void (*widget_predicate_t)(widget_t* w, widget_traversal_event_t event);
+typedef void (*widget_predicate_t)(widget_t* w, widget_traversal_event_t event, void* data);
 
 
 widget_t*
@@ -79,6 +79,6 @@ void
 widget_set_background(widget_t* w, color_t color, bool transparent);
 
 void
-widget_for_each(widget_t* w, widget_predicate_t pred);
+widget_for_each(widget_t* w, widget_predicate_t pred, void* data);
 
 #endif
