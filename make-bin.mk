@@ -59,7 +59,7 @@ BUILDDIR   = build/$(PROJECT)
 AUTOGEN_DIR = $(BUILDDIR)/autogen
 
 # Imported source files and paths
-CHIBIOS ?= ../ChibiOS
+CHIBIOS ?= ../ChibiOS-RT
 include board/board.mk
 include $(CHIBIOS)/os/hal/platforms/STM32F2xx/platform.mk
 include $(CHIBIOS)/os/hal/hal.mk
