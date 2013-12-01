@@ -24,6 +24,12 @@
 5. [BMFont](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/6pq696denystrl7/install_bmfont_1.13.exe)
 6. [Zadig](http://zadig.akeo.ie/)
 
+## Dependencies
+
+* [ChibiOS/RT](https://github.com/ChibiOS/ChibiOS-RT) 2.4.3
+* [snacka](https://github.com/stuffmatic/snacka)
+* [nanopb](https://code.google.com/p/nanopb) 0.2.4
+
 ## JTAG
 
 Using [Olimex ARM-USB-TINY-H programmer](https://www.olimex.com/Products/ARM/JTAG/ARM-USB-TINY-H/)
@@ -37,22 +43,32 @@ dropdown.
 
 # Building
 
-* Check out ChibiOS from the svn repo: [http://svn.code.sf.net/p/chibios/svn/tags/ver_2.4.3](http://svn.code.sf.net/p/chibios/svn/tags/ver_2.4.3)
-  * Place it at the same level as this codebase in ChibiOS
-  * Alternatively, you can create a `chibios.mk` the following format:
-```
-CHIBIOS ?= <path to your ChibiOS dir>
+* Download and extract all dependencies along side the Model-T sources. Your source tree should look like:
 
-export CHIBIOS
 ```
-  * Run `make` to build the software
-  * To load the binaries on the board, connect JTAG to the board and run
-    `make download`
+<MODEL_T_BUILD_DIR>
+|-- model-t
+|-- ChibiOS-RT
+|-- snacka
+|-- nanopb
+```
+
+## Build snacka
+
+```
+cd snacka
+make CC=
+```
+
+* Alternatively, you can edit `deps.mk` point to your dependencies.
+* Run `make` to build the software
+* To load the binaries on the board, connect JTAG to the board and run `make download`
 
 # Debugging
 
 * At the top of the directory
 * Run the following in terminal
+
 ```
 openocd -f interface/olimex-arm-usb-tiny-h.cfg      \
         -f target/stm32f2x.cfg                      \
@@ -62,16 +78,19 @@ openocd -f interface/olimex-arm-usb-tiny-h.cfg      \
         -c halt                                     \
         -c "stm32f2x.cpu configure -rtos auto"
 ```
+
 * In another terminal run:
+
 ```
 arm-none-eabi-gdb.exe build/app_mt/app_mt.elf               \
                       --eval-command "target remote:3333"   \
                       --eval-command "monitor poll"         \
                       --eval-command "monitor reset halt"
 ```
+
 * You can now debug in the gdb window
 
-## Some usefull commands
+## Some useful commands
 
 * `monitor reset halt` resets the device and stops it so you can setup a new session
 * `info threads` shows a list of the current chibios threads, their states and current program counters
@@ -79,6 +98,6 @@ arm-none-eabi-gdb.exe build/app_mt/app_mt.elf               \
 * `thread apply <#> bt` shows a backtrace for a given thread
 * printing `dbg_panic_msg` should help narrow down which error happened
 * if a hard fault exception is generated, you can inspect the registers that are dumped to stack variables in the handler
-  * `PC` (program counter) and `LR` (link register) will most likely be of most interest
+  * `PC` (program counter) and `LR` (link register) will be of most interest
   * Information on those registers is in the .map file
 
