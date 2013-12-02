@@ -53,6 +53,11 @@ web_api_msg_handler(web_api_msg_id_t id, uint8_t* data, uint32_t data_len);
 static void
 websocket_message_rx(void* userData, snOpcode opcode, const char* data, int numBytes);
 
+static void
+websocket_closed(void* userData, snStatusCode status);
+
+static void
+websocket_error(void* userData, snError error);
 
 static BaseChannel* wapi_conn;
 static Mutex wapi_tx_mutex;
@@ -81,21 +86,27 @@ web_api_thread(void* arg)
   (void)arg;
   chRegSetThreadName("web");
 
+  chThdSleepMilliseconds(5000);
+
   snWebsocket* ws = snWebsocket_create(
         NULL, // open callback
         websocket_message_rx,
-        NULL, // close callback
-        NULL, // error callback
+        websocket_closed,
+        websocket_error,
         NULL); // callback data
 
-    snWebsocket_connect(ws, "192.168.1.146", NULL, NULL, 80);
+//  snError err = snWebsocket_connect(ws, "brewbit.herokuapp.com", NULL, NULL, 80);
+  snError err = snWebsocket_connect(ws, "76.88.84.25", NULL, NULL, 10500);
+  if (err != SN_NO_ERROR) {
+    chprintf(SD_STDIO, "websocket connect failed %d\r\n", err);
+  }
 
-    while (snWebsocket_getState(ws) != SN_STATE_OPEN) {
-      snWebsocket_poll(ws);
-      chThdSleepSeconds(1);
-    }
+  while (snWebsocket_getState(ws) != SN_STATE_OPEN) {
+    snWebsocket_poll(ws);
+    chThdSleepSeconds(1);
+  }
 
-    chprintf(SD_STDIO, "websocket is open\r\n");
+  chprintf(SD_STDIO, "websocket is open\r\n");
 
 //    ApiMessage msg = {
 //        .type = ApiMessage_Type_ACTIVATION_TOKEN_REQUEST,
@@ -133,7 +144,7 @@ web_api_thread(void* arg)
 //        read_conn();
 //        break;
 //      }
-//      chThdSleepMilliseconds(200);
+      chThdSleepMilliseconds(2000);
 //    }
   }
 
@@ -155,6 +166,18 @@ websocket_message_rx(void* userData, snOpcode opcode, const char* data, int numB
 //    dispatch_msg(msg);
 //
 //  free(msg);
+}
+
+static void
+websocket_closed(void* userData, snStatusCode status)
+{
+  chprintf(SD_STDIO, "websocket closed %d\r\n", status);
+}
+
+static void
+websocket_error(void* userData, snError error)
+{
+  chprintf(SD_STDIO, "websocket error %d\r\n", error);
 }
 
 //void dispatch_msg(ApiMessage* msg)
