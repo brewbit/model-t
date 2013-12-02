@@ -79,7 +79,8 @@ CSRC = $(PORTSRC) \
        $(CHIBIOS)/os/various/syscalls.c \
        $(CHIBIOS)/os/various/chprintf.c \
        $(addprefix $(AUTOGEN_DIR)/,$(PROJECT_AUTOGEN_CSRC)) \
-       $(addprefix $(PROJECT_SRC_DIR)/,$(PROJECT_CSRC))
+       $(addprefix $(PROJECT_SRC_DIR)/,$(PROJECT_CSRC)) \
+       $(foreach dep,$(addsuffix _CSRC,$(DEPS)),$($(dep)))
 
 # C++ sources that can be compiled in ARM or THUMB mode depending on the global
 # setting.
@@ -111,7 +112,8 @@ ASMSRC = $(PORTASM) \
 
 INCDIR = $(PORTINC) $(KERNINC) \
          $(HALINC) $(PLATFORMINC) $(BOARDINC) \
-         $(CHIBIOS)/os/various
+         $(CHIBIOS)/os/various \
+         $(foreach dep,$(addsuffix _INCDIR,$(DEPS)),$($(dep)))
 
 #
 # Project, sources and paths
@@ -193,14 +195,13 @@ UADEFS =
 UINCDIR = src/common \
           $(AUTOGEN_DIR) \
           $(PROJECT_SRC_DIR) \
-          $(addprefix $(PROJECT_SRC_DIR)/,$(PROJECT_INCDIR)) \
-          $(PROJECT_DEP_INCDIR)
+          $(addprefix $(PROJECT_SRC_DIR)/,$(PROJECT_INCDIR))
           
 # List the user directory to look for the libraries here
-ULIBDIR = $(PROJECT_LIBDIR)
+ULIBDIR =
 
 # List all user libraries here
-ULIBS = $(PROJECT_LIBS)
+ULIBS =
 
 #
 # End of user defines
