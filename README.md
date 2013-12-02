@@ -27,7 +27,7 @@
 ## Dependencies
 
 * [ChibiOS/RT](https://github.com/ChibiOS/ChibiOS-RT) 2.4.3
-* [snacka](https://github.com/stuffmatic/snacka)
+* [snacka](https://github.com/brewbit/snacka)
 * [nanopb](https://code.google.com/p/nanopb) 0.2.4
 
 ## JTAG
@@ -53,14 +53,17 @@ dropdown.
 |-- nanopb
 ```
 
+* Alternatively, you can edit `deps.mk` point to your dependencies.
+
 ## Build snacka
 
 ```
 cd snacka
-make CC=
+make CC=arm-none-eabi-gcc AR=arm-none-eabi-ar WITH_BACKEND=NO lib
 ```
 
-* Alternatively, you can edit `deps.mk` point to your dependencies.
+## Build Model-T Firmware
+
 * Run `make` to build the software
 * To load the binaries on the board, connect JTAG to the board and run `make download`
 
