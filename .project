@@ -3,7 +3,9 @@
 	<name>model-t</name>
 	<comment></comment>
 	<projects>
-		<project>ChibiOS</project>
+		<project>ChibiOS-RT</project>
+		<project>nanopb</project>
+		<project>snacka</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
