@@ -47,6 +47,8 @@ PROJECT_CSRC = \
        txn.c \
        web_api.c \
        web_api_parser.c \
+       snacka_backend/iocallbacks_socket.c \
+       snacka_backend/socket_bsd.c \
        wifi/core/cc3000_common.c \
        wifi/core/cc3000_spi.c \
        wifi/core/evnt_handler.c \

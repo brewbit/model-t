@@ -334,7 +334,7 @@ listen(long sd, long backlog)
 
 #ifndef CC3000_TINY_DRIVER
 int
-gethostbyname(char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr)
+gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr)
 {
     int ret;
 

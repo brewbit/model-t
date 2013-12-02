@@ -59,7 +59,6 @@ BUILDDIR   = build/$(PROJECT)
 AUTOGEN_DIR = $(BUILDDIR)/autogen
 
 # Imported source files and paths
-CHIBIOS ?= ../ChibiOS-RT
 include board/board.mk
 include $(CHIBIOS)/os/hal/platforms/STM32F2xx/platform.mk
 include $(CHIBIOS)/os/hal/hal.mk
@@ -194,7 +193,8 @@ UADEFS =
 UINCDIR = src/common \
           $(AUTOGEN_DIR) \
           $(PROJECT_SRC_DIR) \
-          $(addprefix $(PROJECT_SRC_DIR)/,$(PROJECT_INCDIR))
+          $(addprefix $(PROJECT_SRC_DIR)/,$(PROJECT_INCDIR)) \
+          $(SNACKA)/src
 
 # List the user directory to look for the libraries here
 ULIBDIR =

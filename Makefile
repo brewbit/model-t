@@ -1,5 +1,5 @@
 
--include chibios.mk
+include deps.mk
 
 JTAG ?= ftdi/olimex-arm-usb-tiny-h
 
