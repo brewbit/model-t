@@ -1,5 +1,5 @@
 /**
-* @file    newlib_locking.c
+* @file    newlib_support.c
 * @brief   Recursive mutexes macros and structures. Newlib locking functions.
 */
 
@@ -113,4 +113,15 @@ void __tz_lock (void) {
 
 void __tz_unlock (void) {
   chMtxUnlock();
+}
+
+void
+__assert_func(const char* file, int line, const char* func, const char* cond)
+{
+  (void)file;
+  (void)line;
+  (void)func;
+  (void)cond;
+
+  chDbgPanic("assertion failed");
 }

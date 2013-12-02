@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <snacka/websocket.h>
+
 
 typedef enum {
   NOT_CONNECTED,
@@ -48,6 +50,9 @@ web_api_msg_end(void);
 static void
 web_api_msg_handler(web_api_msg_id_t id, uint8_t* data, uint32_t data_len);
 
+static void
+websocket_message_rx(void* userData, snOpcode opcode, const char* data, int numBytes);
+
 
 static BaseChannel* wapi_conn;
 static Mutex wapi_tx_mutex;
@@ -76,33 +81,113 @@ web_api_thread(void* arg)
   (void)arg;
   chRegSetThreadName("web");
 
+  snWebsocket* ws = snWebsocket_create(
+        NULL, // open callback
+        websocket_message_rx,
+        NULL, // close callback
+        NULL, // error callback
+        NULL); // callback data
+
+    snWebsocket_connect(ws, "192.168.1.146", NULL, NULL, 80);
+
+    while (snWebsocket_getState(ws) != SN_STATE_OPEN) {
+      snWebsocket_poll(ws);
+      chThdSleepSeconds(1);
+    }
+
+    chprintf(SD_STDIO, "websocket is open\r\n");
+
+//    ApiMessage msg = {
+//        .type = ApiMessage_Type_ACTIVATION_TOKEN_REQUEST,
+//        .has_activationTokenRequest = true,
+//        .activationTokenRequest.device_id = "asdfasdf"
+//    };
+//
+//    printf("sending activation token request...\n");
+//    send_api_msg(ws, &msg);
+//
+//    printf("polling...\n");
+//    while (snWebsocket_getState(ws) != SN_STATE_CLOSED) {
+//      snWebsocket_poll(ws);
+//      usleep(1000 * pollDurationMs);
+//    }
+
   while (1) {
-    if (chMsgIsPendingI(chThdSelf())) {
-      Thread* tp = chMsgWait();
-      thread_msg_t* msg = (thread_msg_t*)chMsgGet(tp);
-
-      web_api_dispatch(msg->id, msg->msg_data, msg->user_data);
-
-      chMsgRelease(tp, 0);
-    }
-    else {
-      switch (state) {
-      case NOT_CONNECTED:
-        break;
-
-      case CONNECTING:
-        break;
-
-      case CONNECTED:
-        read_conn();
-        break;
-      }
-      chThdSleepMilliseconds(200);
-    }
+//    if (chMsgIsPendingI(chThdSelf())) {
+//      Thread* tp = chMsgWait();
+//      thread_msg_t* msg = (thread_msg_t*)chMsgGet(tp);
+//
+//      web_api_dispatch(msg->id, msg->msg_data, msg->user_data);
+//
+//      chMsgRelease(tp, 0);
+//    }
+//    else {
+//      switch (state) {
+//      case NOT_CONNECTED:
+//        break;
+//
+//      case CONNECTING:
+//        break;
+//
+//      case CONNECTED:
+//        read_conn();
+//        break;
+//      }
+//      chThdSleepMilliseconds(200);
+//    }
   }
 
   return 0;
 }
+
+static void
+websocket_message_rx(void* userData, snOpcode opcode, const char* data, int numBytes)
+{
+  if (opcode != SN_OPCODE_BINARY)
+    return;
+
+//  ApiMessage* msg = malloc(sizeof(ApiMessage));
+//
+//  pb_istream_t stream = pb_istream_from_buffer(data, numBytes);
+//  bool status = pb_decode(&stream, ApiMessage_fields, msg);
+//
+//  if (status)
+//    dispatch_msg(msg);
+//
+//  free(msg);
+}
+
+//void dispatch_msg(ApiMessage* msg)
+//{
+//  switch (msg->type) {
+//  case ApiMessage_Type_ACTIVATION_TOKEN_REQUEST:
+//    printf("rx activation token request\n");
+//    break;
+//
+//  case ApiMessage_Type_ACTIVATION_TOKEN_RESPONSE:
+//    printf("rx activation token response\n");
+//    break;
+//
+//  case ApiMessage_Type_ACTIVATION_NOTIFICATION:
+//    printf("rx activation notification\n");
+//    break;
+//
+//  case ApiMessage_Type_AUTH_REQUEST:
+//    printf("rx auth request\n");
+//    break;
+//
+//  case ApiMessage_Type_AUTH_RESPONSE:
+//    printf("rx auth response\n");
+//    break;
+//
+//  case ApiMessage_Type_DEVICE_REPORT:
+//    printf("rx device report\n");
+//    break;
+//
+//  default:
+//    break;
+//  }
+//}
 
 static void
 read_conn()

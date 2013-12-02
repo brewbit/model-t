@@ -61,6 +61,8 @@ extern "C"
                                   int* numBytesWritten,
                                   snIOCancelCallback cancelCallback);
     
+    float snSocketTimeCallback(void);
+
 #ifdef __cplusplus
 }
 #endif /* __cplusplus */

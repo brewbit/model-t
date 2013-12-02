@@ -6,7 +6,16 @@ PATCH_VERSION = 0
 
 BOARD = II-MT-CONTROLLER
 
-PROJECT_INCDIR = util wifi
+PROJECT_LIBDIR = $(SNACKA)/build
+
+PROJECT_LIBS = -lsnacka
+
+PROJECT_DEP_INCDIR = \
+       $(SNACKA)/src
+
+PROJECT_INCDIR = \
+       util \
+       wifi
 
 PROJECT_AUTOGEN_CSRC = \
        image_resources.c \

@@ -31,6 +31,7 @@
 
 #include "iocallbacks_socket.h"
 #include "socket.h"
+#include "ch.h"
 
 snError snSocketInitCallback(void** socket)
 {
@@ -94,4 +95,11 @@ snError snSocketWriteCallback(void* userData,
                                            numBytesWritten, 0, 0);
     
     return success ? SN_NO_ERROR : SN_SOCKET_IO_ERROR;
+}
+
+float snSocketTimeCallback()
+{
+  systime_t time = chTimeNow();
+
+  return ((float)time) / CH_FREQUENCY;
 }

@@ -194,13 +194,13 @@ UINCDIR = src/common \
           $(AUTOGEN_DIR) \
           $(PROJECT_SRC_DIR) \
           $(addprefix $(PROJECT_SRC_DIR)/,$(PROJECT_INCDIR)) \
-          $(SNACKA)/src
-
+          $(PROJECT_DEP_INCDIR)
+          
 # List the user directory to look for the libraries here
-ULIBDIR =
+ULIBDIR = $(PROJECT_LIBDIR)
 
 # List all user libraries here
-ULIBS =
+ULIBS = $(PROJECT_LIBS)
 
 #
 # End of user defines
