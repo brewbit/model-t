@@ -96,7 +96,8 @@ web_api_thread(void* arg)
         NULL); // callback data
 
 //  snError err = snWebsocket_connect(ws, "brewbit.herokuapp.com", NULL, NULL, 80);
-  snError err = snWebsocket_connect(ws, "76.88.84.25", NULL, NULL, 10500);
+//  snError err = snWebsocket_connect(ws, "76.88.84.25", NULL, NULL, 10500);
+  snError err = snWebsocket_connect(ws, "192.168.1.146", "echo", NULL, 12345);
   if (err != SN_NO_ERROR) {
     chprintf(SD_STDIO, "websocket connect failed %d\r\n", err);
   }

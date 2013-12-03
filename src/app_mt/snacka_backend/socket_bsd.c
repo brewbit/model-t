@@ -217,8 +217,8 @@ int stfSocket_connect(stfSocket* s,
 
   sockaddr_in addr = {0};
   addr.sin_family = AF_INET;
-  addr.sin_port = port;
-  addr.sin_addr.s_addr = ip_addr;
+  addr.sin_port = htons(port);
+  addr.sin_addr.s_addr = htonl(ip_addr);
   if (connect(s->fileDescriptor, (sockaddr*)&addr, sizeof(addr)) != 0)
     return 0;
 
