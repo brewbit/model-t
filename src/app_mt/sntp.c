@@ -98,7 +98,7 @@ sntp_process(time_t t)
   SNTP_SYSTEM_TIME(t);
 
   /* display local time from GMT time */
-  chprintf(SD_STDIO, "sntp_process: %d", t);
+  chprintf(SD_STDIO, "sntp_process: %d\r\n", t);
 }
 
 /**
@@ -128,12 +128,12 @@ sntp_request(void)
   /* if we got a valid SNTP server address... */
   if (sntp_server_address != 0) {
     /* create new socket */
-    sock = socket(AF_INET, SOCK_DGRAM, 0);
+    sock = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
     if (sock >= 0) {
       /* prepare local address */
       memset(&local, 0, sizeof(local));
       local.sin_family      = AF_INET;
-      local.sin_port        = htons(INADDR_ANY);
+      local.sin_port        = htons(SNTP_PORT);
       local.sin_addr.s_addr = htonl(INADDR_ANY);
 
       chprintf(SD_STDIO, "binding\r\n");
