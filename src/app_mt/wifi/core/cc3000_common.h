@@ -256,6 +256,12 @@ typedef struct _netapp_pingreport_args
 
 #define HOSTNAME_MAX_LENGTH (230)  // 230 bytes + header shouldn't exceed 8 bit value
 
+#define IPV4_ADDR(a, b, c, d) htonl((((a)<<24) | ((b)<<16) | ((c)<<8) | (d)))
+
+//--------- Special Address --------
+
+#define INADDR_ANY 0
+
 //--------- Address Families --------
 
 #define  AF_INET                2

@@ -98,6 +98,10 @@ wlan_event(long event_type, char * data, unsigned char length)
     chprintf(SD_STDIO, "wlan ping\r\n");
     break;
 
+  case HCI_EVENT_CC3000_CAN_SHUT_DOWN:
+    chprintf(SD_STDIO, "wlan CC3000 can shut down\r\n");
+    break;
+
   default:
     chprintf(SD_STDIO, "wlan_event(0x%x)\r\n", event_type);
     break;
@@ -177,7 +181,7 @@ ota_update_mgr()
 
   memset(&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
-  serv_addr.sin_addr.s_addr = 0; // INADDR_ANY
+  serv_addr.sin_addr.s_addr = INADDR_ANY;
   serv_addr.sin_port = htons(5000);
 
   ret = bind(s, (sockaddr*)&serv_addr, sizeof(serv_addr));

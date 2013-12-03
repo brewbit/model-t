@@ -15,6 +15,7 @@
 #include "app_cfg.h"
 #include "debug_client.h"
 #include "net.h"
+#include "sntp.h"
 
 #include <string.h>
 
@@ -47,7 +48,8 @@ main(void)
   touch_init();
   temp_control_init();
   net_init();
-  web_api_init();
+//  web_api_init();
+  sntp_init();
   gui_init();
 
 #ifdef DEBUG

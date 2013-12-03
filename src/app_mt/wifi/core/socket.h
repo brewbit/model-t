@@ -219,7 +219,7 @@ extern long c_listen(long sd, long backlog);
 //
 //*****************************************************************************
 #ifndef CC3000_TINY_DRIVER
-extern int c_gethostbyname(char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr);
+extern int c_gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr);
 #endif
 
 
