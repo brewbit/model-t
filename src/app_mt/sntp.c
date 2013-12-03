@@ -67,7 +67,7 @@
 
 /** SNTP update delay - in milliseconds */
 #ifndef SNTP_UPDATE_DELAY
-#define SNTP_UPDATE_DELAY           15000
+#define SNTP_UPDATE_DELAY           300000 /* 5 min */
 #endif
 
 /** SNTP macro to change system time and/or the update the RTC clock */
@@ -119,8 +119,6 @@ sntp_request(void)
   uint32_t    timestamp;
   time_t      t;
 
-  chprintf(SD_STDIO, "making SNTP request\r\n");
-
   /* Lookup SNTP server address */
   const char* server_name = "pool.ntp.org";
   gethostbyname(server_name, strlen(server_name), &sntp_server_address);
@@ -136,12 +134,8 @@ sntp_request(void)
       local.sin_port        = htons(SNTP_PORT);
       local.sin_addr.s_addr = htonl(INADDR_ANY);
 
-      chprintf(SD_STDIO, "binding\r\n");
-
       /* bind to local address */
       if (bind(sock, (sockaddr *)&local, sizeof(local)) == 0) {
-
-        chprintf(SD_STDIO, "setsockopt\r\n");
 
         /* set recv timeout */
         timeout = SNTP_RECV_TIMEOUT;
@@ -157,16 +151,11 @@ sntp_request(void)
         to.sin_port        = htons(SNTP_PORT);
         to.sin_addr.s_addr = htonl(sntp_server_address);
 
-        chprintf(SD_STDIO, "sendto\r\n");
         /* send SNTP request to server */
         if (sendto(sock, sntp_request, sizeof(sntp_request), 0, (sockaddr *)&to, sizeof(to)) >= 0) {
-          chprintf(SD_STDIO, "recvfrom\r\n");
-
           /* receive SNTP server response */
           tolen = sizeof(to);
           size  = recvfrom(sock, sntp_response, sizeof(sntp_response), 0, (sockaddr *)&to, &tolen);
-
-          chprintf(SD_STDIO, "recvfrom %d\r\n", size);
 
           /* if the response size is good */
           if (size == SNTP_MAX_DATA_LEN) {
