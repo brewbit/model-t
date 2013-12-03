@@ -1,7 +1,6 @@
 
 #include "ch.h"
 #include "hal.h"
-#include "chprintf.h"
 #include "common.h"
 #include "crc/crc32.h"
 

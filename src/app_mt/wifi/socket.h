@@ -281,7 +281,7 @@ extern long connect(long sd, const sockaddr *addr, long addrlen);
 //!  @sa socket
 //
 //*****************************************************************************
-extern int select(long nfds, fd_set *readsds, fd_set *writesds, fd_set *exceptsds, struct timeval *timeout);
+extern int select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *exceptsds, struct timeval *timeout);
 
 //*****************************************************************************
 //

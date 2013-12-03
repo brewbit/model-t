@@ -307,7 +307,7 @@ typedef struct _netapp_pingreport_args
 
 #define  IOCTL_SOCKET_EVENTMASK
 
-#define __FD_SETSIZE            32
+#define __WFD_SETSIZE            32
 
 #define  ASIC_ADDR_LEN          8
 
@@ -335,39 +335,39 @@ typedef struct _sockaddr_in_t
 
 typedef unsigned long socklen_t;
 
-// The fd_set member is required to be an array of longs.
-typedef long int __fd_mask;
+// The wfd_set member is required to be an array of longs.
+typedef long int __wfd_mask;
 
 // It's easier to assume 8-bit bytes than to get CHAR_BIT.
-#define __NFDBITS               (8 * sizeof (__fd_mask))
-#define __FDELT(d)              ((d) / __NFDBITS)
-#define __FDMASK(d)             ((__fd_mask) 1 << ((d) % __NFDBITS))
+#define __NWFDBITS               (8 * sizeof (__wfd_mask))
+#define __WFDELT(d)              ((d) / __NWFDBITS)
+#define __WFDMASK(d)             ((__wfd_mask) 1 << ((d) % __NWFDBITS))
 
-// fd_set for select and pselect.
+// wfd_set for select and pselect.
 typedef struct
 {
-    __fd_mask fds_bits[__FD_SETSIZE / __NFDBITS];
-#define __FDS_BITS(set)        ((set)->fds_bits)
-} fd_set;
+    __wfd_mask wfds_bits[__WFD_SETSIZE / __NWFDBITS];
+#define __WFDS_BITS(set)        ((set)->wfds_bits)
+} wfd_set;
 
 // We don't use `memset' because this would require a prototype and
 //   the array isn't too big.
-#define __FD_ZERO(set)                               \
+#define __WFD_ZERO(set)                               \
   do {                                                \
     unsigned int __i;                                 \
-    fd_set *__arr = (set);                            \
-    for (__i = 0; __i < sizeof (fd_set) / sizeof (__fd_mask); ++__i) \
-      __FDS_BITS (__arr)[__i] = 0;                    \
+    wfd_set *__arr = (set);                            \
+    for (__i = 0; __i < sizeof (wfd_set) / sizeof (__wfd_mask); ++__i) \
+      __WFDS_BITS (__arr)[__i] = 0;                    \
   } while (0)
-#define __FD_SET(d, set)       (__FDS_BITS (set)[__FDELT (d)] |= __FDMASK (d))
-#define __FD_CLR(d, set)       (__FDS_BITS (set)[__FDELT (d)] &= ~__FDMASK (d))
-#define __FD_ISSET(d, set)     (__FDS_BITS (set)[__FDELT (d)] & __FDMASK (d))
+#define __WFD_SET(d, set)       (__WFDS_BITS (set)[__WFDELT (d)] |= __WFDMASK (d))
+#define __WFD_CLR(d, set)       (__WFDS_BITS (set)[__WFDELT (d)] &= ~__WFDMASK (d))
+#define __WFD_ISSET(d, set)     (__WFDS_BITS (set)[__WFDELT (d)] & __WFDMASK (d))
 
-// Access macros for 'fd_set'.
-#define FD_SET(fd, fdsetp)      __FD_SET (fd, fdsetp)
-#define FD_CLR(fd, fdsetp)      __FD_CLR (fd, fdsetp)
-#define FD_ISSET(fd, fdsetp)    __FD_ISSET (fd, fdsetp)
-#define FD_ZERO(fdsetp)         __FD_ZERO (fdsetp)
+// Access macros for 'wfd_set'.
+#define WFD_SET(wfd, wfdsetp)      __WFD_SET (wfd, wfdsetp)
+#define WFD_CLR(wfd, wfdsetp)      __WFD_CLR (wfd, wfdsetp)
+#define WFD_ISSET(wfd, wfdsetp)    __WFD_ISSET (wfd, wfdsetp)
+#define WFD_ZERO(wfdsetp)         __WFD_ZERO (wfdsetp)
 
 //Use in case of Big Endian only
 

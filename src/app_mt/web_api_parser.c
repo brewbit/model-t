@@ -105,7 +105,7 @@ web_api_parse(web_api_parser_t* p, uint8_t c)
         p->msg_handler(p->id, p->data, p->data_len);
     }
     else {
-      chprintf(SD_STDIO, "web api crc error. recv %04x, expected %04x\r\n", p->crc_recv, p->crc_calc);
+      printf("web api crc error. recv %04x, expected %04x\r\n", p->crc_recv, p->crc_calc);
       p->crc_errors++;
     }
 

@@ -1,7 +1,6 @@
 
 #include "iflash.h"
 #include <string.h>
-#include "chprintf.h"
 
 static bool_t flashUnlock(void);
 

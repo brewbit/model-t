@@ -710,7 +710,7 @@ SelectThread(void *arg)
   (void)arg;
 
   struct timeval timeout;
-  fd_set readsds;
+  wfd_set readsds;
 
   int ret = 0;
   int maxFD = 0;
@@ -735,12 +735,12 @@ SelectThread(void *arg)
       return 0;
     }
 
-    FD_ZERO(&readsds);
+    WFD_ZERO(&readsds);
 
     /* ping correct socket descriptor param for select */
     for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
       if (g_sockets[index].status == SOCK_ON){
-        FD_SET(g_sockets[index].sd, &readsds);
+        WFD_SET(g_sockets[index].sd, &readsds);
         if (maxFD <= g_sockets[index].sd)
           maxFD = g_sockets[index].sd + 1;
       }
@@ -753,7 +753,7 @@ SelectThread(void *arg)
       for (index = 0; index < MAX_NUM_OF_SOCKETS; index++) {
         if (g_sockets[index].status != SOC_NOT_INITED && //check that the socket is valid
             g_sockets[index].sd != g_accept_socket &&    //verify this is not an accept socket
-            FD_ISSET(g_sockets[index].sd, &readsds)) {    //and has pending data
+            WFD_ISSET(g_sockets[index].sd, &readsds)) {    //and has pending data
           chSemSignal(&g_sockets[index].sd_semaphore); //release the semaphore
         }
       }

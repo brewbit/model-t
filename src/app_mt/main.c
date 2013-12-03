@@ -10,13 +10,14 @@
 #include "temp_control.h"
 #include "gui_calib.h"
 #include "gui_home.h"
-#include "chprintf.h"
 #include "gfx.h"
 #include "app_cfg.h"
 #include "debug_client.h"
 #include "net.h"
 #include "sntp.h"
+#include <chprintf.h>
 
+#include <stdio.h>
 #include <string.h>
 
 
@@ -43,23 +44,29 @@ main(void)
   /* start stdout port */
   sdStart(SD_STDIO, NULL);
 
-  app_cfg_init();
-  gfx_init();
-  touch_init();
-  temp_control_init();
-  net_init();
+  setvbuf(stdin, NULL, _IONBF, 0);
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
+
+  chprintf(SD_STDIO, "calling printf\r\n");
+  printf("blah blah blah\r\n");
+//  app_cfg_init();
+//  gfx_init();
+//  touch_init();
+//  temp_control_init();
+//  net_init();
 //  web_api_init();
-  sntp_init();
-  gui_init();
-
-#ifdef DEBUG
-  debug_client_init();
-#endif
-
-  widget_t* home_screen = home_screen_create();
-  gui_push_screen(home_screen);
-
-  chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
+////  sntp_init();
+//  gui_init();
+//
+//#ifdef DEBUG
+//  debug_client_init();
+//#endif
+//
+//  widget_t* home_screen = home_screen_create();
+//  gui_push_screen(home_screen);
+//
+//  chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
 
   while (TRUE) {
     palSetPad(PORT_LED1, PAD_LED1);

@@ -427,7 +427,7 @@ connect(long sd, const sockaddr *addr, long addrlen)
 //*****************************************************************************
 
 int
-select(long nfds, fd_set *readsds, fd_set *writesds, fd_set *exceptsds, struct timeval *timeout)
+select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *exceptsds, struct timeval *timeout)
 {
     int ret;
 

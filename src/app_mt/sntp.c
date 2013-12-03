@@ -35,9 +35,9 @@
 
 #include <ch.h>
 #include <hal.h>
-#include <chprintf.h>
 
 #include <string.h>
+#include <stdio.h>
 
 #include "net.h"
 #include "wifi/wlan.h"
@@ -98,7 +98,7 @@ sntp_process(time_t t)
   SNTP_SYSTEM_TIME(t);
 
   /* display local time from GMT time */
-  chprintf(SD_STDIO, "sntp_process: %d\r\n", t);
+  printf("sntp_process: %d\r\n", t);
 }
 
 /**
@@ -169,15 +169,15 @@ sntp_request(void)
               sntp_process(t);
             }
             else {
-              chprintf(SD_STDIO, "sntp_request: not response frame code\r\n");
+              printf("sntp_request: not response frame code\r\n");
             }
           }
           else {
-            chprintf(SD_STDIO, "sntp_request: not recvfrom==%i\r\n", errno);
+            printf("sntp_request: not recvfrom==%i\r\n", errno);
           }
         }
         else {
-          chprintf(SD_STDIO, "sntp_request: not sendto==%i\r\n", errno);
+          printf("sntp_request: not sendto==%i\r\n", errno);
         }
       }
       /* close the socket */

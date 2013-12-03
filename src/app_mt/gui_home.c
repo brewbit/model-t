@@ -9,7 +9,6 @@
 #include "gui_settings.h"
 #include "gui_wifi.h"
 #include "quantity_widget.h"
-#include "chprintf.h"
 #include "app_cfg.h"
 
 #include <string.h>

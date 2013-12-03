@@ -7,7 +7,6 @@
 #include "gui/icon.h"
 #include "gfx.h"
 #include "gui.h"
-#include "chprintf.h"
 
 #include <string.h>
 

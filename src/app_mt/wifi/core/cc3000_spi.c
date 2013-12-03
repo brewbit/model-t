@@ -1,7 +1,6 @@
 
 #include "ch.h"
 #include "hal.h"
-#include "chprintf.h"
 
 #include "hci.h"
 #include "cc3000_spi.h"

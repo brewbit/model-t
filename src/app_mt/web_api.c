@@ -12,6 +12,7 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 #include <snacka/websocket.h>
 
@@ -99,15 +100,19 @@ web_api_thread(void* arg)
 //  snError err = snWebsocket_connect(ws, "76.88.84.25", NULL, NULL, 10500);
   snError err = snWebsocket_connect(ws, "192.168.1.146", "echo", NULL, 12345);
   if (err != SN_NO_ERROR) {
-    chprintf(SD_STDIO, "websocket connect failed %d\r\n", err);
+    printf("websocket connect failed %d\r\n", err);
   }
-
-  while (snWebsocket_getState(ws) != SN_STATE_OPEN) {
-    snWebsocket_poll(ws);
+  else {
+    printf("connect OK, handshaking...\r\n");
     chThdSleepSeconds(1);
   }
 
-  chprintf(SD_STDIO, "websocket is open\r\n");
+  while (snWebsocket_getState(ws) != SN_STATE_OPEN) {
+    snWebsocket_poll(ws); // <----------------------------- SOMETHING IN HERE IS CRASHING...
+    chThdSleepSeconds(1);
+  }
+
+  printf("websocket is open\r\n");
 
 //    ApiMessage msg = {
 //        .type = ApiMessage_Type_ACTIVATION_TOKEN_REQUEST,
@@ -172,13 +177,13 @@ websocket_message_rx(void* userData, snOpcode opcode, const char* data, int numB
 static void
 websocket_closed(void* userData, snStatusCode status)
 {
-  chprintf(SD_STDIO, "websocket closed %d\r\n", status);
+  printf("websocket closed %d\r\n", status);
 }
 
 static void
 websocket_error(void* userData, snError error)
 {
-  chprintf(SD_STDIO, "websocket error %d\r\n", error);
+  printf("websocket error %d\r\n", error);
 }
 
 //void dispatch_msg(ApiMessage* msg)
@@ -296,7 +301,7 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* user_data)
 //{
 //  if (state == NOT_CONNECTED &&
 //      p->state == WSPR_SUCCESS) {
-//    chprintf(SD_STDIO, "connecting...\r\n");
+//    printf("connecting...\r\n");
 //    wspr_tcp_connect(IP_ADDR(192, 168, 1, 146), 31337, on_connect, NULL);
 //    state = CONNECTING;
 //  }
@@ -308,12 +313,12 @@ on_connect(BaseChannel* conn, void* user_data)
   (void)user_data;
 
   if (conn != NULL) {
-    chprintf(SD_STDIO, "connected\r\n");
+    printf("connected\r\n");
     wapi_conn = conn;
     state = CONNECTED;
   }
   else {
-    chprintf(SD_STDIO, "retry\r\n");
+    printf("retry\r\n");
     state = NOT_CONNECTED;
   }
 }
@@ -322,7 +327,7 @@ static void
 dispatch_sensor_sample(sensor_msg_t* p)
 {
   if (wapi_conn != NULL) {
-    chprintf(SD_STDIO, "sending temp\r\n");
+    printf("sending temp\r\n");
     datastream_t* ds = web_api_msg_start(WAPI_SENSOR_SAMPLE);
     ds_write_u8(ds, p->sensor);
     ds_write_float(ds, p->sample.value);
@@ -333,5 +338,5 @@ dispatch_sensor_sample(sensor_msg_t* p)
 static void
 web_api_msg_handler(web_api_msg_id_t id, uint8_t* data, uint32_t data_len)
 {
-  chprintf(SD_STDIO, "recvd web api msg %d\r\n", id);
+  printf("recvd web api msg %d\r\n", id);
 }

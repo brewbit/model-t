@@ -579,8 +579,8 @@ long c_connect(long sd, const sockaddr *addr, long addrlen)
 //!  @sa socket
 //
 //*****************************************************************************
-int c_select(long nfds, fd_set *readsds, fd_set *writesds,
-                    fd_set *exceptsds, struct timeval *timeout)
+int c_select(long nfds, wfd_set *readsds, wfd_set *writesds,
+    wfd_set *exceptsds, struct timeval *timeout)
 {
     unsigned char *ptr, *args;
     tBsdSelectRecvParams tParams;

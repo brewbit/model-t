@@ -244,9 +244,9 @@ int stfSocket_sendData(stfSocket* s, const char* data, int numBytes, int* numSen
   while (numBytesSentTot < numBytes) {
     errno = 0;
     //wait for the socket to become availalbe for writing
-    fd_set rfds;
-    FD_ZERO(&rfds);
-    FD_SET(s->fileDescriptor, &rfds);
+    wfd_set rfds;
+    WFD_ZERO(&rfds);
+    WFD_SET(s->fileDescriptor, &rfds);
         
     struct timeval tv;
     tv.tv_sec = 0;
