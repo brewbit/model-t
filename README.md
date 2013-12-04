@@ -13,7 +13,7 @@
 
 ### Software Tools
 
-1. Install CodeSourcery Lite ARM toolchain
+1. [GNU Tools for ARM Embedded Processors](https://launchpad.net/gcc-arm-embedded/+download)latest version
 2. Python Items
   * [Python](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/rh48m51erv19vt4/python-2.7.2.msi)
   * [PIL](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/5lk8jj1zrb35bi1/PIL-1.1.7.win32-py2.7.exe)
@@ -23,6 +23,10 @@
 4. [OpenOCD](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/b9phnhj8sx2wrs8/openocd-0.7.0.7z)
 5. [BMFont](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/6pq696denystrl7/install_bmfont_1.13.exe)
 6. [Zadig](http://zadig.akeo.ie/)
+
+NOTE: 
+* Make sure to add all of the installed directories above to your path.
+* after installing OpenOCD rename the executable in the /bin directory to "openocd"
 
 ## Dependencies
 
@@ -53,19 +57,29 @@ dropdown.
 |-- nanopb
 ```
 
-* Alternatively, you can edit `deps.mk` point to your dependencies.
+* Alternatively, you can edit `deps.mk` and point to your dependencies.
 
-## Build snacka
+## Build/Load Model-T Firmware via Eclipse
 
-```
-cd snacka
-make CC=arm-none-eabi-gcc AR=arm-none-eabi-ar WITH_BACKEND=NO lib
-```
+1. Open Make Target dialog
+2. Select model-t drop down
+3. Targets:
+* app_mt - builds just the application
+* bootloader - builds just the bootloader
+* clean - cleans all built files
+* download - builds both the application and bootloader and downloads to the model-t via JTAG
+* download_app_mt - builds only the application and downloads to the model-t via JTAG
+* download_bootloader - builds only the bootloader and downloads to the model-t via JTAG (only need to do once)
 
-## Build Model-T Firmware
+## Build/Load Model-T Firmware via command line
 
-* Run `make` to build the software
-* To load the binaries on the board, connect JTAG to the board and run `make download`
+* Run `make` to build the software and pass it one of the following targets:
+** app_mt - build just the application
+** bootloader - build just the bootloader
+** clean - cleans all built files
+** download - builds both the application and bootloader and downloads to the model-t via JTAG
+** download_app_mt - builds only the application and downloads to the model-t via JTAG
+** download_bootloader - builds only the bootloader and downloads to the model-t via JTAG (only need to do once)
 
 # Debugging
 
@@ -93,7 +107,7 @@ arm-none-eabi-gdb.exe build/app_mt/app_mt.elf               \
 
 * You can now debug in the gdb window
 
-## Some useful commands
+Some useful commands
 
 * `monitor reset halt` resets the device and stops it so you can setup a new session
 * `info threads` shows a list of the current chibios threads, their states and current program counters
