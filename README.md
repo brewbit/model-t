@@ -26,22 +26,9 @@
 
 ## Dependencies
 
-* [ChibiOS/RT](https://github.com/ChibiOS/ChibiOS-RT) 2.4.3
+* [ChibiOS/RT](https://github.com/brewbit/ChibiOS-RT)
 * [snacka](https://github.com/brewbit/snacka)
 * [nanopb](https://code.google.com/p/nanopb) 0.2.4
-
-
-##ChibiOS
-edit os/ports/GCC/ARMCMx/rules.mk
-
-REPLACE:
--CFLAGS   += -MD -MP -MF .dep/$(@F).d
--CPPFLAGS += -MD -MP -MF .dep/$(@F).d
-
-WITH:
-+CFLAGS   += -MMD -MP -MF .dep/$(@F).d
-+CPPFLAGS += -MMD -MP -MF .dep/$(@F).d
-
 
 ## JTAG
 
