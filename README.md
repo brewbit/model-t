@@ -30,6 +30,19 @@
 * [snacka](https://github.com/brewbit/snacka)
 * [nanopb](https://code.google.com/p/nanopb) 0.2.4
 
+
+##ChibiOS
+edit os/ports/GCC/ARMCMx/rules.mk
+
+REPLACE:
+-CFLAGS   += -MD -MP -MF .dep/$(@F).d
+-CPPFLAGS += -MD -MP -MF .dep/$(@F).d
+
+WITH:
++CFLAGS   += -MMD -MP -MF .dep/$(@F).d
++CPPFLAGS += -MMD -MP -MF .dep/$(@F).d
+
+
 ## JTAG
 
 Using [Olimex ARM-USB-TINY-H programmer](https://www.olimex.com/Products/ARM/JTAG/ARM-USB-TINY-H/)
