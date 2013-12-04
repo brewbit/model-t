@@ -26,7 +26,7 @@
 
 ## Dependencies
 
-* [ChibiOS/RT](https://github.com/brewbit/ChibiOS-RT)
+* [ChibiOS/RT](https://github.com/brewbit/ChibiOS-RT/tree/stable_2.4.x)
 * [snacka](https://github.com/brewbit/snacka)
 * [nanopb](https://code.google.com/p/nanopb) 0.2.4
 
