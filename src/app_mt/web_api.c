@@ -89,6 +89,8 @@ web_api_thread(void* arg)
 
   chThdSleepMilliseconds(5000);
 
+  printf("ws create\r\n");
+
   snWebsocket* ws = snWebsocket_create(
         NULL, // open callback
         websocket_message_rx,
@@ -96,9 +98,16 @@ web_api_thread(void* arg)
         websocket_error,
         NULL); // callback data
 
+  printf("ws connect\r\n");
+  chThdSleepSeconds(1);
+
 //  snError err = snWebsocket_connect(ws, "brewbit.herokuapp.com", NULL, NULL, 80);
 //  snError err = snWebsocket_connect(ws, "76.88.84.25", NULL, NULL, 10500);
   snError err = snWebsocket_connect(ws, "192.168.1.146", "echo", NULL, 12345);
+
+  printf("ws connect done\r\n");
+  chThdSleepSeconds(1);
+
   if (err != SN_NO_ERROR) {
     printf("websocket connect failed %d\r\n", err);
   }
@@ -107,12 +116,12 @@ web_api_thread(void* arg)
     chThdSleepSeconds(1);
   }
 
-  while (snWebsocket_getState(ws) != SN_STATE_OPEN) {
-    snWebsocket_poll(ws); // <----------------------------- SOMETHING IN HERE IS CRASHING...
-    chThdSleepSeconds(1);
-  }
-
-  printf("websocket is open\r\n");
+//  while (snWebsocket_getState(ws) != SN_STATE_OPEN) {
+////    snWebsocket_poll(ws); // <----------------------------- SOMETHING IN HERE IS CRASHING...
+//    chThdSleepSeconds(1);
+//  }
+//
+//  printf("websocket is open\r\n");
 
 //    ApiMessage msg = {
 //        .type = ApiMessage_Type_ACTIVATION_TOKEN_REQUEST,

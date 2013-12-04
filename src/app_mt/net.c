@@ -46,8 +46,8 @@ net_init()
 {
   wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, write_wlan_pin);
 
-  chThdCreateFromHeap(NULL, 2048, NORMALPRIO, wlan_thread, NULL);
-  chThdCreateFromHeap(NULL, 512, NORMALPRIO, mdns_thread, NULL);
+  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, wlan_thread, NULL);
+  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, mdns_thread, NULL);
 }
 
 static void

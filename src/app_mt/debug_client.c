@@ -33,7 +33,7 @@ static dbg_state_t dbg_state;
 void
 debug_client_init()
 {
-  Thread* th_debug_client = chThdCreateFromHeap(NULL, 512, NORMALPRIO, debug_client_thread, NULL);
+  Thread* th_debug_client = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, debug_client_thread, NULL);
   msg_subscribe(MSG_WIFI_STATUS, th_debug_client, debug_client_dispatch, NULL);
 }
 

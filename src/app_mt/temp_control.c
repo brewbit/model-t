@@ -76,7 +76,7 @@ output_init(relay_output_t* out, output_id_t id, uint32_t gpio)
   else
     set_controller_direction(&out->pid_control, DIRECT);
 
-  chThdCreateFromHeap(NULL, 256, NORMALPRIO, output_thread, out);
+  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, output_thread, out);
 }
 
 static msg_t

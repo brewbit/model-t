@@ -206,5 +206,5 @@ sntp_thread(void *arg)
 void
 sntp_init(void)
 {
-  chThdCreateFromHeap(NULL, 512, NORMALPRIO, sntp_thread, NULL);
+  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, sntp_thread, NULL);
 }
