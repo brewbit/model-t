@@ -186,7 +186,7 @@ void wlan_start(unsigned short usPatchesAvailableAtHost)
   g_should_poll_accept = 0;
   g_accept_socket = -1;
 
-  g_select_thread = chThdCreateFromHeap(NULL, 512, NORMALPRIO, SelectThread, NULL);
+  g_select_thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, SelectThread, NULL);
 
   chMtxUnlock();
 }
