@@ -325,6 +325,7 @@ SpiReadDataCont(void)
 void
 SpiPauseSpi(void)
 {
+  extChannelDisable(&EXTD1, 12);
 }
 
 //*****************************************************************************
@@ -341,6 +342,7 @@ SpiPauseSpi(void)
 void
 SpiResumeSpi(void)
 {
+  extChannelEnable(&EXTD1, 12);
 }
 
 //*****************************************************************************
