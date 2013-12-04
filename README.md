@@ -13,7 +13,7 @@
 
 ### Software Tools
 
-Download and install the following while also adding them to your PATH:
+Download and install the following while also adding them to your [PATH](http://publib.boulder.ibm.com/iseries/v5r2/ic2924/books/5445775168.htm):
 
 1. [GNU Tools for ARM Embedded Processors](https://launchpad.net/gcc-arm-embedded/+download) latest version
 2. Python Items
