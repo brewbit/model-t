@@ -39,7 +39,7 @@ history_screen_create()
   rect.x = 85;
   rect.y = 26;
   rect.width = 220;
-  label_create(s->widget, rect, "Temp History", font_opensans_22, WHITE, 1);
+  label_create(s->widget, rect, "Temp History", font_opensans_regular_22, WHITE, 1);
 
   rect.x = 5;
   rect.y = 80;

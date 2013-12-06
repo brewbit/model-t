@@ -1,13 +1,11 @@
 import os
 import sys
-import glob
-import subprocess
-import Image
-import shlex
-import shutil
-import tempfile
+import ast
+import pygame
+import pygame.font
+import pystache
 
-h_prologue = """
+h_template = """
 #ifndef __FONT_RESOURCES_H__
 #define __FONT_RESOURCES_H__
 
@@ -20,185 +18,143 @@ typedef struct {
   int8_t yoffset;
   uint8_t advance;
   const uint8_t* data;
-} Glyph_t;
+} glyph_t;
 
 typedef struct {
   uint8_t line_height;
   uint8_t base;
-  const Glyph_t* glyphs[256];
-} Font_t;
-"""
+  const glyph_t* glyphs[256];
+} font_t;
 
-font_proto = """
-extern const Font_t* font_%(font_name)s;
-"""
+{{#fonts}}
+extern const font_t* font_{{font_name}}_{{font_size}};
+{{/fonts}}
 
-h_epilogue = """
 #endif
 """
 
-c_prologue = """
+c_template = """
 #include "font_resources.h"
-"""
 
-glyph_data_prologue = """
-const uint8_t glyph_%(font_name)s_%(id)s_data[] = {
-  """
-
-glyph_data_epilogue = """
+{{#fonts}}
+{{#glyphs}}
+static const uint8_t glyph_{{font_name}}_{{font_size}}_{{glyph_id}}_data[] = {
+  {{#glyph_data}}{{.}}, {{/glyph_data}}
 };
-"""
 
-glyph_def = """
-const Glyph_t glyph_%(font_name)s_%(id)s = {
-  .width = %(width)d,
-  .height = %(height)d,
-  .xoffset = %(xoffset)d,
-  .yoffset = %(yoffset)d,
-  .advance = %(xadvance)d,
-  .data = glyph_%(font_name)s_%(id)s_data,
+static const glyph_t glyph_{{font_name}}_{{font_size}}_{{glyph_id}} = {
+  .width = {{width}},
+  .height = {{height}},
+  .xoffset = {{xoffset}},
+  .yoffset = {{yoffset}},
+  .advance = {{advance}},
+  .data = glyph_{{font_name}}_{{font_size}}_{{glyph_id}}_data,
 };
-"""
 
-font_def_prologue = """
-const Font_t _font_%(font_name)s = {
-  .line_height = %(line_height)d,
-  .base = %(base)d,
+{{/glyphs}}
+static const font_t _font_{{font_name}}_{{font_size}} = {
+  .line_height = {{line_height}},
+  .base = {{base}},
   .glyphs = {
-"""
-
-font_def_glyph = """    [%(id)s] = &glyph_%(font_name)s_%(id)s,
-"""
-
-font_def_epilogue = """  },
+    [0] = &glyph_{{font_name}}_{{font_size}}_63,
+{{#glyphs}}
+    [{{glyph_id}}] = &glyph_{{font_name}}_{{font_size}}_{{glyph_id}},
+{{/glyphs}}
+  },
 };
-const Font_t* font_%(font_name)s = &_font_%(font_name)s;
+
+const font_t* font_{{font_name}}_{{font_size}} = &_font_{{font_name}}_{{font_size}};
+
+{{/fonts}}
 """
 
-class FontConverter:
-    def __init__(self, font_config_file, font_working_dir, out_h, out_c):
-        self.config_file = font_config_file
-        font_config_base = os.path.splitext(font_config_file)[0]
-        self.font_name = os.path.basename(font_config_base)
-        self.desc_file = os.path.join(font_working_dir, self.font_name + '.fnt')
-        self.config_file_rewrite = os.path.join(font_working_dir, self.font_name + '.bmfc')
-        
-        self.out_h = out_h
-        self.out_c = out_c
-        
-        self.pages = {}
-        self.chars = {}
-        
-        self.min_yoffset = 100000
-        self.line_height = 0
-        self.base = 0
-        
-    def parse_line(self, line):
-        attrs = {}
-        frags = shlex.split(line)
-        
-        for attr in frags[1:]:
-            a = attr.split('=')
-            attrs[a[0]] = a[1].strip(' "')
-        
-        return frags[0], attrs
+def parse_font(font_file, font_size, charspec):
+  font = pygame.font.Font(font_file, font_size)
+  
+  glyph_ords = set(o for o in (expand_charspec(charspec) + [ ord('?') ]))
+  
+  glyphs = []
+  for glyph_ord in glyph_ords:
+    glyph_chr = chr(glyph_ord)
+    (minx, maxx, miny, maxy, advance) = font.metrics(glyph_chr)[0]
     
-    def process_char(self, char):
-        char['yoffset'] = char['yoffset'] - self.min_yoffset
-        page = self.pages[char['page']]
-        img_glyph = page.crop((char['x'],
-                               char['y'],
-                               char['x'] + char['width'],
-                               char['y'] + char['height']))
-        out_c.write(glyph_data_prologue % char)
-        self.write_glyph_data(img_glyph)
-        out_c.write(glyph_data_epilogue)
-        out_c.write(glyph_def % char)
-        
-    def write_glyph_data(self, img_glyph):
-        val = 0
-        bits = 0
-        for p in img_glyph.getdata():
-            self.out_c.write("0x%02x, " % p)
+    glyph_surface = font.render(glyph_chr, 1, (255,255,255))
+    glyph_data = [glyph_surface.get_at((x, y))[3] for x in xrange(0, glyph_surface.get_width()) for y in xrange(0, glyph_surface.get_height())]
     
-    def rewrite_config(self):
-        config_in = open(self.config_file, 'r')
-        config_out = open(self.config_file_rewrite, 'w')
-        for line in config_in:
-            parts = line.split('=')
-            if len(parts) == 2 and parts[0] == 'fontFile' and parts[1]:
-                fontFile = parts[1]
-                if not os.path.isabs(fontFile):
-                    fontFile = os.path.join(os.path.dirname(self.config_file), fontFile)
-                    fontFile = os.path.abspath(fontFile)
-                config_out.write('fontFile=%s\n' % fontFile)
-            else:
-                config_out.write(line)
-    
-    def convert(self):
-        self.rewrite_config()
-        
-        subprocess.check_call(
-                ['bmfont.com', '-c', self.config_file_rewrite, '-o', self.desc_file])
-        
-        font_desc = open(self.desc_file, 'r')
-        for line in font_desc:
-            cmd, attrs = self.parse_line(line)
-            if cmd == 'common':
-                self.line_height = int(attrs['lineHeight'])
-                self.base = int(attrs['base'])
-            elif cmd == 'page':
-                if not os.path.exists(attrs['file']):
-                    attrs['file'] = os.path.join(os.path.dirname(self.config_file_rewrite), attrs['file'])
-                self.pages[attrs['id']] = Image.open(attrs['file'])
-            elif cmd == 'char':
-                attrs['font_name'] = self.font_name
-                attrs['x'] = int(attrs['x'])
-                attrs['y'] = int(attrs['y'])
-                attrs['width'] = int(attrs['width'])
-                attrs['height'] = int(attrs['height'])
-                attrs['xoffset'] = int(attrs['xoffset'])
-                attrs['yoffset'] = int(attrs['yoffset'])
-                attrs['xadvance'] = int(attrs['xadvance'])
-                self.chars[attrs['id']] = attrs
-                
-                # if this is the ? char, copy it to location 0 for unknown char replacement
-                if attrs['id'] == '63':
-                    attrs = attrs.copy()
-                    attrs['id'] = '0'
-                    self.chars[attrs['id']] = attrs
-                    
-                if attrs['yoffset'] < self.min_yoffset:
-                    self.min_yoffset = attrs['yoffset']
-        
-        out_h.write(font_proto % {'font_name': self.font_name})
-        
-        for char in self.chars.values():
-            self.process_char(char)
-            
-        self.out_c.write(font_def_prologue % 
-                         {'font_name':   self.font_name,
-                          'line_height': self.line_height - self.min_yoffset + 1,
-                          'base':        self.base - self.min_yoffset + 1})
-        for char in self.chars.values():
-            self.out_c.write(font_def_glyph % char)
-        self.out_c.write(font_def_epilogue % {'font_name': self.font_name})
-        
+    glyph_spec = {
+      "glyph_id": glyph_ord,
+      "width": maxx - minx,
+      "height": maxy - miny,
+      "xoffset": minx,
+      "yoffset": miny,
+      "advance": advance,
+      "glyph_data": glyph_data
+    }
+    glyphs.append(glyph_spec)
+
+  font_name = os.path.basename(os.path.splitext(font_file)[0]).lower().replace('-', '_')
+  return {
+    "font_name": font_name,
+    "font_size": font_size,
+    "line_height": font.get_linesize(),
+    "base": font.get_height(),
+    "glyphs": glyphs
+  }
+
+def expand_charspec(charspecs):
+  char_classes = {
+    "alpha": range(65, 91) + range(97, 123),
+    "numeric": range(48, 58),
+    "alphanumeric": range(48, 58) + range(65, 91) + range(97, 123),
+    "symbols": range(33, 48) + range(58, 65) + range(91, 97) + range(123, 127),
+    "space": [32],
+    "all": range(32, 127)
+  }
+  
+  ords = []
+  for charspec in charspecs.split(';'):
+    if charspec in char_classes:
+      ords = ords + char_classes[charspec]
+    else:
+      ords = ords + [ord(c) for c in charspec]
+  return ords
+
+# expected command line format:
+#    fontconv <font_dir> <output_dir>
+#    
+#    font_dir must contain a file named font_specs and contain a python list
+#    specifying the fonts, sizes, and character sets to generate. For example:
+#
+# [
+#   {
+#     "font_file": "OpenSans-Regular.ttf",
+#     "font_size": 8,
+#     "charspec": "all"
+#   },
+#   {
+#     "font_file": "OpenSans-Regular.ttf",
+#     "font_size": 16,
+#     "charspec": "all"
+#   }
+# ]
 if __name__ == "__main__":
-    out_h = open('build/app_mt/autogen/font_resources.h', 'w')
-    out_c = open('build/app_mt/autogen/font_resources.c', 'w')
+  pygame.init()
+  
+  font_dir = sys.argv[1]
+  out_dir = os.path.abspath(sys.argv[2])
+  
+  os.chdir(font_dir)
+  
+  with open('font_specs', 'r') as f:
+    font_specs = ast.literal_eval(f.read())
     
-    out_c.write(c_prologue)
-    out_h.write(h_prologue)
+  context = {
+    "fonts": [ parse_font(**font_spec) for font_spec in font_specs ]
+  }
+
+  with open(os.path.join(out_dir, 'font_resources.h'), 'w+') as f:
+    f.write(pystache.render(h_template, context))
     
-    font_working_dir = os.path.join('build', 'app_mt', 'fonts')
-    if os.path.exists(font_working_dir):
-        shutil.rmtree(font_working_dir)
-    os.mkdir(font_working_dir)
+  with open(os.path.join(out_dir, 'font_resources.c'), 'w+') as f:
+    f.write(pystache.render(c_template, context))
     
-    for arg in sys.argv[1:]:
-        for font_config_file in glob.glob(arg):
-            f = FontConverter(font_config_file, font_working_dir, out_h, out_c)
-            f.convert()
-                    
-    out_h.write(h_epilogue)

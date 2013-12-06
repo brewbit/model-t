@@ -4,10 +4,10 @@
 #include "font_resources.h"
 #include "common.h"
 
-const Glyph_t*
-font_find_glyph(const Font_t* font, char ch);
+const glyph_t*
+font_find_glyph(const font_t* font, char ch);
 
 Extents_t
-font_text_extents(const Font_t* font, const char* str);
+font_text_extents(const font_t* font, const char* str);
 
 #endif

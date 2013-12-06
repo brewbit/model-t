@@ -1,0 +1,22 @@
+[
+  {
+    "font_file": "OpenSans-Regular.ttf",
+    "font_size": 8,
+    "charspec": "all"
+  },
+  {
+    "font_file": "OpenSans-Regular.ttf",
+    "font_size": 16,
+    "charspec": "all"
+  },
+  {
+    "font_file": "OpenSans-Regular.ttf",
+    "font_size": 22,
+    "charspec": "all"
+  },
+  {
+    "font_file": "OpenSans-Regular.ttf",
+    "font_size": 62,
+    "charspec": "space;numeric;CF-.\xB0"
+  },
+]

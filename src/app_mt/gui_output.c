@@ -63,7 +63,7 @@ output_settings_screen_create(output_id_t output)
   rect.y = 26;
   rect.width = 220;
   char* title = (output == OUTPUT_1) ? "Output 1 Setup" : "Output 2 Setup";
-  label_create(s->widget, rect, title, font_opensans_22, WHITE, 1);
+  label_create(s->widget, rect, title, font_opensans_regular_22, WHITE, 1);
 
   rect.x = 48;
   rect.y = 120;

@@ -9,7 +9,7 @@
 
 typedef struct {
   char* text;
-  const Font_t* font;
+  const font_t* font;
   color_t color;
   uint8_t rows;
 } label_t;
@@ -25,7 +25,7 @@ static const widget_class_t label_widget_class = {
 };
 
 widget_t*
-label_create(widget_t* parent, rect_t rect, const char* text, const Font_t* font, color_t color, uint8_t rows)
+label_create(widget_t* parent, rect_t rect, const char* text, const font_t* font, color_t color, uint8_t rows)
 {
   label_t* l = chHeapAlloc(NULL, sizeof(label_t));
   memset(l, 0, sizeof(label_t));
@@ -86,7 +86,7 @@ label_paint(paint_event_t* event)
       in_whitespace = false;
     }
 
-    const Glyph_t* g = font_find_glyph(l->font, c);
+    const glyph_t* g = font_find_glyph(l->font, c);
     text_width += g->advance;
 
     if (text_width > rect.width) {

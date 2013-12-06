@@ -46,17 +46,17 @@ activation_screen_create()
   rect.x = 85;
   rect.y = 26;
   rect.width = 220;
-  label_create(screen->widget, rect, "Activation Code", font_opensans_22, WHITE, 1);
+  label_create(screen->widget, rect, "Activation Code", font_opensans_regular_22, WHITE, 1);
 
   rect.x = 40;
   rect.y = 100;
   rect.width = 220;
-  label_create(screen->widget, rect, "Please enter the following code on BrewBit.com", font_opensans_16, WHITE, 1);
+  label_create(screen->widget, rect, "Please enter the following code on BrewBit.com", font_opensans_regular_16, WHITE, 1);
 
   rect.x = 100;
   rect.y = 150;
   rect.width = 220;
-  label_create(screen->widget, rect, "3A19F7", font_opensans_22, ORANGE, 1);
+  label_create(screen->widget, rect, "3A19F7", font_opensans_regular_22, ORANGE, 1);
 
   gui_msg_subscribe(MSG_SHOW_ACTIVATION_TOKEN, screen->widget);
 

@@ -83,10 +83,10 @@ void
 gfx_draw_str(const char *st, int n, int x, int y);
 
 void
-gfx_print_char(const Glyph_t* g, int x, int y);
+gfx_print_char(const glyph_t* g, int x, int y);
 
 void
-gfx_set_font(const Font_t* font);
+gfx_set_font(const font_t* font);
 
 void
 gfx_draw_bitmap(int x, int y, const Image_t* img);

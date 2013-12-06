@@ -60,7 +60,7 @@ output_function_screen_create(output_id_t output)
   rect.y = 26;
   rect.width = 220;
   char* title = (output == OUTPUT_1) ? "Output 1 Func" : "Output 2 Func";
-  label_create(s->widget, rect, title, font_opensans_22, WHITE, 1);
+  label_create(s->widget, rect, title, font_opensans_regular_22, WHITE, 1);
 
   rect.x = 10;
   rect.y = 95;
@@ -80,10 +80,10 @@ output_function_screen_create(output_id_t output)
   rect.x = 70;
   rect.y = 5;
   rect.width = 200;
-  s->function_heat_header_label = label_create(s->function_heat_button, rect, NULL, font_opensans_16, WHITE, 1);
+  s->function_heat_header_label = label_create(s->function_heat_button, rect, NULL, font_opensans_regular_16, WHITE, 1);
 
   rect.y = 30;
-  s->function_heat_desc_label = label_create(s->function_heat_button, rect, NULL, font_opensans_8, WHITE, 2);
+  s->function_heat_desc_label = label_create(s->function_heat_button, rect, NULL, font_opensans_regular_8, WHITE, 2);
   header = "Function: Heating";
   desc = "The output will turn on when the temp is below the setpoint.";
   label_set_text(s->function_heat_header_label, header);
@@ -98,10 +98,10 @@ output_function_screen_create(output_id_t output)
   rect.x = 70;
   rect.y = 5;
   rect.width = 200;
-  s->function_cool_header_label = label_create(s->function_cool_button, rect, NULL, font_opensans_16, WHITE, 1);
+  s->function_cool_header_label = label_create(s->function_cool_button, rect, NULL, font_opensans_regular_16, WHITE, 1);
 
   rect.y = 30;
-  s->function_cool_desc_label = label_create(s->function_cool_button, rect, NULL, font_opensans_8, WHITE, 2);
+  s->function_cool_desc_label = label_create(s->function_cool_button, rect, NULL, font_opensans_regular_8, WHITE, 2);
   header = "Function: Cooling";
   desc = "The output will turn on when the temp is above the setpoint.";
   label_set_text(s->function_cool_header_label, header);

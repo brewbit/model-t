@@ -40,7 +40,7 @@ typedef struct gfx_ctx_s {
   BackgroundType bg_type;
   const Image_t* bg_img;
   point_t bg_anchor;
-  const Font_t* cfont;
+  const font_t* cfont;
   point_t translation;
 
   struct gfx_ctx_s* next;
@@ -167,7 +167,7 @@ gfx_set_bg_img(const Image_t* img, point_t anchor)
 }
 
 void
-gfx_set_font(const Font_t* font)
+gfx_set_font(const font_t* font)
 {
   ctx->cfont = font;
 }
@@ -267,7 +267,7 @@ draw_vert_line(int x, int y, int l)
 }
 
 void
-gfx_print_char(const Glyph_t* g, int x, int y)
+gfx_print_char(const glyph_t* g, int x, int y)
 {
   uint16_t j;
 
@@ -305,7 +305,7 @@ gfx_draw_str(const char *str, int n, int x, int y)
 
   while ((*str != 0) &&
          (n-- > 0)) {
-    const Glyph_t* g = font_find_glyph(ctx->cfont, *str++);
+    const glyph_t* g = font_find_glyph(ctx->cfont, *str++);
     gfx_print_char(g, x + xoff + g->xoffset, y + g->yoffset);
     xoff += g->advance;
   }

@@ -64,7 +64,7 @@ update_screen_create()
   rect.x = 85;
   rect.y = 26;
   rect.width = 220;
-  label_create(s->widget, rect, "OTA Update", font_opensans_22, WHITE, 1);
+  label_create(s->widget, rect, "OTA Update", font_opensans_regular_22, WHITE, 1);
 
   rect.x = 10;
   rect.y = 85;
@@ -81,10 +81,10 @@ update_screen_create()
   rect.x = 70;
   rect.y = 5;
   rect.width = 200;
-  s->header_label = label_create(s->button, rect, "", font_opensans_16, WHITE, 1);
+  s->header_label = label_create(s->button, rect, "", font_opensans_regular_16, WHITE, 1);
 
   rect.y = 30;
-  s->desc_label = label_create(s->button, rect, "", font_opensans_8, WHITE, 2);
+  s->desc_label = label_create(s->button, rect, "", font_opensans_regular_8, WHITE, 2);
 
   rect.x = 50;
   rect.y = 170;

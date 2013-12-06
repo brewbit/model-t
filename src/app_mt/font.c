@@ -2,10 +2,10 @@
 #include "common.h"
 #include <stdlib.h>
 
-const Glyph_t*
-font_find_glyph(const Font_t* font, char ch)
+const glyph_t*
+font_find_glyph(const font_t* font, char ch)
 {
-  const Glyph_t* g = font->glyphs[(uint8_t) ch];
+  const glyph_t* g = font->glyphs[(uint8_t) ch];
   if (g == NULL)
     g = font->glyphs[0];
 
@@ -13,7 +13,7 @@ font_find_glyph(const Font_t* font, char ch)
 }
 
 Extents_t
-font_text_extents(const Font_t* font, const char* str)
+font_text_extents(const font_t* font, const char* str)
 {
   Extents_t e;
   e.width = 0;
@@ -23,7 +23,7 @@ font_text_extents(const Font_t* font, const char* str)
   int max_y = 0;
 
   while (*str) {
-    const Glyph_t* g = font_find_glyph(font, *str++);
+    const glyph_t* g = font_find_glyph(font, *str++);
     e.width += g->advance;
 
     min_y = MIN(g->yoffset, min_y);

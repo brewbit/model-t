@@ -83,7 +83,7 @@ quantity_select_screen_create(
   rect.x = 85;
   rect.y = 26;
   rect.width = 220;
-  label_create(s->widget, rect, title, font_opensans_22, WHITE, 1);
+  label_create(s->widget, rect, title, font_opensans_regular_22, WHITE, 1);
 
   rect.x = 10;
   rect.y = 95;

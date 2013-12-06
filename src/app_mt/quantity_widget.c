@@ -35,7 +35,7 @@ quantity_widget_create(widget_t* parent, rect_t rect)
   quantity_widget_t* s = chHeapAlloc(NULL, sizeof(quantity_widget_t));
   memset(s, 0, sizeof(quantity_widget_t));
 
-  rect.height = font_opensans_62->base;
+  rect.height = font_opensans_regular_62->base;
   s->widget = widget_create(parent, &quantity_widget_class, s, rect);
 
   s->sample.unit = UNIT_NONE;
@@ -100,19 +100,19 @@ quantity_widget_paint(paint_event_t* event)
   else
     sprintf(value_str, "%0.1f", s->sample.value);
 
-  Extents_t value_ext = font_text_extents(font_opensans_62, value_str);
-  Extents_t unit_ext = font_text_extents(font_opensans_22, unit_str);
+  Extents_t value_ext = font_text_extents(font_opensans_regular_62, value_str);
+  Extents_t unit_ext = font_text_extents(font_opensans_regular_22, unit_str);
 
   point_t center = rect_center(rect);
 
   int value_x = center.x - ((value_ext.width + SPACE + unit_ext.width) / 2);
 
   gfx_set_fg_color(WHITE);
-  gfx_set_font(font_opensans_62);
+  gfx_set_font(font_opensans_regular_62);
   gfx_draw_str(value_str, -1, value_x, rect.y);
 
   gfx_set_fg_color(DARK_GRAY);
-  gfx_set_font(font_opensans_22);
+  gfx_set_font(font_opensans_regular_22);
   gfx_draw_str(unit_str, -1, value_x + value_ext.width + SPACE, rect.y);
 }
 

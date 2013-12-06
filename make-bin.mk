@@ -220,7 +220,7 @@ $(AUTOGEN_DIR):
 	mkdir -p $@
 
 $(AUTOGEN_DIR)/font_resources.c $(AUTOGEN_DIR)/font_resources.h: $(AUTOGEN_DIR) $(wildcard fonts/*.bmfc)
-	python scripts/fontconv fonts/*.bmfc
+	python scripts/fontconv fonts $(AUTOGEN_DIR)
 
 $(AUTOGEN_DIR)/image_resources.c $(AUTOGEN_DIR)/image_resources.h: $(AUTOGEN_DIR) $(wildcard images/*.png)
 	python scripts/imgconv images/*.png
