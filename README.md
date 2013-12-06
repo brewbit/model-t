@@ -13,7 +13,9 @@
 
 ### Software Tools
 
-1. Install CodeSourcery Lite ARM toolchain
+Download and install the following while also adding them to your [PATH](http://publib.boulder.ibm.com/iseries/v5r2/ic2924/books/5445775168.htm):
+
+1. [GNU Tools for ARM Embedded Processors](https://launchpad.net/gcc-arm-embedded/+download) latest version
 2. Python Items
   * [Python](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/rh48m51erv19vt4/python-2.7.2.msi)
   * [PIL](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/5lk8jj1zrb35bi1/PIL-1.1.7.win32-py2.7.exe)
@@ -21,14 +23,27 @@
 3. [Cygwin](http://www.cygwin.com/) Include the following packages:
   * Make
 4. [OpenOCD](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/b9phnhj8sx2wrs8/openocd-0.7.0.7z)
+  * After installing OpenOCD rename the executable in the /bin directory to "openocd"
 5. [BMFont](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/6pq696denystrl7/install_bmfont_1.13.exe)
 6. [Zadig](http://zadig.akeo.ie/)
 
 ## Dependencies
 
-* [ChibiOS/RT](https://github.com/ChibiOS/ChibiOS-RT) 2.4.3
+* [ChibiOS/RT](https://github.com/brewbit/ChibiOS-RT/tree/stable_2.4.x)
 * [snacka](https://github.com/brewbit/snacka)
 * [nanopb](https://code.google.com/p/nanopb) 0.2.4
+
+* Download and extract all dependencies along side the Model-T sources. Your source tree should look like:
+
+```
+<MODEL_T_BUILD_DIR>
+|-- model-t
+|-- ChibiOS-RT
+|-- snacka
+|-- nanopb
+```
+
+* Alternatively, you can edit `deps.mk` and point to your dependencies.
 
 ## JTAG
 
@@ -41,31 +56,21 @@ Run `Zadig`, select Olimex from the drop down, there should be 2, and
 select `WinUSB` for the driver and select install for each Olimex in the
 dropdown.
 
-# Building
+# Build/Load Model-T Firmware via Eclipse
 
-* Download and extract all dependencies along side the Model-T sources. Your source tree should look like:
+1. Open Make Target dialog
+2. Select model-t drop down
+3. Targets:
+  * app_mt              - builds just the application
+  * bootloader          - builds just the bootloader
+  * clean               - cleans all built files
+  * download            - builds both the application and bootloader and downloads to the model-t via JTAG
+  * download_app_mt     - builds only the application and downloads to the model-t via JTAG
+  * download_bootloader - builds only the bootloader and downloads to the model-t via JTAG (only need to do once)
 
-```
-<MODEL_T_BUILD_DIR>
-|-- model-t
-|-- ChibiOS-RT
-|-- snacka
-|-- nanopb
-```
+# Build/Load Model-T Firmware via command line
 
-* Alternatively, you can edit `deps.mk` point to your dependencies.
-
-## Build snacka
-
-```
-cd snacka
-make CC=arm-none-eabi-gcc AR=arm-none-eabi-ar WITH_BACKEND=NO lib
-```
-
-## Build Model-T Firmware
-
-* Run `make` to build the software
-* To load the binaries on the board, connect JTAG to the board and run `make download`
+* Run `make` to build the software and pass it one of the targets defined above:
 
 # Debugging
 
@@ -93,7 +98,7 @@ arm-none-eabi-gdb.exe build/app_mt/app_mt.elf               \
 
 * You can now debug in the gdb window
 
-## Some useful commands
+ Some useful commands
 
 * `monitor reset halt` resets the device and stops it so you can setup a new session
 * `info threads` shows a list of the current chibios threads, their states and current program counters
