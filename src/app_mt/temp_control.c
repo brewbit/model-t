@@ -53,7 +53,7 @@ temp_control_init()
 
   Thread* thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, temp_control_thread, NULL);
 
-  msg_subscribe(MSG_SENSOR_SAMPLE, thread, dispatch_temp_input_msg, NULL);
+//  msg_subscribe(MSG_SENSOR_SAMPLE, thread, dispatch_temp_input_msg, NULL);
   msg_subscribe(MSG_SENSOR_TIMEOUT, thread, dispatch_temp_input_msg, NULL);
   msg_subscribe(MSG_SENSOR_SETTINGS, thread, dispatch_temp_input_msg, NULL);
   msg_subscribe(MSG_OUTPUT_SETTINGS, thread, dispatch_temp_input_msg, NULL);
