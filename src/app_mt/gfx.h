@@ -83,7 +83,7 @@ void
 gfx_draw_str(const char *st, int n, int x, int y);
 
 void
-gfx_print_char(const glyph_t* g, int x, int y);
+gfx_draw_glyph(const glyph_t* g, int x, int y);
 
 void
 gfx_set_font(const font_t* font);

@@ -5,6 +5,7 @@
 
 #include <limits.h>
 #include <string.h>
+#include <stdio.h>
 
 
 // Alpha blending support
@@ -267,7 +268,7 @@ draw_vert_line(int x, int y, int l)
 }
 
 void
-gfx_print_char(const glyph_t* g, int x, int y)
+gfx_draw_glyph(const glyph_t* g, int x, int y)
 {
   uint16_t j;
 
@@ -305,8 +306,9 @@ gfx_draw_str(const char *str, int n, int x, int y)
 
   while ((*str != 0) &&
          (n-- > 0)) {
-    const glyph_t* g = font_find_glyph(ctx->cfont, *str++);
-    gfx_print_char(g, x + xoff + g->xoffset, y + g->yoffset);
+    char c = *str++;
+    const glyph_t* g = font_find_glyph(ctx->cfont, c);
+    gfx_draw_glyph(g, x + xoff + g->xoffset, y + g->yoffset);
     xoff += g->advance;
   }
 }
