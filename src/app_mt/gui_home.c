@@ -121,7 +121,7 @@ home_screen_create()
   set_output_settings(s, OUTPUT_2,
       app_cfg_get_output_settings(OUTPUT_2)->function);
 
-  //gui_msg_subscribe(MSG_SENSOR_SAMPLE, s->screen);
+  gui_msg_subscribe(MSG_SENSOR_SAMPLE, s->screen);
   gui_msg_subscribe(MSG_SENSOR_TIMEOUT, s->screen);
   gui_msg_subscribe(MSG_OUTPUT_SETTINGS, s->screen);
 
