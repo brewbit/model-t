@@ -17,15 +17,16 @@ Download and install the following while also adding them to your [PATH](http://
 
 1. [GNU Tools for ARM Embedded Processors](https://launchpad.net/gcc-arm-embedded/+download) latest version
 2. Python Items
-  * [Python](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/rh48m51erv19vt4/python-2.7.2.msi)
-  * [PIL](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/5lk8jj1zrb35bi1/PIL-1.1.7.win32-py2.7.exe)
-  * [yYAML](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/4kuzb5nktab3gsf/PyYAML-3.10.win32-py2.7.exe)
+  * [Python 2.7](http://www.python.org/download/releases/2.7/)
+  * [pygame 1.9.2](https://bitbucket.org/pygame/pygame/downloads/pygame-1.9.2a0.win32-py2.7.msi)
+  * [pystache](https://pypi.python.org/pypi/pystache)
+  * [PyYAML](https://pypi.python.org/pypi/PyYAML)
 3. [Cygwin](http://www.cygwin.com/) Include the following packages:
   * Make
+  * Google protobufs
 4. [OpenOCD](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/b9phnhj8sx2wrs8/openocd-0.7.0.7z)
   * After installing OpenOCD rename the executable in the /bin directory to "openocd"
-5. [BMFont](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/6pq696denystrl7/install_bmfont_1.13.exe)
-6. [Zadig](http://zadig.akeo.ie/)
+5. [Zadig](http://zadig.akeo.ie/)
 
 ## Dependencies
 
