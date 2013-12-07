@@ -1,8 +1,10 @@
 import os
 import sys
 import ast
+import math
 import pygame
-import pygame.font
+import pygame.freetype
+import pygame.image
 import pystache
 
 h_template = """
@@ -22,7 +24,7 @@ typedef struct {
 
 typedef struct {
   uint8_t line_height;
-  uint8_t base;
+  uint8_t ascender;
   const glyph_t* glyphs[256];
 } font_t;
 
@@ -54,7 +56,7 @@ static const glyph_t glyph_{{font_name}}_{{font_size}}_{{glyph_id}} = {
 {{/glyphs}}
 static const font_t _font_{{font_name}}_{{font_size}} = {
   .line_height = {{line_height}},
-  .base = {{base}},
+  .ascender = {{ascender}},
   .glyphs = {
     [0] = &glyph_{{font_name}}_{{font_size}}_63,
 {{#glyphs}}
@@ -68,36 +70,37 @@ const font_t* font_{{font_name}}_{{font_size}} = &_font_{{font_name}}_{{font_siz
 {{/fonts}}
 """
 
+WHITE = pygame.Color('white')
+
 def parse_font(font_file, font_size, charspec):
-  font = pygame.font.Font(font_file, font_size)
+  font = pygame.freetype.Font(font_file, font_size)
+  font_name = os.path.basename(os.path.splitext(font_file)[0]).lower().replace('-', '_')
   
   glyph_ords = set(o for o in (expand_charspec(charspec) + [ ord('?') ]))
   
   glyphs = []
   for glyph_ord in glyph_ords:
-    glyph_chr = chr(glyph_ord)
-    (minx, maxx, miny, maxy, advance) = font.metrics(glyph_chr)[0]
+    glyph_chr = unichr(glyph_ord)
+    (minx, maxx, miny, maxy, advancex, advancey) = font.get_metrics(glyph_chr)[0]
     
-    glyph_surface = font.render(glyph_chr, 1, (255,255,255))
-    glyph_data = [glyph_surface.get_at((x, y))[3] for x in xrange(0, glyph_surface.get_width()) for y in xrange(0, glyph_surface.get_height())]
+    glyph_data, glyph_dimensions = font.render_raw(glyph_chr)
     
     glyph_spec = {
       "glyph_id": glyph_ord,
-      "width": maxx - minx,
-      "height": maxy - miny,
+      "width": glyph_dimensions[0],
+      "height": glyph_dimensions[1],
       "xoffset": minx,
-      "yoffset": miny,
-      "advance": advance,
-      "glyph_data": glyph_data
+      "yoffset": font.get_sized_ascender() - maxy, # distance from ascent line to top of glyph
+      "advance": int(math.ceil(advancex)),
+      "glyph_data": bytearray(glyph_data)
     }
     glyphs.append(glyph_spec)
 
-  font_name = os.path.basename(os.path.splitext(font_file)[0]).lower().replace('-', '_')
   return {
     "font_name": font_name,
     "font_size": font_size,
-    "line_height": font.get_linesize(),
-    "base": font.get_height(),
+    "line_height": font.get_sized_height(),
+    "ascender": font.get_sized_ascender(),
     "glyphs": glyphs
   }
 
