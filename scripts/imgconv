@@ -2,117 +2,119 @@ import os
 import sys
 import glob
 import Image
+import pystache
 
-h_prologue = """
+h_template = """
 #ifndef __IMAGE_RESOURCES_H__
 #define __IMAGE_RESOURCES_H__
 
 #include <stdlib.h>
 #include <stdint.h>
 
-typedef enum {
-  RGB565,
-  RGBA5658,
-} image_format_t;
-
 typedef struct {
-  const image_format_t format;
   const uint16_t width;
   const uint16_t height;
   const uint16_t* px;
   const uint8_t* alpha;
 } Image_t;
 
-"""
+{{#images}}
+extern const Image_t* img_{{image_name}};
+{{/images}}
 
-h_epilogue = """
 #endif
 """
 
-image_proto = """extern const Image_t* img_##IMAGE_NAME##;
-"""
-
-c_prologue = """
+c_template = """
 #include "image_resources.h"
 
+{{#images}}
+{{#px?}}
+static const uint16_t img_{{image_name}}_px[] = {
+  {{#image_px}}{{.}}, {{/image_px}}
+};
+
+{{/px?}}
+{{#alpha?}}
+static const uint8_t img_{{image_name}}_alpha[] = {
+  {{#image_alpha}}{{.}}, {{/image_alpha}}
+};
+
+{{/alpha?}}
+static const Image_t _img_{{image_name}} = {
+  .width = {{image_width}},
+  .height = {{image_height}},
+{{#px?}}
+  .px = img_{{image_name}}_px,
+{{/px?}}
+{{^px?}}
+  .px = NULL,
+{{/px?}}
+{{#alpha?}}
+  .alpha = img_{{image_name}}_alpha,
+{{/alpha?}}
+{{^alpha?}}
+  .alpha = NULL,
+{{/alpha?}}
+};
+
+const Image_t* img_{{image_name}} = &_img_{{image_name}};
+
+{{/images}}
 """
 
-image_px_prologue = """static const uint16_t img_##IMAGE_NAME##_px[] = {
-  """
+def rescale_color_comp(p, bits):
+  return int(p * ((2**bits) - 1) / 255)
 
-image_alpha_prologue = """
-};
+def rescale_px(p):
+  return (rescale_color_comp(p[0], 5) << 11) + \
+         (rescale_color_comp(p[1], 6) << 5) + \
+          rescale_color_comp(p[2], 5)
 
-static const uint8_t img_##IMAGE_NAME##_alpha[] = {
-  """
-
-image_def_epilogue = """
-};
-
-const Image_t _img_##IMAGE_NAME## = {
-  .format = ##IMAGE_FORMAT##,
-  .width = ##IMAGE_WIDTH##,
-  .height = ##IMAGE_HEIGHT##,
-  .px = img_##IMAGE_NAME##_px,
-  .alpha = ##IMAGE_ALPHA##,
-};
-const Image_t* img_##IMAGE_NAME## = &_img_##IMAGE_NAME##;
-
-"""
-
-def rescale(p, bits):
-	return int(p * ((2**bits) - 1) / 255)
-
-def convert_image(in_file, out_h, out_c):
-	in_file_base = os.path.splitext(os.path.basename(in_file))[0]
-	if in_file_base.endswith('.rgba'):
-		img_format = 'RGBA5658'
-		in_file_base = in_file_base.replace('.rgba', '')
-		img_alpha_var = 'img_' + in_file_base + '_alpha'
-	else:
-		img_format = 'RGB565'
-		img_alpha_var = 'NULL'
+def parse_img(in_file):
+  in_file_base = os.path.splitext(os.path.basename(in_file))[0]
+  
+  if in_file_base.endswith('.rgba'):
+    has_px = True
+    has_alpha = True
+  elif in_file_base.endswith('.a'):
+    has_px = False
+    has_alpha = True
+  else:
+    has_px = True
+    has_alpha = False
+    
+  im = Image.open(in_file)
+  ctx = {
+    "image_name": os.path.splitext(in_file_base)[0],
+    "image_width": im.size[0],
+    "image_height": im.size[1],
+    "px?": has_px,
+    "alpha?": has_alpha
+  }
 	
-	out_base = os.path.splitext(in_file)[0]
-
+  imdata = im.getdata()
+  if has_px:
+    ctx["image_px"] = [rescale_px(p) for p in imdata]
+  
+  if has_alpha:
+    ctx["image_alpha"] = [p[3] for p in imdata]
 	
-	im = Image.open(in_file)
-	imdata = im.getdata()
-	
-	out_h.write(image_proto
-				.replace('##IMAGE_NAME##', in_file_base))
-	
-	out_c.write(image_px_prologue
-				.replace('##IMAGE_NAME##', in_file_base))
-	
-	for p in imdata:
-		ps = (rescale(p[0], 5) << 11) + (rescale(p[1], 6) << 5) + rescale(p[2], 5)
-		out_c.write('0x%04x, ' % ps)
-		
-	if img_format == 'RGBA5658':
-		out_c.write(image_alpha_prologue
-					.replace('##IMAGE_NAME##', in_file_base))
-		
-		for p in imdata:
-			out_c.write('0x%02x, ' % p[3])
-	
-	out_c.write(image_def_epilogue
-				.replace('##IMAGE_FORMAT##', img_format)
-				.replace('##IMAGE_NAME##', in_file_base)
-				.replace('##IMAGE_WIDTH##', str(im.size[0]))
-				.replace('##IMAGE_HEIGHT##', str(im.size[1]))
-				.replace('##IMAGE_ALPHA##', img_alpha_var))
+  return ctx
 
 if __name__ == "__main__":
-	out_h = open('build/app_mt/autogen/image_resources.h', 'w')
-	out_c = open('build/app_mt/autogen/image_resources.c', 'w')
-	
-	out_h.write(h_prologue)
-	out_c.write(c_prologue)
-	
-	for arg in sys.argv[1:]:
-		for f in glob.glob(arg):
-			convert_image(f, out_h, out_c)
-		
-	out_h.write(h_epilogue)
-	
+  img_files = []
+  for arg in sys.argv[1:]:
+    for f in glob.glob(arg):
+      img_files.append(f)
+      
+  context = {
+    "images": [ parse_img(img_file) for img_file in img_files ]
+  }
+  
+  with open('build/app_mt/autogen/image_resources.h', 'w+') as f:
+    f.write(pystache.render(h_template, context))
+    
+  with open('build/app_mt/autogen/image_resources.c', 'w+') as f:
+    f.write(pystache.render(c_template, context))
+  

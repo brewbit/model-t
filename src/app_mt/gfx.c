@@ -313,46 +313,79 @@ gfx_draw_str(const char *str, int n, int x, int y)
   }
 }
 
+static void
+draw_img_rgba(int x, int y, const Image_t* img)
+{
+  int i;
+  for (i = 0; i < (img->width * img->height); i++) {
+    uint8_t alpha = img->alpha[i];
+    uint16_t fcolor = img->px[i];
+
+    if (alpha == 255) {
+      lcd_write_data(fcolor);
+    }
+    else {
+      uint16_t by = y + (i / img->width);
+      uint16_t bx = x + (i % img->width);
+
+      uint16_t bcolor = get_bg_color(bx, by);
+
+      if (alpha == 0) {
+        lcd_write_data(bcolor);
+      }
+      else {
+        lcd_write_data(BLENDED_COLOR(fcolor, bcolor, alpha));
+      }
+    }
+  }
+}
+
+static void
+draw_img_a(int x, int y, const Image_t* img)
+{
+  int i;
+  for (i = 0; i < (img->width * img->height); i++) {
+    uint8_t alpha = img->alpha[i];
+
+    if (alpha == 255) {
+      lcd_write_data(ctx->fcolor);
+    }
+    else {
+      uint16_t by = y + (i / img->width);
+      uint16_t bx = x + (i % img->width);
+
+      uint16_t bcolor = get_bg_color(bx, by);
+
+      if (alpha == 0) {
+        lcd_write_data(bcolor);
+      }
+      else {
+        lcd_write_data(BLENDED_COLOR(ctx->fcolor, bcolor, alpha));
+      }
+    }
+  }
+}
+
+static void
+draw_img_rgb(const Image_t* img)
+{
+  int i;
+  for (i = 0; i < (img->width * img->height); i++) {
+    lcd_write_data(img->px[i]);
+  }
+}
+
 void
 gfx_draw_bitmap(int x, int y, const Image_t* img)
 {
-  unsigned int col;
-
-  int tc;
   gfx_set_cursor(x, y, x + img->width - 1, y + img->height - 1);
-  switch (img->format) {
-  case RGB565:
-    for (tc = 0; tc < (img->width * img->height); tc++) {
-      col = img->px[tc];
-      lcd_write_data(col);
-    }
-    break;
 
-  case RGBA5658:
-    for (tc = 0; tc < (img->width * img->height); tc++) {
-      uint8_t alpha = img->alpha[tc];
-      uint16_t fcolor = img->px[tc];
-
-      if (alpha == 255) {
-        lcd_write_data(fcolor);
-      }
-      else {
-        uint16_t by = y + (tc / img->width);
-        uint16_t bx = x + (tc % img->width);
-
-        uint16_t bcolor = get_bg_color(bx, by);
-
-        if (alpha == 0) {
-          lcd_write_data(bcolor);
-        }
-        else {
-          col = BLENDED_COLOR(fcolor, bcolor, alpha);
-          lcd_write_data(col);
-        }
-      }
-    }
-    break;
-  }
+  if (img->px != NULL && img->alpha != NULL)
+    draw_img_rgba(x, y, img);
+  else if (img->px != NULL)
+    draw_img_rgb(img);
+  else if (img->alpha != NULL)
+    draw_img_a(x, y, img);
 
   lcd_clr_cursor();
 }
