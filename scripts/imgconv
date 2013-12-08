@@ -1,7 +1,8 @@
 import os
 import sys
 import glob
-import Image
+import pygame
+import pygame.image
 import pystache
 
 h_template = """
@@ -63,13 +64,13 @@ const Image_t* img_{{image_name}} = &_img_{{image_name}};
 {{/images}}
 """
 
-def rescale_color_comp(p, bits):
-  return int(p * ((2**bits) - 1) / 255)
+def rescale_color_comp(px, bits):
+  return int(px * ((2**bits) - 1) / 255)
 
-def rescale_px(p):
-  return (rescale_color_comp(p[0], 5) << 11) + \
-         (rescale_color_comp(p[1], 6) << 5) + \
-          rescale_color_comp(p[2], 5)
+def rescale_px(px):
+  return (rescale_color_comp(px.r, 5) << 11) + \
+         (rescale_color_comp(px.g, 6) << 5) + \
+          rescale_color_comp(px.b, 5)
 
 def parse_img(in_file):
   in_file_base = os.path.splitext(os.path.basename(in_file))[0]
@@ -84,25 +85,29 @@ def parse_img(in_file):
     has_px = True
     has_alpha = False
     
-  im = Image.open(in_file)
+  img = pygame.image.load(in_file)
   ctx = {
     "image_name": os.path.splitext(in_file_base)[0],
-    "image_width": im.size[0],
-    "image_height": im.size[1],
+    "image_width": img.get_width(),
+    "image_height": img.get_height(),
     "px?": has_px,
     "alpha?": has_alpha
   }
 	
-  imdata = im.getdata()
+  img_px_array = pygame.PixelArray(img)
+  img_px = [img.unmap_rgb(img_px_array[x, y]) for y in range(0, img.get_height()) for x in range(0, img.get_width())]
+  
   if has_px:
-    ctx["image_px"] = [rescale_px(p) for p in imdata]
+    ctx["image_px"] = [rescale_px(px) for px in img_px]
   
   if has_alpha:
-    ctx["image_alpha"] = [p[3] for p in imdata]
+    ctx["image_alpha"] = [px.a for px in img_px]
 	
   return ctx
 
 if __name__ == "__main__":
+  pygame.init()
+  
   img_files = []
   for arg in sys.argv[1:]:
     for f in glob.glob(arg):
