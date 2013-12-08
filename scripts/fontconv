@@ -99,7 +99,7 @@ def parse_font(font_file, font_size, charspec):
   return {
     "font_name": font_name,
     "font_size": font_size,
-    "line_height": font.get_sized_height(),
+    "line_height": font.get_sized_ascender() - font.get_sized_descender(),
     "ascender": font.get_sized_ascender(),
     "glyphs": glyphs
   }
@@ -111,6 +111,7 @@ def expand_charspec(charspecs):
     "alphanumeric": range(48, 58) + range(65, 91) + range(97, 123),
     "symbols": range(33, 48) + range(58, 65) + range(91, 97) + range(123, 127),
     "space": [32],
+    "degree": [176],
     "all": range(32, 127)
   }
   

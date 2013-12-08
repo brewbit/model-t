@@ -17,6 +17,6 @@
   {
     "font_file": "OpenSans-Regular.ttf",
     "font_size": 62,
-    "charspec": u"space;numeric;CF-.\xb0"
+    "charspec": "space;numeric;degree;CF-."
   },
 ]

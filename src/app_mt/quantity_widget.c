@@ -35,7 +35,7 @@ quantity_widget_create(widget_t* parent, rect_t rect)
   quantity_widget_t* s = chHeapAlloc(NULL, sizeof(quantity_widget_t));
   memset(s, 0, sizeof(quantity_widget_t));
 
-  rect.height = font_opensans_regular_62->ascender;
+  rect.height = font_opensans_regular_62->line_height;
   s->widget = widget_create(parent, &quantity_widget_class, s, rect);
 
   s->sample.unit = UNIT_NONE;

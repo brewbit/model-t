@@ -219,7 +219,7 @@ include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
 $(AUTOGEN_DIR):
 	mkdir -p $@
 
-$(AUTOGEN_DIR)/font_resources.c $(AUTOGEN_DIR)/font_resources.h: $(AUTOGEN_DIR) $(wildcard fonts/*.bmfc)
+$(AUTOGEN_DIR)/font_resources.c $(AUTOGEN_DIR)/font_resources.h: $(AUTOGEN_DIR) scripts/fontconv $(wildcard fonts/*.ttf) fonts/font_specs
 	python scripts/fontconv fonts $(AUTOGEN_DIR)
 
 $(AUTOGEN_DIR)/image_resources.c $(AUTOGEN_DIR)/image_resources.h: $(AUTOGEN_DIR) $(wildcard images/*.png)
