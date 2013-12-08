@@ -19,4 +19,8 @@
 #define container_of(ptr, type, member) \
                 (type *)( ((char *)ptr) - offsetof(type, member) )
 
+#ifdef REQUIRE_PRINTF_FLOAT
+asm (".global _printf_float");
+#endif
+
 #endif

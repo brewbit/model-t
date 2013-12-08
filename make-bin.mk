@@ -161,7 +161,7 @@ CPPWARN = -Wall -Wextra
 #
 
 # List all default C defines here, like -D_DEBUG=1
-DDEFS = -DSTDOUT_SD=SD3 -DSTDIN_SD=SD3
+DDEFS = -DSTDOUT_SD=SD3 -DSTDIN_SD=SD3 -DREQUIRE_PRINTF_FLOAT
 
 # List all default ASM defines here, like -D_DEBUG=1
 DADEFS =
