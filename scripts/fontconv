@@ -24,7 +24,6 @@ typedef struct {
 
 typedef struct {
   uint8_t line_height;
-  uint8_t ascender;
   const glyph_t* glyphs[256];
 } font_t;
 
@@ -56,7 +55,6 @@ static const glyph_t glyph_{{font_name}}_{{font_size}}_{{glyph_id}} = {
 {{/glyphs}}
 static const font_t _font_{{font_name}}_{{font_size}} = {
   .line_height = {{line_height}},
-  .ascender = {{ascender}},
   .glyphs = {
     [0] = &glyph_{{font_name}}_{{font_size}}_63,
 {{#glyphs}}
@@ -96,11 +94,13 @@ def parse_font(font_file, font_size, charspec):
     }
     glyphs.append(glyph_spec)
 
+  min_yoffset = min(g["yoffset"] for g in glyphs)
+  for g in glyphs: g["yoffset"] = g["yoffset"] - min_yoffset
+  
   return {
     "font_name": font_name,
     "font_size": font_size,
-    "line_height": font.get_sized_ascender() - font.get_sized_descender(),
-    "ascender": font.get_sized_ascender(),
+    "line_height": max(g["height"] for g in glyphs),
     "glyphs": glyphs
   }
 
