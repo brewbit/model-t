@@ -64,7 +64,7 @@ output_trigger_screen_create(output_id_t output)
       .width = 56,
       .height = 56,
   };
-  s->back_button = button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
+  s->back_button = button_create(s->widget, rect, img_left, WHITE, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -76,16 +76,16 @@ output_trigger_screen_create(output_id_t output)
   rect.y = 95;
   rect.width = 300;
   rect.height = 66;
-  s->trigger_sensor1_button = button_create(s->widget, rect, NULL, BLACK, trigger_sensor1_button_clicked);
+  s->trigger_sensor1_button = button_create(s->widget, rect, NULL, WHITE, BLACK, trigger_sensor1_button_clicked);
 
   rect.y = 165;
-  s->trigger_sensor2_button = button_create(s->widget, rect, NULL, BLACK, trigger_sensor2_button_clicked);
+  s->trigger_sensor2_button = button_create(s->widget, rect, NULL, WHITE, BLACK, trigger_sensor2_button_clicked);
 
   rect.x = 5;
   rect.y = 5;
   rect.width = 56;
   rect.height = 56;
-  s->trigger_sensor1_icon = icon_create(s->trigger_sensor1_button, rect, img_temp_38, AMBER);
+  s->trigger_sensor1_icon = icon_create(s->trigger_sensor1_button, rect, img_temp_38, WHITE, AMBER);
 
   rect.x = 70;
   rect.y = 5;
@@ -103,7 +103,7 @@ output_trigger_screen_create(output_id_t output)
   rect.y = 5;
   rect.width = 56;
   rect.height = 56;
-  s->trigger_sensor2_icon = icon_create(s->trigger_sensor2_button, rect, img_temp_38, PURPLE);
+  s->trigger_sensor2_icon = icon_create(s->trigger_sensor2_button, rect, img_temp_38, WHITE, PURPLE);
 
   rect.x = 70;
   rect.y = 5;

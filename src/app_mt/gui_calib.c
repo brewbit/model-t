@@ -68,12 +68,12 @@ calib_screen_create()
       .width = 56,
       .height = 56,
   };
-  s->complete_button = button_create(s->widget, rect, img_left, BLACK, complete_calib);
+  s->complete_button = button_create(s->widget, rect, img_left, WHITE, BLACK, complete_calib);
   widget_hide(s->complete_button);
 
   rect.x = 320 - 56 - 15;
   rect.y = 240 - 56 - 15;
-  s->recal_button = button_create(s->widget, rect, img_update, BLACK, restart_calib);
+  s->recal_button = button_create(s->widget, rect, img_update, WHITE, BLACK, restart_calib);
   widget_hide(s->recal_button);
 
   gui_msg_subscribe(MSG_TOUCH_INPUT, s->widget);

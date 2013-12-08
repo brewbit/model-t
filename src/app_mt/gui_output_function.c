@@ -54,7 +54,7 @@ output_function_screen_create(output_id_t output)
       .width = 56,
       .height = 56,
   };
-  button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
+  button_create(s->widget, rect, img_left, WHITE, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -66,16 +66,16 @@ output_function_screen_create(output_id_t output)
   rect.y = 95;
   rect.width = 300;
   rect.height = 66;
-  s->function_heat_button = button_create(s->widget, rect, NULL, BLACK, function_heat_button_clicked);
+  s->function_heat_button = button_create(s->widget, rect, NULL, WHITE, BLACK, function_heat_button_clicked);
 
   rect.y = 165;
-  s->function_cool_button = button_create(s->widget, rect, NULL, BLACK, function_cool_button_clicked);
+  s->function_cool_button = button_create(s->widget, rect, NULL, WHITE, BLACK, function_cool_button_clicked);
 
   rect.x = 5;
   rect.y = 5;
   rect.width = 56;
   rect.height = 56;
-  s->function_heat_icon = icon_create(s->function_heat_button, rect, img_flame, ORANGE);
+  s->function_heat_icon = icon_create(s->function_heat_button, rect, img_flame, WHITE, ORANGE);
 
   rect.x = 70;
   rect.y = 5;
@@ -93,7 +93,7 @@ output_function_screen_create(output_id_t output)
   rect.y = 5;
   rect.width = 56;
   rect.height = 56;
-  s->function_cool_icon = icon_create(s->function_cool_button, rect, img_snowflake, CYAN);
+  s->function_cool_icon = icon_create(s->function_cool_button, rect, img_snowflake, WHITE, CYAN);
 
   rect.x = 70;
   rect.y = 5;

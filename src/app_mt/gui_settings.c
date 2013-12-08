@@ -49,7 +49,7 @@ settings_screen_create()
       .width = 56,
       .height = 56,
   };
-  s->back_button = button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
+  s->back_button = button_create(s->widget, rect, img_left, WHITE, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -60,19 +60,19 @@ settings_screen_create()
   rect.y = 86;
   rect.width = 56;
   rect.height = 56;
-  s->unit_button = button_create(s->widget, rect, img_deg_f, ORANGE, unit_button_clicked);
+  s->unit_button = button_create(s->widget, rect, img_deg_f, WHITE, ORANGE, unit_button_clicked);
 
   rect.x += 84;
-  button_create(s->widget, rect, img_hand, STEEL, calibrate_button_clicked);
+  button_create(s->widget, rect, img_hand, WHITE, STEEL, calibrate_button_clicked);
 
   rect.x += 84;
-  button_create(s->widget, rect, img_update, CYAN, update_button_clicked);
+  button_create(s->widget, rect, img_update, WHITE, CYAN, update_button_clicked);
 
   rect.x = 48;
   rect.y = 150;
   rect.width = 56 ;
   rect.width = 56 ;
-  button_create(s->widget, rect, img_activation, EMERALD, activation_button_clicked);
+  button_create(s->widget, rect, img_activation, WHITE, EMERALD, activation_button_clicked);
 
   s->temp_unit = app_cfg_get_temp_unit();
   set_unit(s, s->temp_unit);

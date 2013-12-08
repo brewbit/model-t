@@ -57,7 +57,7 @@ output_settings_screen_create(output_id_t output)
       .width = 56,
       .height = 56,
   };
-  s->back_button = button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
+  s->back_button = button_create(s->widget, rect, img_left, WHITE, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -69,13 +69,13 @@ output_settings_screen_create(output_id_t output)
   rect.y = 120;
   rect.width = 56;
   rect.height = 56;
-  s->function_button = button_create(s->widget, rect, img_flame, ORANGE, function_button_clicked);
+  s->function_button = button_create(s->widget, rect, img_flame, WHITE, ORANGE, function_button_clicked);
 
   rect.x += 84;
-  s->trigger_button = button_create(s->widget, rect, img_temp_38, AMBER, trigger_button_clicked);
+  s->trigger_button = button_create(s->widget, rect, img_temp_38, WHITE, AMBER, trigger_button_clicked);
 
   rect.x += 84;
-  s->compressor_delay_button = button_create(s->widget, rect, img_stopwatch, GREEN, compressor_delay_button_clicked);
+  s->compressor_delay_button = button_create(s->widget, rect, img_stopwatch, WHITE, GREEN, compressor_delay_button_clicked);
 
   s->output = output;
   s->settings = *app_cfg_get_output_settings(output);

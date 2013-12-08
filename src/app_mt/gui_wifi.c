@@ -45,7 +45,7 @@ wifi_screen_create()
       .width = 56,
       .height = 56,
   };
-  button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
+  button_create(s->widget, rect, img_left, WHITE, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -56,13 +56,13 @@ wifi_screen_create()
   rect.y = 95;
   rect.width = 300;
   rect.height = 66;
-  widget_t* nwk_button = button_create(s->widget, rect, NULL, BLACK, NULL);
+  widget_t* nwk_button = button_create(s->widget, rect, NULL, WHITE, BLACK, NULL);
 
   rect.x = 5;
   rect.y = 5;
   rect.width = 56;
   rect.height = 56;
-  icon_create(nwk_button, rect, img_signal, CYAN);
+  icon_create(nwk_button, rect, img_signal, WHITE, CYAN);
 
   rect.x = 70;
   rect.y = 5;

@@ -9,6 +9,7 @@
 
 typedef struct {
   const Image_t* image;
+  uint16_t icon_color;
 } icon_t;
 
 
@@ -22,15 +23,16 @@ static const widget_class_t icon_widget_class = {
 };
 
 widget_t*
-icon_create(widget_t* parent, rect_t rect, const Image_t* image, uint16_t color)
+icon_create(widget_t* parent, rect_t rect, const Image_t* image, uint16_t icon_color, uint16_t bg_color)
 {
   icon_t* i = chHeapAlloc(NULL, sizeof(icon_t));
   memset(i, 0, sizeof(icon_t));
 
   i->image = image;
+  i->icon_color = icon_color;
 
   widget_t* w = widget_create(parent, &icon_widget_class, i, rect);
-  widget_set_background(w, color, FALSE);
+  widget_set_background(w, bg_color, FALSE);
 
   return w;
 }
@@ -65,6 +67,7 @@ icon_paint(paint_event_t* event)
 
   /* draw icon */
   if (i->image != NULL) {
+    gfx_set_fg_color(i->icon_color);
     gfx_draw_bitmap(
         center.x - (i->image->width / 2),
         center.y - (i->image->height / 2),

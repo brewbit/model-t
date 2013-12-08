@@ -19,7 +19,8 @@ button_create(
     widget_t* parent,
     rect_t rect,
     const Image_t* icon,
-    uint16_t color,
+    uint16_t icon_color,
+    uint16_t btn_color,
     button_event_handler_t evt_handler);
 
 void

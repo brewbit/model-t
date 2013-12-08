@@ -59,7 +59,7 @@ update_screen_create()
       .width = 56,
       .height = 56,
   };
-  button_create(s->widget, rect, img_left, BLACK, back_button_clicked);
+  button_create(s->widget, rect, img_left, WHITE, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -70,13 +70,13 @@ update_screen_create()
   rect.y = 85;
   rect.width = 300;
   rect.height = 66;
-  s->button = button_create(s->widget, rect, NULL, BLACK, update_button_clicked);
+  s->button = button_create(s->widget, rect, NULL, WHITE, BLACK, update_button_clicked);
 
   rect.x = 5;
   rect.y = 5;
   rect.width = 56;
   rect.height = 56;
-  icon_create(s->button, rect, img_update, CYAN);
+  icon_create(s->button, rect, img_update, WHITE, CYAN);
 
   rect.x = 70;
   rect.y = 5;

@@ -14,7 +14,8 @@
 typedef struct {
   bool is_down;
   const Image_t* icon;
-  uint16_t color;
+  uint16_t icon_color;
+  uint16_t btn_color;
   systime_t next_event_time;
 
   button_event_handler_t evt_handler;
@@ -35,18 +36,19 @@ static const widget_class_t button_widget_class = {
 };
 
 widget_t*
-button_create(widget_t* parent, rect_t rect, const Image_t* icon, uint16_t color,
+button_create(widget_t* parent, rect_t rect, const Image_t* icon, uint16_t icon_color, uint16_t btn_color,
     button_event_handler_t evt_handler)
 {
   button_t* b = chHeapAlloc(NULL, sizeof(button_t));
   memset(b, 0, sizeof(button_t));
 
   b->icon = icon;
-  b->color = color;
+  b->icon_color = icon_color;
+  b->btn_color = btn_color;
   b->evt_handler = evt_handler;
 
   widget_t* w = widget_create(parent, &button_widget_class, b, rect);
-  widget_set_background(w, color, FALSE);
+  widget_set_background(w, btn_color, FALSE);
 
   return w;
 }
@@ -65,8 +67,8 @@ void
 button_set_color(widget_t* w, uint16_t color)
 {
   button_t* b = widget_get_instance_data(w);
-  if (b->color != color) {
-    b->color = color;
+  if (b->btn_color != color) {
+    b->btn_color = color;
     if (!b->is_down && widget_is_enabled(w))
       widget_set_background(w, color, FALSE);
     widget_invalidate(w);
@@ -116,7 +118,7 @@ button_touch(touch_event_t* event)
   else {
     if (b->is_down) {
       b->is_down = false;
-      widget_set_background(event->widget, b->color, FALSE);
+      widget_set_background(event->widget, b->btn_color, FALSE);
       gui_release_touch_capture();
 
       if (b->evt_handler) {
@@ -143,6 +145,7 @@ button_paint(paint_event_t* event)
 
   /* draw icon */
   if (b->icon != NULL) {
+    gfx_set_fg_color(b->icon_color);
     gfx_draw_bitmap(
         center.x - (b->icon->width / 2),
         center.y - (b->icon->height / 2),
@@ -156,7 +159,7 @@ button_enable(enable_event_t* event)
   button_t* b = widget_get_instance_data(event->widget);
 
   if (event->enabled) {
-    widget_set_background(event->widget, b->color, FALSE);
+    widget_set_background(event->widget, b->btn_color, FALSE);
   }
   else {
     widget_set_background(event->widget, DARK_GRAY, FALSE);

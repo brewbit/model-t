@@ -41,7 +41,7 @@ activation_screen_create()
       .width = 56,
       .height = 56,
   };
-  button_create(screen->widget, rect, img_left, BLACK, back_button_clicked);
+  button_create(screen->widget, rect, img_left, WHITE, BLACK, back_button_clicked);
 
   rect.x = 85;
   rect.y = 26;

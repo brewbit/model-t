@@ -83,30 +83,30 @@ home_screen_create()
       .width  = TILE_SPAN(3),
       .height = TILE_SPAN(2),
   };
-  s->stage_button = button_create(s->screen, rect, NULL, GREEN, click_stage_button);
+  s->stage_button = button_create(s->screen, rect, NULL, WHITE, GREEN, click_stage_button);
 
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
   rect.height = TILE_SPAN(1);
-  s->sensors[SENSOR_1].button = button_create(s->screen, rect, img_temp_med, AMBER, click_sensor_button);
+  s->sensors[SENSOR_1].button = button_create(s->screen, rect, img_temp_med, WHITE, AMBER, click_sensor_button);
   widget_disable(s->sensors[SENSOR_1].button);
 
   rect.y = TILE_Y(1);
-  s->sensors[SENSOR_2].button = button_create(s->screen, rect, img_temp_med, PURPLE, click_sensor_button);
+  s->sensors[SENSOR_2].button = button_create(s->screen, rect, img_temp_med, WHITE, PURPLE, click_sensor_button);
   widget_disable(s->sensors[SENSOR_2].button);
 
   rect.x = TILE_X(0);
   rect.y = TILE_Y(2);
-  s->output1_button = button_create(s->screen, rect, img_plug, ORANGE, click_output_button);
+  s->output1_button = button_create(s->screen, rect, img_plug, WHITE, ORANGE, click_output_button);
 
   rect.x = TILE_X(1);
-  s->output2_button = button_create(s->screen, rect, img_plug, CYAN, click_output_button);
+  s->output2_button = button_create(s->screen, rect, img_plug, WHITE, CYAN, click_output_button);
 
   rect.x = TILE_X(2);
-  s->conn_button = button_create(s->screen, rect, img_signal, STEEL, click_conn_button);
+  s->conn_button = button_create(s->screen, rect, img_signal, WHITE, STEEL, click_conn_button);
 
   rect.x = TILE_X(3);
-  s->settings_button = button_create(s->screen, rect, img_settings, OLIVE, click_settings_button);
+  s->settings_button = button_create(s->screen, rect, img_settings, WHITE, OLIVE, click_settings_button);
 
   rect.x = 0;
   rect.width = TILE_SPAN(3);
