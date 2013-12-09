@@ -225,4 +225,8 @@ $(AUTOGEN_DIR)/font_resources.c $(AUTOGEN_DIR)/font_resources.h: $(AUTOGEN_DIR) 
 $(AUTOGEN_DIR)/image_resources.c $(AUTOGEN_DIR)/image_resources.h: $(AUTOGEN_DIR) scripts/imgconv $(wildcard images/*.png)
 	python scripts/imgconv images/*.png
 
-
+$(AUTOGEN_DIR)/bbmt.pb:
+	protoc $(BBMT_MSGS_INCLUDES) -o$@ $(BBMT_MSGS)/bbmt.proto
+	
+$(AUTOGEN_DIR)/bbmt.pb.c $(AUTOGEN_DIR)/bbmt.pb.h: $(AUTOGEN_DIR)/bbmt.pb
+	python $(NANOPB)/generator/nanopb_generator.py $(AUTOGEN_DIR)/bbmt.pb

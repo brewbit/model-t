@@ -14,7 +14,8 @@ PROJECT_INCDIR = \
 
 PROJECT_AUTOGEN_CSRC = \
        image_resources.c \
-       font_resources.c
+       font_resources.c \
+       bbmt.pb.c
 
 PROJECT_CSRC = \
        app_cfg.c \
