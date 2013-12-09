@@ -243,27 +243,7 @@ int stfSocket_sendData(stfSocket* s, const char* data, int numBytes, int* numSen
   int numBytesSentTot = 0;
   while (numBytesSentTot < numBytes) {
     errno = 0;
-    //wait for the socket to become availalbe for writing
-    wfd_set rfds;
-    WFD_ZERO(&rfds);
-    WFD_SET(s->fileDescriptor, &rfds);
-        
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 10000; //10 ms
-        
-    int selRet = select(s->fileDescriptor + 1, NULL, &rfds, NULL, &tv);
-        
-    if (selRet == -1) {
-      return 0;
-    }
-    else if (selRet == 0) {
-      //printf("no data yet\n");
-    }
-    else {
-      //printf("new data available\n");
-    }
-        
+
     //check if we should abort
     if (cancelCallback) {
       if (cancelCallback(callbackData) == 0) {
@@ -278,18 +258,21 @@ int stfSocket_sendData(stfSocket* s, const char* data, int numBytes, int* numSen
         chunkSize,
         0);
         
-    //check errors
-    int ignores[2] = {EAGAIN, EWOULDBLOCK};
-    if (shouldStopOnError(s, errno, ignores, 2)) {
-      return 0;
-    }
-        
     if (ret >= 0) {
       numBytesSentTot += ret;
     }
-        
+    else {
+      //check errors
+      int ignores[2] = {EAGAIN, EWOULDBLOCK};
+      if (shouldStopOnError(s, errno, ignores, 2)) {
+        return 0;
+      }
+    }
+
     //printf("sent %d/%d\n", numBytesSentTot, numBytes);
   }
+
+  *numSentBytes = numBytesSentTot;
     
   return 1;
 }
