@@ -843,6 +843,7 @@ static int
 simple_link_recv(long sd, void *buf, long len, long flags, sockaddr *from,
                 socklen_t *fromlen, long opcode)
 {
+    int ret;
     unsigned char *ptr, *args;
     tBsdReadReturnParams tSocketReadEvent;
 
@@ -867,15 +868,17 @@ simple_link_recv(long sd, void *buf, long len, long flags, sockaddr *from,
         // big enough to store also parameters of receive from too....
         SimpleLinkWaitData(buf, (unsigned char *)from, (unsigned char *)fromlen);
         errno = 0;
+        ret = tSocketReadEvent.iNumberOfBytes;
     }
     else if (tSocketReadEvent.iNumberOfBytes == 0) {
         errno = EAGAIN;
+        ret = -1;
     }
     else {
-        errno = tSocketReadEvent.iNumberOfBytes;
+        ret = errno = tSocketReadEvent.iNumberOfBytes;
     }
 
-    return(tSocketReadEvent.iNumberOfBytes);
+    return ret;
 }
 
 //*****************************************************************************
