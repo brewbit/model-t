@@ -49,7 +49,7 @@ main(void)
   touch_init();
   temp_control_init();
   net_init();
-//  web_api_init();
+  web_api_init();
 //  sntp_init();
   gui_init();
 

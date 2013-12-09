@@ -116,12 +116,12 @@ web_api_thread(void* arg)
     chThdSleepSeconds(1);
   }
 
-//  while (snWebsocket_getState(ws) != SN_STATE_OPEN) {
-////    snWebsocket_poll(ws); // <----------------------------- SOMETHING IN HERE IS CRASHING...
-//    chThdSleepSeconds(1);
-//  }
-//
-//  printf("websocket is open\r\n");
+  while (snWebsocket_getState(ws) != SN_STATE_OPEN) {
+    snWebsocket_poll(ws); // <----------------------------- SOMETHING IN HERE IS CRASHING...
+    chThdSleepSeconds(1);
+  }
+
+  printf("websocket is open\r\n");
 
 //    ApiMessage msg = {
 //        .type = ApiMessage_Type_ACTIVATION_TOKEN_REQUEST,
