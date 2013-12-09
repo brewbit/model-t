@@ -52,7 +52,6 @@ PROJECT_CSRC = \
        touch_calib.c \
        txn.c \
        web_api.c \
-       web_api_parser.c \
        snacka_backend/iocallbacks_socket.c \
        snacka_backend/socket_bsd.c \
        wifi/core/cc3000_common.c \
