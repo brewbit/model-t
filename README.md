@@ -33,7 +33,7 @@ Download and install the following while also adding them to your [PATH](http://
 
 * [ChibiOS/RT](https://github.com/brewbit/ChibiOS-RT/tree/stable_2.4.x)
 * [snacka](https://github.com/brewbit/snacka)
-* [nanopb](https://code.google.com/p/nanopb) 0.2.4
+* [nanopb](http://koti.kapsi.fi/~jpa/nanopb/download/nanopb-0.2.4.tar.gz)
 * [protobufs](https://github.com/brewbit/brewbit-protobuf-messages)
 
 * Download and extract all dependencies along side the Model-T sources. Your source tree should look like:
