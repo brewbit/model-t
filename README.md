@@ -23,7 +23,7 @@ Download and install the following while also adding them to your [PATH](http://
   * [PyYAML](https://pypi.python.org/pypi/PyYAML)
 3. [Cygwin](http://www.cygwin.com/) Include the following packages:
   * Make
-  * Google protobufs
+  * Google protobufs (libprotobuf-devel)
 4. [OpenOCD](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/b9phnhj8sx2wrs8/openocd-0.7.0.7z)
   * After installing OpenOCD rename the executable in the /bin directory to "openocd"
 5. [Zadig](http://zadig.akeo.ie/)
