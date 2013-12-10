@@ -21,8 +21,9 @@ Download and install the following while also adding them to your [PATH](http://
   * [pygame 1.9.2](https://bitbucket.org/pygame/pygame/downloads/pygame-1.9.2a0.win32-py2.7.msi)
   * [pystache](https://pypi.python.org/pypi/pystache)
   * [PyYAML](https://pypi.python.org/pypi/PyYAML)
+  * [Python-protobufs](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/EnIwDJuDwzL8I7u/protobuf-2.5.0.win32.exe)
 3. [Cygwin](http://www.cygwin.com/) Include the following packages:
-  * Make
+  * Make (gcc)
   * Google protobufs (libprotobuf-devel)
 4. [OpenOCD](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/b9phnhj8sx2wrs8/openocd-0.7.0.7z)
   * After installing OpenOCD rename the executable in the /bin directory to "openocd"
@@ -33,6 +34,7 @@ Download and install the following while also adding them to your [PATH](http://
 * [ChibiOS/RT](https://github.com/brewbit/ChibiOS-RT/tree/stable_2.4.x)
 * [snacka](https://github.com/brewbit/snacka)
 * [nanopb](https://code.google.com/p/nanopb) 0.2.4
+* [protobufs](https://github.com/brewbit/brewbit-protobuf-messages)
 
 * Download and extract all dependencies along side the Model-T sources. Your source tree should look like:
 
@@ -42,6 +44,7 @@ Download and install the following while also adding them to your [PATH](http://
 |-- ChibiOS-RT
 |-- snacka
 |-- nanopb
+|-- brewbit-protobuf-messages
 ```
 
 * Alternatively, you can edit `deps.mk` and point to your dependencies.
