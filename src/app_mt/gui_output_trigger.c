@@ -90,10 +90,10 @@ output_trigger_screen_create(output_id_t output)
   rect.x = 70;
   rect.y = 5;
   rect.width = 200;
-  s->trigger_sensor1_header_label = label_create(s->trigger_sensor1_button, rect, NULL, font_opensans_regular_16, WHITE, 1);
+  s->trigger_sensor1_header_label = label_create(s->trigger_sensor1_button, rect, NULL, font_opensans_regular_18, WHITE, 1);
 
   rect.y = 30;
-  s->trigger_sensor1_desc_label = label_create(s->trigger_sensor1_button, rect, NULL, font_opensans_regular_8, WHITE, 2);
+  s->trigger_sensor1_desc_label = label_create(s->trigger_sensor1_button, rect, NULL, font_opensans_regular_12, WHITE, 2);
   header = "Trigger: Sensor 1";
   desc = "The temperature will be read from Sensor 1.";
   label_set_text(s->trigger_sensor1_header_label, header);
@@ -108,10 +108,10 @@ output_trigger_screen_create(output_id_t output)
   rect.x = 70;
   rect.y = 5;
   rect.width = 200;
-  s->trigger_sensor2_header_label = label_create(s->trigger_sensor2_button, rect, NULL, font_opensans_regular_16, WHITE, 1);
+  s->trigger_sensor2_header_label = label_create(s->trigger_sensor2_button, rect, NULL, font_opensans_regular_18, WHITE, 1);
 
   rect.y = 30;
-  s->trigger_sensor2_desc_label = label_create(s->trigger_sensor2_button, rect, NULL, font_opensans_regular_8, WHITE, 2);
+  s->trigger_sensor2_desc_label = label_create(s->trigger_sensor2_button, rect, NULL, font_opensans_regular_12, WHITE, 2);
   header = "Trigger: Sensor 2";
   desc = "The temperature will be read from Sensor 2.";
   label_set_text(s->trigger_sensor2_header_label, header);
