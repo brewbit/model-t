@@ -3,6 +3,7 @@
 
 #include "widget.h"
 #include "image.h"
+#include "font.h"
 
 
 typedef struct {
@@ -28,5 +29,14 @@ button_set_icon(widget_t* w, const Image_t* icon);
 
 void
 button_set_color(widget_t* w, uint16_t color);
+
+void
+button_set_text(widget_t* w, const char* text);
+
+const char*
+button_get_text(widget_t* w);
+
+void
+button_set_font(widget_t* w, const font_t* font);
 
 #endif

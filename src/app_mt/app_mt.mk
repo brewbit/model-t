@@ -35,6 +35,7 @@ PROJECT_CSRC = \
        gui_output_trigger.c \
        gui_quantity_select.c \
        gui_settings.c \
+       gui_textentry.c \
        gui_update.c \
        gui_wifi.c \
        image.c \

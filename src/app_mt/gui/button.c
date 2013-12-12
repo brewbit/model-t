@@ -17,6 +17,8 @@ typedef struct {
   uint16_t icon_color;
   uint16_t btn_color;
   systime_t next_event_time;
+  const char* text;
+  const font_t* font;
 
   button_event_handler_t evt_handler;
 } button_t;
@@ -39,8 +41,7 @@ widget_t*
 button_create(widget_t* parent, rect_t rect, const Image_t* icon, uint16_t icon_color, uint16_t btn_color,
     button_event_handler_t evt_handler)
 {
-  button_t* b = chHeapAlloc(NULL, sizeof(button_t));
-  memset(b, 0, sizeof(button_t));
+  button_t* b = calloc(1, sizeof(button_t));
 
   b->icon = icon;
   b->icon_color = icon_color;
@@ -75,11 +76,56 @@ button_set_color(widget_t* w, uint16_t color)
   }
 }
 
+void
+button_set_text(widget_t* w, const char* text)
+{
+  button_t* b = widget_get_instance_data(w);
+  if (b->text == NULL) {
+    if (text != NULL) {
+      b->text = strdup(text);
+      widget_invalidate(w);
+    }
+  }
+  else {
+    if (text != NULL) {
+      if (strcmp(text, b->text) != 0) {
+        b->text = strdup(text);
+        widget_invalidate(w);
+      }
+    }
+    else {
+      b->text = NULL;
+      widget_invalidate(w);
+    }
+  }
+}
+
+const char*
+button_get_text(widget_t* w)
+{
+  button_t* b = widget_get_instance_data(w);
+  return b->text;
+}
+
+void
+button_set_font(widget_t* w, const font_t* font)
+{
+  button_t* b = widget_get_instance_data(w);
+  if (b->font != font) {
+    b->font = font;
+    widget_invalidate(w);
+  }
+}
+
 static void
 button_destroy(widget_t* w)
 {
   button_t* b = widget_get_instance_data(w);
-  chHeapFree(b);
+
+  if (b->text != NULL)
+    free(b->text);
+
+  free(b);
 }
 
 static void
@@ -150,6 +196,14 @@ button_paint(paint_event_t* event)
         center.x - (b->icon->width / 2),
         center.y - (b->icon->height / 2),
         b->icon);
+  }
+
+  if (b->text != NULL && b->font != NULL) {
+    Extents_t x = font_text_extents(b->font, b->text);
+    gfx_set_font(b->font);
+    gfx_draw_str(b->text, -1,
+        center.x - (x.width / 2),
+        center.y - (x.height / 2));
   }
 }
 

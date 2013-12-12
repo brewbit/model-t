@@ -8,6 +8,7 @@
 #include "gui_output.h"
 #include "gui_settings.h"
 #include "gui_wifi.h"
+#include "gui_textentry.h"
 #include "quantity_widget.h"
 #include "app_cfg.h"
 
@@ -356,7 +357,9 @@ static void
 click_stage_button(button_event_t* event)
 {
   (void)event;
-//  if (event->id == EVT_BUTTON_CLICK)
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* history_screen = textentry_screen_create();
 //  widget_t* history_screen = history_screen_create();
-//  gui_push_screen(history_screen);
+    gui_push_screen(history_screen);
+  }
 }
