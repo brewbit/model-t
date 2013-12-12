@@ -67,12 +67,12 @@ wifi_screen_create()
   rect.x = 70;
   rect.y = 5;
   rect.width = 200;
-  label_create(nwk_button, rect, "Network", font_opensans_regular_16, WHITE, 1);
+  label_create(nwk_button, rect, "Network", font_opensans_regular_18, WHITE, 1);
 
   rect.y = 30;
-  s->nwk_status1 = label_create(nwk_button, rect, "Checking network status...", font_opensans_regular_8, WHITE, 1);
-  rect.y += font_opensans_regular_8->line_height;
-  s->nwk_status2 = label_create(nwk_button, rect, "", font_opensans_regular_8, WHITE, 1);
+  s->nwk_status1 = label_create(nwk_button, rect, "Checking network status...", font_opensans_regular_12, WHITE, 1);
+  rect.y += font_opensans_regular_12->line_height;
+  s->nwk_status2 = label_create(nwk_button, rect, "", font_opensans_regular_12, WHITE, 1);
 
   gui_msg_subscribe(MSG_WIFI_STATUS, s->widget);
   gui_msg_subscribe(MSG_SCAN_RESULT, s->widget);

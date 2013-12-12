@@ -1,12 +1,12 @@
 [
   {
     "font_file": "OpenSans-Regular.ttf",
-    "font_size": 8,
+    "font_size": 12,
     "charspec": "all"
   },
   {
     "font_file": "OpenSans-Regular.ttf",
-    "font_size": 16,
+    "font_size": 18,
     "charspec": "all"
   },
   {
