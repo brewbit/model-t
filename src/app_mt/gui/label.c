@@ -27,8 +27,7 @@ static const widget_class_t label_widget_class = {
 widget_t*
 label_create(widget_t* parent, rect_t rect, const char* text, const font_t* font, color_t color, uint8_t rows)
 {
-  label_t* l = chHeapAlloc(NULL, sizeof(label_t));
-  memset(l, 0, sizeof(label_t));
+  label_t* l = calloc(1, sizeof(label_t));
 
   if (text != NULL)
     l->text = strdup(text);
@@ -46,7 +45,7 @@ label_set_text(widget_t* w, char* text)
   label_t* l = widget_get_instance_data(w);
   if (strcmp(l->text, text) != 0) {
     if (l->text != NULL)
-      chHeapFree(l->text);
+      free(l->text);
     l->text = strdup(text);
     widget_invalidate(w);
   }
@@ -56,57 +55,73 @@ static void
 label_destroy(widget_t* w)
 {
   label_t* l = widget_get_instance_data(w);
-  chHeapFree(l);
+  free(l);
+}
+
+static char*
+get_row_text(label_t* l, const char* text, int width, bool ellipsize)
+{
+  char* str = strdup(text);
+  Extents_t e = font_text_extents(l->font, str);
+  if (e.width < width)
+    return str;
+
+  if (ellipsize)
+    width -= font_text_extents(l->font, "...").width;
+
+  do {
+    char* last_space = strrchr(str, ' ');
+    if (last_space != NULL) {
+      // chop off the last word and see if the string will fit.
+      *last_space = '\0';
+      e = font_text_extents(l->font, str);
+    }
+    else {
+      // There is no whitespace, so just start chopping characters until it fits.
+      do {
+        str[strlen(str) - 1] = '\0';
+        e = font_text_extents(l->font, str);
+      } while (e.width > width);
+    }
+  } while (e.width > width);
+
+  if (ellipsize) {
+    char* estr = malloc(strlen(str) + 3 + 1);
+    strcpy(estr, str);
+    strcat(estr, "...");
+    free(str);
+    str = estr;
+  }
+
+  return str;
 }
 
 static void
 label_paint(paint_event_t* event)
 {
+  int i;
   label_t* l = widget_get_instance_data(event->widget);
   rect_t rect = widget_get_rect(event->widget);
 
   gfx_set_font(l->font);
   gfx_set_fg_color(l->color);
 
-  char c;
-  int str_idx = 0;
-  bool in_whitespace = true;
-  int last_word_start = 0;
-  const char* str = l->text;
-  int text_width = 0;
-  int row = 0;
+  const char* text = l->text;
+  for (i = 0; i < l->rows; ++i) {
+    char* row_text = get_row_text(l, text, rect.width, (i == (l->rows - 1)));
 
-  while ((c = str[str_idx]) != 0) {
-    if (c == ' ') {
-      in_whitespace = true;
-    }
-    else if (in_whitespace) {
-      // just found the beginning of a word
-      last_word_start = str_idx;
-      in_whitespace = false;
-    }
+//    if ((i == (l->rows - 1)) &&
+//        (l->ellipsize == ELLIPSIZE_END) &&
+//        (strlen(row_text) < strlen(text))) {
+//
+//    }
 
-    const glyph_t* g = font_find_glyph(l->font, c);
-    text_width += g->advance;
+    gfx_draw_str(row_text, -1, rect.x, rect.y + (i * l->font->line_height));
 
-    if (text_width > rect.width) {
-      if (!in_whitespace) {
-        if (last_word_start != 0)
-          str_idx = last_word_start;
-      }
+    text += strlen(row_text);
+    while (*text == ' ')
+      text++;
 
-      gfx_draw_str(str, str_idx, rect.x, rect.y + (row * l->font->line_height));
-
-      str = str + str_idx;
-      str_idx = 0;
-      last_word_start = 0;
-      text_width = 0;
-      row++;
-    }
-    else {
-      str_idx++;
-    }
+    free(row_text);
   }
-
-  gfx_draw_str(str, -1, rect.x, rect.y + (row * l->font->line_height));
 }
