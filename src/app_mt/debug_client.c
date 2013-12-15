@@ -34,7 +34,7 @@ void
 debug_client_init()
 {
   Thread* th_debug_client = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, debug_client_thread, NULL);
-  msg_subscribe(MSG_WIFI_STATUS, th_debug_client, debug_client_dispatch, NULL);
+  msg_subscribe(MSG_NET_STATUS, th_debug_client, debug_client_dispatch, NULL);
 }
 
 static msg_t
@@ -99,7 +99,7 @@ debug_client_dispatch(msg_id_t id, void* msg_data, void* user_data)
   (void)user_data;
 
   switch (id) {
-  case MSG_WIFI_STATUS:
+  case MSG_NET_STATUS:
 //    dispatch_wifi_status(msg_data);
     break;
 

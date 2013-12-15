@@ -7,6 +7,7 @@
 #include "gui/icon.h"
 #include "gfx.h"
 #include "gui.h"
+#include "net.h"
 
 #include <string.h>
 
@@ -22,7 +23,7 @@ static void wifi_screen_destroy(widget_t* w);
 static void wifi_screen_msg(msg_event_t* event);
 static void back_button_clicked(button_event_t* event);
 
-//static void dispatch_wifi_status(wifi_screen_t* s, wspr_wifi_status_t* status);
+static void dispatch_net_status(wifi_screen_t* s, const net_status_t* status);
 
 
 static widget_class_t wifi_screen_widget_class = {
@@ -34,8 +35,7 @@ static widget_class_t wifi_screen_widget_class = {
 widget_t*
 wifi_screen_create()
 {
-  wifi_screen_t* s = chHeapAlloc(NULL, sizeof(wifi_screen_t));
-  memset(s, 0, sizeof(wifi_screen_t));
+  wifi_screen_t* s = calloc(1, sizeof(wifi_screen_t));
 
   s->widget = widget_create(NULL, &wifi_screen_widget_class, s, display_rect);
 
@@ -70,13 +70,14 @@ wifi_screen_create()
   label_create(nwk_button, rect, "Network", font_opensans_regular_18, WHITE, 1);
 
   rect.y = 30;
-  s->nwk_status1 = label_create(nwk_button, rect, "Checking network status...", font_opensans_regular_12, WHITE, 1);
+  s->nwk_status1 = label_create(nwk_button, rect, "", font_opensans_regular_12, WHITE, 1);
   rect.y += font_opensans_regular_12->line_height;
   s->nwk_status2 = label_create(nwk_button, rect, "", font_opensans_regular_12, WHITE, 1);
 
-  gui_msg_subscribe(MSG_WIFI_STATUS, s->widget);
-  gui_msg_subscribe(MSG_SCAN_RESULT, s->widget);
-  gui_msg_subscribe(MSG_SCAN_COMPLETE, s->widget);
+  const net_status_t* net_status = net_get_status();
+  dispatch_net_status(s, net_status);
+
+  gui_msg_subscribe(MSG_NET_STATUS, s->widget);
 
   return s->widget;
 }
@@ -86,9 +87,7 @@ wifi_screen_destroy(widget_t* w)
 {
   wifi_screen_t* s = widget_get_instance_data(w);
 
-  gui_msg_unsubscribe(MSG_WIFI_STATUS, w);
-  gui_msg_unsubscribe(MSG_SCAN_RESULT, w);
-  gui_msg_unsubscribe(MSG_SCAN_COMPLETE, w);
+  gui_msg_unsubscribe(MSG_NET_STATUS, w);
 
   chHeapFree(s);
 }
@@ -99,8 +98,8 @@ wifi_screen_msg(msg_event_t* event)
   wifi_screen_t* s = widget_get_instance_data(event->widget);
 
   switch (event->msg_id) {
-  case MSG_WIFI_STATUS:
-//    dispatch_wifi_status(s, event->msg_data);
+  case MSG_NET_STATUS:
+    dispatch_net_status(s, event->msg_data);
     break;
 
   default:
@@ -108,32 +107,31 @@ wifi_screen_msg(msg_event_t* event)
   }
 }
 
-//static void
-//dispatch_wifi_status(wifi_screen_t* s, wspr_wifi_status_t* status)
-//{
-//  if (!status->configured) {
-//    label_set_text(s->nwk_status1, "No network configured.");
-//    label_set_text(s->nwk_status2, "Connect to AP to configure.");
-//  }
-//  else {
-//    switch (status->state) {
-//    case 0:
-//      label_set_text(s->nwk_status1, "You are currently connected to:");
-//      label_set_text(s->nwk_status2, status->ssid);
-//      break;
-//
-//    case -30:
-//      label_set_text(s->nwk_status1, "No networks found");
-//      label_set_text(s->nwk_status2, "");
-//      break;
-//
-//    default:
-//      label_set_text(s->nwk_status1, "Unknown network status");
-//      label_set_text(s->nwk_status2, "");
-//      break;
-//    }
-//  }
-//}
+static void
+dispatch_net_status(wifi_screen_t* s, const net_status_t* status)
+{
+  switch (status->net_state) {
+  case NET_DISCONNECTED:
+    label_set_text(s->nwk_status1, "Not connected");
+    label_set_text(s->nwk_status2, "Touch to scan for networks");
+    break;
+
+  case NET_SCANNING:
+    label_set_text(s->nwk_status1, "Scanning for networks...");
+    label_set_text(s->nwk_status2, "");
+    break;
+
+  case NET_CONNECTING:
+    label_set_text(s->nwk_status1, "Connecting to:");
+    label_set_text(s->nwk_status2, status->ssid);
+    break;
+
+  case NET_CONNECTED:
+    label_set_text(s->nwk_status1, "Connected to:");
+    label_set_text(s->nwk_status2, status->ssid);
+    break;
+  }
+}
 
 static void
 back_button_clicked(button_event_t* event)
