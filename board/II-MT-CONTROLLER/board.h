@@ -66,8 +66,8 @@
 #define PORT_LED2      GPIOB
 #define PAD_LED2       1
 
-#define PORT_SFLASH_CS GPIOB
-#define PAD_SFLASH_CS  12
+#define PORT_SFLASH_CS GPIOD
+#define PAD_SFLASH_CS  13
 
 #define PORT_RELAY1    GPIOC
 #define PAD_RELAY1     4
@@ -81,8 +81,8 @@
 #define PORT_WIFI_IRQ  GPIOD
 #define PAD_WIFI_IRQ   12
 
-#define PORT_WIFI_CS   GPIOD
-#define PAD_WIFI_CS    13
+#define PORT_WIFI_CS   GPIOB
+#define PAD_WIFI_CS    12
 
 /*
  * Serial port assignments.
