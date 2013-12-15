@@ -36,6 +36,9 @@ static void
 widget_invalidate_predicate(widget_t* w, widget_traversal_event_t event, void* data);
 
 static void
+widget_layout_predicate(widget_t* w, widget_traversal_event_t event, void* data);
+
+static void
 widget_paint_predicate(widget_t* w, widget_traversal_event_t event, void* data);
 
 static void
@@ -105,8 +108,10 @@ widget_get_rect(widget_t* w)
 void
 widget_set_rect(widget_t* w, rect_t rect)
 {
-  w->rect = rect;
-  widget_invalidate(w->parent);
+  if (memcmp(&rect, &w->rect, sizeof(rect_t)) != 0) {
+    w->rect = rect;
+    widget_invalidate(w->parent);
+  }
 }
 
 void*
@@ -130,6 +135,32 @@ widget_add_child(widget_t* parent, widget_t* child)
   }
 
   child->parent = parent;
+}
+
+int
+widget_num_children(widget_t* w)
+{
+  widget_t* child;
+  int i = 0;
+  for (child = w->first_child; child != NULL; child = child->next_sibling) {
+    i++;
+  }
+
+  return i;
+}
+
+// TODO use an arraylist to speed this up...
+widget_t*
+widget_get_child(widget_t* w, int idx)
+{
+  widget_t* child;
+  int i = 0;
+  for (child = w->first_child; child != NULL; child = child->next_sibling) {
+    if (i++ == idx)
+      return child;
+  }
+
+  return NULL;
 }
 
 void
@@ -230,7 +261,20 @@ dispatch_touch(widget_t* w, touch_event_t* event)
 void
 widget_paint(widget_t* w)
 {
+  widget_for_each(w, widget_layout_predicate, NULL);
   widget_for_each(w, widget_paint_predicate, NULL);
+}
+
+static void
+widget_layout_predicate(widget_t* w, widget_traversal_event_t event, void* data)
+{
+  (void)data;
+
+  if (event == WIDGET_TRAVERSAL_BEFORE_CHILDREN) {
+    if (widget_is_visible(w)) {
+      CALL_WC(w, on_layout)(w);
+    }
+  }
 }
 
 static void

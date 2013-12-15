@@ -22,6 +22,7 @@ typedef struct {
 static void wifi_screen_destroy(widget_t* w);
 static void wifi_screen_msg(msg_event_t* event);
 static void back_button_clicked(button_event_t* event);
+static void network_button_clicked(button_event_t* event);
 
 static void dispatch_net_status(wifi_screen_t* s, const net_status_t* status);
 
@@ -56,7 +57,7 @@ wifi_screen_create()
   rect.y = 95;
   rect.width = 300;
   rect.height = 66;
-  widget_t* nwk_button = button_create(s->widget, rect, NULL, WHITE, BLACK, NULL);
+  widget_t* nwk_button = button_create(s->widget, rect, NULL, WHITE, BLACK, network_button_clicked);
 
   rect.x = 5;
   rect.y = 5;
@@ -89,7 +90,7 @@ wifi_screen_destroy(widget_t* w)
 
   gui_msg_unsubscribe(MSG_NET_STATUS, w);
 
-  chHeapFree(s);
+  free(s);
 }
 
 static void
@@ -138,4 +139,13 @@ back_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK)
     gui_pop_screen();
+}
+
+static void
+network_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* wifi_scan_screen = wifi_scan_screen_create();
+    gui_push_screen(wifi_scan_screen);
+  }
 }

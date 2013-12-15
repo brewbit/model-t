@@ -175,7 +175,6 @@ wlan_thread(void* arg)
       last_state = net_status.net_state;
     }
 
-
     chThdSleepMilliseconds(250);
   }
 

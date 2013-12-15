@@ -11,6 +11,7 @@ typedef enum {
 } widget_traversal_event_t;
 
 typedef struct {
+  void (*on_layout)(widget_t* w);
   void (*on_paint)(paint_event_t* event);
   void (*on_touch)(touch_event_t* event);
   void (*on_msg)(msg_event_t* event);
@@ -41,6 +42,12 @@ widget_get_instance_data(widget_t* w);
 
 void
 widget_add_child(widget_t* parent, widget_t* child);
+
+int
+widget_num_children(widget_t* w);
+
+widget_t*
+widget_get_child(widget_t* parent, int idx);
 
 void
 widget_unparent(widget_t* w);

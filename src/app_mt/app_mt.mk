@@ -38,6 +38,7 @@ PROJECT_CSRC = \
        gui_textentry.c \
        gui_update.c \
        gui_wifi.c \
+       gui_wifi_scan.c \
        image.c \
        lcd.c \
        main.c \
@@ -73,6 +74,7 @@ PROJECT_CSRC = \
        gui/button.c \
        gui/icon.c \
        gui/label.c \
+       gui/listbox.c \
        gui/progressbar.c \
        gui/scatter_plot.c \
        gui/widget.c \
