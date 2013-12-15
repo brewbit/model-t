@@ -20,7 +20,6 @@ Download and install the following while also adding them to your [PATH](http://
   * [Python 2.7](http://www.python.org/download/releases/2.7/)
   * [pygame 1.9.2](https://bitbucket.org/pygame/pygame/downloads/pygame-1.9.2a0.win32-py2.7.msi)
   * [pystache](https://pypi.python.org/pypi/pystache)
-  * [PyYAML](https://pypi.python.org/pypi/PyYAML)
   * [Python-protobufs](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/EnIwDJuDwzL8I7u/protobuf-2.5.0.win32.exe)
 3. [Cygwin](http://www.cygwin.com/) Include the following packages:
   * Make (gcc)
