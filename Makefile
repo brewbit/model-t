@@ -1,6 +1,4 @@
 
-include deps.mk
-
 JTAG ?= ftdi/olimex-arm-usb-tiny-h
 
 all: bootloader app_mt
@@ -8,6 +6,7 @@ all: bootloader app_mt
 make_prog = $(MAKE) -f src/$(1)/$(1).mk
 
 app_mt:
+	$(call make_prog,app_mt) autogen
 	$(call make_prog,app_mt)
 
 bootloader:

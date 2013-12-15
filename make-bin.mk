@@ -3,6 +3,8 @@
 # NOTE: Can be overridden externally.
 #
 
+include deps.mk
+
 # Compiler options here.
 ifeq ($(USE_OPT),)
   USE_OPT = -Os -ggdb -fomit-frame-pointer -falign-functions=16
@@ -216,17 +218,25 @@ endif
 
 include $(CHIBIOS)/os/ports/GCC/ARMCMx/rules.mk
 
-$(AUTOGEN_DIR):
+AUTOGEN_SRCS = \
+	font_resources.c \
+	image_resources.c \
+	bbmt.pb.c
+
+autogen: $(addprefix $(AUTOGEN_DIR)/, $(AUTOGEN_SRCS)) | $(AUTOGEN_DIR)
+
+$(AUTOGEN_DIR): | $(BUILDDIR)
 	mkdir -p $@
 
-$(AUTOGEN_DIR)/font_resources.c $(AUTOGEN_DIR)/font_resources.h: $(AUTOGEN_DIR) scripts/fontconv $(wildcard fonts/*.ttf) fonts/font_specs
+$(AUTOGEN_DIR)/font_resources.c $(AUTOGEN_DIR)/font_resources.h: scripts/fontconv $(wildcard fonts/*.ttf) fonts/font_specs | $(AUTOGEN_DIR)
 	python scripts/fontconv fonts $(AUTOGEN_DIR)
 
-$(AUTOGEN_DIR)/image_resources.c $(AUTOGEN_DIR)/image_resources.h: $(AUTOGEN_DIR) scripts/imgconv $(wildcard images/*.png)
-	python scripts/imgconv images/*.png
+$(AUTOGEN_DIR)/image_resources.c $(AUTOGEN_DIR)/image_resources.h: scripts/imgconv $(wildcard images/*.png) | $(AUTOGEN_DIR)
+	python scripts/imgconv $(wildcard images/*.png)
 
-$(AUTOGEN_DIR)/bbmt.pb:
+$(AUTOGEN_DIR)/bbmt.pb: | $(AUTOGEN_DIR)
 	protoc $(BBMT_MSGS_INCLUDES) -o$@ $(BBMT_MSGS)/bbmt.proto
 	
-$(AUTOGEN_DIR)/bbmt.pb.c $(AUTOGEN_DIR)/bbmt.pb.h: $(AUTOGEN_DIR)/bbmt.pb
+$(AUTOGEN_DIR)/bbmt.pb.c $(AUTOGEN_DIR)/bbmt.pb.h: $(AUTOGEN_DIR)/bbmt.pb | $(AUTOGEN_DIR)
 	python $(NANOPB)/generator/nanopb_generator.py $(AUTOGEN_DIR)/bbmt.pb
+
