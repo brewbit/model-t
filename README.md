@@ -15,6 +15,8 @@
 
 Download and install the following while also adding them to your [PATH](http://publib.boulder.ibm.com/iseries/v5r2/ic2924/books/5445775168.htm):
 
+#### Windows
+
 1. [GNU Tools for ARM Embedded Processors](https://launchpad.net/gcc-arm-embedded/+download) latest version
 2. Python Items
   * [Python 2.7](http://www.python.org/download/releases/2.7/)
@@ -27,6 +29,16 @@ Download and install the following while also adding them to your [PATH](http://
 4. [OpenOCD](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/b9phnhj8sx2wrs8/openocd-0.7.0.7z)
   * After installing OpenOCD rename the executable in the /bin directory to "openocd"
 5. [Zadig](http://zadig.akeo.ie/)
+
+#### OS X
+
+1. [GNU Tools for ARM Embedded Processors](https://launchpad.net/gcc-arm-embedded/4.7/4.7-2013-q3-update/+download/gcc-arm-none-eabi-4_7-2013q3-20130916-mac.tar.bz2)
+2. Python Items
+  * `brew install python && brew link python`
+  * `pip install pygame pystache`
+  * `pip install pyprotobuf`
+3. Protobuf stuff
+  * `brew install protobuf`
 
 ## Dependencies
 
