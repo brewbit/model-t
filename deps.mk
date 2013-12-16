@@ -4,6 +4,8 @@ SNACKA    ?= ../snacka
 NANOPB    ?= ../nanopb
 BBMT_MSGS ?= ../brewbit-protobuf-messages
 
+DEPENDENCIES = $(CHIBIOS) $(SNACKA) $(NANOPB) $(BBMT_MSGS)
+
 ######################################
 #              SNACKA                #
 ######################################
@@ -33,5 +35,10 @@ NANOPB_CSRC = \
 ######################################
 BBMT_MSGS_INCLUDES = -I$(BBMT_MSGS) -I$(NANOPB)/generator -I/usr/include
 
+UNAME := $(shell uname)
+ifeq ($(UNAME),Darwin)
+  BBMT_MSGS_INCLUDES += -I/usr/local/include
+endif
 
 .EXPORT_ALL_VARIABLES:
+
