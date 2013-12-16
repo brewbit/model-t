@@ -74,6 +74,8 @@ wifi_scan_screen_create()
   gui_msg_subscribe(MSG_NET_NETWORK_UPDATED, s->widget);
   gui_msg_subscribe(MSG_NET_NETWORK_TIMEOUT, s->widget);
 
+  net_scan_start();
+
   return s->widget;
 }
 
@@ -151,7 +153,7 @@ static void
 back_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-//    net_scan_stop();
+    net_scan_stop();
     gui_pop_screen();
   }
 }

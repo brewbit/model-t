@@ -42,4 +42,10 @@ net_init(void);
 const net_status_t*
 net_get_status(void);
 
+void
+net_scan_start(void);
+
+void
+net_scan_stop(void);
+
 #endif

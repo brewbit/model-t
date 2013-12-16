@@ -54,6 +54,8 @@ save_network(network_t* net);
 
 static net_status_t net_status;
 static bool net_status_updated = true;
+static Thread* thread_scan;
+static network_t networks[16];
 
 
 void
@@ -68,6 +70,22 @@ const net_status_t*
 net_get_status()
 {
   return &net_status;
+}
+
+void
+net_scan_start()
+{
+  if (thread_scan == NULL)
+    thread_scan = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, scan_thread, NULL);
+}
+
+void
+net_scan_stop()
+{
+  chThdTerminate(thread_scan);
+  chThdWait(thread_scan);
+  thread_scan = NULL;
+  memset(networks, 0, sizeof(networks));
 }
 
 static void
@@ -183,7 +201,7 @@ scan_thread(void* arg)
     return 0;
   }
 
-  while (1) {
+  while (!chThdShouldTerminate()) {
     ret = wlan_ioctl_get_scan_results(0, scan_buf);
     if (ret != 0) {
       printf("scan failed: %d\r\n", (int)ret);
@@ -210,10 +228,13 @@ scan_thread(void* arg)
     chThdSleepMilliseconds(500);
   }
 
+  ret = wlan_ioctl_set_scan_params(0, 100, 100, 5, 0x1FFF, -80, 0, 205, channel_interval_list);
+  if (ret != 0) {
+    printf("stop scan failed: %d\r\n", (int)ret);
+  }
+
   return 0;
 }
-
-static network_t networks[16];
 
 static network_t*
 find_network(char* ssid)
@@ -290,7 +311,6 @@ wlan_thread(void* arg)
   }
 
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, mdns_thread, NULL);
-  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, scan_thread, NULL);
 
   while (1) {
     if (net_status_updated) {
