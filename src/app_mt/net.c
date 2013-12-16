@@ -43,9 +43,6 @@ write_wlan_pin(unsigned char val);
 //ota_update_mgr(void);
 
 static void
-broadcast_net_status(void);
-
-static void
 save_or_update_network(network_t* network);
 
 static void
@@ -56,6 +53,7 @@ save_network(network_t* net);
 
 
 static net_status_t net_status;
+static bool net_status_updated = true;
 
 
 void
@@ -89,11 +87,13 @@ wlan_event(long event_type, char * data, unsigned char length)
     // WLAN-connected event
   case HCI_EVNT_WLAN_UNSOL_CONNECT:
     net_status.ap_connected = true;
+    net_status_updated = true;
     break;
 
     // Notification that CC3000 device is disconnected from the access point (AP)
   case HCI_EVNT_WLAN_UNSOL_DISCONNECT:
     net_status.ap_connected = false;
+    net_status_updated = true;
     break;
 
     // Notification of a Dynamic Host Configuration Protocol (DHCP) state change
@@ -104,8 +104,7 @@ wlan_event(long event_type, char * data, unsigned char length)
     sprintf(net_status.default_gateway, "%d.%d.%d.%d", data[11], data[10], data[9], data[8]);
     sprintf(net_status.dhcp_server, "%d.%d.%d.%d", data[15], data[14], data[13], data[12]);
     sprintf(net_status.dns_server, "%d.%d.%d.%d", data[19], data[18], data[17], data[16]);
-
-    broadcast_net_status();
+    net_status_updated = true;
     break;
 
     // Notification that the CC3000 device finished the initialization process
@@ -293,11 +292,8 @@ wlan_thread(void* arg)
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, mdns_thread, NULL);
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, scan_thread, NULL);
 
-  bool last_ap_conn = (bool)-1;
   while (1) {
-//    net_status.net_state = wlan_ioctl_statusget();
-
-    if (net_status.ap_connected != last_ap_conn) {
+    if (net_status_updated) {
       if (net_status.ap_connected) {
         tNetappIpconfigRetArgs ip_cfg;
         netapp_ipconfig(&ip_cfg);
@@ -306,8 +302,8 @@ wlan_thread(void* arg)
         net_status.ssid[32] = 0;
       }
 
-      broadcast_net_status();
-      last_ap_conn = net_status.ap_connected;
+      msg_broadcast(MSG_NET_STATUS, &net_status);
+      net_status_updated = false;
     }
 
     chThdSleepMilliseconds(500);
@@ -316,12 +312,6 @@ wlan_thread(void* arg)
 //  ota_update_mgr();
 
   return 0;
-}
-
-static void
-broadcast_net_status()
-{
-  msg_broadcast(MSG_NET_STATUS, &net_status);
 }
 
 // TODO: move this elsewhere
