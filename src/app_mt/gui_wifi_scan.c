@@ -16,7 +16,6 @@
 
 typedef struct {
   widget_t* widget;
-  widget_t* scan_button;
   widget_t* net_list;
 } wifi_scan_screen_t;
 
@@ -24,7 +23,6 @@ typedef struct {
 static void wifi_scan_screen_destroy(widget_t* w);
 static void wifi_scan_screen_msg(msg_event_t* event);
 static void back_button_clicked(button_event_t* event);
-static void scan_button_clicked(button_event_t* event);
 
 static void
 dispatch_new_network(wifi_scan_screen_t* s, const network_t* network);
@@ -56,8 +54,6 @@ wifi_scan_screen_create()
       .height = 56,
   };
   button_create(s->widget, rect, img_left, WHITE, BLACK, back_button_clicked);
-  rect.x = DISP_WIDTH - 56 - 15;
-  s->scan_button = button_create(s->widget, rect, img_update, WHITE, BLACK, scan_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
@@ -157,16 +153,3 @@ back_button_clicked(button_event_t* event)
     gui_pop_screen();
   }
 }
-
-static void
-scan_button_clicked(button_event_t* event)
-{
-  widget_t* screen = widget_get_parent(event->widget);
-  wifi_scan_screen_t* s = widget_get_instance_data(screen);
-
-  if (event->id == EVT_BUTTON_CLICK) {
-//    net_scan_start();
-    widget_disable(s->scan_button);
-  }
-}
-
