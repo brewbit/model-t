@@ -1,3 +1,6 @@
+.PHONY: update_deps
+
+include deps.mk
 
 JTAG ?= ftdi/olimex-arm-usb-tiny-h
 
@@ -43,5 +46,9 @@ download_bootloader: bootloader
 
 download: download_app_mt download_bootloader
 
+update_deps:
+	@./scripts/update_dependencies.sh $(DEPENDENCIES)
+
 clean:
 	rm -rf .dep build
+

@@ -4,6 +4,8 @@ SNACKA    ?= ../snacka
 NANOPB    ?= ../nanopb
 BBMT_MSGS ?= ../brewbit-protobuf-messages
 
+DEPENDENCIES = $(CHIBIOS) $(SNACKA) $(NANOPB) $(BBMT_MSGS)
+
 ######################################
 #              SNACKA                #
 ######################################
