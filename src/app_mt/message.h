@@ -20,8 +20,9 @@ typedef enum {
   MSG_TEMP_UNIT,
 
   MSG_NET_STATUS,
-  MSG_NET_SCAN_RESULT,
-  MSG_NET_SCAN_COMPLETE,
+  MSG_NET_NEW_NETWORK,     // a new wireless network is now available
+  MSG_NET_NETWORK_UPDATED, // new information for a previously seen network is available
+  MSG_NET_NETWORK_TIMEOUT, // a wireless network is no longer available
 
   MSG_SHOW_ACTIVATION_TOKEN,
 

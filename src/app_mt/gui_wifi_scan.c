@@ -11,20 +11,29 @@
 #include "net.h"
 
 #include <string.h>
+#include <stdio.h>
 
 
 typedef struct {
   widget_t* widget;
-  widget_t* nwk_status1;
-  widget_t* nwk_status2;
+  widget_t* scan_button;
+  widget_t* net_list;
 } wifi_scan_screen_t;
 
 
 static void wifi_scan_screen_destroy(widget_t* w);
 static void wifi_scan_screen_msg(msg_event_t* event);
 static void back_button_clicked(button_event_t* event);
+static void scan_button_clicked(button_event_t* event);
 
-static void dispatch_net_status(wifi_scan_screen_t* s, const net_status_t* status);
+static void
+dispatch_new_network(wifi_scan_screen_t* s, const network_t* network);
+
+static void
+dispatch_network_update(wifi_scan_screen_t* s, const network_t* network);
+
+static void
+dispatch_network_timeout(wifi_scan_screen_t* s, const network_t* network);
 
 
 static widget_class_t wifi_scan_screen_widget_class = {
@@ -47,26 +56,23 @@ wifi_scan_screen_create()
       .height = 56,
   };
   button_create(s->widget, rect, img_left, WHITE, BLACK, back_button_clicked);
+  rect.x = DISP_WIDTH - 56 - 15;
+  s->scan_button = button_create(s->widget, rect, img_update, WHITE, BLACK, scan_button_clicked);
 
   rect.x = 85;
   rect.y = 26;
-  rect.width = 220;
+  rect.width = 160;
   label_create(s->widget, rect, "Network Scan", font_opensans_regular_22, WHITE, 1);
 
   rect.x = 5;
   rect.y = 70;
   rect.width = 300;
   rect.height = 150;
-  widget_t* lb = listbox_create(s->widget, rect, 30);
-  listbox_add_row(lb, label_create(NULL, rect, "row 1", font_opensans_regular_22, WHITE, 1));
-  listbox_add_row(lb, label_create(NULL, rect, "row 2", font_opensans_regular_22, WHITE, 1));
-  listbox_add_row(lb, label_create(NULL, rect, "row 3", font_opensans_regular_22, WHITE, 1));
-  listbox_add_row(lb, label_create(NULL, rect, "row 4", font_opensans_regular_22, WHITE, 1));
-  listbox_add_row(lb, label_create(NULL, rect, "row 5", font_opensans_regular_22, WHITE, 1));
-  listbox_add_row(lb, label_create(NULL, rect, "row 6", font_opensans_regular_22, WHITE, 1));
+  s->net_list = listbox_create(s->widget, rect, 30);
 
-  gui_msg_subscribe(MSG_NET_SCAN_RESULT, s->widget);
-  gui_msg_subscribe(MSG_NET_SCAN_COMPLETE, s->widget);
+  gui_msg_subscribe(MSG_NET_NEW_NETWORK, s->widget);
+  gui_msg_subscribe(MSG_NET_NETWORK_UPDATED, s->widget);
+  gui_msg_subscribe(MSG_NET_NETWORK_TIMEOUT, s->widget);
 
   return s->widget;
 }
@@ -76,8 +82,9 @@ wifi_scan_screen_destroy(widget_t* w)
 {
   wifi_scan_screen_t* s = widget_get_instance_data(w);
 
-  gui_msg_unsubscribe(MSG_NET_SCAN_RESULT, w);
-  gui_msg_unsubscribe(MSG_NET_SCAN_COMPLETE, w);
+  gui_msg_unsubscribe(MSG_NET_NEW_NETWORK, w);
+  gui_msg_unsubscribe(MSG_NET_NETWORK_UPDATED, w);
+  gui_msg_unsubscribe(MSG_NET_NETWORK_TIMEOUT, w);
 
   free(s);
 }
@@ -88,8 +95,16 @@ wifi_scan_screen_msg(msg_event_t* event)
   wifi_scan_screen_t* s = widget_get_instance_data(event->widget);
 
   switch (event->msg_id) {
-  case MSG_NET_STATUS:
-    dispatch_net_status(s, event->msg_data);
+  case MSG_NET_NEW_NETWORK:
+    dispatch_new_network(s, event->msg_data);
+    break;
+
+  case MSG_NET_NETWORK_UPDATED:
+    dispatch_network_update(s, event->msg_data);
+    break;
+
+  case MSG_NET_NETWORK_TIMEOUT:
+    dispatch_network_timeout(s, event->msg_data);
     break;
 
   default:
@@ -98,35 +113,58 @@ wifi_scan_screen_msg(msg_event_t* event)
 }
 
 static void
-dispatch_net_status(wifi_scan_screen_t* s, const net_status_t* status)
+dispatch_new_network(wifi_scan_screen_t* s, const network_t* network)
 {
-  switch (status->net_state) {
-  case NET_DISCONNECTED:
-    label_set_text(s->nwk_status1, "Not connected");
-    label_set_text(s->nwk_status2, "Touch to scan for networks");
-    break;
+  printf("scan result\r\n");
+  printf("  ssid: %s\r\n", network->ssid);
+  printf("  security mode: %d\r\n", network->security_mode);
+  printf("  rssi: %d\r\n", network->rssi);
 
-  case NET_SCANNING:
-    label_set_text(s->nwk_status1, "Scanning for networks...");
-    label_set_text(s->nwk_status2, "");
-    break;
+  rect_t rect = {
+      .x = 0,
+      .y = 0,
+      .width = 220,
+      .height = 40
+  };
+  listbox_add_row(s->net_list, label_create(NULL, rect, network->ssid, font_opensans_regular_22, WHITE, 1));
+}
 
-  case NET_CONNECTING:
-    label_set_text(s->nwk_status1, "Connecting to:");
-    label_set_text(s->nwk_status2, status->ssid);
-    break;
+static void
+dispatch_network_update(wifi_scan_screen_t* s, const network_t* network)
+{
+  printf("net update\r\n");
+  printf("  ssid: %s\r\n", network->ssid);
+  printf("  security mode: %d\r\n", network->security_mode);
+  printf("  rssi: %d\r\n", network->rssi);
+}
 
-  case NET_CONNECTED:
-    label_set_text(s->nwk_status1, "Connected to:");
-    label_set_text(s->nwk_status2, status->ssid);
-    break;
-  }
+static void
+dispatch_network_timeout(wifi_scan_screen_t* s, const network_t* network)
+{
+  printf("net timeout\r\n");
+  printf("  ssid: %s\r\n", network->ssid);
+  printf("  security mode: %d\r\n", network->security_mode);
+  printf("  rssi: %d\r\n", network->rssi);
 }
 
 static void
 back_button_clicked(button_event_t* event)
 {
-  if (event->id == EVT_BUTTON_CLICK)
+  if (event->id == EVT_BUTTON_CLICK) {
+//    net_scan_stop();
     gui_pop_screen();
+  }
+}
+
+static void
+scan_button_clicked(button_event_t* event)
+{
+  widget_t* screen = widget_get_parent(event->widget);
+  wifi_scan_screen_t* s = widget_get_instance_data(screen);
+
+  if (event->id == EVT_BUTTON_CLICK) {
+//    net_scan_start();
+    widget_disable(s->scan_button);
+  }
 }
 

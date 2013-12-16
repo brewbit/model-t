@@ -408,7 +408,7 @@ extern long c_wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long u
                                          unsigned long uiMaxDwellTime, unsigned long uiNumOfProbeRequests,
                                          unsigned long uiChannelMask, long iRSSIThreshold,
                                          unsigned long uiSNRThreshold, unsigned long uiDefaultTxPower,
-                                         unsigned long *aiIntervalList);
+                                         const unsigned long *aiIntervalList);
 
 
 //*****************************************************************************

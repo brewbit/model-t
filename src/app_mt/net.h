@@ -2,6 +2,8 @@
 #ifndef NET_H
 #define NET_H
 
+#include <ch.h>
+
 #include <stdbool.h>
 
 typedef enum {
@@ -25,6 +27,21 @@ typedef struct {
   char dns_server[16];
 } net_status_t;
 
+typedef struct {
+  long rssi;
+  unsigned long security_mode;
+  char          ssid[33];
+  unsigned char bssid[6];
+  systime_t last_seen;
+} network_t;
+
+typedef struct {
+    bool valid;
+    unsigned long networks_found;
+    unsigned long scan_status;
+    unsigned long frame_time;
+    network_t network;
+} net_scan_result_t;
 
 void
 net_init(void);

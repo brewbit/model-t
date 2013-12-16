@@ -452,8 +452,8 @@ long wlan_ioctl_del_profile(unsigned long ulIndex)
 //!
 //!                         - 1 bit isValid - is result valid or not
 //!                         - 7 bits rssi - RSSI value;
-//!                 - 2 bits: securityMode - security mode of the AP:
-//!                           0 - Open, 1 - WEP, 2 WPA, 3 WPA2
+//!                         - 2 bits: securityMode - security mode of the AP:
+//!                            0 - Open, 1 - WEP, 2 WPA, 3 WPA2
 //!                         - 6 bits: SSID name length
 //!                         - 2 bytes: the time at which the entry has entered into
 //!                            scans result table
@@ -521,7 +521,7 @@ long wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwell
                                 unsigned long uiMaxDwellTime, unsigned long uiNumOfProbeRequests,
                                 unsigned long uiChannelMask, long iRSSIThreshold,
                                 unsigned long uiSNRThreshold, unsigned long uiDefaultTxPower,
-                                unsigned long *aiIntervalList)
+                                const unsigned long *aiIntervalList)
 {
     unsigned long  uiRes;
 

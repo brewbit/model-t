@@ -27,6 +27,9 @@ mdns_thread(void* arg);
 static msg_t
 wlan_thread(void* arg);
 
+static msg_t
+scan_thread(void* arg);
+
 static void
 wlan_event(long event_type, char * data, unsigned char length);
 
@@ -42,6 +45,15 @@ write_wlan_pin(unsigned char val);
 static void
 broadcast_net_status(void);
 
+static void
+save_or_update_network(network_t* network);
+
+static void
+prune_networks(void);
+
+static bool
+save_network(network_t* net);
+
 
 static net_status_t net_status;
 
@@ -52,7 +64,6 @@ net_init()
   wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, write_wlan_pin);
 
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, wlan_thread, NULL);
-  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, mdns_thread, NULL);
 }
 
 const net_status_t*
@@ -139,6 +150,126 @@ mdns_thread(void* arg)
   return 0;
 }
 
+static const unsigned long channel_interval_list[16] = {
+    2000,
+    2000,
+    2000,
+    2000,
+    2000,
+    2000,
+    2000,
+    2000,
+    2000,
+    2000,
+    2000,
+    2000,
+    2000,
+    2000,
+    2000,
+    2000,
+};
+
+static msg_t
+scan_thread(void* arg)
+{
+  (void)arg;
+
+  unsigned char scan_buf[50];
+
+  long ret = wlan_ioctl_set_scan_params(26000, 100, 100, 5, 0x1FFF, -80, 0, 205, channel_interval_list);
+  if (ret != 0) {
+    printf("start scan failed: %d\r\n", (int)ret);
+    return 0;
+  }
+
+  while (1) {
+    ret = wlan_ioctl_get_scan_results(0, scan_buf);
+    if (ret != 0) {
+      printf("scan failed: %d\r\n", (int)ret);
+      break;
+    }
+    else {
+      int scan_status = (scan_buf[7] << 24) | (scan_buf[6] << 16) | (scan_buf[5] << 8) | scan_buf[4];
+      int valid = (scan_buf[8] & 0x01);
+      if (scan_status == 1 && valid == 1) {
+        network_t network;
+        network.rssi = (scan_buf[8] >> 1) - 128;
+        network.security_mode = (scan_buf[9] & 0x03);
+        int ssid_len = (scan_buf[9] >> 2);
+        memcpy(network.ssid, &scan_buf[12], ssid_len);
+        network.ssid[ssid_len] = 0;
+        memcpy(network.bssid, &scan_buf[44], 6);
+        network.last_seen = chTimeNow();
+
+        save_or_update_network(&network);
+      }
+      prune_networks();
+    }
+
+    chThdSleepMilliseconds(500);
+  }
+
+  return 0;
+}
+
+static network_t networks[16];
+
+static network_t*
+find_network(char* ssid)
+{
+  int i;
+  for (i = 0; i < 16; ++i) {
+    if (strcmp(networks[i].ssid, ssid) == 0)
+      return &networks[i];
+  }
+
+  return NULL;
+}
+
+static void
+save_or_update_network(network_t* network)
+{
+  network_t* existing_network = find_network(network->ssid);
+
+  if (existing_network == NULL) {
+    if (save_network(network))
+      msg_broadcast(MSG_NET_NEW_NETWORK, network);
+  }
+  else {
+    *existing_network = *network;
+    msg_broadcast(MSG_NET_NETWORK_UPDATED, network);
+  }
+}
+
+static bool
+save_network(network_t* net)
+{
+  int i;
+  for (i = 0; i < 16; ++i) {
+    if (strcmp(networks[i].ssid, "") == 0) {
+      networks[i] = *net;
+      return true;
+    }
+  }
+
+  return false;
+}
+
+#define NETWORK_TIMEOUT S2ST(60)
+
+static void
+prune_networks()
+{
+  int i;
+  for (i = 0; i < 16; ++i) {
+    if ((strcmp(networks[i].ssid, "") != 0) &&
+        (chTimeNow() - networks[i].last_seen) > NETWORK_TIMEOUT) {
+      msg_broadcast(MSG_NET_NETWORK_TIMEOUT, &networks[i]);
+      memset(&networks[i], 0, sizeof(networks[i]));
+    }
+  }
+}
+
 static msg_t
 wlan_thread(void* arg)
 {
@@ -156,6 +287,9 @@ wlan_thread(void* arg)
     printf("  Not up to date. Applying patch.\r\n");
     wlan_apply_patch();
   }
+
+  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, mdns_thread, NULL);
+  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, scan_thread, NULL);
 
   net_state_t last_state = (net_state_t)-1;
   while (1) {

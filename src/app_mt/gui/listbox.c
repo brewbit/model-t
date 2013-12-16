@@ -106,8 +106,8 @@ listbox_layout(widget_t* w)
     }
   }
 
-//  widget_enable(l->up_button, (l->pos > 0));
-//  widget_enable(l->dn_button, (l->pos < (widget_num_children(w) - num_visible_rows)));
+  widget_enable(l->up_button, (l->pos > 0));
+  widget_enable(l->dn_button, (l->pos < (widget_num_children(w) - num_visible_rows)));
 }
 
 static void
@@ -117,8 +117,7 @@ up_button_event(button_event_t* event)
   listbox_t* l = widget_get_instance_data(parent);
 
   if (event->id == EVT_BUTTON_CLICK) {
-    if (l->pos > 0)
-      l->pos--;
+    l->pos--;
   }
 }
 
@@ -129,7 +128,6 @@ down_button_event(button_event_t* event)
   listbox_t* l = widget_get_instance_data(parent);
 
   if (event->id == EVT_BUTTON_CLICK) {
-//    if (l->pos < (widget_num_children(w) - num_visible_rows))
-      l->pos++;
+    l->pos++;
   }
 }
