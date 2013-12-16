@@ -88,10 +88,12 @@ wlan_event(long event_type, char * data, unsigned char length)
 
     // WLAN-connected event
   case HCI_EVNT_WLAN_UNSOL_CONNECT:
+    net_status.ap_connected = true;
     break;
 
     // Notification that CC3000 device is disconnected from the access point (AP)
   case HCI_EVNT_WLAN_UNSOL_DISCONNECT:
+    net_status.ap_connected = false;
     break;
 
     // Notification of a Dynamic Host Configuration Protocol (DHCP) state change
@@ -291,13 +293,12 @@ wlan_thread(void* arg)
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, mdns_thread, NULL);
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, scan_thread, NULL);
 
-  net_state_t last_state = (net_state_t)-1;
+  bool last_ap_conn = (bool)-1;
   while (1) {
-    net_status.net_state = wlan_ioctl_statusget();
+//    net_status.net_state = wlan_ioctl_statusget();
 
-    if (net_status.net_state != last_state) {
-      if ((net_status.net_state == NET_CONNECTING) ||
-          (net_status.net_state == NET_CONNECTED)) {
+    if (net_status.ap_connected != last_ap_conn) {
+      if (net_status.ap_connected) {
         tNetappIpconfigRetArgs ip_cfg;
         netapp_ipconfig(&ip_cfg);
 
@@ -306,10 +307,10 @@ wlan_thread(void* arg)
       }
 
       broadcast_net_status();
-      last_state = net_status.net_state;
+      last_ap_conn = net_status.ap_connected;
     }
 
-    chThdSleepMilliseconds(250);
+    chThdSleepMilliseconds(500);
   }
 
 //  ota_update_mgr();

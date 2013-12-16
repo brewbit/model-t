@@ -111,26 +111,13 @@ wifi_screen_msg(msg_event_t* event)
 static void
 dispatch_net_status(wifi_screen_t* s, const net_status_t* status)
 {
-  switch (status->net_state) {
-  case NET_DISCONNECTED:
-    label_set_text(s->nwk_status1, "Not connected");
-    label_set_text(s->nwk_status2, "Touch to scan for networks");
-    break;
-
-  case NET_SCANNING:
-    label_set_text(s->nwk_status1, "Scanning for networks...");
-    label_set_text(s->nwk_status2, "");
-    break;
-
-  case NET_CONNECTING:
-    label_set_text(s->nwk_status1, "Connecting to:");
-    label_set_text(s->nwk_status2, status->ssid);
-    break;
-
-  case NET_CONNECTED:
+  if (status->ap_connected) {
     label_set_text(s->nwk_status1, "Connected to:");
     label_set_text(s->nwk_status2, status->ssid);
-    break;
+  }
+  else {
+    label_set_text(s->nwk_status1, "Not connected");
+    label_set_text(s->nwk_status2, "Touch to scan for networks");
   }
 }
 
