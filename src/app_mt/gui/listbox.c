@@ -23,6 +23,8 @@ static void listbox_destroy(widget_t* w);
 static void up_button_event(button_event_t* event);
 static void down_button_event(button_event_t* event);
 
+static int num_visible_items(widget_t* lb);
+
 
 static const widget_class_t listbox_widget_class = {
     .on_layout  = listbox_layout,
@@ -109,14 +111,13 @@ listbox_layout(widget_t* w)
 {
   int i;
   listbox_t* l = widget_get_instance_data(w);
-  rect_t rect = widget_get_rect(w);
 
-  int num_visible_items = rect.height / l->item_height;
+  int visible_items = num_visible_items(w);
   for (i = 0; i < widget_num_children(w); ++i) {
     int visible_index = i - l->pos;
 
     widget_t* child = widget_get_child(w, i);
-    if (visible_index >= 0 && visible_index < num_visible_items) {
+    if (visible_index >= 0 && visible_index < visible_items) {
       rect_t child_rect = widget_get_rect(child);
       child_rect.y = (visible_index * l->item_height) + ((l->item_height - child_rect.height) / 2);
       widget_set_rect(child, child_rect);
@@ -128,7 +129,16 @@ listbox_layout(widget_t* w)
   }
 
   widget_enable(l->up_button, (l->pos > 0));
-  widget_enable(l->dn_button, (l->pos < (widget_num_children(w) - num_visible_items)));
+  widget_enable(l->dn_button, (l->pos < (widget_num_children(w) - visible_items)));
+}
+
+static int
+num_visible_items(widget_t* lb)
+{
+  listbox_t* l = widget_get_instance_data(lb);
+  rect_t rect = widget_get_rect(lb);
+
+  return rect.height / l->item_height;
 }
 
 static void
@@ -137,18 +147,26 @@ up_button_event(button_event_t* event)
   widget_t* parent = widget_get_parent(event->widget);
   listbox_t* l = widget_get_instance_data(parent);
 
-  if (event->id == EVT_BUTTON_CLICK) {
-    l->pos--;
+  if (event->id == EVT_BUTTON_CLICK ||
+      event->id == EVT_BUTTON_REPEAT) {
+    if (l->pos > 0) {
+      l->pos--;
+      widget_invalidate(l->item_container);
+    }
   }
 }
 
 static void
 down_button_event(button_event_t* event)
 {
-  widget_t* parent = widget_get_parent(event->widget);
-  listbox_t* l = widget_get_instance_data(parent);
+  widget_t* lb = widget_get_parent(event->widget);
+  listbox_t* l = widget_get_instance_data(lb);
 
-  if (event->id == EVT_BUTTON_CLICK) {
-    l->pos++;
+  if (event->id == EVT_BUTTON_CLICK ||
+      event->id == EVT_BUTTON_REPEAT) {
+    if (l->pos < widget_num_children(l->item_container) - num_visible_items(lb)) {
+      l->pos++;
+      widget_invalidate(l->item_container);
+    }
   }
 }
