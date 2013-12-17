@@ -152,10 +152,11 @@ dispatch_touch(touch_msg_t* touch)
   }
 
   if (dest_widget != NULL) {
+    point_t pos = widget_rel_pos(dest_widget, touch->calib);
     touch_event_t te = {
         .id = touch->touch_down ? EVT_TOUCH_DOWN : EVT_TOUCH_UP,
         .widget = dest_widget,
-        .pos = touch->calib,
+        .pos = pos,
     };
     widget_dispatch_event(dest_widget, (event_t*)&te);
   }
