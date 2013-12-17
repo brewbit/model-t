@@ -13,6 +13,7 @@
 typedef struct widget_s {
   const widget_class_t* widget_class;
   void* instance_data;
+  void* user_data;
 
   struct widget_s* parent;
 
@@ -57,8 +58,7 @@ dispatch_msg(widget_t* w, msg_event_t* event);
 widget_t*
 widget_create(widget_t* parent, const widget_class_t* widget_class, void* instance_data, rect_t rect)
 {
-  widget_t* w = chHeapAlloc(NULL, sizeof(widget_t));
-  memset(w, 0, sizeof(widget_t));
+  widget_t* w = calloc(1, sizeof(widget_t));
 
   w->widget_class = widget_class;
   w->instance_data = instance_data;
@@ -118,6 +118,18 @@ void*
 widget_get_instance_data(widget_t* w)
 {
   return w->instance_data;
+}
+
+void
+widget_set_user_data(widget_t* w, void* user_data)
+{
+  w->user_data = user_data;
+}
+
+void*
+widget_get_user_data(widget_t* w)
+{
+  return w->user_data;
 }
 
 void
@@ -214,6 +226,20 @@ widget_hit_test(widget_t* root, point_t p)
     return root;
 
   return NULL;
+}
+
+point_t
+widget_rel_pos(widget_t* w, point_t abs_pos)
+{
+  widget_t* parent;
+  point_t rel_pos = abs_pos;
+
+  for (parent = w->parent; parent != NULL; parent = parent->parent) {
+    rel_pos.x -= parent->rect.x;
+    rel_pos.y -= parent->rect.y;
+  }
+
+  return rel_pos;
 }
 
 void

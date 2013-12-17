@@ -41,6 +41,12 @@ void*
 widget_get_instance_data(widget_t* w);
 
 void
+widget_set_user_data(widget_t* w, void* user_data);
+
+void*
+widget_get_user_data(widget_t* w);
+
+void
 widget_add_child(widget_t* parent, widget_t* child);
 
 int
@@ -54,6 +60,9 @@ widget_unparent(widget_t* w);
 
 widget_t*
 widget_hit_test(widget_t* root, point_t p);
+
+point_t
+widget_rel_pos(widget_t* w, point_t abs_pos);
 
 void
 widget_dispatch_event(widget_t* w, event_t* event);
