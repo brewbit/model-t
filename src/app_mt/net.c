@@ -48,7 +48,7 @@ save_or_update_network(network_t* network);
 static void
 prune_networks(void);
 
-static bool
+static network_t*
 save_network(network_t* net);
 
 
@@ -170,22 +170,8 @@ mdns_thread(void* arg)
 }
 
 static const unsigned long channel_interval_list[16] = {
-    2000,
-    2000,
-    2000,
-    2000,
-    2000,
-    2000,
-    2000,
-    2000,
-    2000,
-    2000,
-    2000,
-    2000,
-    2000,
-    2000,
-    2000,
-    2000,
+    2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000,
+    2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000
 };
 
 static msg_t
@@ -251,30 +237,31 @@ find_network(char* ssid)
 static void
 save_or_update_network(network_t* network)
 {
-  network_t* existing_network = find_network(network->ssid);
+  network_t* saved_network = find_network(network->ssid);
 
-  if (existing_network == NULL) {
-    if (save_network(network))
-      msg_broadcast(MSG_NET_NEW_NETWORK, network);
+  if (saved_network == NULL) {
+    saved_network = save_network(network);
+    if (saved_network != NULL)
+      msg_broadcast(MSG_NET_NEW_NETWORK, saved_network);
   }
   else {
-    *existing_network = *network;
-    msg_broadcast(MSG_NET_NETWORK_UPDATED, network);
+    *saved_network = *network;
+    msg_broadcast(MSG_NET_NETWORK_UPDATED, saved_network);
   }
 }
 
-static bool
+static network_t*
 save_network(network_t* net)
 {
   int i;
   for (i = 0; i < 16; ++i) {
     if (strcmp(networks[i].ssid, "") == 0) {
       networks[i] = *net;
-      return true;
+      return &networks[i];
     }
   }
 
-  return false;
+  return NULL;
 }
 
 #define NETWORK_TIMEOUT S2ST(60)
