@@ -23,15 +23,16 @@ typedef struct {
 static void wifi_scan_screen_destroy(widget_t* w);
 static void wifi_scan_screen_msg(msg_event_t* event);
 static void back_button_clicked(button_event_t* event);
+static void network_button_event(button_event_t* event);
 
 static void
-dispatch_new_network(wifi_scan_screen_t* s, const network_t* network);
+dispatch_new_network(wifi_scan_screen_t* s, network_t* network);
 
 static void
-dispatch_network_update(wifi_scan_screen_t* s, const network_t* network);
+dispatch_network_update(wifi_scan_screen_t* s, network_t* network);
 
 static void
-dispatch_network_timeout(wifi_scan_screen_t* s, const network_t* network);
+dispatch_network_timeout(wifi_scan_screen_t* s, network_t* network);
 
 
 static widget_class_t wifi_scan_screen_widget_class = {
@@ -111,12 +112,12 @@ wifi_scan_screen_msg(msg_event_t* event)
 }
 
 static void
-dispatch_new_network(wifi_scan_screen_t* s, const network_t* network)
+dispatch_new_network(wifi_scan_screen_t* s, network_t* network)
 {
-  printf("scan result\r\n");
-  printf("  ssid: %s\r\n", network->ssid);
-  printf("  security mode: %d\r\n", network->security_mode);
-  printf("  rssi: %d\r\n", network->rssi);
+//  printf("scan result\r\n");
+//  printf("  ssid: %s\r\n", network->ssid);
+//  printf("  security mode: %d\r\n", network->security_mode);
+//  printf("  rssi: %d\r\n", network->rssi);
 
   rect_t rect = {
       .x = 0,
@@ -124,25 +125,39 @@ dispatch_new_network(wifi_scan_screen_t* s, const network_t* network)
       .width = 220,
       .height = 40
   };
-  listbox_add_row(s->net_list, label_create(NULL, rect, network->ssid, font_opensans_regular_22, WHITE, 1));
+//  widget_t* item = label_create(NULL, rect, network->ssid, font_opensans_regular_22, WHITE, 1);
+  widget_t* item = button_create(NULL, rect, NULL, WHITE, BLACK, network_button_event);
+  button_set_text(item, network->ssid);
+  button_set_font(item, font_opensans_regular_22);
+  widget_set_user_data(item, network);
+  listbox_add_item(s->net_list, item);
 }
 
 static void
-dispatch_network_update(wifi_scan_screen_t* s, const network_t* network)
+dispatch_network_update(wifi_scan_screen_t* s, network_t* network)
 {
-  printf("net update\r\n");
-  printf("  ssid: %s\r\n", network->ssid);
-  printf("  security mode: %d\r\n", network->security_mode);
-  printf("  rssi: %d\r\n", network->rssi);
+//  printf("net update\r\n");
+//  printf("  ssid: %s\r\n", network->ssid);
+//  printf("  security mode: %d\r\n", network->security_mode);
+//  printf("  rssi: %d\r\n", network->rssi);
 }
 
 static void
-dispatch_network_timeout(wifi_scan_screen_t* s, const network_t* network)
+dispatch_network_timeout(wifi_scan_screen_t* s, network_t* network)
 {
   printf("net timeout\r\n");
   printf("  ssid: %s\r\n", network->ssid);
   printf("  security mode: %d\r\n", network->security_mode);
   printf("  rssi: %d\r\n", network->rssi);
+
+  int i;
+  for (i = 0; i < listbox_num_items(s->net_list); ++i) {
+    widget_t* item = listbox_get_item(s->net_list, i);
+    if (network == widget_get_user_data(item)) {
+      listbox_delete_item(item);
+      break;
+    }
+  }
 }
 
 static void
@@ -151,5 +166,14 @@ back_button_clicked(button_event_t* event)
   if (event->id == EVT_BUTTON_CLICK) {
     net_scan_stop();
     gui_pop_screen();
+  }
+}
+
+static void
+network_button_event(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
+    network_t* net = widget_get_user_data(event->widget);
+    printf("clicked network %s\r\n", net->ssid);
   }
 }
