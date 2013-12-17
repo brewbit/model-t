@@ -22,6 +22,13 @@
 #define TOUCH_THRESHOLD 950
 #define DEBOUNCE_TIME MS2ST(20)
 
+// Number of samples to collect before starting to dispatch them to the system.
+// This is mainly used because the last few samples collected on a touch up
+// event are bad. So we use the latest sample to determine if the touch has
+// been lifted, but we report an slightly old (but valid) location that was
+// previously collected.
+#define SAMPLE_DELAY 4
+
 // ADC sample resolution
 #define Q 1024
 
@@ -122,8 +129,10 @@ static const axis_cfg_t y_axis = {
 
 static uint8_t touch_down;
 static systime_t last_touch_time;
-static point_t touch_coord_raw;
-static point_t touch_coord_calib;
+static uint8_t down_samples;
+static uint8_t sample_idx;
+static point_t touch_coord_raw[SAMPLE_DELAY];
+static point_t touch_coord_calib[SAMPLE_DELAY];
 
 void
 touch_init()
@@ -137,8 +146,8 @@ static void
 touch_dispatch()
 {
   touch_msg_t msg = {
-      .raw = touch_coord_raw,
-      .calib = touch_coord_calib,
+      .raw = touch_coord_raw[sample_idx],
+      .calib = touch_coord_calib[sample_idx],
       .touch_down = touch_down
   };
   msg_broadcast(MSG_TOUCH_INPUT, &msg);
@@ -203,29 +212,33 @@ touch_thread(void* arg)
     if (p > TOUCH_THRESHOLD) {
 #if (DISP_ORIENT == LANDSCAPE)
       /* swap the coordinates since the screen is rotated */
-      touch_coord_raw.x = y;
-      touch_coord_raw.y = x;
+      touch_coord_raw[sample_idx].x = y;
+      touch_coord_raw[sample_idx].y = x;
 #else
-      touch_coord_raw.x = x;
-      touch_coord_raw.y = y;
+      touch_coord_raw[sample_idx].x = x;
+      touch_coord_raw[sample_idx].y = y;
 #endif
 
       /* calibrate the raw touch coordinate */
       getDisplayPoint(
-          &touch_coord_calib,
-          &touch_coord_raw,
+          &touch_coord_calib[sample_idx],
+          &touch_coord_raw[sample_idx],
           app_cfg_get_touch_calib());
 
       touch_down = 1;
       last_touch_time = chTimeNow();
+      sample_idx = (sample_idx + 1) % SAMPLE_DELAY;
 
-      /* distribute the touch event */
-      touch_dispatch();
+      if (down_samples < SAMPLE_DELAY)
+        down_samples++;
+      else
+        touch_dispatch();
     }
     else {
       if (touch_down &&
           !chTimeIsWithin(last_touch_time, last_touch_time + DEBOUNCE_TIME)) {
         touch_down = 0;
+        down_samples = 0;
         touch_dispatch();
       }
     }
