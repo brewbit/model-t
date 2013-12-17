@@ -24,7 +24,8 @@ typedef struct widget_s {
   struct widget_s* prev_sibling;
 
   rect_t rect;
-  bool invalid;
+  bool needs_layout;
+  bool needs_paint;
   bool visible;
   bool enabled;
 
@@ -64,7 +65,8 @@ widget_create(widget_t* parent, const widget_class_t* widget_class, void* instan
   w->instance_data = instance_data;
 
   w->rect = rect;
-  w->invalid = true;
+  w->needs_layout = true;
+  w->needs_paint = true;
   w->visible = true;
   w->enabled = true;
   w->bg_color = BLACK;
@@ -297,8 +299,9 @@ widget_layout_predicate(widget_t* w, widget_traversal_event_t event, void* data)
   (void)data;
 
   if (event == WIDGET_TRAVERSAL_BEFORE_CHILDREN) {
-    if (widget_is_visible(w)) {
+    if (w->needs_layout && widget_is_visible(w)) {
       CALL_WC(w, on_layout)(w);
+      w->needs_layout = false;
     }
   }
 }
@@ -314,7 +317,7 @@ widget_paint_predicate(widget_t* w, widget_traversal_event_t event, void* data)
     if (!w->bg_transparent)
       gfx_set_bg_color(w->bg_color);
 
-    if (w->invalid && widget_is_visible(w)) {
+    if (w->needs_paint && widget_is_visible(w)) {
       paint_event_t event = {
           .id = EVT_PAINT,
           .widget = w,
@@ -324,7 +327,7 @@ widget_paint_predicate(widget_t* w, widget_traversal_event_t event, void* data)
 
       CALL_WC(w, on_paint)(&event);
 
-      w->invalid = false;
+      w->needs_paint = false;
     }
 
     gfx_push_translation(w->rect.x, w->rect.y);
@@ -348,8 +351,10 @@ widget_invalidate_predicate(widget_t* w, widget_traversal_event_t event, void* d
 {
   (void)data;
 
-  if (event == WIDGET_TRAVERSAL_BEFORE_CHILDREN)
-    w->invalid = true;
+  if (event == WIDGET_TRAVERSAL_BEFORE_CHILDREN) {
+    w->needs_paint = true;
+    w->needs_layout = true;
+  }
 }
 
 void
