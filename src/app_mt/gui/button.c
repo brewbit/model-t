@@ -171,12 +171,13 @@ button_touch(touch_event_t* event)
         be.id = EVT_BUTTON_UP;
         b->evt_handler(&be);
       }
-//      if (rect_inside(widget_get_rect(event->widget), event->pos)) {
+
+      if (rect_inside(widget_get_rect(event->widget), event->pos)) {
         if (b->evt_handler) {
           be.id = EVT_BUTTON_CLICK;
           b->evt_handler(&be);
         }
-//      }
+      }
     }
   }
 }
