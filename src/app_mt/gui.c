@@ -50,9 +50,11 @@ gui_pop_screen()
 }
 
 void
-gui_acquire_touch_capture(widget_t* widget)
+gui_acquire_touch_capture(widget_t* w)
 {
-  touch_capture_widget = widget;
+  if (widget_is_enabled(w) &&
+      widget_is_visible(w))
+    touch_capture_widget = w;
 }
 
 void
@@ -144,6 +146,11 @@ static void
 dispatch_touch(touch_msg_t* touch)
 {
   widget_t* dest_widget = NULL;
+
+  if ((touch_capture_widget != NULL) &&
+      (!widget_is_enabled(touch_capture_widget) ||
+       !widget_is_visible(touch_capture_widget)))
+    gui_release_touch_capture();
 
   if (touch_capture_widget != NULL)
     dest_widget = touch_capture_widget;
