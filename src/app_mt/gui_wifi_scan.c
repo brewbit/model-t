@@ -24,6 +24,7 @@ static void wifi_scan_screen_destroy(widget_t* w);
 static void wifi_scan_screen_msg(msg_event_t* event);
 static void back_button_clicked(button_event_t* event);
 static void network_button_event(button_event_t* event);
+static void handle_passphrase(const char* passphrase, void* user_data);
 
 static void
 dispatch_new_network(wifi_scan_screen_t* s, network_t* network);
@@ -64,8 +65,8 @@ wifi_scan_screen_create()
   rect.x = 5;
   rect.y = 70;
   rect.width = 300;
-  rect.height = 150;
-  s->net_list = listbox_create(s->widget, rect, 30);
+  rect.height = 160;
+  s->net_list = listbox_create(s->widget, rect, 40);
 
   gui_msg_subscribe(MSG_NET_NEW_NETWORK, s->widget);
   gui_msg_subscribe(MSG_NET_NETWORK_UPDATED, s->widget);
@@ -125,7 +126,6 @@ dispatch_new_network(wifi_scan_screen_t* s, network_t* network)
       .width = 220,
       .height = 40
   };
-//  widget_t* item = label_create(NULL, rect, network->ssid, font_opensans_regular_22, WHITE, 1);
   widget_t* item = button_create(NULL, rect, NULL, WHITE, BLACK, network_button_event);
   button_set_text(item, network->ssid);
   button_set_font(item, font_opensans_regular_22);
@@ -145,10 +145,10 @@ dispatch_network_update(wifi_scan_screen_t* s, network_t* network)
 static void
 dispatch_network_timeout(wifi_scan_screen_t* s, network_t* network)
 {
-  printf("net timeout\r\n");
-  printf("  ssid: %s\r\n", network->ssid);
-  printf("  security mode: %d\r\n", network->security_mode);
-  printf("  rssi: %d\r\n", network->rssi);
+//  printf("net timeout\r\n");
+//  printf("  ssid: %s\r\n", network->ssid);
+//  printf("  security mode: %d\r\n", network->security_mode);
+//  printf("  rssi: %d\r\n", network->rssi);
 
   int i;
   for (i = 0; i < listbox_num_items(s->net_list); ++i) {
@@ -169,11 +169,24 @@ back_button_clicked(button_event_t* event)
   }
 }
 
+static network_t* selected_net;
+
 static void
 network_button_event(button_event_t* event)
 {
+  wifi_scan_screen_t* s = widget_get_instance_data(event->widget);
   if (event->id == EVT_BUTTON_CLICK) {
     network_t* net = widget_get_user_data(event->widget);
-    printf("clicked network %s\r\n", net->ssid);
+    selected_net = net;
+    if (selected_net->security_mode == 0 /* WLAN_SEC_UNSEC */)
+      net_connect(selected_net, NULL);
+    else
+      textentry_screen_show(handle_passphrase, NULL);
   }
+}
+
+static void
+handle_passphrase(const char* passphrase, void* user_data)
+{
+  net_connect(selected_net, passphrase);
 }

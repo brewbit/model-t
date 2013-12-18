@@ -88,6 +88,17 @@ net_scan_stop()
   memset(networks, 0, sizeof(networks));
 }
 
+void
+net_connect(network_t* net, const char* passphrase)
+{
+  if (wlan_ioctl_del_profile(255) != 0)
+    printf("del profile failed\r\n");
+  wlan_add_profile(net->security_mode,
+      (unsigned char*)net->ssid, strlen(net->ssid),
+      NULL, 0, 0x18, 0x1e, 0x2,
+      (unsigned char*)passphrase, strlen(passphrase));
+}
+
 static void
 wlan_event(long event_type, char * data, unsigned char length)
 {
@@ -296,6 +307,9 @@ wlan_thread(void* arg)
     printf("  Not up to date. Applying patch.\r\n");
     wlan_apply_patch();
   }
+
+  if (wlan_ioctl_set_connection_policy(0, 1, 1) != 0)
+    printf("set conn policy failed\r\n");
 
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, mdns_thread, NULL);
 

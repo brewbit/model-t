@@ -48,4 +48,7 @@ net_scan_start(void);
 void
 net_scan_stop(void);
 
+void
+net_connect(network_t* net, const char* passphrase);
+
 #endif
