@@ -4,7 +4,9 @@
 
 #include "gui/widget.h"
 
-widget_t*
-textentry_screen_create(void);
+typedef void (*text_handler_t)(const char* text, void* user_data);
+
+void
+textentry_screen_show(text_handler_t text_handler, void* user_data);
 
 #endif

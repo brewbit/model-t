@@ -16,6 +16,9 @@
 
 
 typedef struct {
+  text_handler_t text_handler;
+  void* user_data;
+
   widget_t* widget;
   widget_t* buttons[3][5];
   widget_t* text_label;
@@ -26,6 +29,7 @@ typedef struct {
 
 static void textentry_screen_destroy(widget_t* w);
 static void back_button_clicked(button_event_t* event);
+static void ok_button_clicked(button_event_t* event);
 static void backspace_button_clicked(button_event_t* event);
 static void up_button_clicked(button_event_t* event);
 static void down_button_clicked(button_event_t* event);
@@ -66,11 +70,14 @@ static const char* btn_layout[NUM_ROWS][5] = {
     {"?","`","~"," ",NULL},
 };
 
-widget_t*
-textentry_screen_create()
+void
+textentry_screen_show(text_handler_t text_handler, void* user_data)
 {
   int i;
   textentry_screen_t* screen = calloc(1, sizeof(textentry_screen_t));
+
+  screen->text_handler = text_handler;
+  screen->user_data = user_data;
 
   screen->widget = widget_create(NULL, &textentry_screen_widget_class, screen, display_rect);
 
@@ -98,7 +105,7 @@ textentry_screen_create()
 
   rect.x = 268;
   rect.y = 5;
-  button_create(screen->widget, rect, img_check, WHITE, BLACK, back_button_clicked);
+  button_create(screen->widget, rect, img_check, WHITE, BLACK, ok_button_clicked);
 
   rect.y = 65;
   button_create(screen->widget, rect, img_backspace, WHITE, BLACK, backspace_button_clicked);
@@ -117,7 +124,7 @@ textentry_screen_create()
   screen->text_label = label_create(screen->widget, rect, "", font_opensans_regular_22, WHITE, 2);
   widget_set_background(screen->text_label, LIGHT_GRAY, false);
 
-  return screen->widget;
+  gui_push_screen(screen->widget);
 }
 
 static void
@@ -158,6 +165,18 @@ back_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK)
     gui_pop_screen();
+}
+
+static void
+ok_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* w = widget_get_parent(event->widget);
+    textentry_screen_t* screen = widget_get_instance_data(w);
+    if (screen->text_handler != NULL)
+      screen->text_handler(screen->text, screen->user_data);
+    gui_pop_screen();
+  }
 }
 
 static void
