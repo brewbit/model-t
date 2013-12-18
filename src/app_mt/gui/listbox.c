@@ -83,6 +83,7 @@ listbox_add_item(widget_t* lb, widget_t* item)
   rect.width = MIN(rect.width, container_rect.width);
   rect.height = MIN(rect.height, l->item_height);
   widget_set_rect(item, rect);
+  widget_invalidate(lb);
 }
 
 int
