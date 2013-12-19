@@ -174,12 +174,11 @@ static network_t* selected_net;
 static void
 network_button_event(button_event_t* event)
 {
-  wifi_scan_screen_t* s = widget_get_instance_data(event->widget);
   if (event->id == EVT_BUTTON_CLICK) {
     network_t* net = widget_get_user_data(event->widget);
     selected_net = net;
     if (selected_net->security_mode == 0 /* WLAN_SEC_UNSEC */)
-      net_connect(selected_net, NULL);
+      handle_passphrase(NULL, NULL);
     else
       textentry_screen_show(handle_passphrase, NULL);
   }
@@ -188,5 +187,7 @@ network_button_event(button_event_t* event)
 static void
 handle_passphrase(const char* passphrase, void* user_data)
 {
+  net_scan_stop();
   net_connect(selected_net, passphrase);
+  gui_pop_screen();
 }
