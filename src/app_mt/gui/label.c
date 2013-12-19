@@ -40,7 +40,7 @@ label_create(widget_t* parent, rect_t rect, const char* text, const font_t* font
 }
 
 void
-label_set_text(widget_t* w, char* text)
+label_set_text(widget_t* w, const char* text)
 {
   label_t* l = widget_get_instance_data(w);
   if (strcmp(l->text, text) != 0) {
