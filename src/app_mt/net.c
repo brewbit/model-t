@@ -18,7 +18,17 @@
 #include <stdio.h>
 
 
+#define SCAN_INTERVAL 1000
 #define SERVICE_NAME "brewbit-model-t"
+
+
+typedef struct {
+    bool valid;
+    unsigned long networks_found;
+    unsigned long scan_status;
+    unsigned long frame_time;
+    network_t network;
+} net_scan_result_t;
 
 
 static msg_t
@@ -75,8 +85,10 @@ net_get_status()
 void
 net_scan_start()
 {
-  if (thread_scan == NULL)
+  if (thread_scan == NULL) {
+    memset(networks, 0, sizeof(networks));
     thread_scan = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, scan_thread, NULL);
+  }
 }
 
 void
@@ -85,7 +97,6 @@ net_scan_stop()
   chThdTerminate(thread_scan);
   chThdWait(thread_scan);
   thread_scan = NULL;
-  memset(networks, 0, sizeof(networks));
 }
 
 void
@@ -97,6 +108,9 @@ net_connect(network_t* net, const char* passphrase)
       (unsigned char*)net->ssid, strlen(net->ssid),
       NULL, 0, 0x18, 0x1e, 0x2,
       (unsigned char*)passphrase, strlen(passphrase));
+
+  wlan_stop();
+  wlan_start(0);
 }
 
 static void
@@ -180,54 +194,86 @@ mdns_thread(void* arg)
   return 0;
 }
 
-static const unsigned long channel_interval_list[16] = {
-    2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000,
-    2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000
-};
+static int
+enable_scan(bool enable)
+{
+  static const unsigned long channel_interval_list[16] = {
+      2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000,
+      2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000
+  };
+
+  unsigned long interval = enable ? SCAN_INTERVAL : 0;
+  return wlan_ioctl_set_scan_params(interval, 100, 100, 5, 0x1FFF, -80, 0, 205, channel_interval_list);
+}
+
+static long
+perform_scan()
+{
+  // enable scanning
+  long ret = enable_scan(true);
+  if (ret != 0)
+    return ret;
+
+  // wait for scan to complete
+  chThdSleepMilliseconds(SCAN_INTERVAL);
+
+  // disable scanning
+  return enable_scan(false);
+}
+
+static long
+get_scan_result(net_scan_result_t* result)
+{
+  unsigned char scan_buf[50];
+
+  long ret = wlan_ioctl_get_scan_results(0, scan_buf);
+  if (ret != 0)
+    return ret;
+
+  result->networks_found = (scan_buf[3] << 24) | (scan_buf[2] << 16) | (scan_buf[1] << 8) | scan_buf[0];
+  result->scan_status = (scan_buf[7] << 24) | (scan_buf[6] << 16) | (scan_buf[5] << 8) | scan_buf[4];
+  result->valid = (scan_buf[8] & 0x01);
+
+  result->network.rssi = (scan_buf[8] >> 1) - 128;
+  result->network.security_mode = (scan_buf[9] & 0x03);
+
+  int ssid_len = (scan_buf[9] >> 2);
+  memcpy(result->network.ssid, &scan_buf[12], ssid_len);
+  result->network.ssid[ssid_len] = 0;
+
+  memcpy(result->network.bssid, &scan_buf[44], 6);
+
+  result->network.last_seen = chTimeNow();
+
+  return 0;
+}
 
 static msg_t
 scan_thread(void* arg)
 {
   (void)arg;
 
-  unsigned char scan_buf[50];
-
-  long ret = wlan_ioctl_set_scan_params(26000, 100, 100, 5, 0x1FFF, -80, 0, 205, channel_interval_list);
-  if (ret != 0) {
-    printf("start scan failed: %d\r\n", (int)ret);
-    return 0;
-  }
-
   while (!chThdShouldTerminate()) {
-    ret = wlan_ioctl_get_scan_results(0, scan_buf);
-    if (ret != 0) {
-      printf("scan failed: %d\r\n", (int)ret);
-      break;
-    }
-    else {
-      int scan_status = (scan_buf[7] << 24) | (scan_buf[6] << 16) | (scan_buf[5] << 8) | scan_buf[4];
-      int valid = (scan_buf[8] & 0x01);
-      if (scan_status == 1 && valid == 1) {
-        network_t network;
-        network.rssi = (scan_buf[8] >> 1) - 128;
-        network.security_mode = (scan_buf[9] & 0x03);
-        int ssid_len = (scan_buf[9] >> 2);
-        memcpy(network.ssid, &scan_buf[12], ssid_len);
-        network.ssid[ssid_len] = 0;
-        memcpy(network.bssid, &scan_buf[44], 6);
-        network.last_seen = chTimeNow();
+    if (perform_scan() == 0) {
+      net_scan_result_t result;
+      do {
+        if (get_scan_result(&result) != 0)
+          break;
 
-        save_or_update_network(&network);
-      }
+        // TODO have to check !chThdShouldTerminate() because the thread that will be broadcast to
+        // might be waiting for this thread to terminate, and if so, trying to broadcast to it
+        // will cause deadlock... Instead of blocking call for scan stop, use a central network
+        // state machine that handles connection/scanning/etc and use non-blocking calls to change
+        // states
+        if (result.scan_status == 1 && result.valid && !chThdShouldTerminate())
+          save_or_update_network(&result.network);
+      } while (result.networks_found > 1 && !chThdShouldTerminate()); // TODO remove eventually
+
+      if (!chThdShouldTerminate()) // TODO remove eventually
       prune_networks();
     }
 
     chThdSleepMilliseconds(500);
-  }
-
-  ret = wlan_ioctl_set_scan_params(0, 100, 100, 5, 0x1FFF, -80, 0, 205, channel_interval_list);
-  if (ret != 0) {
-    printf("stop scan failed: %d\r\n", (int)ret);
   }
 
   return 0;

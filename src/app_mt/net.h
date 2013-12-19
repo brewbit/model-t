@@ -28,13 +28,6 @@ typedef struct {
   systime_t last_seen;
 } network_t;
 
-typedef struct {
-    bool valid;
-    unsigned long networks_found;
-    unsigned long scan_status;
-    unsigned long frame_time;
-    network_t network;
-} net_scan_result_t;
 
 void
 net_init(void);
