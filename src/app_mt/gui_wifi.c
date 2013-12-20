@@ -16,6 +16,8 @@ typedef struct {
   widget_t* widget;
   widget_t* nwk_status1;
   widget_t* nwk_status2;
+  widget_t* acct_status1;
+  widget_t* acct_status2;
 } wifi_screen_t;
 
 
@@ -51,29 +53,57 @@ wifi_screen_create()
   rect.x = 85;
   rect.y = 26;
   rect.width = 220;
-  label_create(s->widget, rect, "WiFi Config", font_opensans_regular_22, WHITE, 1);
+  label_create(s->widget, rect, "Connection Settings", font_opensans_regular_22, WHITE, 1);
 
-  rect.x = 10;
-  rect.y = 95;
-  rect.width = 300;
-  rect.height = 66;
-  widget_t* nwk_button = button_create(s->widget, rect, NULL, WHITE, BLACK, network_button_clicked);
+  // create network connection button
+  {
+    rect.x = 10;
+    rect.y = 85;
+    rect.width = 300;
+    rect.height = 66;
+    widget_t* nwk_button = button_create(s->widget, rect, NULL, WHITE, BLACK, network_button_clicked);
 
-  rect.x = 5;
-  rect.y = 5;
-  rect.width = 56;
-  rect.height = 56;
-  icon_create(nwk_button, rect, img_signal, WHITE, CYAN);
+    rect.x = 5;
+    rect.y = 5;
+    rect.width = 56;
+    rect.height = 56;
+    icon_create(nwk_button, rect, img_signal, WHITE, CYAN);
 
-  rect.x = 70;
-  rect.y = 5;
-  rect.width = 200;
-  label_create(nwk_button, rect, "Network", font_opensans_regular_18, WHITE, 1);
+    rect.x = 70;
+    rect.y = 5;
+    rect.width = 200;
+    label_create(nwk_button, rect, "Network Connection", font_opensans_regular_18, WHITE, 1);
 
-  rect.y = 30;
-  s->nwk_status1 = label_create(nwk_button, rect, "", font_opensans_regular_12, WHITE, 1);
-  rect.y += font_opensans_regular_12->line_height;
-  s->nwk_status2 = label_create(nwk_button, rect, "", font_opensans_regular_12, WHITE, 1);
+    rect.y = 30;
+    s->nwk_status1 = label_create(nwk_button, rect, "", font_opensans_regular_12, WHITE, 1);
+    rect.y += font_opensans_regular_12->line_height;
+    s->nwk_status2 = label_create(nwk_button, rect, "", font_opensans_regular_12, WHITE, 1);
+  }
+
+  // create account connection button
+  {
+    rect.x = 10;
+    rect.y = 155;
+    rect.width = 300;
+    rect.height = 66;
+    widget_t* acct_button = button_create(s->widget, rect, NULL, WHITE, BLACK, network_button_clicked);
+
+    rect.x = 5;
+    rect.y = 5;
+    rect.width = 56;
+    rect.height = 56;
+    icon_create(acct_button, rect, img_signal, WHITE, CYAN);
+
+    rect.x = 70;
+    rect.y = 5;
+    rect.width = 200;
+    label_create(acct_button, rect, "Account Connection", font_opensans_regular_18, WHITE, 1);
+
+    rect.y = 30;
+    s->acct_status1 = label_create(acct_button, rect, "", font_opensans_regular_12, WHITE, 1);
+    rect.y += font_opensans_regular_12->line_height;
+    s->acct_status2 = label_create(acct_button, rect, "", font_opensans_regular_12, WHITE, 1);
+  }
 
   const net_status_t* net_status = net_get_status();
   dispatch_net_status(s, net_status);
