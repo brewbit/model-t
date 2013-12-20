@@ -353,9 +353,6 @@ wlan_thread(void* arg)
       scan_thread();
     else {
       if (net_status.net_state != last_net_state) {
-        msg_broadcast(MSG_NET_STATUS, &net_status);
-        last_net_state = net_status.net_state;
-
         switch (net_status.net_state) {
         case NS_CONNECT:
         {
@@ -397,6 +394,9 @@ wlan_thread(void* arg)
         default:
           break;
         }
+
+        msg_broadcast(MSG_NET_STATUS, &net_status);
+        last_net_state = net_status.net_state;
       }
     }
 
