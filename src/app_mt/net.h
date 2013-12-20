@@ -6,10 +6,23 @@
 
 #include <stdbool.h>
 
+typedef enum {
+  NS_DISCONNECTED,
+  NS_CONNECT,
+  NS_CONNECTING,
+  NS_CONNECTED,
+  NS_CONNECT_FAILED
+} net_state_t;
+
 typedef struct {
+  bool scan_active;
+
+  net_state_t net_state;
+
   // AP status
-  bool ap_connected;
   char ssid[33];
+  unsigned long security_mode;
+  char passphrase[128];
 
   // DHCP status
   bool dhcp_resolved;

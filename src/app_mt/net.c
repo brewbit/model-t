@@ -37,8 +37,8 @@ mdns_thread(void* arg);
 static msg_t
 wlan_thread(void* arg);
 
-static msg_t
-scan_thread(void* arg);
+static void
+scan_thread(void);
 
 static void
 wlan_event(long event_type, char * data, unsigned char length);
@@ -61,10 +61,18 @@ prune_networks(void);
 static network_t*
 save_network(network_t* net);
 
+static int
+enable_scan(bool enable);
+
+static long
+perform_scan(void);
+
+static long
+get_scan_result(net_scan_result_t* result);
+
 
 static net_status_t net_status;
-static bool net_status_updated = true;
-static Thread* thread_scan;
+static net_state_t last_net_state;
 static network_t networks[16];
 
 
@@ -85,32 +93,23 @@ net_get_status()
 void
 net_scan_start()
 {
-  if (thread_scan == NULL) {
-    memset(networks, 0, sizeof(networks));
-    thread_scan = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, scan_thread, NULL);
-  }
+  memset(networks, 0, sizeof(networks));
+  net_status.scan_active = true;
 }
 
 void
 net_scan_stop()
 {
-  chThdTerminate(thread_scan);
-  chThdWait(thread_scan);
-  thread_scan = NULL;
+  net_status.scan_active = false;
 }
 
 void
 net_connect(network_t* net, const char* passphrase)
 {
-  if (wlan_ioctl_del_profile(255) != 0)
-    printf("del profile failed\r\n");
-  wlan_add_profile(net->security_mode,
-      (unsigned char*)net->ssid, strlen(net->ssid),
-      NULL, 0, 0x18, 0x1e, 0x2,
-      (unsigned char*)passphrase, strlen(passphrase));
-
-  wlan_stop();
-  wlan_start(0);
+  net_status.security_mode = net->security_mode;
+  strncpy(net_status.ssid, net->ssid, sizeof(net_status.ssid));
+  strncpy(net_status.passphrase, passphrase, sizeof(net_status.passphrase));
+  net_status.net_state = NS_CONNECT;
 }
 
 static void
@@ -129,14 +128,15 @@ wlan_event(long event_type, char * data, unsigned char length)
 
     // WLAN-connected event
   case HCI_EVNT_WLAN_UNSOL_CONNECT:
-    net_status.ap_connected = true;
-    net_status_updated = true;
+    net_status.net_state = NS_CONNECTED;
     break;
 
     // Notification that CC3000 device is disconnected from the access point (AP)
   case HCI_EVNT_WLAN_UNSOL_DISCONNECT:
-    net_status.ap_connected = false;
-    net_status_updated = true;
+    if (net_status.net_state == NS_CONNECTING)
+      net_status.net_state = NS_CONNECT_FAILED;
+    else
+      net_status.net_state = NS_DISCONNECTED;
     break;
 
     // Notification of a Dynamic Host Configuration Protocol (DHCP) state change
@@ -147,7 +147,6 @@ wlan_event(long event_type, char * data, unsigned char length)
     sprintf(net_status.default_gateway, "%d.%d.%d.%d", data[11], data[10], data[9], data[8]);
     sprintf(net_status.dhcp_server, "%d.%d.%d.%d", data[15], data[14], data[13], data[12]);
     sprintf(net_status.dns_server, "%d.%d.%d.%d", data[19], data[18], data[17], data[16]);
-    net_status_updated = true;
     break;
 
     // Notification that the CC3000 device finished the initialization process
@@ -248,35 +247,25 @@ get_scan_result(net_scan_result_t* result)
   return 0;
 }
 
-static msg_t
-scan_thread(void* arg)
+static void
+scan_thread()
 {
-  (void)arg;
-
-  while (!chThdShouldTerminate()) {
+  while (net_status.scan_active) {
     if (perform_scan() == 0) {
       net_scan_result_t result;
       do {
         if (get_scan_result(&result) != 0)
           break;
 
-        // TODO have to check !chThdShouldTerminate() because the thread that will be broadcast to
-        // might be waiting for this thread to terminate, and if so, trying to broadcast to it
-        // will cause deadlock... Instead of blocking call for scan stop, use a central network
-        // state machine that handles connection/scanning/etc and use non-blocking calls to change
-        // states
-        if (result.scan_status == 1 && result.valid && !chThdShouldTerminate())
+        if (result.scan_status == 1 && result.valid)
           save_or_update_network(&result.network);
-      } while (result.networks_found > 1 && !chThdShouldTerminate()); // TODO remove eventually
+      } while (result.networks_found > 1);
 
-      if (!chThdShouldTerminate()) // TODO remove eventually
       prune_networks();
     }
 
     chThdSleepMilliseconds(500);
   }
-
-  return 0;
 }
 
 static network_t*
@@ -360,23 +349,59 @@ wlan_thread(void* arg)
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, mdns_thread, NULL);
 
   while (1) {
-    if (net_status_updated) {
-      if (net_status.ap_connected) {
-        tNetappIpconfigRetArgs ip_cfg;
-        netapp_ipconfig(&ip_cfg);
+    if (net_status.scan_active)
+      scan_thread();
+    else {
+      if (net_status.net_state != last_net_state) {
+        msg_broadcast(MSG_NET_STATUS, &net_status);
+        last_net_state = net_status.net_state;
 
-        memcpy(net_status.ssid, ip_cfg.uaSSID, 32);
-        net_status.ssid[32] = 0;
+        switch (net_status.net_state) {
+        case NS_CONNECT:
+        {
+          // Delete any stored profiles
+          long ret = wlan_ioctl_del_profile(255);
+          if (ret != 0)
+            net_status.net_state = NS_CONNECT_FAILED;
+
+          // Add the new profile
+          ret = wlan_add_profile(net_status.security_mode,
+              (unsigned char*)net_status.ssid, strlen(net_status.ssid),
+              NULL, 0, 0x18, 0x1e, 0x2,
+              (unsigned char*)net_status.passphrase, strlen(net_status.passphrase));
+          if (ret != 0)
+            net_status.net_state = NS_CONNECT_FAILED;
+
+          // Restart the module
+          wlan_stop();
+          chThdSleepMilliseconds(100);
+          wlan_start(0);
+
+          net_status.net_state = NS_CONNECTING;
+          break;
+        }
+
+        case NS_CONNECTED:
+        {
+          tNetappIpconfigRetArgs ip_cfg;
+          netapp_ipconfig(&ip_cfg);
+
+          memcpy(net_status.ssid, ip_cfg.uaSSID, 32);
+          net_status.ssid[32] = 0;
+          break;
+        }
+
+        case NS_CONNECTING:
+        case NS_CONNECT_FAILED:
+        case NS_DISCONNECTED:
+        default:
+          break;
+        }
       }
-
-      msg_broadcast(MSG_NET_STATUS, &net_status);
-      net_status_updated = false;
     }
 
     chThdSleepMilliseconds(500);
   }
-
-//  ota_update_mgr();
 
   return 0;
 }
