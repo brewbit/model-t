@@ -15,8 +15,17 @@
 #include "bbmt.pb.h"
 
 
+typedef enum {
+  AS_REQUEST_ACTIVATION_TOKEN,
+  AS_WAIT_FOR_ACTIVATION_TOKEN,
+  AS_WAIT_FOR_ACTIVATION_NOTIFICATION,
+  AS_IDLE
+} api_state_t;
+
+
 typedef struct {
   snWebsocket* ws;
+  api_state_t state;
 } web_api_t;
 
 
@@ -37,6 +46,12 @@ send_api_msg(snWebsocket* ws, ApiMessage* msg);
 
 static void
 dispatch_api_msg(web_api_t* api, ApiMessage* msg);
+
+static void
+api_exec(web_api_t* api);
+
+static void
+request_activation_token(web_api_t* api);
 
 
 void
@@ -62,36 +77,70 @@ web_api_thread(void* arg)
         websocket_error,
         api); // callback data
 
-  snError err = snWebsocket_connect(api->ws, "brewbit.herokuapp.com", NULL, NULL, 80);
+  while (1) {
+    switch(snWebsocket_getState(api->ws)) {
+    case SN_STATE_OPEN:
+      api_exec(api);
+      // intentional fall-through
 
-  if (err != SN_NO_ERROR) {
-    printf("websocket connect failed %d\r\n", err);
+    case SN_STATE_CONNECTING:
+    case SN_STATE_CLOSING:
+      snWebsocket_poll(api->ws);
+      break;
+
+    case SN_STATE_CLOSED:
+    {
+      snError err = snWebsocket_connect(api->ws, "brewbit.herokuapp.com", NULL, NULL, 80);
+
+      if (err != SN_NO_ERROR)
+        printf("websocket connect failed %d\r\n", err);
+      break;
+    }
+
+    default:
+      break;
+    }
+
+    chThdSleepMilliseconds(250);
   }
 
-  while (snWebsocket_getState(api->ws) != SN_STATE_OPEN) {
-    snWebsocket_poll(api->ws);
-    chThdSleepSeconds(1);
-  }
+  return 0;
+}
 
+static void
+api_exec(web_api_t* api)
+{
+  switch (api->state) {
+  case AS_REQUEST_ACTIVATION_TOKEN:
+    request_activation_token(api);
+    api->state = AS_WAIT_FOR_ACTIVATION_TOKEN;
+    break;
+
+  case AS_WAIT_FOR_ACTIVATION_TOKEN:
+    break;
+
+  case AS_WAIT_FOR_ACTIVATION_NOTIFICATION:
+    break;
+
+  case AS_IDLE:
+    break;
+
+  default:
+    break;
+  }
+}
+
+static void
+request_activation_token(web_api_t* api)
+{
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_ACTIVATION_TOKEN_REQUEST;
   msg->has_activationTokenRequest = true;
   strcpy(msg->activationTokenRequest.device_id, "asdfasdf");
 
   send_api_msg(api->ws, msg);
+
   free(msg);
-
-  while (snWebsocket_getState(api->ws) != SN_STATE_CLOSED) {
-    snWebsocket_poll(api->ws);
-    chThdSleepSeconds(1);
-  }
-
-  printf("closed...\r\n");
-  while (1) {
-    chThdSleepSeconds(1);
-  }
-
-  return 0;
 }
 
 static void
@@ -144,23 +193,13 @@ websocket_error(void* userData, snError error)
 static void
 dispatch_api_msg(web_api_t* api, ApiMessage* msg)
 {
-  (void)api;
-
   switch (msg->type) {
-  case ApiMessage_Type_ACTIVATION_TOKEN_REQUEST:
-    printf("rx activation token request\r\n");
-    break;
-
   case ApiMessage_Type_ACTIVATION_TOKEN_RESPONSE:
-    printf("rx activation token response\r\n");
+    api->state = AS_WAIT_FOR_ACTIVATION_NOTIFICATION;
     break;
 
   case ApiMessage_Type_ACTIVATION_NOTIFICATION:
-    printf("rx activation notification\r\n");
-    break;
-
-  case ApiMessage_Type_AUTH_REQUEST:
-    printf("rx auth request\r\n");
+    api->state = AS_IDLE;
     break;
 
   case ApiMessage_Type_AUTH_RESPONSE:
@@ -172,6 +211,7 @@ dispatch_api_msg(web_api_t* api, ApiMessage* msg)
     break;
 
   default:
+    printf("Unsupported API message: %d\r\n", msg->type);
     break;
   }
 }
