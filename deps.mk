@@ -11,6 +11,7 @@ DEPENDENCIES = $(CHIBIOS) $(SNACKA) $(NANOPB) $(BBMT_MSGS)
 ######################################
 SNACKA_SRCDIR = $(SNACKA)/src
 SNACKA_INCDIR = $(SNACKA_SRCDIR)
+SNACKA_DEFS = -DPB_FIELD_16BIT
 SNACKA_CSRC = \
 	$(SNACKA_SRCDIR)/snacka/frame.c \
 	$(SNACKA_SRCDIR)/snacka/frameheader.c \
