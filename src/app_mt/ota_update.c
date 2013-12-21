@@ -18,6 +18,9 @@ static void
 ota_update_dispatch(msg_id_t id, void* msg_data, void* user_data);
 
 static void
+dispatch_ota_update_start(void);
+
+static void
 dispatch_ota_update_chunk(UpdateChunk* update_chunk);
 
 
@@ -29,19 +32,14 @@ ota_update_init()
 {
   Thread* update_thd = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, ota_update_thread, NULL);
 
+  msg_subscribe(MSG_OTAU_START, update_thd, ota_update_dispatch, NULL);
   msg_subscribe(MSG_OTAU_CHUNK, update_thd, ota_update_dispatch, NULL);
 }
 
 void
 ota_update_start()
 {
-  if (!sxfs_part_clear(SP_OTA_UPDATE_IMG))
-    printf("part clear failed\r\n");
-
-  if (!sxfs_part_open(&part, SP_OTA_UPDATE_IMG))
-    printf("part open failed\r\n");
-
-  web_api_request_update();
+  msg_broadcast(MSG_OTAU_START, NULL);
 }
 
 static msg_t
@@ -73,9 +71,27 @@ ota_update_dispatch(msg_id_t id, void* msg_data, void* user_data)
     dispatch_ota_update_chunk(msg_data);
     break;
 
+  case MSG_OTAU_START:
+    dispatch_ota_update_start();
+    break;
+
   default:
     break;
   }
+}
+
+static void
+dispatch_ota_update_start()
+{
+//  msg_broadcast(MSG_OTAU_STATUS, NULL);
+
+  if (!sxfs_part_clear(SP_OTA_UPDATE_IMG))
+    printf("part clear failed\r\n");
+
+  if (!sxfs_part_open(&part, SP_OTA_UPDATE_IMG))
+    printf("part open failed\r\n");
+
+  web_api_request_update();
 }
 
 static void

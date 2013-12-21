@@ -128,9 +128,8 @@ static void
 update_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    ota_update_start();
-//  widget_t* update_screen = update_screen_create();
-//  gui_push_screen(update_screen);
+    widget_t* update_screen = update_screen_create();
+    gui_push_screen(update_screen);
   }
 }
 

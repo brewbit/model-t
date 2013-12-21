@@ -6,17 +6,9 @@
 #include "gui/progressbar.h"
 #include "gui.h"
 #include "gfx.h"
+#include "ota_update.h"
 
 #include <string.h>
-
-
-typedef enum {
-  UPDATE_CHECKING_VERSION,
-  UPDATE_AVAILABLE,
-  UPDATE_NOT_AVAILABLE,
-  UPDATE_DOWNLOADING,
-  UPDATE_APPLYING
-} update_state_t;
 
 
 typedef struct {
@@ -25,20 +17,19 @@ typedef struct {
   widget_t* header_label;
   widget_t* desc_label;
   widget_t* progress;
-
-  update_state_t state;
-  VirtualTimer timer;
 } update_screen_t;
 
 
+
+static void update_screen_msg(msg_event_t* event);
 static void update_screen_destroy(widget_t* w);
 static void back_button_clicked(button_event_t* event);
 static void update_button_clicked(button_event_t* event);
-static void update_ui(update_screen_t* s);
-static void update_state(void* arg);
+static void dispatch_update_status(update_screen_t* s, ota_update_status_t* status);
 
 
 widget_class_t update_screen_widget_class = {
+    .on_msg     = update_screen_msg,
     .on_destroy = update_screen_destroy
 };
 
@@ -48,8 +39,6 @@ update_screen_create()
 {
   update_screen_t* s = chHeapAlloc(NULL, sizeof(update_screen_t));
   memset(s, 0, sizeof(update_screen_t));
-
-  s->state = UPDATE_CHECKING_VERSION;
 
   s->widget = widget_create(NULL, &update_screen_widget_class, s, display_rect);
 
@@ -93,7 +82,7 @@ update_screen_create()
   s->progress = progressbar_create(s->widget, rect, CYAN, ORANGE);
   widget_hide(s->progress);
 
-  update_ui(s);
+  gui_msg_subscribe(MSG_OTAU_STATUS, s->widget);
 
   return s->widget;
 }
@@ -107,6 +96,21 @@ update_screen_destroy(widget_t* w)
 }
 
 static void
+update_screen_msg(msg_event_t* event)
+{
+  update_screen_t* s = widget_get_instance_data(event->widget);
+
+  switch (event->msg_id) {
+  case MSG_OTAU_STATUS:
+    dispatch_update_status(s, event->msg_data);
+    break;
+
+  default:
+    break;
+  }
+}
+
+static void
 back_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK)
@@ -117,70 +121,69 @@ static void
 update_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    widget_t* w = widget_get_parent(event->widget);
-    update_screen_t* s = widget_get_instance_data(w);
-
-    if (s->state == UPDATE_AVAILABLE) {
-      s->state = UPDATE_DOWNLOADING;
-      update_ui(s);
-    }
+    ota_update_start();
   }
 }
 
 static void
-update_ui(update_screen_t* s)
+dispatch_update_status(update_screen_t* s, ota_update_status_t* status)
 {
   char* header = NULL;
   char* desc = NULL;
-  int delay = 0;
 
-  switch (s->state) {
-  case UPDATE_CHECKING_VERSION:
-    header = "Checking for updates";
-    desc = "Contacting server...";
-    delay = 4000;
-    s->state = UPDATE_NOT_AVAILABLE;
+  switch (status->state) {
+  case OU_PREPARING:
     break;
 
-  case UPDATE_AVAILABLE:
-    header = "Update available!";
-    desc = "Touch here to apply the update.";
+  case OU_REQUESTING:
     break;
 
-  case UPDATE_NOT_AVAILABLE:
-    header = "You're up to date!";
-    desc = "There are currently no updates.";
+  case OU_DOWNLOADING:
     break;
 
-  case UPDATE_DOWNLOADING:
-    header = "Downloading update";
-    desc = "Do not remove power during update!";
-
-    widget_show(s->progress);
-    if (progressbar_get_progress(s->progress) < 100) {
-      progressbar_set_progress(s->progress, progressbar_get_progress(s->progress) + 1);
-    }
-    else {
-      progressbar_set_progress(s->progress, 0);
-      s->state = UPDATE_APPLYING;
-    }
-    delay = 50;
+  case OU_COMPLETE:
     break;
 
-  case UPDATE_APPLYING:
-    header = "Applying update";
-    desc = "Do not remove power during update!";
-
-    widget_show(s->progress);
-    if (progressbar_get_progress(s->progress) < 100) {
-      progressbar_set_progress(s->progress, progressbar_get_progress(s->progress) + 1);
-      delay = 100;
-    }
-    else {
-      gui_pop_screen();
-      gui_pop_screen();
-    }
+  case OU_FAILED:
     break;
+
+//  case OU_PREPARING:
+//    header = "Checking for updates";
+//    desc = "Contacting server...";
+//    break;
+//
+//  case UPDATE_AVAILABLE:
+//    header = "Update available!";
+//    desc = "Touch here to apply the update.";
+//    break;
+//
+//  case UPDATE_NOT_AVAILABLE:
+//    header = "You're up to date!";
+//    desc = "There are currently no updates.";
+//    break;
+//
+//  case UPDATE_DOWNLOADING:
+//    header = "Downloading update";
+//    desc = "Do not remove power during update!";
+//
+//    widget_show(s->progress);
+//    if (progressbar_get_progress(s->progress) < 100) {
+//      progressbar_set_progress(s->progress, progressbar_get_progress(s->progress) + 1);
+//    }
+//    else {
+//      progressbar_set_progress(s->progress, 0);
+//    }
+//    break;
+//
+//  case UPDATE_APPLYING:
+//    header = "Applying update";
+//    desc = "Do not remove power during update!";
+//
+//    widget_show(s->progress);
+//    if (progressbar_get_progress(s->progress) < 100) {
+//      progressbar_set_progress(s->progress, progressbar_get_progress(s->progress) + 1);
+//    }
+//    break;
 
   default:
     break;
@@ -188,14 +191,4 @@ update_ui(update_screen_t* s)
 
   label_set_text(s->header_label, header);
   label_set_text(s->desc_label, desc);
-
-  if (delay != 0)
-    chVTSetI(&s->timer, MS2ST(delay), update_state, s);
-}
-
-static void
-update_state(void* arg)
-{
-  update_screen_t* s = arg;
-  update_ui(s);
 }

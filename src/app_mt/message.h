@@ -28,6 +28,7 @@ typedef enum {
 
   MSG_OTAU_START,
   MSG_OTAU_CHUNK,
+  MSG_OTAU_STATUS,
 
   NUM_THREAD_MSGS
 } msg_id_t;

@@ -105,8 +105,8 @@ web_api_thread(void* arg)
     case SN_STATE_CLOSED:
     {
       printf("WS connecting\r\n");
-//      snError err = snWebsocket_connect(api->ws, "brewbit.herokuapp.com", NULL, NULL, 80);
-      snError err = snWebsocket_connect(api->ws, "192.168.1.146", NULL, NULL, 9000);
+      snError err = snWebsocket_connect(api->ws, "brewbit.herokuapp.com", NULL, NULL, 80);
+//      snError err = snWebsocket_connect(api->ws, "192.168.1.146", NULL, NULL, 9000);
 
       if (err != SN_NO_ERROR)
         printf("websocket connect failed %d\r\n", err);
