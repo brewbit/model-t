@@ -26,6 +26,9 @@ typedef enum {
 
   MSG_SHOW_ACTIVATION_TOKEN,
 
+  MSG_OTAU_START,
+  MSG_OTAU_CHUNK,
+
   NUM_THREAD_MSGS
 } msg_id_t;
 

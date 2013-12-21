@@ -13,12 +13,17 @@
 
 #include "web_api.h"
 #include "bbmt.pb.h"
+#include "message.h"
 
 
 typedef enum {
+  AS_REQUEST_AUTH,
+  AS_WAIT_FOR_AUTH,
   AS_REQUEST_ACTIVATION_TOKEN,
   AS_WAIT_FOR_ACTIVATION_TOKEN,
   AS_WAIT_FOR_ACTIVATION_NOTIFICATION,
+  AS_REQUEST_UPDATE,
+  AS_WAIT_FOR_UPDATE,
   AS_IDLE
 } api_state_t;
 
@@ -27,6 +32,8 @@ typedef struct {
   snWebsocket* ws;
   api_state_t state;
 } web_api_t;
+
+static web_api_t* api;
 
 
 static msg_t
@@ -53,6 +60,12 @@ api_exec(web_api_t* api);
 static void
 request_activation_token(web_api_t* api);
 
+static void
+request_auth(web_api_t* api);
+
+static void
+request_update(web_api_t* api);
+
 
 void
 web_api_init()
@@ -68,7 +81,8 @@ web_api_thread(void* arg)
 
   chThdSleepMilliseconds(5000);
 
-  web_api_t* api = calloc(1, sizeof(web_api_t));
+  api = calloc(1, sizeof(web_api_t));
+  api->state = AS_REQUEST_AUTH;
 
   api->ws = snWebsocket_create(
         NULL, // open callback
@@ -90,10 +104,14 @@ web_api_thread(void* arg)
 
     case SN_STATE_CLOSED:
     {
-      snError err = snWebsocket_connect(api->ws, "brewbit.herokuapp.com", NULL, NULL, 80);
+      printf("WS connecting\r\n");
+//      snError err = snWebsocket_connect(api->ws, "brewbit.herokuapp.com", NULL, NULL, 80);
+      snError err = snWebsocket_connect(api->ws, "192.168.1.131", NULL, NULL, 5000);
 
       if (err != SN_NO_ERROR)
         printf("websocket connect failed %d\r\n", err);
+      else
+        printf("websocket connect OK\r\n");
       break;
     }
 
@@ -111,6 +129,15 @@ static void
 api_exec(web_api_t* api)
 {
   switch (api->state) {
+  case AS_REQUEST_AUTH:
+    printf("requesting auth\r\n");
+    request_auth(api);
+    api->state = AS_WAIT_FOR_AUTH;
+    break;
+
+  case AS_WAIT_FOR_AUTH:
+    break;
+
   case AS_REQUEST_ACTIVATION_TOKEN:
     request_activation_token(api);
     api->state = AS_WAIT_FOR_ACTIVATION_TOKEN;
@@ -120,6 +147,14 @@ api_exec(web_api_t* api)
     break;
 
   case AS_WAIT_FOR_ACTIVATION_NOTIFICATION:
+    break;
+
+  case AS_REQUEST_UPDATE:
+    request_update(api);
+    api->state = AS_WAIT_FOR_UPDATE;
+    break;
+
+  case AS_WAIT_FOR_UPDATE:
     break;
 
   case AS_IDLE:
@@ -137,6 +172,41 @@ request_activation_token(web_api_t* api)
   msg->type = ApiMessage_Type_ACTIVATION_TOKEN_REQUEST;
   msg->has_activationTokenRequest = true;
   strcpy(msg->activationTokenRequest.device_id, "asdfasdf");
+
+  send_api_msg(api->ws, msg);
+
+  free(msg);
+}
+
+static void
+request_auth(web_api_t* api)
+{
+  ApiMessage* msg = calloc(1, sizeof(ApiMessage));
+  msg->type = ApiMessage_Type_AUTH_REQUEST;
+  msg->has_authRequest = true;
+  unsigned long *devid = (unsigned long *)0x1FFF7A10;
+  sprintf(msg->authRequest.device_id, "%08x%08x%08x", devid[0], devid[1], devid[2]);
+  sprintf(msg->authRequest.activation_token, "asdfasdf");
+
+  send_api_msg(api->ws, msg);
+
+  free(msg);
+}
+
+void
+web_api_request_update(void)
+{
+  printf("setting state request update\r\n");
+  api->state = AS_REQUEST_UPDATE;
+}
+
+static void
+request_update(web_api_t* api)
+{
+  ApiMessage* msg = calloc(1, sizeof(ApiMessage));
+  msg->type = ApiMessage_Type_UPDATE_REQUEST;
+  msg->has_updateRequest = true;
+  msg->updateRequest.blah = 42;
 
   send_api_msg(api->ws, msg);
 
@@ -203,11 +273,13 @@ dispatch_api_msg(web_api_t* api, ApiMessage* msg)
     break;
 
   case ApiMessage_Type_AUTH_RESPONSE:
-    printf("rx auth response\r\n");
+    printf("got auth response\r\n");
+    api->state = AS_IDLE;
     break;
 
-  case ApiMessage_Type_DEVICE_REPORT:
-    printf("rx device report\r\n");
+  case ApiMessage_Type_UPDATE_CHUNK:
+    printf("got update chunk %d %d\r\n", msg->updateChunk.data.size, msg->updateChunk.offset);
+    msg_broadcast(MSG_OTAU_CHUNK, &msg->updateChunk);
     break;
 
   default:

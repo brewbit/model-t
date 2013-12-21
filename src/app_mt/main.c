@@ -15,6 +15,7 @@
 #include "debug_client.h"
 #include "net.h"
 #include "sntp.h"
+#include "ota_update.h"
 #include <chprintf.h>
 
 #include <stdio.h>
@@ -49,7 +50,8 @@ main(void)
   touch_init();
   temp_control_init();
   net_init();
-//  web_api_init();
+  ota_update_init();
+  web_api_init();
 //  sntp_init();
   gui_init();
 

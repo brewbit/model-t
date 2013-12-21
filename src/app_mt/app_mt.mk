@@ -45,6 +45,7 @@ PROJECT_CSRC = \
        message.c \
        net.c \
        onewire.c \
+       ota_update.c \
        pid.c \
        quantity_widget.c \
        sensor.c \

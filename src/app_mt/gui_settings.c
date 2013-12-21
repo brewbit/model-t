@@ -8,6 +8,7 @@
 #include "gui_update.h"
 #include "gui_calib.h"
 #include "gui_activation.h"
+#include "ota_update.h"
 
 #include <string.h>
 
@@ -127,6 +128,7 @@ static void
 update_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
+    ota_update_start();
 //  widget_t* update_screen = update_screen_create();
 //  gui_push_screen(update_screen);
   }
