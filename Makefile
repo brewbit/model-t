@@ -46,6 +46,9 @@ download_bootloader: bootloader
 
 download: download_app_mt download_bootloader
 
+test_server: app_mt
+	PYTHONPATH=build/app_mt/autogen:$(NANOPB)/generator python scripts/test_server.py
+
 update_deps:
 	@./scripts/update_dependencies.sh $(DEPENDENCIES)
 

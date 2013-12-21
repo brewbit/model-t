@@ -236,7 +236,7 @@ $(AUTOGEN_DIR)/image_resources.c $(AUTOGEN_DIR)/image_resources.h: scripts/imgco
 	python scripts/imgconv $(wildcard images/*.png)
 
 $(AUTOGEN_DIR)/bbmt.pb: | $(AUTOGEN_DIR)
-	protoc $(BBMT_MSGS_INCLUDES) -o$@ $(BBMT_MSGS)/bbmt.proto
+	protoc $(BBMT_MSGS_INCLUDES) -o$@ --python_out=$(AUTOGEN_DIR) $(BBMT_MSGS)/bbmt.proto
 	
 $(AUTOGEN_DIR)/bbmt.pb.c $(AUTOGEN_DIR)/bbmt.pb.h: $(AUTOGEN_DIR)/bbmt.pb | $(AUTOGEN_DIR)
 	python $(NANOPB)/generator/nanopb_generator.py $(AUTOGEN_DIR)/bbmt.pb

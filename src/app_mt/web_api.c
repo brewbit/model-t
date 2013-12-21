@@ -106,7 +106,7 @@ web_api_thread(void* arg)
     {
       printf("WS connecting\r\n");
 //      snError err = snWebsocket_connect(api->ws, "brewbit.herokuapp.com", NULL, NULL, 80);
-      snError err = snWebsocket_connect(api->ws, "192.168.1.131", NULL, NULL, 5000);
+      snError err = snWebsocket_connect(api->ws, "192.168.1.146", NULL, NULL, 9000);
 
       if (err != SN_NO_ERROR)
         printf("websocket connect failed %d\r\n", err);
