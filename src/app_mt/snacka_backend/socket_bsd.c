@@ -215,6 +215,10 @@ int stfSocket_connect(stfSocket* s,
     return 0;
   }
 
+  //set socket to non-blocking
+  unsigned long val = SOCK_ON;
+  setsockopt(s->fileDescriptor, SOL_SOCKET, SOCKOPT_NONBLOCK, &val, sizeof(val));
+
   sockaddr_in addr = {0};
   addr.sin_family = AF_INET;
   addr.sin_port = htons(port);
