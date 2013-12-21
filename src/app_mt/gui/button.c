@@ -17,7 +17,7 @@ typedef struct {
   uint16_t icon_color;
   uint16_t btn_color;
   systime_t next_event_time;
-  const char* text;
+  char* text;
   const font_t* font;
 
   button_event_handler_t evt_handler;
