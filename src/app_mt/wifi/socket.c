@@ -45,6 +45,12 @@
 #include "core/socket.h"
 
 #include <string.h>
+#include <stdbool.h>
+
+
+static int
+common_recv(long sd, void *buf, long len, long flags, sockaddr *from, socklen_t *fromlen);
+
 
 extern wlan_socket_t           g_sockets[MAX_NUM_OF_SOCKETS];
 
@@ -73,27 +79,44 @@ extern int                     g_should_poll_accept;
 #endif
 
 
-static void find_add_next_free_socket(int sd)
+static void
+find_add_next_free_socket(int sd)
 {
-    int index = 0;
-    for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
-        if (g_sockets[index].status == SOC_NOT_INITED){
-            g_sockets[index].status = SOCK_ON;
-            g_sockets[index].sd = sd;
-            return;
-        }
+  int i;
+  for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
+    if (g_sockets[i].status == SOC_NOT_INITED){
+      g_sockets[i].status = SOCK_ON;
+      g_sockets[i].sd = sd;
+      g_sockets[i].recv_timeout = TIME_INFINITE;
+      g_sockets[i].nonblock = SOCK_OFF;
+      return;
     }
+  }
 }
 
-static void find_clear_socket(int sd)
+static void
+find_clear_socket(int sd)
 {
-    int index = 0;
-    for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
-        if (g_sockets[index].sd == sd){
-            g_sockets[index].status = SOC_NOT_INITED;
-            g_sockets[index].sd = -1;
-        }
+  int i;
+  for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
+    if (g_sockets[i].sd == sd){
+      g_sockets[i].status = SOC_NOT_INITED;
+      g_sockets[i].sd = -1;
     }
+  }
+}
+
+static wlan_socket_t*
+find_socket_by_sd(long sd)
+{
+  int i;
+
+  for (i = 0; i < MAX_NUM_OF_SOCKETS; i++) {
+    if (g_sockets[i].sd == sd)
+      return &g_sockets[i];
+  }
+
+  return NULL;
 }
 
 //*****************************************************************************
@@ -491,11 +514,58 @@ setsockopt(long sd, long level, long optname, const void *optval, socklen_t optl
 {
     int ret;
 
-    chMtxLock(&g_main_mutex);
-    ret = c_setsockopt(sd, level, optname, optval, optlen);
-    chMtxUnlock();
+    wlan_socket_t* s = find_socket_by_sd(sd);
+    if (s == NULL) {
+      errno = EBADF;
+      return -1;
+    }
 
-    return(ret);
+    bool handled_locally = false;
+    if (level == SOL_SOCKET) {
+      switch (optname) {
+      case SOCKOPT_RECV_TIMEOUT:
+        if (optlen != sizeof(unsigned long)) {
+          errno = EINVAL;
+          ret = -1;
+        }
+        else {
+          s->recv_timeout = *((unsigned long*)optval);
+          ret = 0;
+        }
+        handled_locally = true;
+        break;
+
+      case SOCKOPT_NONBLOCK:
+        if (optlen != sizeof(unsigned long)) {
+          errno = EINVAL;
+          ret = -1;
+        }
+        else {
+          unsigned long nonblock = *((unsigned long*)optval);
+          if (nonblock == SOCK_ON || nonblock == SOCK_OFF) {
+            s->nonblock = nonblock;
+            ret = 0;
+          }
+          else {
+            errno = EINVAL;
+            ret = -1;
+          }
+        }
+        handled_locally = true;
+        break;
+
+      default:
+        break;
+      }
+    }
+
+    if (!handled_locally) {
+      chMtxLock(&g_main_mutex);
+      ret = c_setsockopt(sd, level, optname, optval, optlen);
+      chMtxUnlock();
+    }
+
+    return ret;
 }
 #endif
 
@@ -583,32 +653,7 @@ getsockopt(long sd, long level, long optname, void *optval, socklen_t *optlen)
 int
 recv(long sd, void *buf, long len, long flags)
 {
-    int ret;
-    int index = 0;
-
-    chSemSignal(&g_select_sleep_semaphore); //wakeup select thread if needed
-
-    for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
-        if (g_sockets[index].sd == sd){
-            /* wait for data to become available */
-            chSemWait(&g_sockets[index].sd_semaphore);
-        }
-    }
-
-    /* suspend select thread until waiting for more data */
-    chSemWait(&g_select_sleep_semaphore);
-
-    if (g_wlan_stopped){ //if wlan_stop then return
-        return -1;
-    }
-
-    /* call the original recv knowing there is available data
-       and it's a non-blocking call */
-    chMtxLock(&g_main_mutex);
-    ret = c_recv(sd, buf, len, flags);
-    chMtxUnlock();
-
-    return(ret);
+  return common_recv(sd, buf, len, flags, NULL, NULL);
 }
 
 //*****************************************************************************
@@ -643,29 +688,60 @@ int
 recvfrom(long sd, void *buf, long len, long flags,
          sockaddr *from, socklen_t *fromlen)
 {
-    int index = 0;
-    int ret;
+  if (from == NULL || fromlen == NULL) {
+    errno = EINVAL;
+    return -1;
+  }
 
-    chSemSignal(&g_select_sleep_semaphore); //wakeup select thread if needed
-    for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
-        if (g_sockets[index].sd == sd){
-            /* wait for data to become available */
-            chSemWait(&g_sockets[index].sd_semaphore);
-        }
-    }
-    chSemWait(&g_select_sleep_semaphore); //suspend select thread until waiting for more data
+  return common_recv(sd, buf, len, flags, from, fromlen);
+}
 
-    if (g_wlan_stopped){ //if wlan_stop then return
-        return -1;
-    }
+static int
+common_recv(long sd, void *buf, long len, long flags,
+    sockaddr *from, socklen_t *fromlen)
+{
+  int ret = -1;
+  systime_t timeout;
 
-    /* Call the original recv knowing there is available data
+  wlan_socket_t* s = find_socket_by_sd(sd);
+  if (s == NULL) {
+    errno = EBADF;
+    return -1;
+  }
+
+  if (s->nonblock == SOCK_ON)
+    timeout = TIME_IMMEDIATE;
+  else
+    timeout = s->recv_timeout;
+
+  /* wakeup select thread if needed */
+  chSemSignal(&g_select_sleep_semaphore);
+  /* wait for data to become available */
+  msg_t rdy = chBSemWaitTimeout(&s->sd_semaphore, timeout);
+  /* suspend select thread until waiting for more data */
+  chSemWait(&g_select_sleep_semaphore);
+
+  if (rdy == RDY_TIMEOUT) {
+    errno = EWOULDBLOCK;
+    return -1;
+  }
+
+  if (g_wlan_stopped) { //if wlan_stop then return
+    return -1;
+  }
+
+  if (rdy == RDY_OK) {
+    /* call the original recv knowing there is available data
        and it's a non-blocking call */
     chMtxLock(&g_main_mutex);
-    ret = c_recvfrom(sd, buf, len, flags, from, fromlen);
+    if (from == NULL || fromlen == NULL)
+      ret = c_recv(sd, buf, len, flags);
+    else
+      ret = c_recvfrom(sd, buf, len, flags, from, fromlen);
     chMtxUnlock();
+  }
 
-    return(ret);
+  return ret;
 }
 
 //*****************************************************************************

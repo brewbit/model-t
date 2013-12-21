@@ -169,12 +169,14 @@ void wlan_start(unsigned short usPatchesAvailableAtHost)
 {
   chMtxLock(&g_main_mutex);
 
-  int index = 0;
+  int i = 0;
 
-  for(index = 0; index < MAX_NUM_OF_SOCKETS; index++){
-    g_sockets[index].sd = -1;
-    g_sockets[index].status = SOC_NOT_INITED;
-    chSemInit(&g_sockets[index].sd_semaphore, 0);
+  for(i = 0; i < MAX_NUM_OF_SOCKETS; i++){
+    g_sockets[i].sd = -1;
+    g_sockets[i].status = SOC_NOT_INITED;
+    g_sockets[i].recv_timeout = TIME_INFINITE;
+    g_sockets[i].nonblock = SOCK_OFF;
+    chBSemInit(&g_sockets[i].sd_semaphore, FALSE);
   }
 
   chSemInit(&g_accept_semaphore, 0);
@@ -208,7 +210,7 @@ void wlan_start(unsigned short usPatchesAvailableAtHost)
 
 void wlan_stop(void)
 {
-    int index = 0;
+    int i = 0;
 
     chMtxLock(&g_main_mutex);
 
@@ -220,9 +222,9 @@ void wlan_stop(void)
     g_select_thread = NULL;
     g_wlan_stopped = 1;
 
-    for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
-        g_sockets[index].sd = 1;
-        g_sockets[index].status = SOC_NOT_INITED;
+    for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
+        g_sockets[i].sd = 1;
+        g_sockets[i].status = SOC_NOT_INITED;
     }
 
     chMtxUnlock();
@@ -714,13 +716,13 @@ SelectThread(void *arg)
 
   int ret = 0;
   int maxFD = 0;
-  int index = 0;
+  int i = 0;
 
   chRegSetThreadName("SelectThread");
 
   memset(&timeout, 0, sizeof(struct timeval));
   timeout.tv_sec = 0;
-  timeout.tv_usec = (500 * 1000);          /* 500 msecs */
+  timeout.tv_usec = (200 * 1000);          /* 200 msecs */
 
   while (1) //run until closed by wlan_stop
   {
@@ -738,11 +740,11 @@ SelectThread(void *arg)
     WFD_ZERO(&readsds);
 
     /* ping correct socket descriptor param for select */
-    for (index = 0; index < MAX_NUM_OF_SOCKETS; index++){
-      if (g_sockets[index].status == SOCK_ON){
-        WFD_SET(g_sockets[index].sd, &readsds);
-        if (maxFD <= g_sockets[index].sd)
-          maxFD = g_sockets[index].sd + 1;
+    for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
+      if (g_sockets[i].status == SOCK_ON){
+        WFD_SET(g_sockets[i].sd, &readsds);
+        if (maxFD <= g_sockets[i].sd)
+          maxFD = g_sockets[i].sd + 1;
       }
     }
 
@@ -750,11 +752,11 @@ SelectThread(void *arg)
                                                               to process "accept" below */
 
     if (ret>0) {
-      for (index = 0; index < MAX_NUM_OF_SOCKETS; index++) {
-        if (g_sockets[index].status != SOC_NOT_INITED && //check that the socket is valid
-            g_sockets[index].sd != g_accept_socket &&    //verify this is not an accept socket
-            WFD_ISSET(g_sockets[index].sd, &readsds)) {    //and has pending data
-          chSemSignal(&g_sockets[index].sd_semaphore); //release the semaphore
+      for (i = 0; i < MAX_NUM_OF_SOCKETS; i++) {
+        if (g_sockets[i].status != SOC_NOT_INITED && //check that the socket is valid
+            g_sockets[i].sd != g_accept_socket &&    //verify this is not an accept socket
+            WFD_ISSET(g_sockets[i].sd, &readsds)) {    //and has pending data
+          chBSemSignal(&g_sockets[i].sd_semaphore); //release the semaphore
         }
       }
     }

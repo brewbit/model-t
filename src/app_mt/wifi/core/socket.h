@@ -61,7 +61,9 @@ typedef struct _wlan_socket_t
 {
   int sd;
   long status;
-  Semaphore sd_semaphore;
+  BinarySemaphore sd_semaphore;
+  systime_t recv_timeout;
+  long nonblock;
 }wlan_socket_t;
 
 //*****************************************************************************
