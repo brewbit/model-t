@@ -206,7 +206,7 @@ request_update(web_api_t* api)
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_UPDATE_REQUEST;
   msg->has_updateRequest = true;
-  msg->updateRequest.blah = 42;
+  msg->updateRequest.device_version = 42;
 
   send_api_msg(api->ws, msg);
 
