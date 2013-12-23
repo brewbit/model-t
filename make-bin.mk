@@ -189,6 +189,8 @@ DLIBS = -lm
 UDEFS = -DMAJOR_VERSION=$(MAJOR_VERSION) \
         -DMINOR_VERSION=$(MINOR_VERSION) \
         -DPATCH_VERSION=$(PATCH_VERSION) \
+        -DWEB_API_HOST=$(WEB_API_HOST) \
+        -DWEB_API_PORT=$(WEB_API_PORT) \
          $(foreach dep,$(addsuffix _DEFS,$(DEPS)),$($(dep)))
 
 # Define ASM defines here

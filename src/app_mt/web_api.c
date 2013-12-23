@@ -15,6 +15,18 @@
 #include "bbmt.pb.h"
 #include "message.h"
 
+#ifndef WEB_API_HOST
+#define WEB_API_HOST_STR "brewbit.herokuapp.com"
+#else
+#define xstr(s) str(s)
+#define str(s) #s
+#define WEB_API_HOST_STR xstr(WEB_API_HOST)
+#endif
+
+#ifndef WEB_API_PORT
+#define WEB_API_PORT 80
+#endif
+
 
 typedef enum {
   AS_REQUEST_AUTH,
@@ -105,8 +117,7 @@ web_api_thread(void* arg)
     case SN_STATE_CLOSED:
     {
       printf("WS connecting\r\n");
-      snError err = snWebsocket_connect(api->ws, "brewbit.herokuapp.com", NULL, NULL, 80);
-//      snError err = snWebsocket_connect(api->ws, "192.168.1.146", NULL, NULL, 9000);
+      snError err = snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT);
 
       if (err != SN_NO_ERROR)
         printf("websocket connect failed %d\r\n", err);
@@ -184,7 +195,7 @@ request_auth(web_api_t* api)
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_AUTH_REQUEST;
   msg->has_authRequest = true;
-  unsigned long *devid = (unsigned long *)0x1FFF7A10;
+  uint32_t* devid = (uint32_t*)0x1FFF7A10;
   sprintf(msg->authRequest.device_id, "%08x%08x%08x", devid[0], devid[1], devid[2]);
   sprintf(msg->authRequest.activation_token, "asdfasdf");
 
