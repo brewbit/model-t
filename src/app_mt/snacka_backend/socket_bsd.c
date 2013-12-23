@@ -286,12 +286,10 @@ int stfSocket_receiveData(stfSocket* s, char* data, int maxNumBytes, int* numByt
   errno = 0;
 //    assert(data);
   int success = 1;
-  printf("+recv\r\n");
   int bytesRecvd = recv(s->fileDescriptor,
       data,
       maxNumBytes,
       0);
-  printf("-recv\r\n");
     
   int ignores[2] = {EAGAIN, EWOULDBLOCK};
   if (shouldStopOnError(s, errno, ignores, 2)) {
