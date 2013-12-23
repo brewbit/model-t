@@ -93,6 +93,8 @@ msg_broadcast(msg_id_t id, void* msg_data, bool wait)
       if (listener->thread != chThdSelf())
         *thread_count += 1;
     }
+    if (*thread_count == 0)
+      free(thread_count);
   }
 
   for (listener = listeners[id]; listener != NULL; listener = listener->next) {
