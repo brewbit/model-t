@@ -30,6 +30,8 @@ typedef enum {
   MSG_OTAU_CHUNK,
   MSG_OTAU_STATUS,
 
+  MSG_CHECK_UPDATE,
+
   MSG_SHUTDOWN,
 
   NUM_THREAD_MSGS
@@ -64,6 +66,9 @@ msg_post(msg_id_t id, void* msg_data);
 
 thread_msg_t*
 msg_get(void);
+
+thread_msg_t*
+msg_get_timeout(systime_t timeout);
 
 void
 msg_release(thread_msg_t* msg);

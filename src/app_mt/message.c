@@ -123,10 +123,19 @@ msg_broadcast(msg_id_t id, void* msg_data, bool wait)
 thread_msg_t*
 msg_get()
 {
+  return msg_get_timeout(TIME_INFINITE);
+}
+
+thread_msg_t*
+msg_get_timeout(systime_t timeout)
+{
   Thread* curThread = chThdSelf();
   thread_msg_t* msg;
-  chMBFetch(&curThread->mb, (msg_t*)&msg, TIME_INFINITE);
-  return msg;
+  msg_t rdy = chMBFetch(&curThread->mb, (msg_t*)&msg, timeout);
+  if (rdy == RDY_OK)
+    return msg;
+
+  return NULL;
 }
 
 void
@@ -145,8 +154,8 @@ msg_release(thread_msg_t* msg)
     uint32_t result;
     uint32_t thd_cnt;
     do {
-      thd_cnt = __LDREXW(msg->thread_count);
-      result = __STREXW(thd_cnt - 1, msg->thread_count);
+      thd_cnt = __LDREXW(msg->thread_count) - 1;
+      result = __STREXW(thd_cnt, msg->thread_count);
     } while (result != 0);
 
     // This is the last thread to process the message, so we have to clean
