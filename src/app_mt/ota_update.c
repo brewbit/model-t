@@ -104,6 +104,8 @@ dispatch_ota_update_chunk(UpdateChunk* update_chunk)
     if (sxfs_part_verify(SP_OTA_UPDATE_IMG)) {
       printf("image verified resetting to apply update...\r\n");
 
+      msg_broadcast(MSG_SHUTDOWN, NULL);
+
       chThdSleepSeconds(1);
 
       NVIC_SystemReset();

@@ -81,7 +81,9 @@ net_init()
 {
   wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, write_wlan_pin);
 
-  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, wlan_thread, NULL);
+  Thread* thd_wlan = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, wlan_thread, NULL);
+
+//  msg_subscribe(MSG_SHUTDOWN, thd_wlan, dispatch, NULL);
 }
 
 const net_status_t*

@@ -30,6 +30,8 @@ typedef enum {
   MSG_OTAU_CHUNK,
   MSG_OTAU_STATUS,
 
+  MSG_SHUTDOWN,
+
   NUM_THREAD_MSGS
 } msg_id_t;
 
