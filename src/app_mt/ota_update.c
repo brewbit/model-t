@@ -39,7 +39,7 @@ ota_update_init()
 void
 ota_update_start()
 {
-  msg_send(MSG_OTAU_START, NULL);
+  msg_post(MSG_OTAU_START, NULL);
 }
 
 static msg_t
