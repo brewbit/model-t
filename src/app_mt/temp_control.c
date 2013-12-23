@@ -129,10 +129,11 @@ temp_control_thread(void* arg)
   chRegSetThreadName("temp_control");
 
   while (1) {
-    Thread* tp = chMsgWait();
-    thread_msg_t* msg = (thread_msg_t*)chMsgGet(tp);
+    thread_msg_t* msg = msg_get();
+
     dispatch_temp_input_msg(msg->id, msg->msg_data, msg->user_data);
-    chMsgRelease(tp, 0);
+
+    msg_release(msg);
   }
 
   return 0;

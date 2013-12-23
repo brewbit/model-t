@@ -290,7 +290,7 @@ dispatch_api_msg(web_api_t* api, ApiMessage* msg)
 
   case ApiMessage_Type_UPDATE_CHUNK:
     printf("got update chunk %d %d\r\n", msg->updateChunk.data.size, msg->updateChunk.offset);
-    msg_broadcast(MSG_OTAU_CHUNK, &msg->updateChunk);
+    msg_send(MSG_OTAU_CHUNK, &msg->updateChunk);
     break;
 
   default:

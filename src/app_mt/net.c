@@ -290,11 +290,11 @@ save_or_update_network(network_t* network)
   if (saved_network == NULL) {
     saved_network = save_network(network);
     if (saved_network != NULL)
-      msg_broadcast(MSG_NET_NEW_NETWORK, saved_network);
+      msg_send(MSG_NET_NEW_NETWORK, saved_network);
   }
   else {
     *saved_network = *network;
-    msg_broadcast(MSG_NET_NETWORK_UPDATED, saved_network);
+    msg_send(MSG_NET_NETWORK_UPDATED, saved_network);
   }
 }
 
@@ -321,7 +321,7 @@ prune_networks()
   for (i = 0; i < 16; ++i) {
     if ((strcmp(networks[i].ssid, "") != 0) &&
         (chTimeNow() - networks[i].last_seen) > NETWORK_TIMEOUT) {
-      msg_broadcast(MSG_NET_NETWORK_TIMEOUT, &networks[i]);
+      msg_send(MSG_NET_NETWORK_TIMEOUT, &networks[i]);
       memset(&networks[i], 0, sizeof(networks[i]));
     }
   }
@@ -397,7 +397,7 @@ wlan_thread(void* arg)
           break;
         }
 
-        msg_broadcast(MSG_NET_STATUS, &net_status);
+        msg_send(MSG_NET_STATUS, &net_status);
         last_net_state = net_status.net_state;
       }
     }

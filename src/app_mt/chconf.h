@@ -453,13 +453,18 @@
  */
 /*===========================================================================*/
 
+#define MAX_THREAD_MAILBOX_MSGS 64
+
 /**
  * @brief   Threads descriptor structure extension.
  * @details User fields added to the end of the @p Thread structure.
  */
 #if !defined(THREAD_EXT_FIELDS) || defined(__DOXYGEN__)
 #define THREAD_EXT_FIELDS                                                   \
-  /* Add threads custom fields here.*/
+  /* Add threads custom fields here.*/                                      \
+  Mailbox mb;                                                               \
+  msg_t mb_buf[MAX_THREAD_MAILBOX_MSGS];                                    \
+  Semaphore mb_sem;
 #endif
 
 /**
@@ -472,6 +477,8 @@
 #if !defined(THREAD_EXT_INIT_HOOK) || defined(__DOXYGEN__)
 #define THREAD_EXT_INIT_HOOK(tp) {                                          \
   /* Add threads initialization code here.*/                                \
+  chMBInit(&tp->mb, tp->mb_buf, MAX_THREAD_MAILBOX_MSGS);                   \
+  chSemInit(&tp->mb_sem, 0);                                                \
 }
 #endif
 

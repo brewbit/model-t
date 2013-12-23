@@ -37,6 +37,8 @@ typedef enum {
 
 
 typedef struct {
+  Thread* waiting_thd;
+  uint32_t* thread_count;
   msg_id_t id;
   void* user_data;
   void* msg_data;
@@ -52,7 +54,18 @@ msg_subscribe(msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatcher, voi
 void
 msg_unsubscribe(msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatch, void* user_data);
 
+// send a message and wait for it to be processed
 void
-msg_broadcast(msg_id_t id, void* msg_data);
+msg_send(msg_id_t id, void* msg_data);
+
+// send a message but don't wait for it to be processed
+void
+msg_post(msg_id_t id, void* msg_data);
+
+thread_msg_t*
+msg_get(void);
+
+void
+msg_release(thread_msg_t* msg);
 
 #endif

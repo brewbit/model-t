@@ -39,7 +39,7 @@ ota_update_init()
 void
 ota_update_start()
 {
-  msg_broadcast(MSG_OTAU_START, NULL);
+  msg_send(MSG_OTAU_START, NULL);
 }
 
 static msg_t
@@ -50,12 +50,11 @@ ota_update_thread(void* arg)
   chRegSetThreadName("ota_update");
 
   while (1) {
-    Thread* tp = chMsgWait();
-    thread_msg_t* msg = (thread_msg_t*)chMsgGet(tp);
+    thread_msg_t* msg = msg_get();
 
     ota_update_dispatch(msg->id, msg->msg_data, msg->user_data);
 
-    chMsgRelease(tp, 0);
+    msg_release(msg);
   }
 
   return 0;
@@ -83,7 +82,7 @@ ota_update_dispatch(msg_id_t id, void* msg_data, void* user_data)
 static void
 dispatch_ota_update_start()
 {
-//  msg_broadcast(MSG_OTAU_STATUS, NULL);
+//  msg_send(MSG_OTAU_STATUS, NULL);
 
   if (!sxfs_part_clear(SP_OTA_UPDATE_IMG))
     printf("part clear failed\r\n");
@@ -104,7 +103,7 @@ dispatch_ota_update_chunk(UpdateChunk* update_chunk)
     if (sxfs_part_verify(SP_OTA_UPDATE_IMG)) {
       printf("image verified resetting to apply update...\r\n");
 
-      msg_broadcast(MSG_SHUTDOWN, NULL);
+      msg_send(MSG_SHUTDOWN, NULL);
 
       chThdSleepSeconds(1);
 

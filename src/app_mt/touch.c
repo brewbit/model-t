@@ -150,7 +150,7 @@ touch_dispatch()
       .calib = touch_coord_calib[sample_idx],
       .touch_down = touch_down
   };
-  msg_broadcast(MSG_TOUCH_INPUT, &msg);
+  msg_send(MSG_TOUCH_INPUT, &msg);
 }
 
 void

@@ -46,12 +46,11 @@ debug_client_thread(void* arg)
 
   while (1) {
     if (chMsgIsPendingI(chThdSelf())) {
-      Thread* tp = chMsgWait();
-      thread_msg_t* msg = (thread_msg_t*)chMsgGet(tp);
+      thread_msg_t* msg = msg_get();
 
       debug_client_dispatch(msg->id, msg->msg_data, msg->user_data);
 
-      chMsgRelease(tp, 0);
+      msg_release(msg);
     }
     else {
       switch (dbg_state) {

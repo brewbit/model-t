@@ -40,13 +40,13 @@ gui_init()
 void
 gui_push_screen(widget_t* screen)
 {
-  msg_broadcast(MSG_GUI_PUSH_SCREEN, screen);
+  msg_send(MSG_GUI_PUSH_SCREEN, screen);
 }
 
 void
 gui_pop_screen()
 {
-  msg_broadcast(MSG_GUI_POP_SCREEN, NULL);
+  msg_send(MSG_GUI_POP_SCREEN, NULL);
 }
 
 void
@@ -89,12 +89,11 @@ gui_thread_func(void* arg)
   chRegSetThreadName("gui");
 
   while (1) {
-    Thread* tp = chMsgWait();
-    thread_msg_t* msg = (thread_msg_t*)chMsgGet(tp);
+    thread_msg_t* msg = msg_get();
 
     gui_dispatch(msg->id, msg->msg_data, msg->user_data);
 
-    chMsgRelease(tp, 0);
+    msg_release(msg);
   }
 
   return 0;
@@ -104,7 +103,7 @@ void
 gui_idle()
 {
   if ((chTimeNow() - last_paint_time) >= MS2ST(100)) {
-    msg_broadcast(MSG_GUI_PAINT, NULL);
+    msg_send(MSG_GUI_PAINT, NULL);
     last_paint_time = chTimeNow();
   }
 }

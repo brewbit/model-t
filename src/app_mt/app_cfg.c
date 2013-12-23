@@ -147,7 +147,7 @@ app_cfg_set_temp_unit(unit_t temp_unit)
   app_cfg_local.data.temp_unit = temp_unit;
   chMtxUnlock();
 
-  msg_broadcast(MSG_TEMP_UNIT, &app_cfg_local.data.temp_unit);
+  msg_send(MSG_TEMP_UNIT, &app_cfg_local.data.temp_unit);
 }
 
 const matrix_t*
@@ -187,7 +187,7 @@ app_cfg_set_sensor_settings(sensor_id_t sensor, sensor_settings_t* settings)
       .sensor = sensor,
       .settings = *settings
   };
-  msg_broadcast(MSG_SENSOR_SETTINGS, &msg);
+  msg_send(MSG_SENSOR_SETTINGS, &msg);
 }
 
 const output_settings_t*
@@ -213,5 +213,5 @@ app_cfg_set_output_settings(output_id_t output, output_settings_t* settings)
       .output = output,
       .settings = *settings
   };
-  msg_broadcast(MSG_OUTPUT_SETTINGS, &msg);
+  msg_send(MSG_OUTPUT_SETTINGS, &msg);
 }
