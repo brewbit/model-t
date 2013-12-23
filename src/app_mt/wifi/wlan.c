@@ -53,6 +53,13 @@
 #include "core/socket.h"
 
 
+static void
+wlan_evt_cb(long event_type, char * data, unsigned char length);
+
+static msg_t
+SelectThread(void* arg);
+
+
 wlan_socket_t           g_sockets[MAX_NUM_OF_SOCKETS];
 
 /* Handles for making the APIs asychronous and thread-safe */
@@ -70,9 +77,8 @@ int                     g_accept_socket;
 int                     g_accept_addrlen;
 int                     g_should_poll_accept;
 
-//char                    selectThreadStack[512];
+tWlanCB app_evt_cb;
 
-static msg_t SelectThread(void* arg);
 
 //*****************************************************************************
 //
@@ -131,8 +137,9 @@ void wlan_init(tWlanCB               sWlanCB,
   chSemInit(&g_spi_semaphore, 0);
 
   chMtxLock(&g_main_mutex);
+  app_evt_cb = sWlanCB;
   g_select_thread = NULL;
-  c_wlan_init(sWlanCB, sFWPatches, sDriverPatches,
+  c_wlan_init(wlan_evt_cb, sFWPatches, sDriverPatches,
       sBootLoaderPatches, sReadWlanInterruptPin,
       sWriteWlanPin);
   chMtxUnlock();
@@ -223,7 +230,7 @@ void wlan_stop(void)
     g_wlan_stopped = 1;
 
     for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
-        g_sockets[i].sd = 1;
+        g_sockets[i].sd = -1;
         g_sockets[i].status = SOC_NOT_INITED;
     }
 
@@ -704,7 +711,33 @@ long wlan_smart_config_process()
 
     return(ret);
 }
-#endif //CC3000_UNENCRYPTED_SMART_CONFIG
+#endif
+
+static void
+wlan_evt_cb(long event_type, char* data, unsigned char length)
+{
+
+  switch (event_type) {
+  case HCI_EVNT_BSD_TCP_CLOSE_WAIT:
+  {
+    long sd = *(long*)data;
+
+    int i;
+    for (i = 0; i < MAX_NUM_OF_SOCKETS; i++) {
+      if (g_sockets[i].sd == sd) {
+        g_sockets[i].status = SOC_NOT_CONN;
+
+      }
+    }
+    break;
+  }
+
+  default:
+    if (app_evt_cb != NULL)
+      app_evt_cb(event_type, data, length);
+    break;
+  }
+}
 
 static msg_t
 SelectThread(void *arg)
@@ -753,7 +786,7 @@ SelectThread(void *arg)
 
     if (ret>0) {
       for (i = 0; i < MAX_NUM_OF_SOCKETS; i++) {
-        if (g_sockets[i].status != SOC_NOT_INITED && //check that the socket is valid
+        if (g_sockets[i].status == SOCK_ON && //check that the socket is valid
             g_sockets[i].sd != g_accept_socket &&    //verify this is not an accept socket
             WFD_ISSET(g_sockets[i].sd, &readsds)) {    //and has pending data
           chBSemSignal(&g_sockets[i].sd_semaphore); //release the semaphore

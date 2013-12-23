@@ -704,6 +704,11 @@ common_recv(long sd, void *buf, long len, long flags,
     return -1;
   }
 
+  if (s->status == SOC_NOT_CONN) {
+    errno = ENOTCONN;
+    return -1;
+  }
+
   if (s->nonblock == SOCK_ON)
     timeout = TIME_IMMEDIATE;
   else

@@ -49,6 +49,8 @@ extern "C" {
 #endif
 
 #define      SOC_NOT_INITED (-3)   /* socket in progress */
+#define      SOC_NOT_CONN   (-4)   /* socket disconnected */
+
 //*****************************************************************************
 //
 //! \addtogroup wlan_api
