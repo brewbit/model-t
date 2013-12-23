@@ -242,7 +242,7 @@ accept(long sd, sockaddr *addr, socklen_t *addrlen)
 
     /* set socket options to non blocking for accept polling purposes */
     val = SOCK_ON;
-    setsockopt( sd, SOL_SOCKET, SOCKOPT_NONBLOCK, &val, sizeof(val));
+    setsockopt( sd, SOL_SOCKET, SOCKOPT_ACCEPT_NONBLOCK, &val, sizeof(val));
 
     g_should_poll_accept = 1;
     chSemSignal(&g_select_sleep_semaphore); /* wakeup select thread if needed */
@@ -520,7 +520,6 @@ setsockopt(long sd, long level, long optname, const void *optval, socklen_t optl
       return -1;
     }
 
-    bool handled_locally = false;
     if (level == SOL_SOCKET) {
       switch (optname) {
       case SOCKOPT_RECV_TIMEOUT:
@@ -532,10 +531,9 @@ setsockopt(long sd, long level, long optname, const void *optval, socklen_t optl
           s->recv_timeout = *((unsigned long*)optval);
           ret = 0;
         }
-        handled_locally = true;
         break;
 
-      case SOCKOPT_NONBLOCK:
+      case SOCKOPT_RECV_NONBLOCK:
         if (optlen != sizeof(unsigned long)) {
           errno = EINVAL;
           ret = -1;
@@ -551,7 +549,6 @@ setsockopt(long sd, long level, long optname, const void *optval, socklen_t optl
             ret = -1;
           }
         }
-        handled_locally = true;
         break;
 
       default:
@@ -559,11 +556,9 @@ setsockopt(long sd, long level, long optname, const void *optval, socklen_t optl
       }
     }
 
-    if (!handled_locally) {
-      chMtxLock(&g_main_mutex);
-      ret = c_setsockopt(sd, level, optname, optval, optlen);
-      chMtxUnlock();
-    }
+    chMtxLock(&g_main_mutex);
+    ret = c_setsockopt(sd, level, optname, optval, optlen);
+    chMtxUnlock();
 
     return ret;
 }

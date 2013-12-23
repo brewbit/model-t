@@ -293,11 +293,14 @@ typedef struct _netapp_pingreport_args
 #define SOC_IN_PROGRESS         (-2)        // socket in progress
 
 //----------- Socket Options -----------
-#define  SOL_SOCKET             0xffff      //  socket level
-#define  SOCKOPT_RECV_TIMEOUT   1           //  optname to configure recv and recvfromtimeout
-#define  SOCKOPT_NONBLOCK       2           // accept non block mode set SOCK_ON or SOCK_OFF (default block mode )
-#define  SOCK_ON                0           // socket non-blocking mode is enabled
-#define  SOCK_OFF               1           // socket blocking mode is enabled
+#define  SOL_SOCKET             0xffff                  //  socket level
+
+#define  SOCKOPT_RECV_NONBLOCK                 0        // recv non block mode, set SOCK_ON or SOCK_OFF (default block mode)
+#define  SOCKOPT_RECV_TIMEOUT                  1        // optname to configure recv and recvfromtimeout
+#define  SOCKOPT_ACCEPT_NONBLOCK               2        // accept non block mode, set SOCK_ON or SOCK_OFF (default block mode)
+
+#define  SOCK_ON                0                       // socket non-blocking mode        is enabled
+#define  SOCK_OFF               1                       // socket blocking mode is enabled
 
 #define  TCP_NODELAY            0x0001
 #define  TCP_BSDURGENT          0x7000

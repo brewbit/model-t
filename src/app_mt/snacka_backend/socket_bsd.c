@@ -217,7 +217,7 @@ int stfSocket_connect(stfSocket* s,
 
   //set socket to non-blocking
   unsigned long val = SOCK_ON;
-  setsockopt(s->fileDescriptor, SOL_SOCKET, SOCKOPT_NONBLOCK, &val, sizeof(val));
+  setsockopt(s->fileDescriptor, SOL_SOCKET, SOCKOPT_RECV_NONBLOCK, &val, sizeof(val));
 
   sockaddr_in addr = {0};
   addr.sin_family = AF_INET;
@@ -286,10 +286,12 @@ int stfSocket_receiveData(stfSocket* s, char* data, int maxNumBytes, int* numByt
   errno = 0;
 //    assert(data);
   int success = 1;
+  printf("+recv\r\n");
   int bytesRecvd = recv(s->fileDescriptor,
       data,
       maxNumBytes,
       0);
+  printf("-recv\r\n");
     
   int ignores[2] = {EAGAIN, EWOULDBLOCK};
   if (shouldStopOnError(s, errno, ignores, 2)) {
