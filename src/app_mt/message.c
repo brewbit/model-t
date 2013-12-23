@@ -110,9 +110,12 @@ msg_broadcast(msg_id_t id, void* msg_data, bool wait)
       msg->waiting_thd = wait ? chThdSelf() : NULL;
       msg->thread_count = thread_count;
 
+      // Ownership of msg is transferred to the thread it was sent to here.
+      // Do not reference it again because it might not exist anymore!
       chMBPost(&listener->thread->mb, (msg_t)msg, TIME_INFINITE);
+
       if (wait)
-        chSemWait(&msg->waiting_thd->mb_sem);
+        chSemWait(&chThdSelf()->mb_sem);
     }
   }
 }
@@ -129,10 +132,14 @@ msg_get()
 void
 msg_release(thread_msg_t* msg)
 {
+  if (msg == NULL)
+    return;
+
   // If a thread is waiting for this message to be processed,
   // signal it and let it clean up the message data
-  if (msg->waiting_thd != NULL)
+  if (msg->waiting_thd != NULL) {
     chSemSignal(&msg->waiting_thd->mb_sem);
+  }
   else {
     // atomic decrement
     uint32_t result;
