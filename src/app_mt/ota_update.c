@@ -84,6 +84,8 @@ dispatch_ota_update_start()
 {
 //  msg_send(MSG_OTAU_STATUS, NULL);
 
+  printf("part clear\r\n");
+
   if (!sxfs_part_clear(SP_OTA_UPDATE_IMG))
     printf("part clear failed\r\n");
 

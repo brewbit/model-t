@@ -52,6 +52,9 @@ static msg_t
 web_api_thread(void* arg);
 
 static void
+web_api_dispatch(msg_id_t id, void* msg_data, void* user_data);
+
+static void
 websocket_message_rx(void* userData, snOpcode opcode, const char* data, int numBytes);
 
 static void
@@ -82,7 +85,9 @@ request_update(web_api_t* api);
 void
 web_api_init()
 {
-  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, web_api_thread, NULL);
+  Thread* thd_web_api = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, web_api_thread, NULL);
+
+  msg_subscribe(MSG_CHECK_UPDATE, thd_web_api, web_api_dispatch, NULL);
 }
 
 static msg_t
@@ -104,36 +109,56 @@ web_api_thread(void* arg)
         api); // callback data
 
   while (1) {
-    switch(snWebsocket_getState(api->ws)) {
-    case SN_STATE_OPEN:
-      api_exec(api);
-      // intentional fall-through
+    thread_msg_t* msg = msg_get_timeout(MS2ST(250));
 
-    case SN_STATE_CONNECTING:
-    case SN_STATE_CLOSING:
-      snWebsocket_poll(api->ws);
-      break;
-
-    case SN_STATE_CLOSED:
-    {
-      printf("WS connecting\r\n");
-      snError err = snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT);
-
-      if (err != SN_NO_ERROR)
-        printf("websocket connect failed %d\r\n", err);
-      else
-        printf("websocket connect OK\r\n");
-      break;
+    if (msg != NULL) {
+      web_api_dispatch(msg->id, msg->msg_data, msg->user_data);
+      msg_release(msg);
     }
+    else {
+      switch(snWebsocket_getState(api->ws)) {
+      case SN_STATE_OPEN:
+        api_exec(api);
+        // intentional fall-through
 
-    default:
-      break;
+      case SN_STATE_CONNECTING:
+      case SN_STATE_CLOSING:
+        snWebsocket_poll(api->ws);
+        break;
+
+      case SN_STATE_CLOSED:
+      {
+        printf("WS connecting\r\n");
+        snError err = snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT);
+
+        if (err != SN_NO_ERROR)
+          printf("websocket connect failed %d\r\n", err);
+        else
+          printf("websocket connect OK\r\n");
+        break;
+      }
+
+      default:
+        break;
+      }
     }
-
-    chThdSleepMilliseconds(250);
   }
 
   return 0;
+}
+
+static void
+web_api_dispatch(msg_id_t id, void* msg_data, void* user_data)
+{
+  switch (id) {
+  case MSG_CHECK_UPDATE:
+    request_update(api);
+    api->state = AS_WAIT_FOR_UPDATE;
+    break;
+
+  default:
+    break;
+  }
 }
 
 static void
@@ -161,8 +186,6 @@ api_exec(web_api_t* api)
     break;
 
   case AS_REQUEST_UPDATE:
-    request_update(api);
-    api->state = AS_WAIT_FOR_UPDATE;
     break;
 
   case AS_WAIT_FOR_UPDATE:
@@ -207,13 +230,13 @@ request_auth(web_api_t* api)
 void
 web_api_request_update(void)
 {
-  printf("setting state request update\r\n");
-  api->state = AS_REQUEST_UPDATE;
+  msg_post(MSG_CHECK_UPDATE, NULL);
 }
 
 static void
 request_update(web_api_t* api)
 {
+  printf("sending update check\r\n");
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_UPDATE_REQUEST;
   msg->has_updateRequest = true;
