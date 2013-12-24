@@ -14,8 +14,8 @@ typedef struct widget_stack_elem_s {
 static void dispatch_touch(touch_msg_t* event);
 static void dispatch_push_screen(widget_t* screen);
 static void dispatch_pop_screen(void);
-static void gui_dispatch(msg_id_t id, void* msg_data, void* user_data);
-static void dispatch_msg(widget_t* w, msg_id_t id, void* msg_data);
+static void gui_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data);
+static void dispatch_msg_to_widget(widget_t* w, msg_id_t id, void* msg_data);
 
 
 static msg_listener_t* gui_msg_listener;
@@ -27,7 +27,8 @@ static systime_t last_paint_time;
 void
 gui_init()
 {
-  gui_msg_listener = msg_listener_create("gui", 1024, gui_dispatch);
+  gui_msg_listener = msg_listener_create("gui", 1024, gui_dispatch, NULL);
+  msg_listener_set_idle_timeout(gui_msg_listener, 250);
 
   msg_subscribe(gui_msg_listener, MSG_TOUCH_INPUT, NULL);
   msg_subscribe(gui_msg_listener, MSG_GUI_PUSH_SCREEN, NULL);
@@ -89,10 +90,12 @@ gui_idle()
 }
 
 static void
-gui_dispatch(msg_id_t id, void* msg_data, void* user_data)
+gui_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
 {
-  if (user_data != NULL) {
-    dispatch_msg(user_data, id, msg_data);
+  (void)listener_data;
+
+  if (sub_data != NULL) {
+    dispatch_msg_to_widget(sub_data, id, msg_data);
   }
   else {
     switch(id) {
@@ -173,7 +176,7 @@ dispatch_pop_screen()
 }
 
 static void
-dispatch_msg(widget_t* w, msg_id_t id, void* msg_data)
+dispatch_msg_to_widget(widget_t* w, msg_id_t id, void* msg_data)
 {
   msg_event_t event = {
       .id = EVT_MSG,

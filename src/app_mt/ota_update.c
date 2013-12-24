@@ -12,7 +12,7 @@
 
 
 static void
-ota_update_dispatch(msg_id_t id, void* msg_data, void* user_data);
+ota_update_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data);
 
 static void
 dispatch_ota_update_start(void);
@@ -27,7 +27,7 @@ static sxfs_part_t part;
 void
 ota_update_init()
 {
-  msg_listener_t* l = msg_listener_create("ota_update", 1024, ota_update_dispatch);
+  msg_listener_t* l = msg_listener_create("ota_update", 1024, ota_update_dispatch, NULL);
 
   msg_subscribe(l, MSG_OTAU_START, NULL);
   msg_subscribe(l, MSG_OTAU_CHUNK, NULL);
@@ -40,9 +40,10 @@ ota_update_start()
 }
 
 static void
-ota_update_dispatch(msg_id_t id, void* msg_data, void* user_data)
+ota_update_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
 {
-  (void)user_data;
+  (void)listener_data;
+  (void)sub_data;
 
   switch (id) {
   case MSG_OTAU_CHUNK:

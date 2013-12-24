@@ -5,6 +5,8 @@
 #include "ch.h"
 
 typedef enum {
+  MSG_IDLE,
+
   MSG_TOUCH_INPUT,
 
   MSG_SENSOR_SAMPLE,
@@ -50,10 +52,13 @@ struct msg_listener_s;
 typedef struct msg_listener_s msg_listener_t;
 
 
-typedef void (*thread_msg_dispatch_t)(msg_id_t id, void* msg_data, void* user_data);
+typedef void (*thread_msg_dispatch_t)(msg_id_t id, void* msg_data, void* listener_data, void* sub_data);
 
 msg_listener_t*
-msg_listener_create(const char* name, int stack_size, thread_msg_dispatch_t dispatch);
+msg_listener_create(const char* name, int stack_size, thread_msg_dispatch_t dispatch, void* user_data);
+
+void
+msg_listener_set_idle_timeout(msg_listener_t* l, uint32_t idle_timeout);
 
 void
 msg_subscribe(msg_listener_t* l, msg_id_t id, void* user_data);
@@ -68,14 +73,5 @@ msg_send(msg_id_t id, void* msg_data);
 // send a message but don't wait for it to be processed
 void
 msg_post(msg_id_t id, void* msg_data);
-
-thread_msg_t*
-msg_get(void);
-
-thread_msg_t*
-msg_get_timeout(systime_t timeout);
-
-void
-msg_release(thread_msg_t* msg);
 
 #endif

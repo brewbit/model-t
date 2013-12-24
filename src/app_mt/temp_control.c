@@ -26,7 +26,7 @@ typedef struct {
 } relay_output_t;
 
 
-static void dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data);
+static void dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_data);
 static void dispatch_output_settings(output_settings_msg_t* msg);
 static void dispatch_sensor_settings(sensor_settings_msg_t* msg);
 static void dispatch_sensor_sample(sensor_msg_t* msg);
@@ -50,7 +50,7 @@ temp_control_init()
   output_init(&outputs[OUTPUT_1], OUTPUT_1, PAD_RELAY1);
   output_init(&outputs[OUTPUT_2], OUTPUT_2, PAD_RELAY2);
 
-  msg_listener_t* l = msg_listener_create("temp_ctrl", 1024, dispatch_temp_input_msg);
+  msg_listener_t* l = msg_listener_create("temp_ctrl", 1024, dispatch_temp_input_msg, NULL);
 
 //  msg_subscribe(MSG_SENSOR_SAMPLE, thread, dispatch_temp_input_msg, NULL);
   msg_subscribe(l, MSG_SENSOR_TIMEOUT, NULL);
@@ -132,9 +132,10 @@ manage_pid(output_id_t output)
 }
 
 static void
-dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data)
+dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
 {
-  (void)user_data;
+  (void)listener_data;
+  (void)sub_data;
 
   switch (id) {
   case MSG_SENSOR_SAMPLE:

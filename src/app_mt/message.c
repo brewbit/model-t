@@ -10,6 +10,8 @@ typedef struct msg_listener_s {
   Thread* thread;
   const char* name;
   thread_msg_dispatch_t dispatch;
+  systime_t timeout;
+  void* user_data;
 } msg_listener_t;
 
 typedef struct msg_subscription_s {
@@ -25,18 +27,32 @@ msg_thread_func(void* arg);
 static void
 msg_broadcast(msg_id_t id, void* msg_data, bool wait);
 
+static thread_msg_t*
+msg_get(msg_listener_t* l);
+
+static void
+msg_release(thread_msg_t* msg);
+
 
 static msg_subscription_t* subs[NUM_THREAD_MSGS];
 
 
 msg_listener_t*
-msg_listener_create(const char* name, int stack_size, thread_msg_dispatch_t dispatch)
+msg_listener_create(const char* name, int stack_size, thread_msg_dispatch_t dispatch, void* user_data)
 {
   msg_listener_t* l = calloc(1, sizeof(msg_listener_t));
   l->name = name;
   l->dispatch = dispatch;
+  l->timeout = TIME_INFINITE;
+  l->user_data = user_data;
   l->thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, msg_thread_func, l);
   return l;
+}
+
+void
+msg_listener_set_idle_timeout(msg_listener_t* l, uint32_t idle_timeout)
+{
+  l->timeout = MS2ST(idle_timeout);
 }
 
 static msg_t
@@ -47,11 +63,15 @@ msg_thread_func(void* arg)
   chRegSetThreadName(l->name);
 
   while (1) {
-    thread_msg_t* msg = msg_get();
+    thread_msg_t* msg = msg_get(l);
 
-    l->dispatch(msg->id, msg->msg_data, msg->user_data);
-
-    msg_release(msg);
+    if (msg != NULL) {
+      l->dispatch(msg->id, msg->msg_data, l->user_data, msg->user_data);
+      msg_release(msg);
+    }
+    else {
+      l->dispatch(MSG_IDLE, NULL, l->user_data, NULL);
+    }
   }
 
   return 0;
@@ -90,7 +110,7 @@ msg_unsubscribe(msg_listener_t* l, msg_id_t id, void* user_data)
       else {
         subs[id] = sub->next;
       }
-      chHeapFree(sub);
+      free(sub);
       break;
     }
     prev_sub = sub;
@@ -134,7 +154,7 @@ msg_broadcast(msg_id_t id, void* msg_data, bool wait)
   for (sub = subs[id]; sub != NULL; sub = sub->next) {
     if (sub->listener->thread == chThdSelf()) {
       if (sub->listener->dispatch != NULL)
-        sub->listener->dispatch(id, msg_data, sub->user_data);
+        sub->listener->dispatch(id, msg_data, sub->listener->user_data, sub->user_data);
       else
         chDbgPanic("message broadcast to self, but no dispatch method provided");
     }
@@ -156,25 +176,19 @@ msg_broadcast(msg_id_t id, void* msg_data, bool wait)
   }
 }
 
-thread_msg_t*
-msg_get()
-{
-  return msg_get_timeout(TIME_INFINITE);
-}
-
-thread_msg_t*
-msg_get_timeout(systime_t timeout)
+static thread_msg_t*
+msg_get(msg_listener_t* l)
 {
   Thread* curThread = chThdSelf();
   thread_msg_t* msg;
-  msg_t rdy = chMBFetch(&curThread->mb, (msg_t*)&msg, timeout);
+  msg_t rdy = chMBFetch(&curThread->mb, (msg_t*)&msg, l->timeout);
   if (rdy == RDY_OK)
     return msg;
 
   return NULL;
 }
 
-void
+static void
 msg_release(thread_msg_t* msg)
 {
   if (msg == NULL)
