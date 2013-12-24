@@ -24,7 +24,6 @@ PROJECT_CSRC = \
        app_cfg.c \
        app_hdr.c \
        datastream.c \
-       debug_client.c \
        fault.c \
        font.c \
        gfx.c \

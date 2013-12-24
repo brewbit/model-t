@@ -85,9 +85,10 @@ request_update(web_api_t* api);
 void
 web_api_init()
 {
-  Thread* thd_web_api = chThdCreateFromHeap(NULL, 2048, NORMALPRIO, web_api_thread, NULL);
-
-  msg_subscribe(MSG_CHECK_UPDATE, thd_web_api, web_api_dispatch, NULL);
+//  msg_listener_t* l = msg_listener_create("web_api", 2048, web_api_dispatch);
+//  Thread* thd_web_api = chThdCreateFromHeap(NULL, 2048, NORMALPRIO, web_api_thread, NULL);
+//
+//  msg_subscribe(l, MSG_CHECK_UPDATE, NULL);
 }
 
 static msg_t
