@@ -95,6 +95,8 @@ update_screen_destroy(widget_t* w)
 {
   update_screen_t* s = widget_get_instance_data(w);
 
+  gui_msg_unsubscribe(MSG_OTAU_STATUS, s->widget);
+
   chHeapFree(s);
 }
 
