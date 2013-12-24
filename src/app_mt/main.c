@@ -28,7 +28,6 @@ idle_thread(void* arg)
   chRegSetThreadName("idle");
 
   while (1) {
-    gui_idle();
     app_cfg_idle();
   }
 

@@ -28,12 +28,11 @@ void
 gui_init()
 {
   gui_msg_listener = msg_listener_create("gui", 1024, gui_dispatch, NULL);
-  msg_listener_set_idle_timeout(gui_msg_listener, 250);
+  msg_listener_set_idle_timeout(gui_msg_listener, 100);
 
   msg_subscribe(gui_msg_listener, MSG_TOUCH_INPUT, NULL);
   msg_subscribe(gui_msg_listener, MSG_GUI_PUSH_SCREEN, NULL);
   msg_subscribe(gui_msg_listener, MSG_GUI_POP_SCREEN, NULL);
-  msg_subscribe(gui_msg_listener, MSG_GUI_PAINT, NULL);
 }
 
 void
@@ -80,15 +79,6 @@ gui_msg_unsubscribe(msg_id_t id, widget_t* w)
   msg_unsubscribe(gui_msg_listener, id, w);
 }
 
-void
-gui_idle()
-{
-  if ((chTimeNow() - last_paint_time) >= MS2ST(100)) {
-    msg_send(MSG_GUI_PAINT, NULL);
-    last_paint_time = chTimeNow();
-  }
-}
-
 static void
 gui_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
 {
@@ -111,16 +101,18 @@ gui_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
       dispatch_touch(msg_data);
       break;
 
-    case MSG_GUI_PAINT:
-      chThdSetPriority(HIGHPRIO);
-      if (screen_stack != NULL)
-        widget_paint(screen_stack->widget);
-      chThdSetPriority(NORMALPRIO);
-      break;
-
     default:
       break;
     }
+  }
+
+  if ((chTimeNow() - last_paint_time) >= MS2ST(100)) {
+    if (screen_stack != NULL) {
+      chThdSetPriority(HIGHPRIO);
+      widget_paint(screen_stack->widget);
+      chThdSetPriority(NORMALPRIO);
+    }
+    last_paint_time = chTimeNow();
   }
 }
 
