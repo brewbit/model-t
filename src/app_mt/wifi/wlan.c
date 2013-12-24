@@ -235,6 +235,8 @@ void wlan_stop(void)
     }
 
     chMtxUnlock();
+
+    chThdSleepMilliseconds(100);
 }
 
 

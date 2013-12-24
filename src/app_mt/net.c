@@ -343,6 +343,7 @@ wlan_thread(void* arg)
   if (patchVer[0] != 1 || patchVer[1] != 24) {
     printf("  Not up to date. Applying patch.\r\n");
     wlan_apply_patch();
+    printf("  Update complete\r\n");
   }
 
   if (wlan_ioctl_set_connection_policy(0, 1, 1) != 0)
