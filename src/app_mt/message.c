@@ -45,7 +45,7 @@ msg_listener_create(const char* name, int stack_size, thread_msg_dispatch_t disp
   l->dispatch = dispatch;
   l->timeout = TIME_INFINITE;
   l->user_data = user_data;
-  l->thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, msg_thread_func, l);
+  l->thread = chThdCreateFromHeap(NULL, stack_size, NORMALPRIO, msg_thread_func, l);
   return l;
 }
 
