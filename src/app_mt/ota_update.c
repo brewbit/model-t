@@ -129,12 +129,17 @@ dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
 {
   status.update_downloaded += update_chunk->data.size;
 
+  printf("downloaded %d / %d (%d%%)\r\n",
+      status.update_downloaded,
+      status.update_size,
+      (100 * status.update_downloaded) / status.update_size);
+
   set_state(OU_DOWNLOADING);
 
   sxfs_part_write(&part, update_chunk->data.bytes, update_chunk->data.size);
 
-  // if last chunk...
-  if (update_chunk->data.size < sizeof(update_chunk->data.bytes)) {
+  if (status.update_downloaded >= status.update_size) {
+    // Verify the integrity of the image that we just downloaded
     if (sxfs_part_verify(SP_OTA_UPDATE_IMG)) {
       printf("image verified resetting to apply update...\r\n");
 
@@ -147,6 +152,7 @@ dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
     }
     else {
       printf("sxfs verify failed\r\n");
+      set_state(OU_FAILED);
     }
   }
 }

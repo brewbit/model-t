@@ -127,7 +127,6 @@ update_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
     ota_update_status_t* us = ota_update_get_status();
-    printf("update state %d\r\n", us->state);
     if (us->state == OU_IDLE)
       msg_post(MSG_OTAU_CHECK, NULL);
     else if (us->state == OU_UPDATE_AVAILABLE)
@@ -143,18 +142,18 @@ dispatch_update_status(update_screen_t* s, ota_update_status_t* status)
 
   switch (status->state) {
   case OU_IDLE:
-    header = "Touch here to check for updates";
-    desc = "";
+    header = "Check";
+    desc = "Touch here to check for updates";
     break;
 
   case OU_CHECKING:
-    header = "Checking for updates";
-    desc = "Contacting server...";
+    header = "Checking";
+    desc = "Contacting server to check for updates...";
     break;
 
   case OU_UPDATE_AVAILABLE:
     header = "Update available!";
-    desc = "Touch here to apply the update.";
+    desc = "Touch here to download the update.";
     break;
 
   case OU_UPDATE_NOT_AVAILABLE:
@@ -163,33 +162,26 @@ dispatch_update_status(update_screen_t* s, ota_update_status_t* status)
     break;
 
   case OU_PREPARING:
-    header = "Preparing for update...";
-    desc = "";
+    header = "Preparing";
+    desc = "Making space for the update...";
     break;
 
   case OU_STARTING_DOWNLOAD:
-    header = "Starting firmware download...";
-    desc = "";
+    header = "Downloading";
+    desc = "Starting the update download...";
     break;
 
   case OU_DOWNLOADING:
-    header = "Downloading formware...";
-    desc = "Do not remove power during update!";
-
-    printf("downloading %d / %d (%d%%)\r\n", status->update_downloaded, status->update_size, (100 * status->update_downloaded) / status->update_size);
+    header = "Downloading";
+    desc = "Download in progress...";
 
     widget_show(s->progress);
     progressbar_set_progress(s->progress, (100 * status->update_downloaded) / status->update_size);
     break;
 
   case OU_COMPLETE:
-    header = "Applying update";
+    header = "Installing";
     desc = "Do not remove power during update!";
-
-    widget_show(s->progress);
-    if (progressbar_get_progress(s->progress) < 100) {
-      progressbar_set_progress(s->progress, progressbar_get_progress(s->progress) + 1);
-    }
     break;
 
   case OU_FAILED:
