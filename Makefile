@@ -2,7 +2,10 @@
 
 include deps.mk
 
-JTAG ?= ftdi/olimex-arm-usb-tiny-h
+OLIMEX_JTAG = ftdi/olimex-arm-usb-tiny-h
+JLINK_JTAG = jlink
+
+JTAG ?= $(JLINK_JTAG)
 
 all: bootloader app_mt
 
@@ -25,10 +28,12 @@ prog_download = @openocd \
 	-c shutdown download.log 2>&1 && \
 	echo Download complete
 
-download_app_mt: app_mt
+upgrade_image: app_mt
 	arm-none-eabi-objcopy -O binary --only-section header build/app_mt/app_mt.elf build/app_mt/app_mt_hdr.bin
 	arm-none-eabi-objcopy -O binary --remove-section cfg --remove-section header build/app_mt/app_mt.elf build/app_mt/app_mt_app.bin
 	python scripts/build_app_image.py build/app_mt/app_mt_hdr.bin build/app_mt/app_mt_app.bin build/app_mt/app_mt_update.bin
+
+download_app_mt: upgrade_image
 	@openocd \
 	-f interface/$(JTAG).cfg \
 	-f target/stm32f2x.cfg \
