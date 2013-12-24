@@ -1,3 +1,4 @@
+import os
 from twisted.internet import reactor
 from autobahn.websocket import WebSocketServerFactory, \
                                WebSocketServerProtocol, \
@@ -16,16 +17,23 @@ class BrewBitServerProtocol(WebSocketServerProtocol):
             response.type = bbmt_pb2.ApiMessage.AUTH_RESPONSE
             response.authResponse.authenticated = True
             self.send_response(response)
-        elif request.type == bbmt_pb2.ApiMessage.UPDATE_REQUEST:
+        elif request.type == bbmt_pb2.ApiMessage.FIRMWARE_UPDATE_CHECK_REQUEST:
+            response = bbmt_pb2.ApiMessage()
+            response.type = bbmt_pb2.ApiMessage.FIRMWARE_UPDATE_CHECK_RESPONSE
+            response.firmwareUpdateCheckResponse.update_available = True
+            response.firmwareUpdateCheckResponse.version = "1.0.1"
+            response.firmwareUpdateCheckResponse.binary_size = os.stat('build/app_mt/app_mt_update.bin').st_size
+            self.send_response(response)
+        elif request.type == bbmt_pb2.ApiMessage.FIRMWARE_DOWNLOAD_REQUEST:
             with open('build/app_mt/app_mt_update.bin', 'rb') as f:
                 while True:
                     response = bbmt_pb2.ApiMessage()
-                    response.type = bbmt_pb2.ApiMessage.UPDATE_CHUNK
-                    response.updateChunk.offset = f.tell()
-                    response.updateChunk.data = f.read(1024)
+                    response.type = bbmt_pb2.ApiMessage.FIRMWARE_DOWNLOAD_RESPONSE
+                    response.firmwareDownloadResponse.offset = f.tell()
+                    response.firmwareDownloadResponse.data = f.read(1024)
                     self.send_response(response)
                     
-                    if len(response.updateChunk.data) < 1024:
+                    if len(response.firmwareDownloadResponse.data) < 1024:
                         break
                    
     def send_response(self, response):

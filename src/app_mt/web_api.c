@@ -14,6 +14,7 @@
 #include "web_api.h"
 #include "bbmt.pb.h"
 #include "message.h"
+#include "net.h"
 
 #ifndef WEB_API_HOST
 #define WEB_API_HOST_STR "brewbit.herokuapp.com"
@@ -29,14 +30,9 @@
 
 
 typedef enum {
-  AS_REQUEST_AUTH,
-  AS_WAIT_FOR_AUTH,
-  AS_REQUEST_ACTIVATION_TOKEN,
-  AS_WAIT_FOR_ACTIVATION_TOKEN,
-  AS_WAIT_FOR_ACTIVATION_NOTIFICATION,
-  AS_REQUEST_UPDATE,
-  AS_WAIT_FOR_UPDATE,
-  AS_IDLE
+  AS_WAITING_NET_CONNECTION,
+  AS_CONNECTING,
+  AS_CONNECTED
 } api_state_t;
 
 
@@ -45,14 +41,12 @@ typedef struct {
   api_state_t state;
 } web_api_t;
 
-static web_api_t* api;
-
-
-static msg_t
-web_api_thread(void* arg);
 
 static void
-web_api_dispatch(msg_id_t id, void* msg_data, void* user_data);
+web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data);
+
+static void
+web_api_idle(web_api_t* api);
 
 static void
 websocket_message_rx(void* userData, snOpcode opcode, const char* data, int numBytes);
@@ -79,83 +73,102 @@ static void
 request_auth(web_api_t* api);
 
 static void
-request_update(web_api_t* api);
+check_for_update(web_api_t* api);
+
+static void
+start_update(web_api_t* api);
 
 
 void
 web_api_init()
 {
-//  msg_listener_t* l = msg_listener_create("web_api", 2048, web_api_dispatch);
-//  Thread* thd_web_api = chThdCreateFromHeap(NULL, 2048, NORMALPRIO, web_api_thread, NULL);
-//
-//  msg_subscribe(l, MSG_CHECK_UPDATE, NULL);
-}
-
-static msg_t
-web_api_thread(void* arg)
-{
-  (void)arg;
-  chRegSetThreadName("web");
-
-  chThdSleepMilliseconds(5000);
-
-  api = calloc(1, sizeof(web_api_t));
-  api->state = AS_REQUEST_AUTH;
+  web_api_t* api = calloc(1, sizeof(web_api_t));
+  api->state = AS_WAITING_NET_CONNECTION;
 
   api->ws = snWebsocket_create(
         NULL, // open callback
         websocket_message_rx,
         websocket_closed,
         websocket_error,
-        api); // callback data
+        api);
 
-  while (1) {
-    thread_msg_t* msg = msg_get_timeout(MS2ST(250));
+  msg_listener_t* l = msg_listener_create("web_api", 2048, web_api_dispatch, api);
+  msg_listener_set_idle_timeout(l, 250);
 
-    if (msg != NULL) {
-      web_api_dispatch(msg->id, msg->msg_data, msg->user_data);
-      msg_release(msg);
-    }
-    else {
-      switch(snWebsocket_getState(api->ws)) {
-      case SN_STATE_OPEN:
-        api_exec(api);
-        // intentional fall-through
-
-      case SN_STATE_CONNECTING:
-      case SN_STATE_CLOSING:
-        snWebsocket_poll(api->ws);
-        break;
-
-      case SN_STATE_CLOSED:
-      {
-        printf("WS connecting\r\n");
-        snError err = snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT);
-
-        if (err != SN_NO_ERROR)
-          printf("websocket connect failed %d\r\n", err);
-        else
-          printf("websocket connect OK\r\n");
-        break;
-      }
-
-      default:
-        break;
-      }
-    }
-  }
-
-  return 0;
+  msg_subscribe(l, MSG_NET_STATUS, NULL);
+  msg_subscribe(l, MSG_API_FW_UPDATE_CHECK, NULL);
+  msg_subscribe(l, MSG_API_FW_DNLD_START, NULL);
+  msg_subscribe(l, MSG_OTAU_CHECK, NULL);
 }
 
 static void
-web_api_dispatch(msg_id_t id, void* msg_data, void* user_data)
+web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
 {
-  switch (id) {
-  case MSG_CHECK_UPDATE:
-    request_update(api);
-    api->state = AS_WAIT_FOR_UPDATE;
+  (void)sub_data;
+  (void)msg_data;
+
+  web_api_t* api = listener_data;
+
+  if (id == MSG_NET_STATUS) {
+    net_status_t* ns = msg_data;
+    switch (ns->net_state) {
+    case NS_CONNECTED:
+      api->state = AS_CONNECTING;
+      break;
+
+    case NS_DISCONNECTED:
+      api->state = AS_WAITING_NET_CONNECTION;
+      break;
+
+    default:
+      break;
+    }
+  }
+  else if (id == MSG_IDLE) {
+    web_api_idle(api);
+  }
+
+  if (api->state == AS_CONNECTED) {
+    switch (id) {
+    case MSG_API_FW_UPDATE_CHECK:
+      check_for_update(api);
+      break;
+
+    case MSG_API_FW_DNLD_START:
+      start_update(api);
+      break;
+
+    default:
+      break;
+    }
+  }
+}
+
+static void
+web_api_idle(web_api_t* api)
+{
+  switch(snWebsocket_getState(api->ws)) {
+  case SN_STATE_OPEN:
+    api->state = AS_CONNECTED;
+    api_exec(api);
+    // intentional fall-through
+
+  case SN_STATE_CONNECTING:
+  case SN_STATE_CLOSING:
+    snWebsocket_poll(api->ws);
     break;
+
+  case SN_STATE_CLOSED:
+  {
+    printf("WS connecting\r\n");
+    snError err = snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT);
+
+    if (err != SN_NO_ERROR)
+      printf("websocket connect failed %d\r\n", err);
+    else
+      printf("websocket connect OK\r\n");
+    break;
+  }
 
   default:
     break;
@@ -165,39 +178,28 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* user_data)
 static void
 api_exec(web_api_t* api)
 {
-  switch (api->state) {
-  case AS_REQUEST_AUTH:
-    printf("requesting auth\r\n");
-    request_auth(api);
-    api->state = AS_WAIT_FOR_AUTH;
-    break;
 
-  case AS_WAIT_FOR_AUTH:
-    break;
-
-  case AS_REQUEST_ACTIVATION_TOKEN:
-    request_activation_token(api);
-    api->state = AS_WAIT_FOR_ACTIVATION_TOKEN;
-    break;
-
-  case AS_WAIT_FOR_ACTIVATION_TOKEN:
-    break;
-
-  case AS_WAIT_FOR_ACTIVATION_NOTIFICATION:
-    break;
-
-  case AS_REQUEST_UPDATE:
-    break;
-
-  case AS_WAIT_FOR_UPDATE:
-    break;
-
-  case AS_IDLE:
-    break;
-
-  default:
-    break;
-  }
+//  switch (api->state) {
+//  case AS_REQUESTING_AUTH:
+//    printf("requesting auth\r\n");
+//    request_auth(api);
+//    api->state = AS_IDLE;
+//    break;
+//
+//  case AS_REQUESTING_ACTIVATION_TOKEN:
+//    request_activation_token(api);
+//    api->state = AS_IDLE;
+//    break;
+//
+//  case AS_CHECKING_FOR_UPDATE:
+//    break;
+//
+//  case AS_IDLE:
+//    break;
+//
+//  default:
+//    break;
+//  }
 }
 
 static void
@@ -228,20 +230,29 @@ request_auth(web_api_t* api)
   free(msg);
 }
 
-void
-web_api_request_update(void)
-{
-  msg_post(MSG_CHECK_UPDATE, NULL);
-}
-
 static void
-request_update(web_api_t* api)
+check_for_update(web_api_t* api)
 {
   printf("sending update check\r\n");
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
-  msg->type = ApiMessage_Type_UPDATE_REQUEST;
-  msg->has_updateRequest = true;
-  msg->updateRequest.device_version = 42;
+  msg->type = ApiMessage_Type_FIRMWARE_UPDATE_CHECK_REQUEST;
+  msg->has_firmwareUpdateCheckRequest = true;
+  sprintf(msg->firmwareUpdateCheckRequest.current_version, "%d.%d.%d", MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
+
+  send_api_msg(api->ws, msg);
+
+  free(msg);
+}
+
+static void
+start_update(web_api_t* api)
+{
+  printf("sending update start\r\n");
+  ApiMessage* msg = calloc(1, sizeof(ApiMessage));
+  msg->type = ApiMessage_Type_FIRMWARE_DOWNLOAD_REQUEST;
+  msg->has_firmwareDownloadRequest = true;
+  // TODO get the version from the update check response...
+  sprintf(msg->firmwareDownloadRequest.requested_version, "%d.%d.%d", MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
 
   send_api_msg(api->ws, msg);
 
@@ -300,21 +311,22 @@ dispatch_api_msg(web_api_t* api, ApiMessage* msg)
 {
   switch (msg->type) {
   case ApiMessage_Type_ACTIVATION_TOKEN_RESPONSE:
-    api->state = AS_WAIT_FOR_ACTIVATION_NOTIFICATION;
+//    api->state = AS_WAIT_FOR_ACTIVATION_NOTIFICATION;
     break;
 
   case ApiMessage_Type_ACTIVATION_NOTIFICATION:
-    api->state = AS_IDLE;
     break;
 
   case ApiMessage_Type_AUTH_RESPONSE:
     printf("got auth response\r\n");
-    api->state = AS_IDLE;
     break;
 
-  case ApiMessage_Type_UPDATE_CHUNK:
-    printf("got update chunk %d %d\r\n", msg->updateChunk.data.size, msg->updateChunk.offset);
-    msg_send(MSG_OTAU_CHUNK, &msg->updateChunk);
+  case ApiMessage_Type_FIRMWARE_UPDATE_CHECK_RESPONSE:
+    msg_send(MSG_API_FW_UPDATE_CHECK_RESPONSE, &msg->firmwareUpdateCheckResponse);
+    break;
+
+  case ApiMessage_Type_FIRMWARE_DOWNLOAD_RESPONSE:
+    msg_send(MSG_API_FW_CHUNK, &msg->firmwareDownloadResponse);
     break;
 
   default:

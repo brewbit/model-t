@@ -5,7 +5,4 @@
 void
 web_api_init(void);
 
-void
-web_api_request_update(void);
-
 #endif

@@ -82,6 +82,9 @@ update_screen_create()
   s->progress = progressbar_create(s->widget, rect, CYAN, ORANGE);
   widget_hide(s->progress);
 
+  ota_update_status_t* us = ota_update_get_status();
+  dispatch_update_status(s, us);
+
   gui_msg_subscribe(MSG_OTAU_STATUS, s->widget);
 
   return s->widget;
@@ -121,7 +124,12 @@ static void
 update_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    ota_update_start();
+    ota_update_status_t* us = ota_update_get_status();
+    printf("update state %d\r\n", us->state);
+    if (us->state == OU_IDLE)
+      msg_post(MSG_OTAU_CHECK, NULL);
+    else if (us->state == OU_UPDATE_AVAILABLE)
+      msg_post(MSG_OTAU_START, NULL);
   }
 }
 
@@ -132,58 +140,60 @@ dispatch_update_status(update_screen_t* s, ota_update_status_t* status)
   char* desc = NULL;
 
   switch (status->state) {
-  case OU_PREPARING:
+  case OU_IDLE:
+    header = "Touch here to check for updates";
+    desc = "";
     break;
 
-  case OU_REQUESTING:
+  case OU_CHECKING:
+    header = "Checking for updates";
+    desc = "Contacting server...";
+    break;
+
+  case OU_UPDATE_AVAILABLE:
+    header = "Update available!";
+    desc = "Touch here to apply the update.";
+    break;
+
+  case OU_UPDATE_NOT_AVAILABLE:
+    header = "You're up to date!";
+    desc = "There are currently no updates.";
+    break;
+
+  case OU_PREPARING:
+    header = "Preparing for update...";
+    desc = "";
+    break;
+
+  case OU_STARTING_DOWNLOAD:
+    header = "Starting firmware download...";
+    desc = "";
     break;
 
   case OU_DOWNLOADING:
+    header = "Downloading formware...";
+    desc = "Do not remove power during update!";
+
+    printf("downloading %d / %d (%d%%)\r\n", status->update_downloaded, status->update_size, (100 * status->update_downloaded) / status->update_size);
+
+    widget_show(s->progress);
+    progressbar_set_progress(s->progress, (100 * status->update_downloaded) / status->update_size);
     break;
 
   case OU_COMPLETE:
+    header = "Applying update";
+    desc = "Do not remove power during update!";
+
+    widget_show(s->progress);
+    if (progressbar_get_progress(s->progress) < 100) {
+      progressbar_set_progress(s->progress, progressbar_get_progress(s->progress) + 1);
+    }
     break;
 
   case OU_FAILED:
+    header = "Update failed!";
+    desc = "";
     break;
-
-//  case OU_PREPARING:
-//    header = "Checking for updates";
-//    desc = "Contacting server...";
-//    break;
-//
-//  case UPDATE_AVAILABLE:
-//    header = "Update available!";
-//    desc = "Touch here to apply the update.";
-//    break;
-//
-//  case UPDATE_NOT_AVAILABLE:
-//    header = "You're up to date!";
-//    desc = "There are currently no updates.";
-//    break;
-//
-//  case UPDATE_DOWNLOADING:
-//    header = "Downloading update";
-//    desc = "Do not remove power during update!";
-//
-//    widget_show(s->progress);
-//    if (progressbar_get_progress(s->progress) < 100) {
-//      progressbar_set_progress(s->progress, progressbar_get_progress(s->progress) + 1);
-//    }
-//    else {
-//      progressbar_set_progress(s->progress, 0);
-//    }
-//    break;
-//
-//  case UPDATE_APPLYING:
-//    header = "Applying update";
-//    desc = "Do not remove power during update!";
-//
-//    widget_show(s->progress);
-//    if (progressbar_get_progress(s->progress) < 100) {
-//      progressbar_set_progress(s->progress, progressbar_get_progress(s->progress) + 1);
-//    }
-//    break;
 
   default:
     break;
