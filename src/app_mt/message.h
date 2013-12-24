@@ -46,15 +46,20 @@ typedef struct {
   void* msg_data;
 } thread_msg_t;
 
+struct msg_listener_s;
+typedef struct msg_listener_s msg_listener_t;
+
 
 typedef void (*thread_msg_dispatch_t)(msg_id_t id, void* msg_data, void* user_data);
 
+msg_listener_t*
+msg_listener_create(const char* name, int stack_size, thread_msg_dispatch_t dispatch);
 
 void
-msg_subscribe(msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatcher, void* user_data);
+msg_subscribe(msg_listener_t* l, msg_id_t id, void* user_data);
 
 void
-msg_unsubscribe(msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatch, void* user_data);
+msg_unsubscribe(msg_listener_t* l, msg_id_t id, void* user_data);
 
 // send a message and wait for it to be processed
 void

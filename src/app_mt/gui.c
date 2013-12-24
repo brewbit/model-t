@@ -11,8 +11,6 @@ typedef struct widget_stack_elem_s {
 } widget_stack_elem_t;
 
 
-static msg_t gui_thread_func(void* arg);
-
 static void dispatch_touch(touch_msg_t* event);
 static void dispatch_push_screen(widget_t* screen);
 static void dispatch_pop_screen(void);
@@ -20,7 +18,7 @@ static void gui_dispatch(msg_id_t id, void* msg_data, void* user_data);
 static void dispatch_msg(widget_t* w, msg_id_t id, void* msg_data);
 
 
-static Thread* gui_thread;
+static msg_listener_t* gui_msg_listener;
 static widget_t* touch_capture_widget;
 static widget_stack_elem_t* screen_stack = NULL;
 static systime_t last_paint_time;
@@ -29,12 +27,12 @@ static systime_t last_paint_time;
 void
 gui_init()
 {
-  gui_thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, gui_thread_func, NULL);
+  gui_msg_listener = msg_listener_create("gui", 1024, gui_dispatch);
 
-  msg_subscribe(MSG_TOUCH_INPUT, gui_thread, gui_dispatch, NULL);
-  msg_subscribe(MSG_GUI_PUSH_SCREEN, gui_thread, gui_dispatch, NULL);
-  msg_subscribe(MSG_GUI_POP_SCREEN, gui_thread, gui_dispatch, NULL);
-  msg_subscribe(MSG_GUI_PAINT, gui_thread, gui_dispatch, NULL);
+  msg_subscribe(gui_msg_listener, MSG_TOUCH_INPUT, NULL);
+  msg_subscribe(gui_msg_listener, MSG_GUI_PUSH_SCREEN, NULL);
+  msg_subscribe(gui_msg_listener, MSG_GUI_POP_SCREEN, NULL);
+  msg_subscribe(gui_msg_listener, MSG_GUI_PAINT, NULL);
 }
 
 void
@@ -69,7 +67,7 @@ gui_msg_subscribe(msg_id_t id, widget_t* w)
   if (w == NULL)
     return;
 
-  msg_subscribe(id, gui_thread, gui_dispatch, w);
+  msg_subscribe(gui_msg_listener, id, w);
 }
 
 void
@@ -78,25 +76,7 @@ gui_msg_unsubscribe(msg_id_t id, widget_t* w)
   if (w == NULL)
     return;
 
-  msg_unsubscribe(id, gui_thread, gui_dispatch, w);
-}
-
-static msg_t
-gui_thread_func(void* arg)
-{
-  (void)arg;
-
-  chRegSetThreadName("gui");
-
-  while (1) {
-    thread_msg_t* msg = msg_get();
-
-    gui_dispatch(msg->id, msg->msg_data, msg->user_data);
-
-    msg_release(msg);
-  }
-
-  return 0;
+  msg_unsubscribe(gui_msg_listener, id, w);
 }
 
 void

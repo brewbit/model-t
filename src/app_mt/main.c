@@ -12,7 +12,6 @@
 #include "gui_home.h"
 #include "gfx.h"
 #include "app_cfg.h"
-#include "debug_client.h"
 #include "net.h"
 #include "sntp.h"
 #include "ota_update.h"
@@ -54,10 +53,6 @@ main(void)
   web_api_init();
 //  sntp_init();
   gui_init();
-
-#ifdef DEBUG
-  debug_client_init();
-#endif
 
   widget_t* home_screen = home_screen_create();
   gui_push_screen(home_screen);

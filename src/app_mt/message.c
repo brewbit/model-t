@@ -8,58 +8,92 @@
 
 typedef struct msg_listener_s {
   Thread* thread;
+  const char* name;
   thread_msg_dispatch_t dispatch;
-  void* user_data;
-  struct msg_listener_s* next;
 } msg_listener_t;
 
+typedef struct msg_subscription_s {
+  msg_listener_t* listener;
+  void* user_data;
+  struct msg_subscription_s* next;
+} msg_subscription_t;
+
+
+static msg_t
+msg_thread_func(void* arg);
 
 static void
 msg_broadcast(msg_id_t id, void* msg_data, bool wait);
 
 
-static msg_listener_t* listeners[NUM_THREAD_MSGS];
+static msg_subscription_t* subs[NUM_THREAD_MSGS];
 
+
+msg_listener_t*
+msg_listener_create(const char* name, int stack_size, thread_msg_dispatch_t dispatch)
+{
+  msg_listener_t* l = calloc(1, sizeof(msg_listener_t));
+  l->name = name;
+  l->dispatch = dispatch;
+  l->thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, msg_thread_func, l);
+  return l;
+}
+
+static msg_t
+msg_thread_func(void* arg)
+{
+  msg_listener_t* l = arg;
+
+  chRegSetThreadName(l->name);
+
+  while (1) {
+    thread_msg_t* msg = msg_get();
+
+    l->dispatch(msg->id, msg->msg_data, msg->user_data);
+
+    msg_release(msg);
+  }
+
+  return 0;
+}
 
 void
-msg_subscribe(msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatch, void* user_data)
+msg_subscribe(msg_listener_t* l, msg_id_t id, void* user_data)
 {
   if (id >= NUM_THREAD_MSGS)
     return;
 
-  msg_listener_t* listener = chHeapAlloc(NULL, sizeof(msg_listener_t));
-  listener->thread = thread;
-  listener->dispatch = dispatch;
-  listener->user_data = user_data;
+  msg_subscription_t* sub = calloc(1, sizeof(msg_subscription_t));
+  sub->listener = l;
+  sub->user_data = user_data;
 
   chSysLock();
-  listener->next = listeners[id];
-  listeners[id] = listener;
+  sub->next = subs[id];
+  subs[id] = sub;
   chSysUnlock();
 }
 
 void
-msg_unsubscribe(msg_id_t id, Thread* thread, thread_msg_dispatch_t dispatch, void* user_data)
+msg_unsubscribe(msg_listener_t* l, msg_id_t id, void* user_data)
 {
   if (id >= NUM_THREAD_MSGS)
     return;
 
-  msg_listener_t* listener;
-  msg_listener_t* prev_listener = NULL;
-  for (listener = listeners[id]; listener != NULL; listener = listener->next) {
-    if ((listener->thread == thread) &&
-        (listener->dispatch == dispatch) &&
-        (listener->user_data == user_data)) {
-      if (prev_listener != NULL) {
-        prev_listener->next = listener->next;
+  msg_subscription_t* sub;
+  msg_subscription_t* prev_sub = NULL;
+  for (sub = subs[id]; sub != NULL; sub = sub->next) {
+    if ((sub->listener == l) &&
+        (sub->user_data == user_data)) {
+      if (prev_sub != NULL) {
+        prev_sub->next = sub->next;
       }
       else {
-        listeners[id] = listener->next;
+        subs[id] = sub->next;
       }
-      chHeapFree(listener);
+      chHeapFree(sub);
       break;
     }
-    prev_listener = listener;
+    prev_sub = sub;
   }
 }
 
@@ -78,7 +112,7 @@ msg_post(msg_id_t id, void* msg_data)
 static void
 msg_broadcast(msg_id_t id, void* msg_data, bool wait)
 {
-  msg_listener_t* listener;
+  msg_subscription_t* sub;
 
   if (id >= NUM_THREAD_MSGS)
     return;
@@ -88,19 +122,19 @@ msg_broadcast(msg_id_t id, void* msg_data, bool wait)
     thread_count = malloc(sizeof(int));
     *thread_count = 0;
 
-    // count listeners
-    for (listener = listeners[id]; listener != NULL; listener = listener->next) {
-      if (listener->thread != chThdSelf())
+    // count subs
+    for (sub = subs[id]; sub != NULL; sub = sub->next) {
+      if (sub->listener->thread != chThdSelf())
         *thread_count += 1;
     }
     if (*thread_count == 0)
       free(thread_count);
   }
 
-  for (listener = listeners[id]; listener != NULL; listener = listener->next) {
-    if (listener->thread == chThdSelf()) {
-      if (listener->dispatch != NULL)
-        listener->dispatch(id, msg_data, listener->user_data);
+  for (sub = subs[id]; sub != NULL; sub = sub->next) {
+    if (sub->listener->thread == chThdSelf()) {
+      if (sub->listener->dispatch != NULL)
+        sub->listener->dispatch(id, msg_data, sub->user_data);
       else
         chDbgPanic("message broadcast to self, but no dispatch method provided");
     }
@@ -108,13 +142,13 @@ msg_broadcast(msg_id_t id, void* msg_data, bool wait)
       thread_msg_t* msg = malloc(sizeof(thread_msg_t));
       msg->id = id;
       msg->msg_data = msg_data;
-      msg->user_data = listener->user_data;
+      msg->user_data = sub->user_data;
       msg->waiting_thd = wait ? chThdSelf() : NULL;
       msg->thread_count = thread_count;
 
       // Ownership of msg is transferred to the thread it was sent to here.
       // Do not reference it again because it might not exist anymore!
-      chMBPost(&listener->thread->mb, (msg_t)msg, TIME_INFINITE);
+      chMBPost(&sub->listener->thread->mb, (msg_t)msg, TIME_INFINITE);
 
       if (wait)
         chSemWait(&chThdSelf()->mb_sem);

@@ -11,9 +11,6 @@
 #include <stdio.h>
 
 
-static msg_t
-ota_update_thread(void* arg);
-
 static void
 ota_update_dispatch(msg_id_t id, void* msg_data, void* user_data);
 
@@ -30,34 +27,16 @@ static sxfs_part_t part;
 void
 ota_update_init()
 {
-  Thread* update_thd = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, ota_update_thread, NULL);
+  msg_listener_t* l = msg_listener_create("ota_update", 1024, ota_update_dispatch);
 
-  msg_subscribe(MSG_OTAU_START, update_thd, ota_update_dispatch, NULL);
-  msg_subscribe(MSG_OTAU_CHUNK, update_thd, ota_update_dispatch, NULL);
+  msg_subscribe(l, MSG_OTAU_START, NULL);
+  msg_subscribe(l, MSG_OTAU_CHUNK, NULL);
 }
 
 void
 ota_update_start()
 {
   msg_post(MSG_OTAU_START, NULL);
-}
-
-static msg_t
-ota_update_thread(void* arg)
-{
-  (void)arg;
-
-  chRegSetThreadName("ota_update");
-
-  while (1) {
-    thread_msg_t* msg = msg_get();
-
-    ota_update_dispatch(msg->id, msg->msg_data, msg->user_data);
-
-    msg_release(msg);
-  }
-
-  return 0;
 }
 
 static void

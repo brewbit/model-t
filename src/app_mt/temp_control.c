@@ -26,7 +26,6 @@ typedef struct {
 } relay_output_t;
 
 
-static msg_t temp_control_thread(void* arg);
 static void dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* user_data);
 static void dispatch_output_settings(output_settings_msg_t* msg);
 static void dispatch_sensor_settings(sensor_settings_msg_t* msg);
@@ -51,12 +50,12 @@ temp_control_init()
   output_init(&outputs[OUTPUT_1], OUTPUT_1, PAD_RELAY1);
   output_init(&outputs[OUTPUT_2], OUTPUT_2, PAD_RELAY2);
 
-  Thread* thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, temp_control_thread, NULL);
+  msg_listener_t* l = msg_listener_create("temp_ctrl", 1024, dispatch_temp_input_msg);
 
 //  msg_subscribe(MSG_SENSOR_SAMPLE, thread, dispatch_temp_input_msg, NULL);
-  msg_subscribe(MSG_SENSOR_TIMEOUT, thread, dispatch_temp_input_msg, NULL);
-  msg_subscribe(MSG_SENSOR_SETTINGS, thread, dispatch_temp_input_msg, NULL);
-  msg_subscribe(MSG_OUTPUT_SETTINGS, thread, dispatch_temp_input_msg, NULL);
+  msg_subscribe(l, MSG_SENSOR_TIMEOUT, NULL);
+  msg_subscribe(l, MSG_SENSOR_SETTINGS, NULL);
+  msg_subscribe(l, MSG_OUTPUT_SETTINGS, NULL);
 }
 
 static void
@@ -120,23 +119,6 @@ cycle_delay(output_id_t output)
   const output_settings_t* settings = app_cfg_get_output_settings(output);
   if (settings->compressor_delay > 0)
     chThdSleep(settings->compressor_delay);
-}
-
-static msg_t
-temp_control_thread(void* arg)
-{
-  (void)arg;
-  chRegSetThreadName("temp_control");
-
-  while (1) {
-    thread_msg_t* msg = msg_get();
-
-    dispatch_temp_input_msg(msg->id, msg->msg_data, msg->user_data);
-
-    msg_release(msg);
-  }
-
-  return 0;
 }
 
 static void
