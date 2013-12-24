@@ -112,6 +112,7 @@ net_connect(network_t* net, const char* passphrase)
   strncpy(net_status.ssid, net->ssid, sizeof(net_status.ssid));
   strncpy(net_status.passphrase, passphrase, sizeof(net_status.passphrase));
   net_status.net_state = NS_CONNECT;
+  msg_send(MSG_NET_STATUS, &net_status);
 }
 
 static void
@@ -131,6 +132,7 @@ wlan_event(long event_type, char * data, unsigned char length)
     // WLAN-connected event
   case HCI_EVNT_WLAN_UNSOL_CONNECT:
     net_status.net_state = NS_CONNECTED;
+    msg_send(MSG_NET_STATUS, &net_status);
     break;
 
     // Notification that CC3000 device is disconnected from the access point (AP)
@@ -139,6 +141,7 @@ wlan_event(long event_type, char * data, unsigned char length)
       net_status.net_state = NS_CONNECT_FAILED;
     else
       net_status.net_state = NS_DISCONNECTED;
+    msg_send(MSG_NET_STATUS, &net_status);
     break;
 
     // Notification of a Dynamic Host Configuration Protocol (DHCP) state change
@@ -327,6 +330,37 @@ prune_networks()
   }
 }
 
+static void
+perform_connect()
+{
+  // Delete any stored profiles
+  long ret = wlan_ioctl_del_profile(255);
+  if (ret != 0) {
+    net_status.net_state = NS_CONNECT_FAILED;
+    msg_send(MSG_NET_STATUS, &net_status);
+    return;
+  }
+
+  // Add the new profile
+  ret = wlan_add_profile(net_status.security_mode,
+      (unsigned char*)net_status.ssid, strlen(net_status.ssid),
+      NULL, 0, 0x18, 0x1e, 0x2,
+      (unsigned char*)net_status.passphrase, strlen(net_status.passphrase));
+  if (ret != 0) {
+    net_status.net_state = NS_CONNECT_FAILED;
+    msg_send(MSG_NET_STATUS, &net_status);
+    return;
+  }
+
+  // Restart the module
+  wlan_stop();
+  chThdSleepMilliseconds(100);
+  wlan_start(0);
+
+  net_status.net_state = NS_CONNECTING;
+  msg_send(MSG_NET_STATUS, &net_status);
+}
+
 static msg_t
 wlan_thread(void* arg)
 {
@@ -358,28 +392,8 @@ wlan_thread(void* arg)
       if (net_status.net_state != last_net_state) {
         switch (net_status.net_state) {
         case NS_CONNECT:
-        {
-          // Delete any stored profiles
-          long ret = wlan_ioctl_del_profile(255);
-          if (ret != 0)
-            net_status.net_state = NS_CONNECT_FAILED;
-
-          // Add the new profile
-          ret = wlan_add_profile(net_status.security_mode,
-              (unsigned char*)net_status.ssid, strlen(net_status.ssid),
-              NULL, 0, 0x18, 0x1e, 0x2,
-              (unsigned char*)net_status.passphrase, strlen(net_status.passphrase));
-          if (ret != 0)
-            net_status.net_state = NS_CONNECT_FAILED;
-
-          // Restart the module
-          wlan_stop();
-          chThdSleepMilliseconds(100);
-          wlan_start(0);
-
-          net_status.net_state = NS_CONNECTING;
+          perform_connect();
           break;
-        }
 
         case NS_CONNECTED:
         {
