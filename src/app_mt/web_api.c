@@ -33,6 +33,8 @@
 typedef enum {
   AS_WAITING_NET_CONNECTION,
   AS_CONNECTING,
+  AS_LOGGING_IN,
+  AS_WAITING_ACTIVATION,
   AS_CONNECTED
 } api_state_t;
 
@@ -51,12 +53,6 @@ web_api_idle(web_api_t* api);
 
 static void
 websocket_message_rx(void* userData, snOpcode opcode, const char* data, int numBytes);
-
-static void
-websocket_closed(void* userData, snStatusCode status);
-
-static void
-websocket_error(void* userData, snError error);
 
 static void
 send_api_msg(snWebsocket* ws, ApiMessage* msg);
@@ -95,8 +91,8 @@ web_api_init()
   api->ws = snWebsocket_create(
         NULL, // open callback
         websocket_message_rx,
-        websocket_closed,
-        websocket_error,
+        NULL, // closed callback
+        NULL, // error callback
         api);
 
   msg_listener_t* l = msg_listener_create("web_api", 2048, web_api_dispatch, api);
@@ -195,8 +191,7 @@ web_api_idle(web_api_t* api)
 static void
 api_exec(web_api_t* api)
 {
-
-//  switch (api->state) {
+  switch (api->state) {
 //  case AS_REQUESTING_AUTH:
 //    printf("requesting auth\r\n");
 //    request_auth(api);
@@ -216,7 +211,7 @@ api_exec(web_api_t* api)
 //
 //  default:
 //    break;
-//  }
+  }
 }
 
 static void
@@ -317,20 +312,6 @@ websocket_message_rx(void* userData, snOpcode opcode, const char* data, int numB
     dispatch_api_msg(api, msg);
 
   free(msg);
-}
-
-static void
-websocket_closed(void* userData, snStatusCode status)
-{
-  (void)userData;
-  printf("websocket closed %d\r\n", status);
-}
-
-static void
-websocket_error(void* userData, snError error)
-{
-  (void)userData;
-  printf("websocket error %d\r\n", error);
 }
 
 static void
