@@ -31,12 +31,6 @@ typedef struct {
   uint32_t crc;
 } sxfs_file_rec_t;
 
-/* Partition - represents an open sxfs file */
-typedef struct {
-  uint32_t offset;
-  uint32_t data_left;
-} sxfs_part_t;
-
 /* File - represents an open sxfs file */
 typedef struct {
   uint32_t offset;
@@ -48,10 +42,7 @@ bool
 sxfs_part_clear(sxfs_part_id_t part_id);
 
 bool
-sxfs_part_open(sxfs_part_t* part, sxfs_part_id_t part_id);
-
-void
-sxfs_part_write(sxfs_part_t* part, uint8_t* data, uint32_t data_len);
+sxfs_part_write(sxfs_part_id_t part_id, uint8_t* data, uint32_t data_len, uint32_t offset);
 
 bool
 sxfs_part_verify(sxfs_part_id_t part_id);

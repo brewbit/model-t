@@ -27,7 +27,6 @@ static void
 dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk);
 
 
-static sxfs_part_t part;
 static ota_update_status_t status;
 
 
@@ -99,12 +98,6 @@ dispatch_ota_update_start()
     return;
   }
 
-  if (!sxfs_part_open(&part, SP_OTA_UPDATE_IMG)) {
-    printf("part open failed\r\n");
-    set_state(OU_FAILED);
-    return;
-  }
-
   set_state(OU_STARTING_DOWNLOAD);
   msg_post(MSG_API_FW_DNLD_START, NULL);
 }
@@ -136,7 +129,13 @@ dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
 
   set_state(OU_DOWNLOADING);
 
-  sxfs_part_write(&part, update_chunk->data.bytes, update_chunk->data.size);
+  if (!sxfs_part_write(SP_OTA_UPDATE_IMG,
+      update_chunk->data.bytes,
+      update_chunk->data.size,
+      update_chunk->offset)) {
+    set_state(OU_FAILED);
+    return;
+  }
 
   if (status.update_downloaded >= status.update_size) {
     // Verify the integrity of the image that we just downloaded

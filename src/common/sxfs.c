@@ -26,18 +26,6 @@ static const part_info_t part_info[NUM_SXFS_PARTS] = {
 
 
 bool
-sxfs_part_open(sxfs_part_t* part, sxfs_part_id_t part_id)
-{
-  if (part_id >= NUM_SXFS_PARTS)
-    return false;
-
-  part->offset = part_info[part_id].offset;
-  part->data_left = part_info[part_id].size;
-
-  return true;
-}
-
-bool
 sxfs_part_clear(sxfs_part_id_t part_id)
 {
   if (part_id >= NUM_SXFS_PARTS)
@@ -50,17 +38,19 @@ sxfs_part_clear(sxfs_part_id_t part_id)
   return true;
 }
 
-void
-sxfs_part_write(sxfs_part_t* part, uint8_t* data, uint32_t data_len)
+bool
+sxfs_part_write(sxfs_part_id_t part_id, uint8_t* data, uint32_t data_len, uint32_t offset)
 {
-  uint32_t nwrite = MIN(data_len, part->data_left);
+  if (part_id >= NUM_SXFS_PARTS)
+    return false;
 
-  if (nwrite > 0) {
-    xflash_write(part->offset, data, nwrite);
+  part_info_t pinfo = part_info[part_id];
+  if ((offset + data_len) > pinfo.size)
+    return false;
 
-    part->offset += nwrite;
-    part->data_left -= nwrite;
-  }
+  xflash_write(pinfo.offset + offset, data, data_len);
+
+  return true;
 }
 
 bool
