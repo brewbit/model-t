@@ -15,6 +15,7 @@
 #include "bbmt.pb.h"
 #include "message.h"
 #include "net.h"
+#include "sensor.h"
 
 #ifndef WEB_API_HOST
 #define WEB_API_HOST_STR "brewbit.herokuapp.com"
@@ -67,6 +68,12 @@ static void
 api_exec(web_api_t* api);
 
 static void
+dispatch_sensor_sample(web_api_t* api, sensor_msg_t* sample);
+
+static void
+dispatch_sensor_timeout(web_api_t* api, sensor_timeout_msg_t* timeout);
+
+static void
 request_activation_token(web_api_t* api);
 
 static void
@@ -98,7 +105,8 @@ web_api_init()
   msg_subscribe(l, MSG_NET_STATUS, NULL);
   msg_subscribe(l, MSG_API_FW_UPDATE_CHECK, NULL);
   msg_subscribe(l, MSG_API_FW_DNLD_START, NULL);
-  msg_subscribe(l, MSG_OTAU_CHECK, NULL);
+  msg_subscribe(l, MSG_SENSOR_SAMPLE, NULL);
+  msg_subscribe(l, MSG_SENSOR_TIMEOUT, NULL);
 }
 
 static void
@@ -109,37 +117,46 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
 
   web_api_t* api = listener_data;
 
-  if (id == MSG_NET_STATUS) {
-    net_status_t* ns = msg_data;
-    switch (ns->net_state) {
-    case NS_CONNECTED:
-      api->state = AS_CONNECTING;
-      break;
-
-    case NS_DISCONNECTED:
-      api->state = AS_WAITING_NET_CONNECTION;
-      break;
-
-    default:
+  switch (id) {
+    case MSG_NET_STATUS:
+    {
+      net_status_t* ns = msg_data;
+      if (ns->net_state == NS_CONNECTED)
+        api->state = AS_CONNECTING;
+      else
+        api->state = AS_WAITING_NET_CONNECTION;
       break;
     }
-  }
-  else if (id == MSG_IDLE) {
-    web_api_idle(api);
-  }
 
-  if (api->state == AS_CONNECTED) {
-    switch (id) {
-    case MSG_API_FW_UPDATE_CHECK:
-      check_for_update(api);
-      break;
-
-    case MSG_API_FW_DNLD_START:
-      start_update(api);
+    case MSG_IDLE:
+      web_api_idle(api);
       break;
 
     default:
       break;
+  }
+
+  // Only process the following if the API connection has been established
+  if (api->state == AS_CONNECTED) {
+    switch (id) {
+      case MSG_SENSOR_SAMPLE:
+        dispatch_sensor_sample(api, msg_data);
+        break;
+
+      case MSG_SENSOR_TIMEOUT:
+        dispatch_sensor_timeout(api, msg_data);
+        break;
+
+      case MSG_API_FW_UPDATE_CHECK:
+        check_for_update(api);
+        break;
+
+      case MSG_API_FW_DNLD_START:
+        start_update(api);
+        break;
+
+      default:
+        break;
     }
   }
 }
@@ -148,30 +165,30 @@ static void
 web_api_idle(web_api_t* api)
 {
   switch(snWebsocket_getState(api->ws)) {
-  case SN_STATE_OPEN:
-    api->state = AS_CONNECTED;
-    api_exec(api);
-    // intentional fall-through
+    case SN_STATE_OPEN:
+      api->state = AS_CONNECTED;
+      api_exec(api);
+      // intentional fall-through
 
-  case SN_STATE_CONNECTING:
-  case SN_STATE_CLOSING:
-    snWebsocket_poll(api->ws);
-    break;
+    case SN_STATE_CONNECTING:
+    case SN_STATE_CLOSING:
+      snWebsocket_poll(api->ws);
+      break;
 
-  case SN_STATE_CLOSED:
-  {
-    printf("WS connecting\r\n");
-    snError err = snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT);
+    case SN_STATE_CLOSED:
+    {
+      printf("WS connecting\r\n");
+      snError err = snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT);
 
-    if (err != SN_NO_ERROR)
-      printf("websocket connect failed %d\r\n", err);
-    else
-      printf("websocket connect OK\r\n");
-    break;
-  }
+      if (err != SN_NO_ERROR)
+        printf("websocket connect failed %d\r\n", err);
+      else
+        printf("websocket connect OK\r\n");
+      break;
+    }
 
-  default:
-    break;
+    default:
+      break;
   }
 }
 
@@ -228,6 +245,16 @@ request_auth(web_api_t* api)
   send_api_msg(api->ws, msg);
 
   free(msg);
+}
+
+static void
+dispatch_sensor_sample(web_api_t* api, sensor_msg_t* sample)
+{
+}
+
+static void
+dispatch_sensor_timeout(web_api_t* api, sensor_timeout_msg_t* timeout)
+{
 }
 
 static void
