@@ -79,7 +79,7 @@ static void
 check_for_update(web_api_t* api);
 
 static void
-start_update(web_api_t* api);
+start_update(web_api_t* api, const char* ver);
 
 
 void
@@ -148,7 +148,7 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
         break;
 
       case MSG_API_FW_DNLD_START:
-        start_update(api);
+        start_update(api, msg_data);
         break;
 
       default:
@@ -267,14 +267,14 @@ check_for_update(web_api_t* api)
 }
 
 static void
-start_update(web_api_t* api)
+start_update(web_api_t* api, const char* ver)
 {
   printf("sending update start\r\n");
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_FIRMWARE_DOWNLOAD_REQUEST;
   msg->has_firmwareDownloadRequest = true;
-  // TODO get the version from the update check response...
-  sprintf(msg->firmwareDownloadRequest.requested_version, "%d.%d.%d", MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
+  strncpy(msg->firmwareDownloadRequest.requested_version, ver,
+      sizeof(msg->firmwareDownloadRequest.requested_version));
 
   send_api_msg(api->ws, msg);
 

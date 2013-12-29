@@ -99,7 +99,7 @@ dispatch_ota_update_start()
   }
 
   set_state(OU_STARTING_DOWNLOAD);
-  msg_post(MSG_API_FW_DNLD_START, NULL);
+  msg_post(MSG_API_FW_DNLD_START, strdup(status.update_ver));
 }
 
 static void
