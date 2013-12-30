@@ -5,6 +5,7 @@
 #include "types.h"
 #include "temp_control.h"
 #include "touch_calib.h"
+#include "web_api.h"
 
 
 void
@@ -36,5 +37,11 @@ app_cfg_get_output_settings(output_id_t output);
 
 void
 app_cfg_set_output_settings(output_id_t output, output_settings_t* settings);
+
+const char*
+app_cfg_get_auth_token();
+
+void
+app_cfg_set_auth_token(const char* auth_token);
 
 #endif

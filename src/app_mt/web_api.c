@@ -16,6 +16,7 @@
 #include "message.h"
 #include "net.h"
 #include "sensor.h"
+#include "app_cfg.h"
 
 #ifndef WEB_API_HOST
 #define WEB_API_HOST_STR "brewbit.herokuapp.com"
@@ -30,20 +31,15 @@
 #endif
 
 
-typedef enum {
-  AS_WAITING_NET_CONNECTION,
-  AS_CONNECTING,
-  AS_LOGGING_IN,
-  AS_WAITING_ACTIVATION,
-  AS_CONNECTED
-} api_state_t;
-
-
 typedef struct {
   snWebsocket* ws;
   api_state_t state;
+  char activation_token[64];
 } web_api_t;
 
+
+static void
+set_state(web_api_t* api, api_state_t state);
 
 static void
 web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data);
@@ -59,9 +55,6 @@ send_api_msg(snWebsocket* ws, ApiMessage* msg);
 
 static void
 dispatch_api_msg(web_api_t* api, ApiMessage* msg);
-
-static void
-api_exec(web_api_t* api);
 
 static void
 dispatch_sensor_sample(web_api_t* api, sensor_msg_t* sample);
@@ -82,11 +75,14 @@ static void
 start_update(web_api_t* api, const char* ver);
 
 
+static web_api_t* api;
+
+
 void
 web_api_init()
 {
-  web_api_t* api = calloc(1, sizeof(web_api_t));
-  api->state = AS_WAITING_NET_CONNECTION;
+  api = calloc(1, sizeof(web_api_t));
+  api->state = AS_AWAITING_NET_CONNECTION;
 
   api->ws = snWebsocket_create(
         NULL, // open callback
@@ -105,6 +101,12 @@ web_api_init()
   msg_subscribe(l, MSG_SENSOR_TIMEOUT, NULL);
 }
 
+api_state_t
+web_api_get_status()
+{
+  return api->state;
+}
+
 static void
 web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
 {
@@ -118,9 +120,9 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
     {
       net_status_t* ns = msg_data;
       if (ns->net_state == NS_CONNECTED)
-        api->state = AS_CONNECTING;
+        set_state(api, AS_CONNECTING);
       else
-        api->state = AS_WAITING_NET_CONNECTION;
+        set_state(api, AS_AWAITING_NET_CONNECTION);
       break;
     }
 
@@ -158,60 +160,45 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
 }
 
 static void
-web_api_idle(web_api_t* api)
+set_state(web_api_t* api, api_state_t state)
 {
-  switch(snWebsocket_getState(api->ws)) {
-    case SN_STATE_OPEN:
-      api->state = AS_CONNECTED;
-      api_exec(api);
-      // intentional fall-through
+  if (api->state != state) {
+    api->state = state;
 
-    case SN_STATE_CONNECTING:
-    case SN_STATE_CLOSING:
-      snWebsocket_poll(api->ws);
-      break;
-
-    case SN_STATE_CLOSED:
-    {
-      printf("WS connecting\r\n");
-      snError err = snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT);
-
-      if (err != SN_NO_ERROR)
-        printf("websocket connect failed %d\r\n", err);
-      else
-        printf("websocket connect OK\r\n");
-      break;
-    }
-
-    default:
-      break;
+    api_status_t status_msg = {
+        .state = state
+    };
+    msg_send(MSG_API_STATUS, &status_msg);
   }
 }
 
 static void
-api_exec(web_api_t* api)
+web_api_idle(web_api_t* api)
 {
-  switch (api->state) {
-//  case AS_REQUESTING_AUTH:
-//    printf("requesting auth\r\n");
-//    request_auth(api);
-//    api->state = AS_IDLE;
-//    break;
-//
-//  case AS_REQUESTING_ACTIVATION_TOKEN:
-//    request_activation_token(api);
-//    api->state = AS_IDLE;
-//    break;
-//
-//  case AS_CHECKING_FOR_UPDATE:
-//    break;
-//
-//  case AS_IDLE:
-//    break;
-//
-//  default:
-//    break;
+  switch (snWebsocket_getState(api->ws)) {
+    case SN_STATE_CLOSED:
+      snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT);
+      break;
+
+    case SN_STATE_OPEN:
+      if (api->state == AS_CONNECTING) {
+        const char* auth_token = app_cfg_get_auth_token();
+        if (strlen(auth_token) > 0) {
+          request_auth(api);
+          set_state(api, AS_REQUESTING_AUTH);
+        }
+        else {
+          request_activation_token(api);
+          set_state(api, AS_REQUESTING_ACTIVATION_TOKEN);
+        }
+      }
+      break;
+
+    default:
+      break;
   }
+
+  snWebsocket_poll(api->ws);
 }
 
 static void
@@ -319,14 +306,30 @@ dispatch_api_msg(web_api_t* api, ApiMessage* msg)
 {
   switch (msg->type) {
   case ApiMessage_Type_ACTIVATION_TOKEN_RESPONSE:
-//    api->state = AS_WAIT_FOR_ACTIVATION_NOTIFICATION;
+    printf("got activation token: %s\r\n", msg->activationTokenResponse.activation_token);
+    strncpy(api->activation_token,
+        msg->activationTokenResponse.activation_token,
+        sizeof(api->activation_token));
+    set_state(api, AS_AWAITING_ACTIVATION);
     break;
 
   case ApiMessage_Type_ACTIVATION_NOTIFICATION:
+    printf("got auth token: %s\r\n", msg->activationNotification.auth_token);
+    app_cfg_set_auth_token(msg->activationNotification.auth_token);
+    set_state(api, AS_CONNECTED);
     break;
 
   case ApiMessage_Type_AUTH_RESPONSE:
-    printf("got auth response\r\n");
+    if (msg->authResponse.authenticated) {
+      printf("auth succeeded\r\n");
+      set_state(api, AS_CONNECTED);
+    }
+    else {
+      printf("auth failed, restarting activation\r\n");
+      app_cfg_set_auth_token("");
+      request_activation_token(api);
+      set_state(api, AS_REQUESTING_ACTIVATION_TOKEN);
+    }
     break;
 
   case ApiMessage_Type_FIRMWARE_UPDATE_CHECK_RESPONSE:

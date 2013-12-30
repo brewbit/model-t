@@ -8,6 +8,7 @@
 #include "gfx.h"
 #include "gui.h"
 #include "net.h"
+#include "web_api.h"
 
 #include <string.h>
 
@@ -25,8 +26,10 @@ static void wifi_screen_destroy(widget_t* w);
 static void wifi_screen_msg(msg_event_t* event);
 static void back_button_clicked(button_event_t* event);
 static void network_button_clicked(button_event_t* event);
+static void acct_button_clicked(button_event_t* event);
 
 static void dispatch_net_status(wifi_screen_t* s, const net_status_t* status);
+static void dispatch_api_status(wifi_screen_t* s, api_state_t api_state);
 
 
 static widget_class_t wifi_screen_widget_class = {
@@ -86,7 +89,7 @@ wifi_screen_create()
     rect.y = 155;
     rect.width = 300;
     rect.height = 66;
-    widget_t* acct_button = button_create(s->widget, rect, NULL, WHITE, BLACK, network_button_clicked);
+    widget_t* acct_button = button_create(s->widget, rect, NULL, WHITE, BLACK, acct_button_clicked);
 
     rect.x = 5;
     rect.y = 5;
@@ -108,7 +111,11 @@ wifi_screen_create()
   const net_status_t* net_status = net_get_status();
   dispatch_net_status(s, net_status);
 
+  api_state_t api_state = web_api_get_status();
+  dispatch_api_status(s, api_state);
+
   gui_msg_subscribe(MSG_NET_STATUS, s->widget);
+  gui_msg_subscribe(MSG_API_STATUS, s->widget);
 
   return s->widget;
 }
@@ -119,6 +126,7 @@ wifi_screen_destroy(widget_t* w)
   wifi_screen_t* s = widget_get_instance_data(w);
 
   gui_msg_unsubscribe(MSG_NET_STATUS, w);
+  gui_msg_unsubscribe(MSG_API_STATUS, w);
 
   free(s);
 }
@@ -131,6 +139,11 @@ wifi_screen_msg(msg_event_t* event)
   switch (event->msg_id) {
   case MSG_NET_STATUS:
     dispatch_net_status(s, event->msg_data);
+    break;
+
+  case MSG_API_STATUS:
+    dispatch_api_status(s,
+        ((api_status_t*)event->msg_data)->state);
     break;
 
   default:
@@ -171,6 +184,48 @@ dispatch_net_status(wifi_screen_t* s, const net_status_t* status)
 }
 
 static void
+dispatch_api_status(wifi_screen_t* s, api_state_t api_state)
+{
+  switch (api_state) {
+  case AS_AWAITING_NET_CONNECTION:
+    label_set_text(s->acct_status1, "Awaiting net conn");
+    label_set_text(s->acct_status2, "");
+    break;
+
+  case AS_CONNECTING:
+    label_set_text(s->acct_status1, "Connecting");
+    label_set_text(s->acct_status2, "");
+    break;
+
+  case AS_REQUESTING_AUTH:
+    label_set_text(s->acct_status1, "Requesting auth");
+    label_set_text(s->acct_status2, "");
+    break;
+
+  case AS_REQUESTING_ACTIVATION_TOKEN:
+    label_set_text(s->acct_status1, "Requesting activation token");
+    label_set_text(s->acct_status2, "");
+    break;
+
+  case AS_AWAITING_ACTIVATION:
+    label_set_text(s->acct_status1, "Awaiting activation");
+    label_set_text(s->acct_status2, "");
+    break;
+
+  case AS_CONNECTED:
+    label_set_text(s->acct_status1, "Connected");
+    label_set_text(s->acct_status2, "");
+    break;
+
+
+  default:
+    label_set_text(s->acct_status1, "Unknown state");
+    label_set_text(s->acct_status2, "");
+    break;
+  }
+}
+
+static void
 back_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK)
@@ -183,5 +238,14 @@ network_button_clicked(button_event_t* event)
   if (event->id == EVT_BUTTON_CLICK) {
     widget_t* wifi_scan_screen = wifi_scan_screen_create();
     gui_push_screen(wifi_scan_screen);
+  }
+}
+
+static void
+acct_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* activation_screen = activation_screen_create();
+    gui_push_screen(activation_screen);
   }
 }
