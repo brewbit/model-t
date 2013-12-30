@@ -40,8 +40,7 @@ typedef struct {
 
 typedef struct {
   snWebsocket* ws;
-  api_state_t state;
-  char activation_token[64];
+  api_status_t status;
   sensor_status_t sensor_status[NUM_SENSORS];
   systime_t last_sensor_report_time;
 } web_api_t;
@@ -91,7 +90,7 @@ void
 web_api_init()
 {
   api = calloc(1, sizeof(web_api_t));
-  api->state = AS_AWAITING_NET_CONNECTION;
+  api->status.state = AS_AWAITING_NET_CONNECTION;
 
   api->ws = snWebsocket_create(
         NULL, // open callback
@@ -109,10 +108,10 @@ web_api_init()
   msg_subscribe(l, MSG_SENSOR_SAMPLE, NULL);
 }
 
-api_state_t
+const api_status_t*
 web_api_get_status()
 {
-  return api->state;
+  return &api->status;
 }
 
 static void
@@ -143,7 +142,7 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
   }
 
   // Only process the following if the API connection has been established
-  if (api->state == AS_CONNECTED) {
+  if (api->status.state == AS_CONNECTED) {
     switch (id) {
       case MSG_SENSOR_SAMPLE:
         dispatch_sensor_sample(api, msg_data);
@@ -166,8 +165,8 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
 static void
 set_state(web_api_t* api, api_state_t state)
 {
-  if (api->state != state) {
-    api->state = state;
+  if (api->status.state != state) {
+    api->status.state = state;
 
     api_status_t status_msg = {
         .state = state
@@ -185,7 +184,7 @@ web_api_idle(web_api_t* api)
       break;
 
     case SN_STATE_OPEN:
-      if (api->state == AS_CONNECTING) {
+      if (api->status.state == AS_CONNECTING) {
         const char* auth_token = app_cfg_get_auth_token();
         if (strlen(auth_token) > 0) {
           request_auth(api);
@@ -204,7 +203,7 @@ web_api_idle(web_api_t* api)
 
   snWebsocket_poll(api->ws);
 
-  if ((api->state == AS_CONNECTED) &&
+  if ((api->status.state == AS_CONNECTED) &&
       ((chTimeNow() - api->last_sensor_report_time) > SENSOR_REPORT_INTERVAL))
     send_sensor_report(api);
 }
@@ -351,9 +350,9 @@ dispatch_api_msg(web_api_t* api, ApiMessage* msg)
   switch (msg->type) {
   case ApiMessage_Type_ACTIVATION_TOKEN_RESPONSE:
     printf("got activation token: %s\r\n", msg->activationTokenResponse.activation_token);
-    strncpy(api->activation_token,
+    strncpy(api->status.activation_token,
         msg->activationTokenResponse.activation_token,
-        sizeof(api->activation_token));
+        sizeof(api->status.activation_token));
     set_state(api, AS_AWAITING_ACTIVATION);
     break;
 

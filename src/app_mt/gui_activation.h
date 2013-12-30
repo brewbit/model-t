@@ -5,6 +5,6 @@
 #include "gui/widget.h"
 
 widget_t*
-activation_screen_create(void);
+activation_screen_create(const char* activation_token);
 
 #endif

@@ -13,13 +13,14 @@ typedef enum {
 
 typedef struct {
   api_state_t state;
+  char activation_token[16];
 } api_status_t;
 
 
 void
 web_api_init(void);
 
-api_state_t
+const api_status_t*
 web_api_get_status(void);
 
 #endif

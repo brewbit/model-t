@@ -28,7 +28,7 @@ static widget_class_t activation_screen_widget_class = {
 
 
 widget_t*
-activation_screen_create()
+activation_screen_create(const char* activation_token)
 {
   activation_screen_t* screen = chHeapAlloc(NULL, sizeof(activation_screen_t));
   memset(screen, 0, sizeof(activation_screen_t));
@@ -56,7 +56,7 @@ activation_screen_create()
   rect.x = 100;
   rect.y = 150;
   rect.width = 220;
-  label_create(screen->widget, rect, "3A19F7", font_opensans_regular_22, ORANGE, 1);
+  label_create(screen->widget, rect, activation_token, font_opensans_regular_22, ORANGE, 1);
 
   gui_msg_subscribe(MSG_SHOW_ACTIVATION_TOKEN, screen->widget);
 

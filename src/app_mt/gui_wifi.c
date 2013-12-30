@@ -9,6 +9,8 @@
 #include "gui.h"
 #include "net.h"
 #include "web_api.h"
+#include "gui_activation.h"
+#include "gui_wifi_scan.h"
 
 #include <string.h>
 
@@ -29,7 +31,7 @@ static void network_button_clicked(button_event_t* event);
 static void acct_button_clicked(button_event_t* event);
 
 static void dispatch_net_status(wifi_screen_t* s, const net_status_t* status);
-static void dispatch_api_status(wifi_screen_t* s, api_state_t api_state);
+static void dispatch_api_status(wifi_screen_t* s, const api_status_t* api_state);
 
 
 static widget_class_t wifi_screen_widget_class = {
@@ -111,8 +113,8 @@ wifi_screen_create()
   const net_status_t* net_status = net_get_status();
   dispatch_net_status(s, net_status);
 
-  api_state_t api_state = web_api_get_status();
-  dispatch_api_status(s, api_state);
+  const api_status_t* api_status = web_api_get_status();
+  dispatch_api_status(s, api_status);
 
   gui_msg_subscribe(MSG_NET_STATUS, s->widget);
   gui_msg_subscribe(MSG_API_STATUS, s->widget);
@@ -142,8 +144,7 @@ wifi_screen_msg(msg_event_t* event)
     break;
 
   case MSG_API_STATUS:
-    dispatch_api_status(s,
-        ((api_status_t*)event->msg_data)->state);
+    dispatch_api_status(s, event->msg_data);
     break;
 
   default:
@@ -184,9 +185,9 @@ dispatch_net_status(wifi_screen_t* s, const net_status_t* status)
 }
 
 static void
-dispatch_api_status(wifi_screen_t* s, api_state_t api_state)
+dispatch_api_status(wifi_screen_t* s, const api_status_t* api_status)
 {
-  switch (api_state) {
+  switch (api_status->state) {
   case AS_AWAITING_NET_CONNECTION:
     label_set_text(s->acct_status1, "Awaiting net conn");
     label_set_text(s->acct_status2, "");
@@ -244,8 +245,10 @@ network_button_clicked(button_event_t* event)
 static void
 acct_button_clicked(button_event_t* event)
 {
-  if (event->id == EVT_BUTTON_CLICK) {
-    widget_t* activation_screen = activation_screen_create();
+  const api_status_t* api_status = web_api_get_status();
+  if (event->id == EVT_BUTTON_CLICK &&
+      api_status->state == AS_AWAITING_ACTIVATION) {
+    widget_t* activation_screen = activation_screen_create(api_status->activation_token);
     gui_push_screen(activation_screen);
   }
 }
