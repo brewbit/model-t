@@ -1,4 +1,5 @@
 import os
+import time
 from twisted.internet import reactor
 from autobahn.websocket import WebSocketServerFactory, \
                                WebSocketServerProtocol, \
@@ -16,6 +17,18 @@ class BrewBitServerProtocol(WebSocketServerProtocol):
             response = bbmt_pb2.ApiMessage()
             response.type = bbmt_pb2.ApiMessage.AUTH_RESPONSE
             response.authResponse.authenticated = True
+            self.send_response(response)
+        elif request.type == bbmt_pb2.ApiMessage.ACTIVATION_TOKEN_REQUEST:
+            response = bbmt_pb2.ApiMessage()
+            response.type = bbmt_pb2.ApiMessage.ACTIVATION_TOKEN_RESPONSE
+            response.activationTokenResponse.activation_token = "12kcin"
+            self.send_response(response)
+            
+            time.sleep(1)
+            
+            response = bbmt_pb2.ApiMessage()
+            response.type = bbmt_pb2.ApiMessage.ACTIVATION_NOTIFICATION
+            response.activationNotification.auth_token = "12kcinoaw98hvnow8hfsaj"
             self.send_response(response)
         elif request.type == bbmt_pb2.ApiMessage.FIRMWARE_UPDATE_CHECK_REQUEST:
             response = bbmt_pb2.ApiMessage()
