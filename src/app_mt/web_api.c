@@ -30,11 +30,20 @@
 #define WEB_API_PORT 80
 #endif
 
+#define SENSOR_REPORT_INTERVAL S2ST(60)
+
+
+typedef struct {
+  bool new_sample;
+  quantity_t last_sample;
+} sensor_status_t;
 
 typedef struct {
   snWebsocket* ws;
   api_state_t state;
   char activation_token[64];
+  sensor_status_t sensor_status[NUM_SENSORS];
+  systime_t last_sensor_report_time;
 } web_api_t;
 
 
@@ -60,9 +69,6 @@ static void
 dispatch_sensor_sample(web_api_t* api, sensor_msg_t* sample);
 
 static void
-dispatch_sensor_timeout(web_api_t* api, sensor_timeout_msg_t* timeout);
-
-static void
 request_activation_token(web_api_t* api);
 
 static void
@@ -73,6 +79,9 @@ check_for_update(web_api_t* api);
 
 static void
 start_update(web_api_t* api, const char* ver);
+
+static void
+send_sensor_report(web_api_t* api);
 
 
 static web_api_t* api;
@@ -98,7 +107,6 @@ web_api_init()
   msg_subscribe(l, MSG_API_FW_UPDATE_CHECK, NULL);
   msg_subscribe(l, MSG_API_FW_DNLD_START, NULL);
   msg_subscribe(l, MSG_SENSOR_SAMPLE, NULL);
-  msg_subscribe(l, MSG_SENSOR_TIMEOUT, NULL);
 }
 
 api_state_t
@@ -139,10 +147,6 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
     switch (id) {
       case MSG_SENSOR_SAMPLE:
         dispatch_sensor_sample(api, msg_data);
-        break;
-
-      case MSG_SENSOR_TIMEOUT:
-        dispatch_sensor_timeout(api, msg_data);
         break;
 
       case MSG_API_FW_UPDATE_CHECK:
@@ -199,6 +203,38 @@ web_api_idle(web_api_t* api)
   }
 
   snWebsocket_poll(api->ws);
+
+  if ((api->state == AS_CONNECTED) &&
+      ((chTimeNow() - api->last_sensor_report_time) > SENSOR_REPORT_INTERVAL))
+    send_sensor_report(api);
+}
+
+static void
+send_sensor_report(web_api_t* api)
+{
+  int i;
+  ApiMessage* msg = calloc(1, sizeof(ApiMessage));
+  msg->type = ApiMessage_Type_DEVICE_REPORT;
+  msg->has_deviceReport = true;
+  msg->deviceReport.probeReport_count = 0;
+
+  for (i = 0; i < NUM_SENSORS; ++i) {
+    if (api->sensor_status[i].new_sample) {
+      api->sensor_status[i].new_sample = false;
+      ProbeReport* pr = &msg->deviceReport.probeReport[msg->deviceReport.probeReport_count];
+      msg->deviceReport.probeReport_count++;
+
+      pr->id = i;
+      pr->value = api->sensor_status[i].last_sample.value;
+    }
+  }
+
+  if (msg->deviceReport.probeReport_count > 0) {
+    printf("sending sensor report %d\r\n", msg->deviceReport.probeReport_count);
+    send_api_msg(api->ws, msg);
+  }
+
+  free(msg);
 }
 
 static void
@@ -239,11 +275,12 @@ request_auth(web_api_t* api)
 static void
 dispatch_sensor_sample(web_api_t* api, sensor_msg_t* sample)
 {
-}
+  if (sample->sensor >= NUM_SENSORS)
+    return;
 
-static void
-dispatch_sensor_timeout(web_api_t* api, sensor_timeout_msg_t* timeout)
-{
+  sensor_status_t* s = &api->sensor_status[sample->sensor];
+  s->new_sample = true;
+  s->last_sample = sample->sample;
 }
 
 static void
