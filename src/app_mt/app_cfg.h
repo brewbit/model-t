@@ -39,7 +39,7 @@ void
 app_cfg_set_output_settings(output_id_t output, output_settings_t* settings);
 
 const char*
-app_cfg_get_auth_token();
+app_cfg_get_auth_token(void);
 
 void
 app_cfg_set_auth_token(const char* auth_token);
