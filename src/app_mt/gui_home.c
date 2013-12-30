@@ -9,6 +9,7 @@
 #include "gui_settings.h"
 #include "gui_wifi.h"
 #include "gui_textentry.h"
+#include "gui_quantity_select.h"
 #include "quantity_widget.h"
 #include "app_cfg.h"
 

@@ -968,7 +968,7 @@ simple_link_send(long sd, const void *buf, long len, long flags,
 {
     unsigned char uArgSize,  addrlen;
     unsigned char *ptr, *pDataPtr, *args;
-    unsigned long addr_offset;
+    unsigned long addr_offset = 0;
     int res;
     tBsdReadReturnParams tSocketSendEvent;
 

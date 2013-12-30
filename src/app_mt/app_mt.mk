@@ -23,7 +23,6 @@ PROJECT_AUTOGEN_CSRC = \
 PROJECT_CSRC = \
        app_cfg.c \
        app_hdr.c \
-       datastream.c \
        fault.c \
        font.c \
        gfx.c \
@@ -55,7 +54,6 @@ PROJECT_CSRC = \
        temp_control.c \
        touch.c \
        touch_calib.c \
-       txn.c \
        web_api.c \
        snacka_backend/iocallbacks_socket.c \
        snacka_backend/socket_bsd.c \

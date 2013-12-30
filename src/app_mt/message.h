@@ -25,8 +25,6 @@ typedef enum {
   MSG_NET_NETWORK_UPDATED, // new information for a previously seen network is available
   MSG_NET_NETWORK_TIMEOUT, // a wireless network is no longer available
 
-  MSG_SHOW_ACTIVATION_TOKEN,
-
   MSG_OTAU_CHECK,
   MSG_OTAU_START,
   MSG_OTAU_STATUS,

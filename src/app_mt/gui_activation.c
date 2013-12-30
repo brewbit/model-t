@@ -18,20 +18,17 @@ typedef struct {
 
 
 static void activation_screen_destroy(widget_t* w);
-static void activation_screen_msg(msg_event_t* event);
 static void back_button_clicked(button_event_t* event);
 
 static widget_class_t activation_screen_widget_class = {
     .on_destroy = activation_screen_destroy,
-    .on_msg     = activation_screen_msg
 };
 
 
 widget_t*
 activation_screen_create(const char* activation_token)
 {
-  activation_screen_t* screen = chHeapAlloc(NULL, sizeof(activation_screen_t));
-  memset(screen, 0, sizeof(activation_screen_t));
+  activation_screen_t* screen = calloc(1, sizeof(activation_screen_t));
 
   screen->widget = widget_create(NULL, &activation_screen_widget_class, screen, display_rect);
 
@@ -58,8 +55,6 @@ activation_screen_create(const char* activation_token)
   rect.width = 220;
   label_create(screen->widget, rect, activation_token, font_opensans_regular_22, ORANGE, 1);
 
-  gui_msg_subscribe(MSG_SHOW_ACTIVATION_TOKEN, screen->widget);
-
   return screen->widget;
 }
 
@@ -68,23 +63,7 @@ activation_screen_destroy(widget_t* w)
 {
   activation_screen_t* screen = widget_get_instance_data(w);
 
-  gui_msg_unsubscribe(MSG_SHOW_ACTIVATION_TOKEN, w);
-
-  chHeapFree(screen);
-}
-
-static void
-activation_screen_msg(msg_event_t* event)
-{
-  activation_screen_t* screen = widget_get_instance_data(event->widget);
-
-  switch (event->msg_id) {
-  case MSG_SHOW_ACTIVATION_TOKEN:
-    break;
-
-  default:
-    break;
-  }
+  free(screen);
 }
 
 static void

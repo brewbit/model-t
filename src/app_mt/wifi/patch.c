@@ -251,8 +251,8 @@ fat_read_content(unsigned char *is_allocated,
     *is_allocated++ = (*fatTablePtr) & BIT0;
     *is_valid++ = ((*fatTablePtr) & BIT1) >> 1;
     *write_protected++ = ((*fatTablePtr) & BIT2) >> 2;
-    *file_address++ = (*(fatTablePtr+1)<<8) | (*fatTablePtr) & (BIT4|BIT5|BIT6|BIT7);
-    *file_length++ = (*(fatTablePtr+3)<<8) | (*(fatTablePtr+2)) & (BIT4|BIT5|BIT6|BIT7);
+    *file_address++ = ((*(fatTablePtr+1)<<8) | (*fatTablePtr)) & 0xF0;
+    *file_length++ = ((*(fatTablePtr+3)<<8) | (*(fatTablePtr+2))) & 0xF0;
 
     // move to next file ID
     fatTablePtr += 4;
@@ -286,7 +286,7 @@ fat_write_content(
   unsigned char*  fatTablePtr = fatTable;
 
   // first, write the magic number
-  ucStatus = nvmem_write(16, 2, 0, "LS");
+  ucStatus = nvmem_write(16, 2, 0, (unsigned char*)"LS");
 
   for (; index <= NVMEM_RM_FILEID; index++) {
     // write address low char and mark as allocated

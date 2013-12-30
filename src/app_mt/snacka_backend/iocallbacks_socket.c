@@ -50,6 +50,8 @@ snError snSocketConnectCallback(void* userData,
                                 int port,
                                 snIOCancelCallback cancelCallback)
 {
+    (void)cancelCallback;
+
     stfSocket* socket = (stfSocket*)userData;
     int result = stfSocket_connect(socket, host, port);
     if (result == 0)
@@ -87,6 +89,8 @@ snError snSocketWriteCallback(void* userData,
                               int* numBytesWritten,
                               snIOCancelCallback cancelCallback)
 {
+    (void)cancelCallback;
+
     stfSocket* socket = (stfSocket*)userData;
     
     const int success = stfSocket_sendData(socket,
