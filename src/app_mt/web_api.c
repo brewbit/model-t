@@ -207,7 +207,11 @@ request_activation_token(web_api_t* api)
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_ACTIVATION_TOKEN_REQUEST;
   msg->has_activationTokenRequest = true;
-  strcpy(msg->activationTokenRequest.device_id, "asdfasdf");
+  unsigned int* devid = (unsigned int*)0x1FFF7A10;
+  sprintf(msg->activationTokenRequest.device_id, "%08x%08x%08x",
+      devid[0],
+      devid[1],
+      devid[2]);
 
   send_api_msg(api->ws, msg);
 
