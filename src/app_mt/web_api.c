@@ -204,8 +204,10 @@ web_api_idle(web_api_t* api)
   snWebsocket_poll(api->ws);
 
   if ((api->status.state == AS_CONNECTED) &&
-      ((chTimeNow() - api->last_sensor_report_time) > SENSOR_REPORT_INTERVAL))
+      ((chTimeNow() - api->last_sensor_report_time) > SENSOR_REPORT_INTERVAL)) {
     send_sensor_report(api);
+    api->last_sensor_report_time = chTimeNow();
+  }
 }
 
 static void
