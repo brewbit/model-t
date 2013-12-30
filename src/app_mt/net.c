@@ -70,6 +70,9 @@ perform_scan(void);
 static long
 get_scan_result(net_scan_result_t* result);
 
+static void
+perform_connect(void);
+
 
 static net_status_t net_status;
 static net_state_t last_net_state;
@@ -112,7 +115,6 @@ net_connect(network_t* net, const char* passphrase)
   strncpy(net_status.ssid, net->ssid, sizeof(net_status.ssid));
   strncpy(net_status.passphrase, passphrase, sizeof(net_status.passphrase));
   net_status.net_state = NS_CONNECT;
-  msg_send(MSG_NET_STATUS, &net_status);
 }
 
 static void
@@ -333,6 +335,9 @@ prune_networks()
 static void
 perform_connect()
 {
+  net_status.net_state = NS_CONNECTING;
+  msg_send(MSG_NET_STATUS, &net_status);
+
   // Delete any stored profiles
   long ret = wlan_ioctl_del_profile(255);
   if (ret != 0) {
@@ -356,9 +361,6 @@ perform_connect()
   wlan_stop();
   chThdSleepMilliseconds(100);
   wlan_start(0);
-
-  net_status.net_state = NS_CONNECTING;
-  msg_send(MSG_NET_STATUS, &net_status);
 }
 
 static msg_t

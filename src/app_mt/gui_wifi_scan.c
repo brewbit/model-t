@@ -9,6 +9,7 @@
 #include "gfx.h"
 #include "gui.h"
 #include "net.h"
+#include "gui_textentry.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -136,6 +137,8 @@ dispatch_new_network(wifi_scan_screen_t* s, network_t* network)
 static void
 dispatch_network_update(wifi_scan_screen_t* s, network_t* network)
 {
+  (void)s;
+  (void)network;
 //  printf("net update\r\n");
 //  printf("  ssid: %s\r\n", network->ssid);
 //  printf("  security mode: %d\r\n", network->security_mode);
@@ -187,6 +190,8 @@ network_button_event(button_event_t* event)
 static void
 handle_passphrase(const char* passphrase, void* user_data)
 {
+  (void)user_data;
+
   net_scan_stop();
   net_connect(selected_net, passphrase);
   gui_pop_screen();
