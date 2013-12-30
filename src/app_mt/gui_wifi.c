@@ -194,6 +194,7 @@ dispatch_api_status(wifi_screen_t* s, const api_status_t* api_status)
     label_set_text(s->acct_status2, "");
     break;
 
+  case AS_CONNECT:
   case AS_CONNECTING:
     label_set_text(s->acct_status1, "Connecting");
     label_set_text(s->acct_status2, "");

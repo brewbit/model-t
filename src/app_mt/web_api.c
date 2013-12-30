@@ -65,6 +65,9 @@ static void
 dispatch_api_msg(web_api_t* api, ApiMessage* msg);
 
 static void
+dispatch_net_status(web_api_t* api, net_status_t* ns);
+
+static void
 dispatch_sensor_sample(web_api_t* api, sensor_msg_t* sample);
 
 static void
@@ -124,14 +127,12 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
 
   switch (id) {
     case MSG_NET_STATUS:
-    {
-      net_status_t* ns = msg_data;
-      if (ns->net_state == NS_CONNECTED)
-        set_state(api, AS_CONNECTING);
-      else
-        set_state(api, AS_AWAITING_NET_CONNECTION);
+      dispatch_net_status(api, msg_data);
       break;
-    }
+
+    case MSG_SENSOR_SAMPLE:
+      dispatch_sensor_sample(api, msg_data);
+      break;
 
     case MSG_IDLE:
       web_api_idle(api);
@@ -144,10 +145,6 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
   // Only process the following if the API connection has been established
   if (api->status.state == AS_CONNECTED) {
     switch (id) {
-      case MSG_SENSOR_SAMPLE:
-        dispatch_sensor_sample(api, msg_data);
-        break;
-
       case MSG_API_FW_UPDATE_CHECK:
         check_for_update(api);
         break;
@@ -178,13 +175,18 @@ set_state(web_api_t* api, api_state_t state)
 static void
 web_api_idle(web_api_t* api)
 {
-  switch (snWebsocket_getState(api->ws)) {
-    case SN_STATE_CLOSED:
-      snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT);
+  switch (api->status.state) {
+    case AS_AWAITING_NET_CONNECTION:
+      /* do nothing, wait for net to come up */
       break;
 
-    case SN_STATE_OPEN:
-      if (api->status.state == AS_CONNECTING) {
+    case AS_CONNECT:
+      snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT);
+      set_state(api, AS_CONNECTING);
+      break;
+
+    case AS_CONNECTING:
+      if (snWebsocket_getState(api->ws) == SN_STATE_OPEN) {
         const char* auth_token = app_cfg_get_auth_token();
         if (strlen(auth_token) > 0) {
           request_auth(api);
@@ -197,17 +199,24 @@ web_api_idle(web_api_t* api)
       }
       break;
 
-    default:
+    case AS_REQUESTING_ACTIVATION_TOKEN:
+    case AS_REQUESTING_AUTH:
+    case AS_AWAITING_ACTIVATION:
+      break;
+
+    case AS_CONNECTED:
+      if ((chTimeNow() - api->last_sensor_report_time) > SENSOR_REPORT_INTERVAL) {
+        send_sensor_report(api);
+        api->last_sensor_report_time = chTimeNow();
+      }
       break;
   }
 
   snWebsocket_poll(api->ws);
 
-  if ((api->status.state == AS_CONNECTED) &&
-      ((chTimeNow() - api->last_sensor_report_time) > SENSOR_REPORT_INTERVAL)) {
-    send_sensor_report(api);
-    api->last_sensor_report_time = chTimeNow();
-  }
+  if ((api->status.state != AS_AWAITING_NET_CONNECTION) &&
+      (snWebsocket_getState(api->ws) == SN_STATE_CLOSED))
+    set_state(api, AS_CONNECT);
 }
 
 static void
@@ -271,6 +280,15 @@ request_auth(web_api_t* api)
   send_api_msg(api->ws, msg);
 
   free(msg);
+}
+
+static void
+dispatch_net_status(web_api_t* api, net_status_t* ns)
+{
+  if (ns->net_state == NS_CONNECTED)
+    set_state(api, AS_CONNECT);
+  else
+    set_state(api, AS_AWAITING_NET_CONNECTION);
 }
 
 static void
