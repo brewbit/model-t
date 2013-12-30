@@ -118,12 +118,12 @@ uint32_t crc32_upd32(uint32_t crc, uint32_t data)
 /*                  Note:  The 32-bit CRC is set up as a right-shifting     */
 /*                  CRC with no inversions.                                 */
 /* ======================================================================== */
-uint32_t crc32_block(uint32_t crc, uint8_t *data, uint32_t len)
+uint32_t crc32_block(uint32_t crc, void* data, uint32_t len)
 {
   uint32_t i;
 
   for (i = 0; i < len; i++)
-    crc = (crc >> 8) ^ crc32_tbl[(crc ^ data[i]) & 0xFF];
+    crc = (crc >> 8) ^ crc32_tbl[(crc ^ ((uint8_t*)data)[i]) & 0xFF];
 
   return crc;
 }
