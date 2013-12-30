@@ -20,6 +20,11 @@ typedef enum {
   OUTPUT_FUNC_MANUAL
 } output_function_t;
 
+typedef enum {
+	ON_OFF,
+	PID,
+	MANUAL
+} output_ctrl_t;
 
 typedef struct {
   quantity_t setpoint;

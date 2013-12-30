@@ -18,6 +18,7 @@ typedef struct {
   output_id_t id;
   uint32_t gpio;
   pid_t    pid_control;
+  output_ctrl_t output_mode;
 
   bool sensor_active;
 
@@ -35,6 +36,7 @@ static void manage_pid(output_id_t output);
 static void output_init(relay_output_t* out, output_id_t id, uint32_t gpio);
 static msg_t output_thread(void* arg);
 static void cycle_delay(output_id_t output);
+static void relay_control(relay_output_t* output);
 
 
 static temp_input_t inputs[NUM_SENSORS];
@@ -52,8 +54,8 @@ temp_control_init()
 
   msg_listener_t* l = msg_listener_create("temp_ctrl", 1024, dispatch_temp_input_msg, NULL);
 
-//  msg_subscribe(MSG_SENSOR_SAMPLE, thread, dispatch_temp_input_msg, NULL);
-  msg_subscribe(l, MSG_SENSOR_TIMEOUT, NULL);
+  msg_subscribe(l, MSG_SENSOR_SAMPLE,   NULL);
+  msg_subscribe(l, MSG_SENSOR_TIMEOUT,  NULL);
   msg_subscribe(l, MSG_SENSOR_SETTINGS, NULL);
   msg_subscribe(l, MSG_OUTPUT_SETTINGS, NULL);
 }
@@ -65,6 +67,7 @@ output_init(relay_output_t* out, output_id_t id, uint32_t gpio)
 
   out->id = id;
   out->gpio = gpio;
+  out->output_mode = ON_OFF;
   out->window_time = settings->compressor_delay * 4;
 
   pid_init(&out->pid_control);
@@ -95,22 +98,55 @@ output_thread(void* arg)
       palClearPad(GPIOC, output->gpio);
     }
     else {
-      if ((chTimeNow() - output->window_start_time) >= output->pid_control.pid_output) {
-        palClearPad(GPIOC, output->gpio);
-        // TODO: MAKE SURE THE TIME IS >= 0
-        chThdSleepSeconds(1);
-//        chThdSleep(output->window_time - output->pid_control.pid_output);
-
-        /* Setup next on window */
-        output->window_start_time = chTimeNow();
-        palSetPad(GPIOC, output->gpio);
-      }
+      relay_control(output);
     }
-
     chThdSleepSeconds(1);
   }
 
   return 0;
+}
+
+static void
+relay_control(relay_output_t* output)
+{
+  const output_settings_t* output_settings = app_cfg_get_output_settings(output->id);
+  const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(output_settings->trigger);
+
+  switch(output->output_mode) {
+    case ON_OFF:
+	  if (output_settings->function == OUTPUT_FUNC_HEATING) {
+		if (inputs[output->id].last_sample.value < sensor_settings->setpoint.value) {
+		  palSetPad(GPIOC, output->gpio);
+		}
+		else {
+		  palClearPad(GPIOC, output->gpio);
+		}
+	  }
+	  else {
+		if (inputs[output->id].last_sample.value > sensor_settings->setpoint.value) {
+		  palSetPad(GPIOC, output->gpio);
+		}
+		else {
+		  palClearPad(GPIOC, output->gpio);
+		}
+	  }
+	  break;
+  case PID:
+	if ((chTimeNow() - output->window_start_time) >= output->pid_control.pid_output) {
+		palClearPad(GPIOC, output->gpio);
+
+		chThdSleepSeconds(1);
+		// TODO: MAKE SURE THE TIME IS >= 0
+		//chThdSleep(output->window_time - output->pid_control.pid_output);
+
+		/* Setup next on window */
+		output->window_start_time = chTimeNow();
+		palSetPad(GPIOC, output->gpio);
+	  }
+	break;
+  default:
+	  break;
+  }
 }
 
 static void
