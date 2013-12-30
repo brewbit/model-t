@@ -220,9 +220,12 @@ request_auth(web_api_t* api)
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_AUTH_REQUEST;
   msg->has_authRequest = true;
-  uint32_t* devid = (uint32_t*)0x1FFF7A10;
-  sprintf(msg->authRequest.device_id, "%08x%08x%08x", devid[0], devid[1], devid[2]);
-  sprintf(msg->authRequest.activation_token, "asdfasdf");
+  unsigned int* devid = (unsigned int*)0x1FFF7A10;
+  sprintf(msg->authRequest.device_id, "%08x%08x%08x",
+      devid[0],
+      devid[1],
+      devid[2]);
+  sprintf(msg->authRequest.auth_token, app_cfg_get_auth_token());
 
   send_api_msg(api->ws, msg);
 
