@@ -11,6 +11,7 @@
 #include "web_api.h"
 #include "gui_activation.h"
 #include "gui_wifi_scan.h"
+#include "app_cfg.h"
 
 #include <string.h>
 
@@ -159,17 +160,17 @@ dispatch_net_status(wifi_screen_t* s, const net_status_t* status)
   case NS_CONNECT:
   case NS_CONNECTING:
     label_set_text(s->nwk_status1, "Connecting to:");
-    label_set_text(s->nwk_status2, status->ssid);
+    label_set_text(s->nwk_status2, app_cfg_get_net_settings()->ssid);
     break;
 
   case NS_CONNECT_FAILED:
     label_set_text(s->nwk_status1, "Failed to connect to:");
-    label_set_text(s->nwk_status2, status->ssid);
+    label_set_text(s->nwk_status2, app_cfg_get_net_settings()->ssid);
     break;
 
   case NS_CONNECTED:
     label_set_text(s->nwk_status1, "Connected to:");
-    label_set_text(s->nwk_status2, status->ssid);
+    label_set_text(s->nwk_status2, app_cfg_get_net_settings()->ssid);
     break;
 
   case NS_DISCONNECTED:

@@ -6,6 +6,7 @@
 #include "temp_control.h"
 #include "touch_calib.h"
 #include "web_api.h"
+#include "net.h"
 
 
 void
@@ -43,5 +44,11 @@ app_cfg_get_auth_token(void);
 
 void
 app_cfg_set_auth_token(const char* auth_token);
+
+const net_settings_t*
+app_cfg_get_net_settings(void);
+
+void
+app_cfg_set_net_settings(const net_settings_t* settings);
 
 #endif

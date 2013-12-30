@@ -19,11 +19,6 @@ typedef struct {
 
   net_state_t net_state;
 
-  // AP status
-  char ssid[33];
-  unsigned long security_mode;
-  char passphrase[128];
-
   // DHCP status
   bool dhcp_resolved;
   char ip_addr[16];
@@ -40,6 +35,12 @@ typedef struct {
   unsigned char bssid[6];
   systime_t last_seen;
 } network_t;
+
+typedef struct {
+  char ssid[33];
+  char passphrase[128];
+  unsigned long security_mode;
+} net_settings_t;
 
 
 void

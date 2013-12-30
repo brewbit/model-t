@@ -15,6 +15,7 @@ typedef struct {
   sensor_settings_t sensor_settings[NUM_SENSORS];
   output_settings_t output_settings[NUM_OUTPUTS];
   char auth_token[64];
+  net_settings_t net_settings;
 } app_cfg_data_t;
 
 typedef struct {
@@ -220,7 +221,7 @@ app_cfg_set_output_settings(output_id_t output, output_settings_t* settings)
 const char*
 app_cfg_get_auth_token()
 {
-  return &app_cfg_local.data.auth_token;
+  return app_cfg_local.data.auth_token;
 }
 
 void
@@ -230,5 +231,19 @@ app_cfg_set_auth_token(const char* auth_token)
   strncpy(app_cfg_local.data.auth_token,
       auth_token,
       sizeof(app_cfg_local.data.auth_token));
+  chMtxUnlock();
+}
+
+const net_settings_t*
+app_cfg_get_net_settings()
+{
+  return &app_cfg_local.data.net_settings;
+}
+
+void
+app_cfg_set_net_settings(const net_settings_t* settings)
+{
+  chMtxLock(&app_cfg_mtx);
+  app_cfg_local.data.net_settings = *settings;
   chMtxUnlock();
 }

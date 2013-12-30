@@ -13,6 +13,7 @@
 #include "sxfs.h"
 #include "message.h"
 #include "netapp.h"
+#include "app_cfg.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -48,9 +49,6 @@ wlan_read_interupt_pin(void);
 
 static void
 write_wlan_pin(unsigned char val);
-
-//static void
-//ota_update_mgr(void);
 
 static void
 save_or_update_network(network_t* network);
@@ -111,9 +109,15 @@ net_scan_stop()
 void
 net_connect(network_t* net, const char* passphrase)
 {
-  net_status.security_mode = net->security_mode;
-  strncpy(net_status.ssid, net->ssid, sizeof(net_status.ssid));
-  strncpy(net_status.passphrase, passphrase, sizeof(net_status.passphrase));
+  net_settings_t* ns = malloc(sizeof(net_settings_t));
+  strncpy(ns->ssid, net->ssid, sizeof(ns->ssid));
+  strncpy(ns->passphrase, passphrase, sizeof(ns->passphrase));
+  ns->security_mode = net->security_mode;
+
+  app_cfg_set_net_settings(ns);
+
+  free(ns);
+
   net_status.net_state = NS_CONNECT;
 }
 
@@ -335,32 +339,22 @@ prune_networks()
 static void
 perform_connect()
 {
-  net_status.net_state = NS_CONNECTING;
-  msg_send(MSG_NET_STATUS, &net_status);
-
-  // Delete any stored profiles
-  long ret = wlan_ioctl_del_profile(255);
-  if (ret != 0) {
-    net_status.net_state = NS_CONNECT_FAILED;
+  const net_settings_t* ns = app_cfg_get_net_settings();
+  if (strlen(ns->ssid) > 0) {
+    net_status.net_state = NS_CONNECTING;
     msg_send(MSG_NET_STATUS, &net_status);
-    return;
-  }
 
-  // Add the new profile
-  ret = wlan_add_profile(net_status.security_mode,
-      (unsigned char*)net_status.ssid, strlen(net_status.ssid),
-      NULL, 0, 0x18, 0x1e, 0x2,
-      (unsigned char*)net_status.passphrase, strlen(net_status.passphrase));
-  if (ret != 0) {
-    net_status.net_state = NS_CONNECT_FAILED;
-    msg_send(MSG_NET_STATUS, &net_status);
-    return;
-  }
+    wlan_ioctl_set_connection_policy(0, 0, 0);
 
-  // Restart the module
-  wlan_stop();
-  chThdSleepMilliseconds(100);
-  wlan_start(0);
+    wlan_disconnect();
+
+    chThdSleepMilliseconds(100);
+
+    wlan_connect(ns->security_mode,
+        ns->ssid, strlen(ns->ssid),
+        NULL,
+        ns->passphrase, strlen(ns->passphrase));
+  }
 }
 
 static msg_t
@@ -382,8 +376,7 @@ wlan_thread(void* arg)
     printf("  Update complete\r\n");
   }
 
-  if (wlan_ioctl_set_connection_policy(0, 1, 1) != 0)
-    printf("set conn policy failed\r\n");
+  perform_connect();
 
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, mdns_thread, NULL);
 
@@ -398,15 +391,6 @@ wlan_thread(void* arg)
           break;
 
         case NS_CONNECTED:
-        {
-          tNetappIpconfigRetArgs ip_cfg;
-          netapp_ipconfig(&ip_cfg);
-
-          memcpy(net_status.ssid, ip_cfg.uaSSID, 32);
-          net_status.ssid[32] = 0;
-          break;
-        }
-
         case NS_CONNECTING:
         case NS_CONNECT_FAILED:
         case NS_DISCONNECTED:
