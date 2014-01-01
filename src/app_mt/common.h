@@ -19,4 +19,6 @@
 asm (".global _printf_float");
 #endif
 
+extern char device_id[];
+
 #endif

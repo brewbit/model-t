@@ -17,6 +17,9 @@ typedef enum {
 typedef struct {
   bool scan_active;
 
+  char sp_ver[8];
+  char mac_addr[32];
+
   net_state_t net_state;
 
   // DHCP status

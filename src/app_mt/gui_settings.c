@@ -8,6 +8,7 @@
 #include "gui_update.h"
 #include "gui_calib.h"
 #include "ota_update.h"
+#include "gui_info.h"
 
 #include <string.h>
 
@@ -26,6 +27,7 @@ static void back_button_clicked(button_event_t* event);
 static void unit_button_clicked(button_event_t* event);
 static void update_button_clicked(button_event_t* event);
 static void calibrate_button_clicked(button_event_t* event);
+static void info_button_clicked(button_event_t* event);
 
 static void set_unit(settings_screen_t* s, unit_t unit);
 
@@ -66,6 +68,10 @@ settings_screen_create()
 
   rect.x += 84;
   button_create(s->widget, rect, img_update, WHITE, CYAN, update_button_clicked);
+
+  rect.x = 48;
+  rect.y += 70;
+  button_create(s->widget, rect, img_circle, WHITE, TAUPE, info_button_clicked);
 
   s->temp_unit = app_cfg_get_temp_unit();
   set_unit(s, s->temp_unit);
@@ -113,6 +119,15 @@ update_button_clicked(button_event_t* event)
   if (event->id == EVT_BUTTON_CLICK) {
     widget_t* update_screen = update_screen_create();
     gui_push_screen(update_screen);
+  }
+}
+
+static void
+info_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* info_screen = info_screen_create();
+    gui_push_screen(info_screen);
   }
 }
 

@@ -366,14 +366,24 @@ wlan_thread(void* arg)
 
   wlan_start(0);
 
-  unsigned char patchVer[2];
-  nvmem_read_sp_version(patchVer);
-  printf("CC3000 Service Pack Version: %d.%d\r\n", patchVer[0], patchVer[1]);
+  {
+    unsigned char patchVer[2];
+    nvmem_read_sp_version(patchVer);
+    sprintf(net_status.sp_ver, "%d.%d", patchVer[0], patchVer[1]);
+    printf("CC3000 Service Pack Version: %s\r\n", net_status.sp_ver);
 
-  if (patchVer[0] != 1 || patchVer[1] != 24) {
-    printf("  Not up to date. Applying patch.\r\n");
-    wlan_apply_patch();
-    printf("  Update complete\r\n");
+    if (patchVer[0] != 1 || patchVer[1] != 24) {
+      printf("  Not up to date. Applying patch.\r\n");
+      wlan_apply_patch();
+      printf("  Update complete\r\n");
+    }
+  }
+
+  {
+    unsigned char mac[6];
+    nvmem_get_mac_address(mac);
+    sprintf(net_status.mac_addr, "%02X:%02X:%02X:%02X:%02X:%02X",
+        mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
   }
 
   perform_connect();

@@ -30,6 +30,7 @@ PROJECT_CSRC = \
        gui_activation.c \
        gui_calib.c \
        gui_history.c \
+       gui_info.c \
        gui_home.c \
        gui_output.c \
        gui_output_function.c \

@@ -21,6 +21,9 @@
 #include <string.h>
 
 
+char device_id[32];
+
+
 msg_t
 idle_thread(void* arg)
 {
@@ -39,6 +42,12 @@ main(void)
 {
   halInit();
   chSysInit();
+
+  unsigned int* devid = (unsigned int*)0x1FFF7A10;
+  sprintf(device_id, "%08X%08X%08X",
+      devid[0],
+      devid[1],
+      devid[2]);
 
   /* start stdout port */
   sdStart(SD_STDIO, NULL);
