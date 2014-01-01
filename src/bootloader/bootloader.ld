@@ -33,11 +33,12 @@ __process_stack_size__  = 0x0400;
 
 MEMORY
 {
-    bootloader : org = 0x08000000, len = 16k
-    app_cfg    : org = 0x08004000, len = 16k
-    app_hdr    : org = 0x08008000, len = 512
-    app        : org = 0x08008200, len = 0xBFE00 /* 735.5k */
-    ram        : org = 0x20000000, len = 128k
+    bootloader     : org = 0x08000000, len = 0x3E00
+    bootloader_api : org = 0x08003E00, len = 512
+    app_cfg        : org = 0x08004000, len = 16k
+    app_hdr        : org = 0x08008000, len = 512
+    app            : org = 0x08008200, len = 0xBFE00 /* 735.5k */
+    ram            : org = 0x20000000, len = 128k
 }
 
 __ram_start__           = ORIGIN(ram);
@@ -54,6 +55,11 @@ SECTIONS
     {
         KEEP(*(vectors))
     } > bootloader
+    
+    boot_api : ALIGN(16) SUBALIGN(16)
+    {
+        KEEP(*(bootloader_api))
+    } > bootloader_api
 
     header : ALIGN(16) SUBALIGN(16)
     {
