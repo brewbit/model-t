@@ -6,6 +6,7 @@
 #include "gui.h"
 #include "gfx.h"
 #include "net.h"
+#include "bootloader_api.h"
 
 #include <string.h>
 
@@ -57,7 +58,7 @@ info_screen_create()
   rect.height = 150;
   widget_t* lb = listbox_create(s->widget, rect, 20);
   add_info(lb, "Device SW", VERSION_STR);
-//  add_info(lb, "Boot SW", bootloader_get_version());
+  add_info(lb, "Boot SW", _bootloader_api.get_version());
   add_info(lb, "Device ID", device_id);
   const net_status_t* ns = net_get_status();
   add_info(lb, "WiFi SP", ns->sp_ver);
