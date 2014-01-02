@@ -135,8 +135,8 @@ static void
 calibrate_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-//  widget_t* calib_screen = calib_screen_create();
-//  gui_push_screen(calib_screen);
+    widget_t* calib_screen = calib_screen_create();
+    gui_push_screen(calib_screen);
   }
 }
 
