@@ -163,6 +163,21 @@ touch_calibrate(
   app_cfg_set_touch_calib(&calib_matrix);
 }
 
+void
+touch_calib_reset()
+{
+  matrix_t default_calib = {
+    .An      = 76320,
+    .Bn      = 3080,
+    .Cn      = -9475080,
+    .Dn      = -560,
+    .En      = 60340,
+    .Fn      = -4360660,
+    .Divider = 205664
+  };
+  app_cfg_set_touch_calib(&default_calib);
+}
+
 static uint16_t
 read_axis(const axis_cfg_t* axis_cfg)
 {

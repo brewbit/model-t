@@ -45,13 +45,7 @@ app_cfg_init()
   else {
     app_cfg_local.data.temp_unit = UNIT_TEMP_DEG_F;
 
-    app_cfg_local.data.touch_calib.An      = 76320;
-    app_cfg_local.data.touch_calib.Bn      = 3080;
-    app_cfg_local.data.touch_calib.Cn      = -9475080;
-    app_cfg_local.data.touch_calib.Dn      = -560;
-    app_cfg_local.data.touch_calib.En      = 60340;
-    app_cfg_local.data.touch_calib.Fn      = -4360660;
-    app_cfg_local.data.touch_calib.Divider = 205664;
+    touch_calib_reset();
 
     app_cfg_local.data.sensor_settings[SENSOR_1].setpoint.unit = UNIT_TEMP_DEG_F;
     app_cfg_local.data.sensor_settings[SENSOR_1].setpoint.value = 78;

@@ -8,8 +8,8 @@
 #include "touch.h"
 #include "gui.h"
 #include "temp_control.h"
-#include "gui_calib.h"
 #include "gui_home.h"
+#include "gui_recovery.h"
 #include "gfx.h"
 #include "app_cfg.h"
 #include "net.h"
@@ -64,6 +64,8 @@ main(void)
 
   widget_t* home_screen = home_screen_create();
   gui_push_screen(home_screen);
+
+  recovery_screen_create();
 
   chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
 

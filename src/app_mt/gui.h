@@ -14,6 +14,9 @@ void
 gui_pop_screen(void);
 
 void
+gui_hide_screen(void);
+
+void
 gui_acquire_touch_capture(widget_t* widget);
 
 void

@@ -13,7 +13,7 @@ typedef struct widget_stack_elem_s {
 
 static void dispatch_touch(touch_msg_t* event);
 static void dispatch_push_screen(widget_t* screen);
-static void dispatch_pop_screen(void);
+static void dispatch_pop_screen(bool destroy);
 static void gui_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data);
 static void dispatch_msg_to_widget(widget_t* w, msg_id_t id, void* msg_data);
 
@@ -33,6 +33,7 @@ gui_init()
   msg_subscribe(gui_msg_listener, MSG_TOUCH_INPUT, NULL);
   msg_subscribe(gui_msg_listener, MSG_GUI_PUSH_SCREEN, NULL);
   msg_subscribe(gui_msg_listener, MSG_GUI_POP_SCREEN, NULL);
+  msg_subscribe(gui_msg_listener, MSG_GUI_HIDE_SCREEN, NULL);
 }
 
 void
@@ -45,6 +46,12 @@ void
 gui_pop_screen()
 {
   msg_send(MSG_GUI_POP_SCREEN, NULL);
+}
+
+void
+gui_hide_screen()
+{
+  msg_send(MSG_GUI_HIDE_SCREEN, NULL);
 }
 
 void
@@ -94,7 +101,11 @@ gui_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
       break;
 
     case MSG_GUI_POP_SCREEN:
-      dispatch_pop_screen();
+      dispatch_pop_screen(true);
+      break;
+
+    case MSG_GUI_HIDE_SCREEN:
+      dispatch_pop_screen(false);
       break;
 
     case MSG_TOUCH_INPUT:
@@ -155,11 +166,12 @@ dispatch_push_screen(widget_t* screen)
 }
 
 static void
-dispatch_pop_screen()
+dispatch_pop_screen(bool destroy)
 {
   if ((screen_stack != NULL) &&
       (screen_stack->next != NULL)) {
-    widget_destroy(screen_stack->widget);
+    if (destroy)
+      widget_destroy(screen_stack->widget);
 
     screen_stack = screen_stack->next;
 
