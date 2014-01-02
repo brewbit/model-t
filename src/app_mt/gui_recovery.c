@@ -49,7 +49,7 @@ static void
 update_labels(recovery_screen_t* s);
 
 static void
-trigger_op(recovery_op_t op);
+trigger_op(recovery_screen_t* s);
 
 
 widget_class_t recovery_screen_widget_class = {
@@ -159,7 +159,7 @@ dispatch_touch_input(recovery_screen_t* s, touch_msg_t* touch)
     else {
       if (down_duration > S2ST(5)) {
         s->down_time = chTimeNow();
-        trigger_op(s->op_sel);
+        trigger_op(s);
       }
     }
   }
@@ -177,9 +177,9 @@ dispatch_touch_input(recovery_screen_t* s, touch_msg_t* touch)
 }
 
 static void
-trigger_op(recovery_op_t op)
+trigger_op(recovery_screen_t* s)
 {
-  switch (op) {
+  switch (s->op_sel) {
     case RO_RESET_TOUCH_CALIB:
       touch_calib_reset();
       break;
@@ -190,6 +190,9 @@ trigger_op(recovery_op_t op)
     default:
       break;
   }
+
+  s->shown = false;
+  gui_hide_screen();
 }
 
 static void
