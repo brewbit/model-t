@@ -6,6 +6,7 @@
 #include "gfx.h"
 #include "image.h"
 #include "gui/button.h"
+#include "gui/label.h"
 
 #include <string.h>
 
@@ -24,6 +25,7 @@ typedef struct {
   widget_t* widget;
   widget_t* recal_button;
   widget_t* complete_button;
+  widget_t* lbl_instructions;
 } calib_screen_t;
 
 
@@ -76,6 +78,11 @@ calib_screen_create()
   s->recal_button = button_create(s->widget, rect, img_update, WHITE, BLACK, restart_calib);
   widget_hide(s->recal_button);
 
+  rect.x = 50;
+  rect.y = 100;
+  rect.width = 175;
+  s->lbl_instructions = label_create(s->widget, rect, "Touch and hold the marker until it turns green", font_opensans_regular_18, WHITE, 3);
+
   gui_msg_subscribe(MSG_TOUCH_INPUT, s->widget);
 
   return s->widget;
@@ -110,6 +117,7 @@ restart_calib(button_event_t* event)
     s->sample_idx = 0;
     s->ref_pt_idx = 0;
 
+    widget_show(s->lbl_instructions);
     widget_hide(s->recal_button);
     widget_hide(s->complete_button);
     widget_invalidate(screen_widget);
@@ -209,6 +217,7 @@ calib_touch_up(calib_screen_t* s, point_t p)
     }
     touch_calibrate(ref_pts, avg_sample);
 
+    widget_hide(s->lbl_instructions);
     widget_show(s->recal_button);
     widget_show(s->complete_button);
   }
