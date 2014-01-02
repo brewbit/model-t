@@ -51,6 +51,25 @@ download_bootloader: bootloader
 
 download: download_app_mt download_bootloader
 
+build/app_mt/app_mt.dfu: upgrade_image
+	python scripts/dfu.py \
+		-b 0x08008000:build/app_mt/app_mt_hdr.bin \
+		-b 0x08008200:build/app_mt/app_mt_app.bin \
+		build/app_mt/app_mt.dfu
+
+build/bootloader/bootloader.dfu:
+	python scripts/dfu.py \
+		-b 0x08000000:build/bootloader/bootloader.bin \
+		build/bootloader/bootloader.dfu
+
+download_dfu_app_mt: build/app_mt/app_mt.dfu
+	dfu-util -a 0 -t 2048 -D build/app_mt/app_mt.dfu
+
+download_dfu_bootloader: build/bootloader/bootloader.dfu
+	dfu-util -a 0 -t 2048 -D build/bootloader/bootloader.dfu
+
+download_dfu: download_dfu_app_mt download_dfu_bootloader
+
 test_server: app_mt
 	PYTHONPATH=build/app_mt/autogen:$(NANOPB)/generator python scripts/test_server.py
 
