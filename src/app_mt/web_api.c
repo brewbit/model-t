@@ -172,6 +172,11 @@ set_state(web_api_t* api, api_state_t state)
   }
 }
 
+snHTTPHeader device_id_header = {
+    .name = "Device-ID",
+    .value = device_id
+};
+
 static void
 web_api_idle(web_api_t* api)
 {
@@ -181,7 +186,7 @@ web_api_idle(web_api_t* api)
       break;
 
     case AS_CONNECT:
-      snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT);
+      snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT, &device_id_header, 1);
       set_state(api, AS_CONNECTING);
       break;
 
