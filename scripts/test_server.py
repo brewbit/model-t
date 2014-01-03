@@ -7,6 +7,9 @@ from autobahn.websocket import WebSocketServerFactory, \
 import bbmt_pb2
 
 class BrewBitServerProtocol(WebSocketServerProtocol):
+    def onConnect(self, request):
+        print "Device Connected: ", request.headers
+        
     def onMessage(self, msg, binary):
         request = bbmt_pb2.ApiMessage()
         request.ParseFromString(msg)
