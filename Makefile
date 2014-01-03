@@ -73,6 +73,9 @@ download_dfu: download_dfu_app_mt download_dfu_bootloader
 test_server: app_mt
 	PYTHONPATH=build/app_mt/autogen:$(NANOPB)/generator python scripts/test_server.py
 
+test_client: app_mt
+	PYTHONPATH=build/app_mt/autogen:$(NANOPB)/generator python scripts/test_client.py
+
 update_deps:
 	@./scripts/update_dependencies.sh $(DEPENDENCIES)
 
