@@ -1,9 +1,9 @@
 import os
 import time
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketServerFactory, \
-                               WebSocketServerProtocol, \
-                               listenWS
+from autobahn.websocket.protocol import WebSocketServerFactory, \
+                               WebSocketServerProtocol
+from autobahn.twisted.websocket import listenWS
 import bbmt_pb2
 
 class BrewBitServerProtocol(WebSocketServerProtocol):

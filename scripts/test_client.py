@@ -2,9 +2,9 @@ import os
 import sys
 import time
 from twisted.internet import reactor
-from autobahn.websocket import WebSocketClientFactory, \
-                               WebSocketClientProtocol, \
-                               connectWS
+from autobahn.websocket.protocol import WebSocketClientFactory, \
+                               WebSocketClientProtocol
+from autobahn.twisted.websocket import connectWS
 import bbmt_pb2
 
 

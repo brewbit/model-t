@@ -57,7 +57,7 @@ build/app_mt/app_mt.dfu: upgrade_image
 		-b 0x08008200:build/app_mt/app_mt_app.bin \
 		build/app_mt/app_mt.dfu
 
-build/bootloader/bootloader.dfu:
+build/bootloader/bootloader.dfu: bootloader
 	python scripts/dfu.py \
 		-b 0x08000000:build/bootloader/bootloader.bin \
 		build/bootloader/bootloader.dfu
@@ -71,10 +71,10 @@ download_dfu_bootloader: build/bootloader/bootloader.dfu
 download_dfu: download_dfu_app_mt download_dfu_bootloader
 
 test_server: app_mt
-	PYTHONPATH=$PYTHONPATH:build/app_mt/autogen:$(NANOPB)/generator python scripts/test_server.py
+	PYTHONPATH=$$PYTHONPATH:build/app_mt/autogen:$(NANOPB)/generator python scripts/test_server.py
 
 test_client: app_mt
-	PYTHONPATH=$PYTHONPATH:build/app_mt/autogen:$(NANOPB)/generator python scripts/test_client.py
+	PYTHONPATH=$$PYTHONPATH:build/app_mt/autogen:$(NANOPB)/generator python scripts/test_client.py
 
 update_deps:
 	@./scripts/update_dependencies.sh $(DEPENDENCIES)
