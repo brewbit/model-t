@@ -51,8 +51,8 @@ void loop()
 void board_power(boolean boot)
 {
   digitalWrite(BOARD_PWR, LOW);
-  delay(250);
   digitalWrite(BOARD_BOOT, boot ? HIGH : LOW);
+  delay(1000);
   digitalWrite(BOARD_PWR, HIGH);
   
   if (!board_detect(true))
