@@ -5,6 +5,7 @@
 #include "iflash.h"
 #include "common.h"
 #include "crc/crc32.h"
+#include "touch.h"
 
 #include <string.h>
 
@@ -37,6 +38,8 @@ static systime_t last_idle;
 void
 app_cfg_init()
 {
+  chMtxInit(&app_cfg_mtx);
+
   uint32_t calc_crc = crc32_block(0, &app_cfg_stored.data, sizeof(app_cfg_data_t));
 
   if (app_cfg_stored.crc == calc_crc) {
@@ -67,8 +70,6 @@ app_cfg_init()
 
     app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
   }
-
-  chMtxInit(&app_cfg_mtx);
 }
 
 void
