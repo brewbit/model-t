@@ -1,8 +1,8 @@
 
 
-#define BOARD_PWR    A4
+#define BOARD_RST    10
 #define BOARD_DETECT 7
-#define BOARD_BOOT   A0
+#define BOARD_BOOT   A1
 
 #define DEBOUNCE_TIME 250
 #define DETECT_TIME 500
@@ -10,12 +10,12 @@
 
 void setup()
 {
-  pinMode(BOARD_PWR, OUTPUT);
+  pinMode(BOARD_RST, INPUT);
   pinMode(BOARD_DETECT, INPUT);
   pinMode(BOARD_BOOT, OUTPUT);
   
   digitalWrite(BOARD_BOOT, LOW);
-  digitalWrite(BOARD_PWR, LOW);
+  digitalWrite(BOARD_RST, LOW);
   
   Serial.begin(9600);
 }
@@ -50,13 +50,12 @@ void loop()
 
 void board_power(boolean boot)
 {
-  digitalWrite(BOARD_PWR, LOW);
-  digitalWrite(BOARD_BOOT, boot ? HIGH : LOW);
-  delay(1000);
-  digitalWrite(BOARD_PWR, HIGH);
+  pinMode(BOARD_BOOT, boot ? INPUT : OUTPUT);
+  pinMode(BOARD_RST, OUTPUT);
+  delay(100);
+  pinMode(BOARD_RST, INPUT);
   
-  if (!board_detect(true))
-    digitalWrite(BOARD_PWR, LOW);
+  board_detect(true);
 }
 
 boolean board_detect(boolean connect)
