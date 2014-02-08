@@ -482,6 +482,9 @@
 extern "C" {
 #endif
   void boardInit(void);
+
+  uint32_t* board_get_device_id(void);
+  float board_get_core_temp(void);
 #ifdef __cplusplus
 }
 #endif

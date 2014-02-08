@@ -28,6 +28,39 @@
 #include "ch.h"
 #include "hal.h"
 
+
+// per-core calibration values
+#define TS_CAL1_CNT (*((uint16_t*)0x1FFF7A2C))
+#define TS_CAL1_TMP     (30.0f)
+
+#define TS_CAL2_CNT (*((uint16_t*)0x1FFF7A2E))
+#define TS_CAL2_TMP     (110.0f)
+
+#define TS_AVG_SLOPE    ((TS_CAL2_CNT - TS_CAL1_CNT) / (TS_CAL2_TMP - TS_CAL1_TMP))
+
+// default calibration values
+//#define TS_CAL1_CNT     ((0.76 / 3.3) * 4096)
+//#define TS_CAL1_TMP     (25.0f)
+//#define TS_AVG_SLOPE    (2.5f * (4096 / 3300))
+
+
+static const ADCConversionGroup core_temp_conv_grp = {
+    .circular = FALSE,
+    .num_channels = 1,
+    .end_cb = NULL,
+    .error_cb = NULL,
+
+    /* HW dependent part.*/
+    .cr1   = 0, // 12-bit resolution
+    .cr2   = ADC_CR2_SWSTART, // software triggered
+    .smpr1 = ADC_SMPR1_SMP_SENSOR(ADC_SAMPLE_480),
+    .smpr2 = 0,
+    .sqr1  = ADC_SQR1_NUM_CH(1),
+    .sqr2  = 0,
+    .sqr3  = ADC_SQR3_SQ1_N(ADC_CHANNEL_SENSOR),
+};
+
+
 /**
  * @brief   PAL setup.
  * @details Digital I/O ports static configuration as defined in @p board.h.
@@ -75,4 +108,25 @@ void boardInit(void) {
       FSMC_BWTR1_CLKDIV_0 |
       FSMC_BWTR1_ADDSET_0 |
       FSMC_BWTR1_DATAST_1;
+
+  adcStart(&ADCD1, NULL);
+  adcSTM32EnableTSVREFE();
+}
+
+uint32_t*
+board_get_device_id()
+{
+  return (uint32_t*)0x1FFF7A10;
+}
+
+float
+board_get_core_temp()
+{
+  adcsample_t sample;
+
+  adcAcquireBus(&ADCD1);
+  adcConvert(&ADCD1, &core_temp_conv_grp, &sample, 1);
+  adcReleaseBus(&ADCD1);
+
+  return (float)((((float)sample - TS_CAL1_CNT) / TS_AVG_SLOPE) + TS_CAL1_TMP);
 }

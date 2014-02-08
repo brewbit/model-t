@@ -109,7 +109,7 @@ main(void)
       MINOR_VERSION,
       PATCH_VERSION);
 
-  unsigned long *uid = (unsigned long *)0x1FFF7A10;
+  uint32_t* uid = board_get_device_id();
   chprintf(SD_STDIO, "Device ID: %08x %08x %08x\r\n", uid[0], uid[1], uid[2]);
 
   apply_updates();
