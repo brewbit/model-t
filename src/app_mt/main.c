@@ -43,7 +43,7 @@ main(void)
   halInit();
   chSysInit();
 
-  unsigned int* devid = (unsigned int*)0x1FFF7A10;
+  uint32_t* devid = board_get_device_id();
   sprintf(device_id, "%08X%08X%08X",
       devid[0],
       devid[1],
@@ -51,6 +51,8 @@ main(void)
 
   /* start stdout port */
   sdStart(SD_STDIO, NULL);
+
+  rngStart(&RNGD);
 
   app_cfg_init();
   gfx_init();

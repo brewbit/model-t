@@ -17,6 +17,8 @@
 #include "net.h"
 #include "sensor.h"
 #include "app_cfg.h"
+#include "snacka_backend/iocallbacks_socket.h"
+#include "snacka_backend/cryptocallbacks_chibios.h"
 
 #ifndef WEB_API_HOST
 #define WEB_API_HOST_STR "brewbit.herokuapp.com"
@@ -88,6 +90,30 @@ send_sensor_report(web_api_t* api);
 
 static web_api_t* api;
 
+static const snIOCallbacks iocb = {
+    .initCallback = snSocketInitCallback,
+    .deinitCallback = snSocketDeinitCallback,
+    .connectCallback = snSocketConnectCallback,
+    .disconnectCallback = snSocketDisconnectCallback,
+    .readCallback = snSocketReadCallback,
+    .writeCallback = snSocketWriteCallback,
+    .timeCallback = snSocketTimeCallback
+};
+
+static const snCryptoCallbacks cryptcb = {
+    .randCallback = snChRandCallback,
+    .shaCallback = snChShaCallback
+};
+
+static const snWebsocketSettings ws_settings = {
+    .maxFrameSize = 2048,
+    .logCallback = NULL,
+    .frameCallback = NULL,
+    .ioCallbacks = &iocb,
+    .cryptoCallbacks = &cryptcb,
+    .cancelCallback = NULL
+};
+
 
 void
 web_api_init()
@@ -100,7 +126,8 @@ web_api_init()
         websocket_message_rx,
         NULL, // closed callback
         NULL, // error callback
-        api);
+        api,
+        &ws_settings);
 
   msg_listener_t* l = msg_listener_create("web_api", 2048, web_api_dispatch, api);
   msg_listener_set_idle_timeout(l, 250);

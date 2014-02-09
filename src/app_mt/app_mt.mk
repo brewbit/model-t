@@ -57,6 +57,7 @@ PROJECT_CSRC = \
        touch.c \
        touch_calib.c \
        web_api.c \
+       snacka_backend/cryptocallbacks_chibios.c \
        snacka_backend/iocallbacks_socket.c \
        snacka_backend/socket_bsd.c \
        wifi/core/cc3000_common.c \

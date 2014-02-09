@@ -21,7 +21,9 @@ SNACKA_CSRC = \
 	$(SNACKA_SRCDIR)/snacka/openinghandshakeparser.c \
 	$(SNACKA_SRCDIR)/snacka/utf8.c \
 	$(SNACKA_SRCDIR)/snacka/websocket.c \
-	$(SNACKA_SRCDIR)/external/http_parser/http_parser.c
+	$(SNACKA_SRCDIR)/external/base64/base64.c \
+	$(SNACKA_SRCDIR)/external/http_parser/http_parser.c \
+	$(SNACKA_SRCDIR)/external/sha1/sha1.c
 
 ######################################
 #              NANOPB                #
