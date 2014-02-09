@@ -137,8 +137,6 @@ static point_t touch_coord_calib[SAMPLE_DELAY];
 void
 touch_init()
 {
-  adcStart(&ADCD1, NULL);
-
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, touch_thread, NULL);
 }
 
@@ -197,7 +195,9 @@ read_axis(const axis_cfg_t* axis_cfg)
   chThdSleepMicroseconds(100);
 
   /* capture a number of samples from the read pin */
+  adcAcquireBus(&ADCD1);
   adcConvert(&ADCD1, axis_cfg->conv_grp, samples, NUM_SAMPLES);
+  adcReleaseBus(&ADCD1);
 
   /* average and return the samples */
   return adc_avg(samples+DISCARDED_SAMPLES,
