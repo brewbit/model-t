@@ -87,6 +87,9 @@ start_update(web_api_t* api, const char* ver);
 static void
 send_sensor_report(web_api_t* api);
 
+static void
+dispatch_device_settings(DeviceSettingsNotification* settings);
+
 
 static web_api_t* api;
 
@@ -427,9 +430,39 @@ dispatch_api_msg(web_api_t* api, ApiMessage* msg)
     msg_send(MSG_API_FW_CHUNK, &msg->firmwareDownloadResponse);
     break;
 
+  case ApiMessage_Type_DEVICE_SETTINGS_NOTIFICATION:
+    dispatch_device_settings(&msg->deviceSettingsNotification);
+    break;
+
   default:
     printf("Unsupported API message: %d\r\n", msg->type);
     break;
+  }
+}
+
+static void
+dispatch_device_settings(DeviceSettingsNotification* settings)
+{
+  int i;
+  for (i = 0; i < settings->output_count; ++i) {
+    output_settings_t os;
+    OutputSettings* osm = &settings->output[i];
+
+    os.compressor_delay.value = osm->compressor_delay;
+    os.function = osm->function;
+    os.trigger = osm->trigger_probe_id;
+
+    app_cfg_set_output_settings(osm->id, &os);
+  }
+
+  for (i = 0; i < settings->sensor_count; ++i) {
+    sensor_settings_t ss;
+    SensorSettings* ssm = &settings->sensor[i];
+
+    ss.setpoint.value = ssm->setpoint;
+    ss.setpoint.unit = UNIT_TEMP_DEG_C;
+
+    app_cfg_set_sensor_settings(ssm->id, &ss);
   }
 }
 

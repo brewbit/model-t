@@ -187,15 +187,11 @@ compressor_delay_button_clicked(button_event_t* event)
     title = "Output 2 Delay";
   }
 
-  quantity_t delay = {
-      .value = s->settings.compressor_delay / S2ST(60),
-      .unit = UNIT_TIME_MIN
-  };
   float velocity_steps[] = {
       1.0f
   };
   widget_t* output_delay_screen = quantity_select_screen_create(
-      title, delay, velocity_steps, 1, update_compressor_delay, s);
+      title, s->settings.compressor_delay, velocity_steps, 1, update_compressor_delay, s);
   gui_push_screen(output_delay_screen);
 }
 
@@ -203,7 +199,7 @@ static void
 update_compressor_delay(quantity_t delay, void* user_data)
 {
   output_screen_t* s = user_data;
-  s->settings.compressor_delay = delay.value * S2ST(60);
+  s->settings.compressor_delay = delay;
   app_cfg_set_output_settings(s->output, &s->settings);
 }
 

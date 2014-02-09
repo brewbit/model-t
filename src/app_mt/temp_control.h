@@ -33,8 +33,7 @@ typedef struct {
 typedef struct {
   output_function_t function;
   sensor_id_t trigger;
-  systime_t compressor_delay;
-  quantity_t setpoint;
+  quantity_t compressor_delay;
 } output_settings_t;
 
 typedef struct {
