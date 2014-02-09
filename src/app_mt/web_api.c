@@ -449,6 +449,7 @@ dispatch_device_settings(DeviceSettingsNotification* settings)
     OutputSettings* osm = &settings->output[i];
 
     os.compressor_delay.value = osm->compressor_delay;
+    os.compressor_delay.unit = UNIT_TIME_MIN;
     os.function = osm->function;
     os.trigger = osm->trigger_probe_id;
 
