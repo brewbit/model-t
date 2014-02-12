@@ -31,6 +31,9 @@ void
 button_set_color(widget_t* w, uint16_t color);
 
 void
+button_set_icon_color(widget_t* w, uint16_t color);
+
+void
 button_set_text(widget_t* w, const char* text);
 
 const char*

@@ -46,6 +46,11 @@ typedef struct {
   output_settings_t settings;
 } output_settings_msg_t;
 
+typedef struct {
+  output_id_t output;
+  bool enabled;
+} output_status_t;
+
 
 void
 temp_control_init(void);
