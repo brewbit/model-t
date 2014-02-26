@@ -160,7 +160,7 @@
  * @note    The default is @p TRUE.
  */
 #if !defined(CH_USE_SEMAPHORES) || defined(__DOXYGEN__)
-#define CH_USE_SEMAPHORES               FALSE
+#define CH_USE_SEMAPHORES               TRUE
 #endif
 
 /**
