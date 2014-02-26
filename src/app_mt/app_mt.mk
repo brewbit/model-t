@@ -34,6 +34,7 @@ PROJECT_CSRC = \
        gui_home.c \
        gui_output.c \
        gui_output_function.c \
+       gui_output_mode.c \
        gui_output_trigger.c \
        gui_quantity_select.c \
        gui_recovery.c \

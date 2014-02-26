@@ -60,11 +60,13 @@ app_cfg_init()
     app_cfg_local.data.output_settings[OUTPUT_1].trigger = SENSOR_1;
     app_cfg_local.data.output_settings[OUTPUT_1].compressor_delay.unit = UNIT_TIME_MIN;
     app_cfg_local.data.output_settings[OUTPUT_1].compressor_delay.value = 3;
+    app_cfg_local.data.output_settings[OUTPUT_1].output_mode = ON_OFF;
 
     app_cfg_local.data.output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
     app_cfg_local.data.output_settings[OUTPUT_2].trigger = SENSOR_1;
     app_cfg_local.data.output_settings[OUTPUT_2].compressor_delay.unit = UNIT_TIME_MIN;
     app_cfg_local.data.output_settings[OUTPUT_2].compressor_delay.value = 3;
+    app_cfg_local.data.output_settings[OUTPUT_2].output_mode = ON_OFF;
 
     app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
   }

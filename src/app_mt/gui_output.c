@@ -9,6 +9,7 @@
 #include "app_cfg.h"
 #include "gui_output_function.h"
 #include "gui_output_trigger.h"
+#include "gui_output_mode.h"
 #include "gui_quantity_select.h"
 
 #include <string.h>
@@ -19,6 +20,7 @@ typedef struct {
   widget_t* function_button;
   widget_t* trigger_button;
   widget_t* compressor_delay_button;
+  widget_t* output_mode_button;
 
   output_id_t output;
   output_settings_t settings;
@@ -28,9 +30,10 @@ typedef struct {
 static void output_settings_screen_destroy(widget_t* w);
 static void output_settings_screen_msg(msg_event_t* event);
 static void dispatch_output_settings(output_screen_t* s, output_settings_msg_t* msg);
-static void set_output_settings(output_screen_t* s, output_function_t function, sensor_id_t trigger);
+static void set_output_settings(output_screen_t* s, output_function_t function, sensor_id_t trigger, output_ctrl_t mode);
 static void back_button_clicked(button_event_t* event);
 static void compressor_delay_button_clicked(button_event_t* event);
+static void output_mode_button_clicked(button_event_t* event);
 static void function_button_clicked(button_event_t* event);
 static void trigger_button_clicked(button_event_t* event);
 static void update_compressor_delay(quantity_t delay, void* user_data);
@@ -66,7 +69,7 @@ output_settings_screen_create(output_id_t output)
   label_create(s->widget, rect, title, font_opensans_regular_22, WHITE, 1);
 
   rect.x = 48;
-  rect.y = 120;
+  rect.y = 86;
   rect.width = 56;
   rect.height = 56;
   s->function_button = button_create(s->widget, rect, img_flame, WHITE, ORANGE, function_button_clicked);
@@ -77,11 +80,15 @@ output_settings_screen_create(output_id_t output)
   rect.x += 84;
   s->compressor_delay_button = button_create(s->widget, rect, img_stopwatch, WHITE, GREEN, compressor_delay_button_clicked);
 
+  rect.x = 48;
+  rect.y += 70;
+  button_create(s->widget, rect, img_circle, WHITE, OLIVE, output_mode_button_clicked);
+
   s->output = output;
   s->settings = *app_cfg_get_output_settings(output);
 
   gui_msg_subscribe(MSG_OUTPUT_SETTINGS, s->widget);
-  set_output_settings(s, s->settings.function, s->settings.trigger);
+  set_output_settings(s, s->settings.function, s->settings.trigger, s->settings.output_mode);
 
   return s->widget;
 }
@@ -107,14 +114,15 @@ static void
 dispatch_output_settings(output_screen_t* s, output_settings_msg_t* msg)
 {
   if (msg->output == s->output)
-    set_output_settings(s, msg->settings.function, msg->settings.trigger);
+    set_output_settings(s, msg->settings.function, msg->settings.trigger, msg->settings.output_mode);
 }
 
 static void
-set_output_settings(output_screen_t* s, output_function_t function, sensor_id_t trigger)
+set_output_settings(output_screen_t* s, output_function_t function, sensor_id_t trigger, output_ctrl_t mode)
 {
   widget_t* btn1 = s->function_button;
   widget_t* btn2 = s->trigger_button;
+  widget_t* btn3 = s->output_mode_button;
 
   color_t color = 0;
   const Image_t* img = img_snowflake;
@@ -137,6 +145,8 @@ set_output_settings(output_screen_t* s, output_function_t function, sensor_id_t 
   button_set_icon(btn1, img);
 
   widget_set_background(btn2, (trigger == SENSOR_1) ? AMBER : PURPLE, FALSE);
+
+  widget_set_background(btn3, (mode == ON_OFF) ? OLIVE : STEEL, FALSE);
 }
 
 static void
@@ -193,6 +203,18 @@ compressor_delay_button_clicked(button_event_t* event)
   widget_t* output_delay_screen = quantity_select_screen_create(
       title, s->settings.compressor_delay, velocity_steps, 1, update_compressor_delay, s);
   gui_push_screen(output_delay_screen);
+}
+
+static void
+output_mode_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* screen = widget_get_parent(event->widget);
+    output_screen_t* s = widget_get_instance_data(screen);
+
+    widget_t* output_mode_screen = output_mode_screen_create(s->output);
+    gui_push_screen(output_mode_screen);
+  }
 }
 
 static void
