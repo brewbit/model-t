@@ -68,7 +68,7 @@ output_init(relay_output_t* out, output_id_t id, uint32_t gpio)
 
   out->id = id;
   out->gpio = gpio;
-  out->output_mode = ON_OFF;
+  out->output_mode = settings->output_mode;
   out->window_time = settings->compressor_delay.value * S2ST(60) * 4;
 
   pid_init(&out->pid_control);
@@ -100,7 +100,7 @@ output_thread(void* arg)
     /* If the probe associated with this output is not active disable the output */
     if (!output->sensor_active) {
       palClearPad(GPIOC, output->gpio);
-      output->status.enabled = 0;
+      output->status.enabled = false;
       msg_send(MSG_OUTPUT_STATUS, &output->status);
     }
     else {
@@ -123,47 +123,54 @@ relay_control(relay_output_t* output)
   switch(output->output_mode) {
   case ON_OFF:
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
-	  if (inputs[output->id].last_sample.value < sensor_settings->setpoint.value) {
-	    palSetPad(GPIOC, output->gpio);
-	    output->status.enabled = 1;
-	    msg_send(MSG_OUTPUT_STATUS, &output->status);
-	  }
-	  else {
-      palClearPad(GPIOC, output->gpio);
-      output->status.enabled = 0;
-      msg_send(MSG_OUTPUT_STATUS, &output->status);
-	  }
-	}
-	else {
-	  if (inputs[output->id].last_sample.value > sensor_settings->setpoint.value) {
-	    palSetPad(GPIOC, output->gpio);
-      output->status.enabled = 1;
-      msg_send(MSG_OUTPUT_STATUS, &output->status);
-	  }
-	  else {
-	    palClearPad(GPIOC, output->gpio);
-      output->status.enabled = 0;
-      msg_send(MSG_OUTPUT_STATUS, &output->status);
-	  }
-	}
-	break;
+      if (inputs[output->id].last_sample.value < sensor_settings->setpoint.value) {
+        palSetPad(GPIOC, output->gpio);
+        output->status.enabled = true;
+        msg_send(MSG_OUTPUT_STATUS, &output->status);
+      }
+      else {
+        palClearPad(GPIOC, output->gpio);
+        output->status.enabled = false;
+        msg_send(MSG_OUTPUT_STATUS, &output->status);
+      }
+    }
+    else {
+      if (inputs[output->id].last_sample.value > sensor_settings->setpoint.value) {
+        palSetPad(GPIOC, output->gpio);
+        output->status.enabled = true;
+        msg_send(MSG_OUTPUT_STATUS, &output->status);
+      }
+      else {
+        palClearPad(GPIOC, output->gpio);
+        output->status.enabled = false;
+        msg_send(MSG_OUTPUT_STATUS, &output->status);
+      }
+    }
+    break;
   case PID:
     if ((chTimeNow() - output->window_start_time) >= output->pid_control.pid_output) {
-	    palClearPad(GPIOC, output->gpio);
-      output->status.enabled = 0;
+      systime_t sleepTime;
+      int32_t   windowDelay;
+
+      palClearPad(GPIOC, output->gpio);
+      output->status.enabled = false;
       msg_send(MSG_OUTPUT_STATUS, &output->status);
 
-	    chThdSleepSeconds(1);
-	    // TODO: MAKE SURE THE TIME IS >= 0
-	    //chThdSleep(output->window_time - output->pid_control.pid_output);
+      /* Make sure thread sleep time is > 0  or else chThdSleep will crap itself */
+      windowDelay = output->window_time - output->pid_control.pid_output;
+      sleepTime =  windowDelay > 0 ? windowDelay : 0;
+      if (sleepTime > 0)
+        chThdSleep(sleepTime);
 
-	    /* Setup next on window */
-	    output->window_start_time = chTimeNow();
-	    palSetPad(GPIOC, output->gpio);
+      /* Setup next on window */
+      output->window_start_time = chTimeNow();
+      palSetPad(GPIOC, output->gpio);
+      output->status.enabled = true;
+      msg_send(MSG_OUTPUT_STATUS, &output->status);
     }
-	  break;
+    break;
   default:
-	  break;
+    break;
   }
 }
 

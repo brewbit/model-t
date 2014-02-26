@@ -21,9 +21,9 @@ typedef enum {
 } output_function_t;
 
 typedef enum {
-	ON_OFF,
-	PID,
-	MANUAL
+  ON_OFF,
+  PID,
+  MANUAL
 } output_ctrl_t;
 
 typedef struct {
@@ -34,6 +34,7 @@ typedef struct {
   output_function_t function;
   sensor_id_t trigger;
   quantity_t compressor_delay;
+  output_ctrl_t output_mode;
 } output_settings_t;
 
 typedef struct {
