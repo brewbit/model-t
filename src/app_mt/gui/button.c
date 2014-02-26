@@ -77,6 +77,16 @@ button_set_color(widget_t* w, uint16_t color)
 }
 
 void
+button_set_icon_color(widget_t* w, uint16_t color)
+{
+  button_t* b = widget_get_instance_data(w);
+  if (b->icon_color != color) {
+    b->icon_color = color;
+    widget_invalidate(w);
+  }
+}
+
+void
 button_set_text(widget_t* w, const char* text)
 {
   button_t* b = widget_get_instance_data(w);

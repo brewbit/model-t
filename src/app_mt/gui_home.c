@@ -55,6 +55,7 @@ static void click_settings_button(button_event_t* event);
 static void click_stage_button(button_event_t* event);
 
 static void dispatch_output_settings(home_screen_t* s, output_settings_msg_t* msg);
+static void dispatch_output_status(home_screen_t* s, output_status_t* msg);
 static void dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg);
 static void dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg);
 
@@ -126,6 +127,7 @@ home_screen_create()
   gui_msg_subscribe(MSG_SENSOR_SAMPLE, s->screen);
   gui_msg_subscribe(MSG_SENSOR_TIMEOUT, s->screen);
   gui_msg_subscribe(MSG_OUTPUT_SETTINGS, s->screen);
+  gui_msg_subscribe(MSG_OUTPUT_STATUS, s->screen);
 
   return s->screen;
 }
@@ -138,6 +140,7 @@ home_screen_destroy(widget_t* w)
   gui_msg_unsubscribe(MSG_SENSOR_SAMPLE, s->screen);
   gui_msg_unsubscribe(MSG_SENSOR_TIMEOUT, s->screen);
   gui_msg_unsubscribe(MSG_OUTPUT_SETTINGS, s->screen);
+  gui_msg_unsubscribe(MSG_OUTPUT_STATUS, s->screen);
 
   chHeapFree(s);
 }
@@ -158,6 +161,10 @@ home_screen_msg(msg_event_t* event)
 
   case MSG_OUTPUT_SETTINGS:
     dispatch_output_settings(s, event->msg_data);
+    break;
+
+  case MSG_OUTPUT_STATUS:
+    dispatch_output_status(s, event->msg_data);
     break;
 
   default:
@@ -246,6 +253,22 @@ static void
 dispatch_output_settings(home_screen_t* s, output_settings_msg_t* msg)
 {
   set_output_settings(s, msg->output, msg->settings.function);
+}
+
+static void
+dispatch_output_status(home_screen_t* s, output_status_t* msg)
+{
+  widget_t* btn;
+
+  if (msg->output == OUTPUT_1)
+    btn = s->output1_button;
+  else
+    btn = s->output2_button;
+
+  if (msg->enabled)
+    button_set_icon_color(btn, LIME);
+  else
+    button_set_icon_color(btn, WHITE);
 }
 
 static void
