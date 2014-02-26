@@ -40,7 +40,7 @@
 #define STEEL      COLOR24(100, 118, 135)
 #define MAUVE      COLOR24(118, 96, 138)
 #define TAUPE      COLOR24(135, 121, 78)
-#define PURPLE     COLOR24(0xA7, 0x00, 0xAE)
+#define PURPLE     COLOR24(167, 0, 174)
 
 
 void
