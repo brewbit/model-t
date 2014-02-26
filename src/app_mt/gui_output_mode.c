@@ -77,7 +77,7 @@ output_mode_screen_create(output_id_t output)
   rect.y = 5;
   rect.width = 56;
   rect.height = 56;
-  s->on_off_mode_icon = icon_create(s->on_off_mode_button, rect, img_circle, WHITE, OLIVE);
+  s->on_off_mode_icon = icon_create(s->on_off_mode_button, rect, img_circle, WHITE, RED);
 
   rect.x = 70;
   rect.y = 5;

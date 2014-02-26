@@ -82,7 +82,7 @@ output_settings_screen_create(output_id_t output)
 
   rect.x = 48;
   rect.y += 70;
-  button_create(s->widget, rect, img_circle, WHITE, OLIVE, output_mode_button_clicked);
+  s->output_mode_button = button_create(s->widget, rect, img_circle, WHITE, RED, output_mode_button_clicked);
 
   s->output = output;
   s->settings = *app_cfg_get_output_settings(output);
@@ -146,7 +146,7 @@ set_output_settings(output_screen_t* s, output_function_t function, sensor_id_t 
 
   widget_set_background(btn2, (trigger == SENSOR_1) ? AMBER : PURPLE, FALSE);
 
-  widget_set_background(btn3, (mode == ON_OFF) ? OLIVE : STEEL, FALSE);
+  widget_set_background(btn3, (mode == ON_OFF) ? RED : STEEL, FALSE);
 }
 
 static void
