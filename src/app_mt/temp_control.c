@@ -55,7 +55,7 @@ temp_control_init()
 
   msg_listener_t* l = msg_listener_create("temp_ctrl", 1024, dispatch_temp_input_msg, NULL);
 
-  msg_subscribe(l, MSG_SENSOR_SAMPLE,   NULL);
+//  msg_subscribe(l, MSG_SENSOR_SAMPLE,   NULL);
   msg_subscribe(l, MSG_SENSOR_TIMEOUT,  NULL);
   msg_subscribe(l, MSG_SENSOR_SETTINGS, NULL);
   msg_subscribe(l, MSG_OUTPUT_SETTINGS, NULL);
