@@ -32,7 +32,7 @@
 #define WEB_API_PORT 80
 #endif
 
-#define SENSOR_REPORT_INTERVAL S2ST(60)
+#define SENSOR_REPORT_INTERVAL S2ST(5)
 
 
 typedef struct {
@@ -139,6 +139,7 @@ web_api_init()
   msg_subscribe(l, MSG_API_FW_UPDATE_CHECK, NULL);
   msg_subscribe(l, MSG_API_FW_DNLD_START, NULL);
   msg_subscribe(l, MSG_SENSOR_SAMPLE, NULL);
+  msg_subscribe(l, MSG_HEALTH_CHECK, NULL);
 }
 
 const api_status_t*
@@ -166,6 +167,10 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
 
     case MSG_IDLE:
       web_api_idle(api);
+      break;
+
+    case MSG_HEALTH_CHECK:
+      /* just return to prove we are still alive */
       break;
 
     default:
@@ -216,6 +221,7 @@ web_api_idle(web_api_t* api)
       break;
 
     case AS_CONNECT:
+      printf("Connecting to: %s:%d\r\n", WEB_API_HOST_STR, WEB_API_PORT);
       snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT, &device_id_header, 1);
       set_state(api, AS_CONNECTING);
       break;
@@ -261,21 +267,21 @@ send_sensor_report(web_api_t* api)
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_DEVICE_REPORT;
   msg->has_deviceReport = true;
-  msg->deviceReport.probeReport_count = 0;
+  msg->deviceReport.sensor_report_count = 0;
 
   for (i = 0; i < NUM_SENSORS; ++i) {
     if (api->sensor_status[i].new_sample) {
       api->sensor_status[i].new_sample = false;
-      ProbeReport* pr = &msg->deviceReport.probeReport[msg->deviceReport.probeReport_count];
-      msg->deviceReport.probeReport_count++;
+      SensorReport* pr = &msg->deviceReport.sensor_report[msg->deviceReport.sensor_report_count];
+      msg->deviceReport.sensor_report_count++;
 
       pr->id = i;
       pr->value = api->sensor_status[i].last_sample.value;
     }
   }
 
-  if (msg->deviceReport.probeReport_count > 0) {
-    printf("sending sensor report %d\r\n", msg->deviceReport.probeReport_count);
+  if (msg->deviceReport.sensor_report_count > 0) {
+    printf("sending sensor report %d\r\n", msg->deviceReport.sensor_report_count);
     send_api_msg(api->ws, msg);
   }
 
@@ -451,7 +457,7 @@ dispatch_device_settings(DeviceSettingsNotification* settings)
     os.compressor_delay.value = osm->compressor_delay;
     os.compressor_delay.unit = UNIT_TIME_MIN;
     os.function = osm->function;
-    os.trigger = osm->trigger_probe_id;
+    os.trigger = osm->trigger_sensor_id;
 
     app_cfg_set_output_settings(osm->id, &os);
   }

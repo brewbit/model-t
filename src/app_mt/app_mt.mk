@@ -4,8 +4,8 @@ MAJOR_VERSION = 1
 MINOR_VERSION = 0
 PATCH_VERSION = 0
 
-WEB_API_HOST = brewbit.herokuapp.com
-WEB_API_PORT = 80
+WEB_API_HOST = 192.168.1.146
+WEB_API_PORT = 3000
 
 BOARD = II-MT-CONTROLLER
 
@@ -57,6 +57,7 @@ PROJECT_CSRC = \
        temp_control.c \
        touch.c \
        touch_calib.c \
+       watchdog.c \
        web_api.c \
        snacka_backend/cryptocallbacks_chibios.c \
        snacka_backend/iocallbacks_socket.c \
