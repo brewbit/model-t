@@ -174,6 +174,13 @@
 #define HAL_USE_RNG                 TRUE
 #endif
 
+/**
+ * @brief   Enables the IWDG subsystem.
+ */
+#if !defined(HAL_USE_IWDG) || defined(__DOXYGEN__)
+#define HAL_USE_IWDG                TRUE
+#endif
+
 /*===========================================================================*/
 /* ADC driver related settings.                                              */
 /*===========================================================================*/

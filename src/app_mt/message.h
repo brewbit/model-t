@@ -7,6 +7,8 @@
 typedef enum {
   MSG_IDLE,
 
+  MSG_HEALTH_CHECK,
+
   MSG_TOUCH_INPUT,
 
   MSG_SENSOR_SAMPLE,
