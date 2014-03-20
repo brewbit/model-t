@@ -27,6 +27,7 @@ pid_init(pid_t* pid)
   pid_set_gains(pid, 288, 720, 144);
 }
 
+#define GAMMA 0.03
 void
 pid_exec(pid_t* pid, quantity_t setpoint, quantity_t sample)
 {
@@ -37,16 +38,22 @@ pid_exec(pid_t* pid, quantity_t setpoint, quantity_t sample)
   systime_t time_diff = (now - pid->last_time);
 
   if (time_diff >= pid->sample_time) {
-    float error = (setpoint.value - sample.value);
-    float derivative = (sample.value - pid->last_sample);
+    float err_p = (setpoint.value - sample.value);
+    pid->err_i += err_p;
+    float err_d = (err_p - pid->last_err);
 
-    pid->integral += pid->ki * error;
-    LIMIT(pid->integral, pid->out_min, pid->out_max);
+    /* Limit integrator windup */
+    LIMIT(pid->err_i, pid->out_min, pid->out_max);
 
-    pid->pid_output = (pid->kp * error) + pid->integral - (pid->kd * derivative);
-    LIMIT(pid->pid_output, pid->out_min, pid->out_max);
+    /* Recalculate gains using Lin et al algorithm */
+    pid->kp += -GAMMA * err_p * err_p;
+    pid->ki += -GAMMA * err_p * pid->err_i;
+    pid->kd += -GAMMA * err_p * err_d;
 
-    pid->last_sample = sample.value;
+    pid->out = (pid->kp * err_p) + (pid->ki * pid->err_i) + (pid->kd * err_d);
+    LIMIT(pid->out, pid->out_min, pid->out_max);
+
+    pid->last_err = err_p;
     pid->last_time   = now;
   }
 }
@@ -81,9 +88,9 @@ pid_enable(pid_t* pid, quantity_t sample, bool enabled)
 void
 pid_reinit(pid_t* pid, quantity_t sample)
 {
-  pid->last_sample = sample.value;
-  pid->integral = pid->pid_output;
-  LIMIT(pid->integral, pid->out_min, pid->out_max);
+//  pid->last_err = sample.value;
+  pid->err_i = pid->out;
+  LIMIT(pid->err_i, pid->out_min, pid->out_max);
 }
 
 void
@@ -108,7 +115,7 @@ pid_set_output_limits(pid_t* pid, float min, float max)
   pid->out_max = max;
 
   if (pid->enabled) {
-    LIMIT(pid->pid_output, pid->out_min, pid->out_max);
-    LIMIT(pid->integral, pid->out_min, pid->out_max);
+    LIMIT(pid->out, pid->out_min, pid->out_max);
+    LIMIT(pid->err_i, pid->out_min, pid->out_max);
   }
 }

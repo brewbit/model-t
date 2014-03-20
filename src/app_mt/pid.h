@@ -16,24 +16,24 @@ typedef enum {
 };
 
 typedef struct {
+  bool enabled;
+
   float kp;
   float ki;
   float kd;
 
-  float integral;
-  float last_sample;
-  float pid_output;
+  float err_i;
+  float last_err;
 
-  bool   enabled;
-  float  out_min;
-  float  out_max;
+  float out;
+  float out_min;
+  float out_max;
   int8_t output_sign;
 
   /* Time is in system ticks */
   systime_t sample_time;
   systime_t last_time;
 } pid_t;
-
 
 
 void pid_init(pid_t* pid);

@@ -148,7 +148,7 @@ relay_control(relay_output_t* output)
     }
     break;
   case PID:
-    if ((chTimeNow() - output->window_start_time) >= output->pid_control.pid_output) {
+    if ((chTimeNow() - output->window_start_time) >= output->pid_control.out) {
       systime_t sleepTime;
       int32_t   windowDelay;
 
@@ -157,7 +157,7 @@ relay_control(relay_output_t* output)
       msg_send(MSG_OUTPUT_STATUS, &output->status);
 
       /* Make sure thread sleep time is > 0  or else chThdSleep will crap itself */
-      windowDelay = output->window_time - output->pid_control.pid_output;
+      windowDelay = output->window_time - output->pid_control.out;
       sleepTime =  windowDelay > 0 ? windowDelay : 0;
       if (sleepTime > 0)
         chThdSleep(sleepTime);
