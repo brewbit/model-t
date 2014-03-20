@@ -10,11 +10,10 @@
 #include "sensor.h"
 
 
-#define MANUAL    0
-#define AUTOMATIC 1
-
-#define DIRECT  0
-#define REVERSE 1
+typedef enum {
+  POSITIVE,
+  NEGATIVE
+};
 
 typedef struct {
   float kp;
@@ -25,10 +24,10 @@ typedef struct {
   float last_sample;
   float pid_output;
 
-  bool   in_auto;
+  bool   enabled;
   float  out_min;
   float  out_max;
-  int8_t controller_direction;
+  int8_t output_sign;
 
   /* Time is in system ticks */
   systime_t sample_time;
@@ -39,10 +38,10 @@ typedef struct {
 
 void pid_init(pid_t* pid);
 void pid_exec(pid_t* pid, quantity_t setpoint, quantity_t sample);
-void set_gains(pid_t* pid, float Kp, float Ki, float Kd);
-void set_mode(pid_t* pid, quantity_t sample, uint8_t Mode);
+void pid_set_gains(pid_t* pid, float Kp, float Ki, float Kd);
+void pid_enable(pid_t* pid, quantity_t sample, bool enabled);
 void pid_reinit(pid_t* pid, quantity_t sample);
-void set_controller_direction(pid_t* pid, uint8_t direction);
-void set_output_limits(pid_t* pid, float Min, float Max);
+void pid_set_output_sign(pid_t* pid, uint8_t direction);
+void pid_set_output_limits(pid_t* pid, float Min, float Max);
 
 #endif

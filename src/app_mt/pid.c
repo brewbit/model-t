@@ -1,70 +1,68 @@
 
 #include "pid.h"
 
+/*
+ * This code is based on Brett Beauregard's Improved Beginner PID series of
+ * blog posts [1] with additions for self-tuning behavior based on the paper
+ * "Self-Tuning of PID Controllers by Adaptive Interaction." by Feng Lin,
+ * Robert D Brandt, and George Saikalis [2]
+ *
+ * [1] http://brettbeauregard.com/blog/2011/04/improving-the-beginners-pid-introduction/
+ * [2] http://www.ece.eng.wayne.edu/~flin/Conference/AI-PID.pdf
+ */
+
+#define LIMIT(v, min, max) \
+  do { \
+    if ((v) > (max)) (v) = (max); \
+    else if ((v) < (min)) (v) = (min); \
+  } while (0)
+
 void
 pid_init(pid_t* pid)
 {
   pid->sample_time = MS2ST(5000);
   pid->last_time   = (chTimeNow() - pid->sample_time);
-  pid->in_auto     = true;
+  pid->enabled     = true;
 
-  set_gains(pid, 288, 720, 144);
+  pid_set_gains(pid, 288, 720, 144);
 }
 
 void
 pid_exec(pid_t* pid, quantity_t setpoint, quantity_t sample)
 {
-  /* If not using PID return, the relay will turn on and off at the exact user defined setpoint. */
-  if (!pid->in_auto)
+  if (!pid->enabled)
     return;
 
-  systime_t current_system_time = chTimeNow();
-  systime_t time_diff           = (current_system_time - pid->last_time);
+  systime_t now = chTimeNow();
+  systime_t time_diff = (now - pid->last_time);
 
   if (time_diff >= pid->sample_time) {
-    float error;
-    float sample_diff;
-
-    error = (setpoint.value - sample.value);
+    float error = (setpoint.value - sample.value);
+    float derivative = (sample.value - pid->last_sample);
 
     pid->integral += pid->ki * error;
-    if (pid->integral > pid->out_max)
-      pid->integral = pid->out_max;
-    else if (pid->integral < pid->out_min)
-      pid->integral = pid->out_min;
+    LIMIT(pid->integral, pid->out_min, pid->out_max);
 
-    sample_diff = (sample.value - pid->last_sample);
+    pid->pid_output = (pid->kp * error) + pid->integral - (pid->kd * derivative);
+    LIMIT(pid->pid_output, pid->out_min, pid->out_max);
 
-    /*Compute PID Output*/
-    pid->pid_output = (pid->kp * error) + (pid->integral - pid->kd) * sample_diff;
-
-    if (pid->pid_output > pid->out_max)
-      pid->pid_output = pid->out_max;
-    else if (pid->pid_output < pid->out_min)
-      pid->pid_output = pid->out_min;
-
-    /*Remember some variables for next time*/
     pid->last_sample = sample.value;
-    pid->last_time   = current_system_time;
+    pid->last_time   = now;
   }
 }
 
 void
-set_gains(pid_t* pid, float Kp, float Ki, float Kd)
+pid_set_gains(pid_t* pid, float kp, float ki, float kd)
 {
-  if (Kp < 0 || Ki < 0 || Kd < 0)
+  if (kp < 0 || ki < 0 || kd < 0)
     return;
 
-  pid->kp = Kp;
-  pid->ki = Ki;
-  pid->kd = Kd;
-
   uint32_t sample_time_s = pid->sample_time / CH_FREQUENCY;
-  pid->kp = Kp;
-  pid->ki = Ki * sample_time_s;
-  pid->kd = Kd / sample_time_s;
+  pid->kp = kp;
+  pid->ki = ki * sample_time_s;
+  pid->kd = kd / sample_time_s;
 
-  if (pid->controller_direction == REVERSE) {
+  if (pid->output_sign == NEGATIVE) {
     pid->kp = -pid->kp;
     pid->ki = -pid->ki;
     pid->kd = -pid->kd;
@@ -72,14 +70,12 @@ set_gains(pid_t* pid, float Kp, float Ki, float Kd)
 }
 
 void
-set_mode(pid_t* pid, quantity_t sample, uint8_t Mode)
+pid_enable(pid_t* pid, quantity_t sample, bool enabled)
 {
-  bool new_mode = (Mode == AUTOMATIC);
-  if (new_mode && !pid->in_auto) {
-    /*we just went from manual to auto*/
+  if (enabled && !pid->enabled)
     pid_reinit(pid, sample);
-  }
-  pid->in_auto = new_mode;
+
+  pid->enabled = enabled;
 }
 
 void
@@ -87,43 +83,32 @@ pid_reinit(pid_t* pid, quantity_t sample)
 {
   pid->last_sample = sample.value;
   pid->integral = pid->pid_output;
-
-  if (pid->integral > pid->out_max)
-    pid->integral = pid->out_max;
-  else if (pid->integral < pid->out_min)
-    pid->integral = pid->out_min;
+  LIMIT(pid->integral, pid->out_min, pid->out_max);
 }
 
 void
-set_controller_direction(pid_t* pid, uint8_t direction)
+pid_set_output_sign(pid_t* pid, uint8_t sign)
 {
-   pid->controller_direction = direction;
+   pid->output_sign = sign;
 
-   if(pid->controller_direction == REVERSE) {
-     pid->kp = (0 - pid->kp);
-     pid->ki = (0 - pid->ki);
-     pid->kd = (0 - pid->kd);
+   if (pid->output_sign == NEGATIVE) {
+     pid->kp = -pid->kp;
+     pid->ki = -pid->ki;
+     pid->kd = -pid->kd;
    }
 }
 
 void
-set_output_limits(pid_t* pid, float Min, float Max)
+pid_set_output_limits(pid_t* pid, float min, float max)
 {
-  if(Min >= Max)
+  if (min >= max)
    return;
-  pid->out_min = Min;
-  pid->out_max = Max;
 
-  if(pid->in_auto)
-  {
-    if(pid->pid_output > pid->out_max)
-      pid->pid_output = pid->out_max;
-    else if(pid->pid_output < pid->out_min)
-      pid->pid_output = pid->out_min;
+  pid->out_min = min;
+  pid->out_max = max;
 
-    if(pid->integral > pid->out_max)
-      pid->integral= pid->out_max;
-    else if(pid->integral < pid->out_min)
-      pid->integral = pid->out_min;
+  if (pid->enabled) {
+    LIMIT(pid->pid_output, pid->out_min, pid->out_max);
+    LIMIT(pid->integral, pid->out_min, pid->out_max);
   }
 }

@@ -55,7 +55,7 @@ temp_control_init()
 
   msg_listener_t* l = msg_listener_create("temp_ctrl", 1024, dispatch_temp_input_msg, NULL);
 
-//  msg_subscribe(l, MSG_SENSOR_SAMPLE,   NULL);
+  msg_subscribe(l, MSG_SENSOR_SAMPLE,   NULL);
   msg_subscribe(l, MSG_SENSOR_TIMEOUT,  NULL);
   msg_subscribe(l, MSG_SENSOR_SETTINGS, NULL);
   msg_subscribe(l, MSG_OUTPUT_SETTINGS, NULL);
@@ -72,12 +72,12 @@ output_init(relay_output_t* out, output_id_t id, uint32_t gpio)
   out->window_time = settings->compressor_delay.value * S2ST(60) * 4;
 
   pid_init(&out->pid_control);
-  set_output_limits(&out->pid_control, 0, out->window_time);
+  pid_set_output_limits(&out->pid_control, 0, out->window_time);
 
   if (settings->function == OUTPUT_FUNC_COOLING)
-    set_controller_direction(&out->pid_control, REVERSE);
+    pid_set_output_sign(&out->pid_control, NEGATIVE);
   else
-    set_controller_direction(&out->pid_control, DIRECT);
+    pid_set_output_sign(&out->pid_control, POSITIVE);
 
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, output_thread, out);
 }
@@ -259,11 +259,11 @@ dispatch_output_settings(output_settings_msg_t* msg)
 
     const output_settings_t* output_settings = app_cfg_get_output_settings(i);
     if (output_settings->function == OUTPUT_FUNC_COOLING)
-      set_controller_direction(&output->pid_control, REVERSE);
+      pid_set_output_sign(&output->pid_control, NEGATIVE);
     else if (output_settings->function == OUTPUT_FUNC_HEATING)
-      set_controller_direction(&output->pid_control, DIRECT);
+      pid_set_output_sign(&output->pid_control, POSITIVE);
 
-      set_output_limits(
+      pid_set_output_limits(
           &output->pid_control,
           0,
           output->window_time - (msg->settings.compressor_delay.value * S2ST(60)));
