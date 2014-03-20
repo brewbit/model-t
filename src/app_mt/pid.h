@@ -37,10 +37,10 @@ typedef struct {
 
 
 void pid_init(pid_t* pid);
-void pid_exec(pid_t* pid, quantity_t setpoint, quantity_t sample);
+void pid_exec(pid_t* pid, float setpoint, float sample);
 void pid_set_gains(pid_t* pid, float Kp, float Ki, float Kd);
-void pid_enable(pid_t* pid, quantity_t sample, bool enabled);
-void pid_reinit(pid_t* pid, quantity_t sample);
+void pid_enable(pid_t* pid, float sample, bool enabled);
+void pid_reinit(pid_t* pid, float sample);
 void pid_set_output_sign(pid_t* pid, uint8_t direction);
 void pid_set_output_limits(pid_t* pid, float Min, float Max);
 

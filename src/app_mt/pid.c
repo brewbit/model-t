@@ -29,7 +29,7 @@ pid_init(pid_t* pid)
 
 #define GAMMA 0.03
 void
-pid_exec(pid_t* pid, quantity_t setpoint, quantity_t sample)
+pid_exec(pid_t* pid, float setpoint, float sample)
 {
   if (!pid->enabled)
     return;
@@ -38,7 +38,7 @@ pid_exec(pid_t* pid, quantity_t setpoint, quantity_t sample)
   systime_t time_diff = (now - pid->last_time);
 
   if (time_diff >= pid->sample_time) {
-    float err_p = (setpoint.value - sample.value);
+    float err_p = (setpoint - sample);
     pid->err_i += err_p;
     float err_d = (err_p - pid->last_err);
 
@@ -77,7 +77,7 @@ pid_set_gains(pid_t* pid, float kp, float ki, float kd)
 }
 
 void
-pid_enable(pid_t* pid, quantity_t sample, bool enabled)
+pid_enable(pid_t* pid, float sample, bool enabled)
 {
   if (enabled && !pid->enabled)
     pid_reinit(pid, sample);
@@ -86,7 +86,7 @@ pid_enable(pid_t* pid, quantity_t sample, bool enabled)
 }
 
 void
-pid_reinit(pid_t* pid, quantity_t sample)
+pid_reinit(pid_t* pid, float sample)
 {
 //  pid->last_err = sample.value;
   pid->err_i = pid->out;

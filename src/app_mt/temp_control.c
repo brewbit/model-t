@@ -189,7 +189,7 @@ manage_pid(output_id_t output)
     const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(output_settings->trigger);
 
     pid_t* pid = &outputs[output].pid_control;
-    pid_exec(pid, sensor_settings->setpoint, inputs[output_settings->trigger].last_sample);
+    pid_exec(pid, sensor_settings->setpoint.value, inputs[output_settings->trigger].last_sample.value);
 }
 
 static void
@@ -269,9 +269,9 @@ dispatch_output_settings(output_settings_msg_t* msg)
           output->window_time - (msg->settings.compressor_delay.value * S2ST(60)));
 
       if (output_settings->trigger == SENSOR_1)
-        pid_reinit(&output->pid_control, inputs[SENSOR_1].last_sample);
+        pid_reinit(&output->pid_control, inputs[SENSOR_1].last_sample.value);
       else if (output_settings->trigger == SENSOR_2)
-        pid_reinit(&output->pid_control, inputs[SENSOR_2].last_sample);
+        pid_reinit(&output->pid_control, inputs[SENSOR_2].last_sample.value);
   }
 }
 
@@ -286,8 +286,8 @@ dispatch_sensor_settings(sensor_settings_msg_t* msg)
   for (i = 0; i < NUM_OUTPUTS; ++i) {
       const output_settings_t* output_settings = app_cfg_get_output_settings(i);
       if (output_settings->trigger == SENSOR_1)
-        pid_reinit(&outputs[i].pid_control, inputs[SENSOR_1].last_sample);
+        pid_reinit(&outputs[i].pid_control, inputs[SENSOR_1].last_sample.value);
       else if (output_settings->trigger == SENSOR_2)
-        pid_reinit(&outputs[i].pid_control, inputs[SENSOR_2].last_sample);
+        pid_reinit(&outputs[i].pid_control, inputs[SENSOR_2].last_sample.value);
   }
 }
