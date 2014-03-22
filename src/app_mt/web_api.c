@@ -466,7 +466,7 @@ dispatch_device_settings(DeviceSettingsNotification* settings)
     sensor_settings_t ss;
     SensorSettings* ssm = &settings->sensor[i];
 
-    ss.setpoint.value = ssm->setpoint;
+    ss.setpoint.value = ssm->static_setpoint;
     ss.setpoint.unit = UNIT_TEMP_DEG_C;
 
     app_cfg_set_sensor_settings(ssm->id, &ss);
