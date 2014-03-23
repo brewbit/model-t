@@ -60,18 +60,7 @@ main(void)
   touch_init();
   temp_control_init();
   net_init();
-  ota_update_init();
   web_api_init();
-//  sntp_init();
-  gui_init();
-  watchdog_init();
-
-  widget_t* home_screen = home_screen_create();
-  gui_push_screen(home_screen);
-
-  recovery_screen_create();
-
-  chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
 
   while (TRUE) {
     palSetPad(PORT_LED1, PAD_LED1);
