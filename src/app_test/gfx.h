@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include "font.h"
-#include "image.h"
 #include "lcd.h"
 
 
@@ -77,9 +76,6 @@ void
 gfx_set_bg_color(uint16_t color);
 
 void
-gfx_set_bg_img(const Image_t* img, point_t anchor);
-
-void
 gfx_draw_str(const char *st, int n, int x, int y);
 
 void
@@ -87,11 +83,5 @@ gfx_draw_glyph(const glyph_t* g, int x, int y);
 
 void
 gfx_set_font(const font_t* font);
-
-void
-gfx_draw_bitmap(int x, int y, const Image_t* img);
-
-void
-gfx_tile_bitmap(const Image_t* img, rect_t rect);
 
 #endif

@@ -3,10 +3,6 @@
 #include "hal.h"
 #include "touch.h"
 #include "lcd.h"
-#include "touch_calib.h"
-#include "gui.h"
-#include "message.h"
-#include "app_cfg.h"
 
 #include <stdbool.h>
 
@@ -15,6 +11,11 @@
 #define XN 6
 #define YP 5
 #define YN 7
+
+#ifndef               OK
+  #define       OK     1
+  #define     NOT_OK   0
+#endif
 
 #define NUM_SAMPLES 8
 #define DISCARDED_SAMPLES 1
@@ -32,6 +33,16 @@
 // ADC sample resolution
 #define Q 1024
 
+matrix_t default_calib = {
+    .An      = 76320,
+    .Bn      = 3080,
+    .Cn      = -9475080,
+    .Dn      = -560,
+    .En      = 60340,
+    .Fn      = -4360660,
+    .Divider = 205664
+};
+
 typedef struct {
   uint16_t drive_pos_pad;
   uint16_t drive_neg_pad;
@@ -45,6 +56,11 @@ static uint16_t read_axis(const axis_cfg_t* axis_cfg);
 static adcsample_t adc_avg(adcsample_t* samples, uint16_t num_samples);
 static msg_t touch_thread(void* arg);
 static void touch_dispatch(void);
+
+static int getDisplayPoint(
+  point_t* displayPtr,
+  const point_t* screenPtr,
+  const matrix_t* matrixPtr);
 
 
 static const ADCConversionGroup xp_conv_grp = {
@@ -143,37 +159,7 @@ touch_init()
 static void
 touch_dispatch()
 {
-  touch_msg_t msg = {
-      .raw = touch_coord_raw[sample_idx],
-      .calib = touch_coord_calib[sample_idx],
-      .touch_down = touch_down
-  };
-  msg_send(MSG_TOUCH_INPUT, &msg);
-}
 
-void
-touch_calibrate(
-    const point_t* ref_pts,
-    const point_t* sampled_pts)
-{
-  matrix_t calib_matrix;
-  setCalibrationMatrix(ref_pts, sampled_pts, &calib_matrix);
-  app_cfg_set_touch_calib(&calib_matrix);
-}
-
-void
-touch_calib_reset()
-{
-  matrix_t default_calib = {
-    .An      = 76320,
-    .Bn      = 3080,
-    .Cn      = -9475080,
-    .Dn      = -560,
-    .En      = 60340,
-    .Fn      = -4360660,
-    .Divider = 205664
-  };
-  app_cfg_set_touch_calib(&default_calib);
 }
 
 static uint16_t
@@ -202,6 +188,96 @@ read_axis(const axis_cfg_t* axis_cfg)
   /* average and return the samples */
   return adc_avg(samples+DISCARDED_SAMPLES,
       NUM_SAMPLES-DISCARDED_SAMPLES);
+}
+
+/**********************************************************************
+ *
+ *     Function: getDisplayPoint()
+ *
+ *  Description: Given a valid set of calibration factors and a point
+ *                value reported by the touch screen, this function
+ *                calculates and returns the true (or closest to true)
+ *                display point below the spot where the touch screen
+ *                was touched.
+ *
+ *
+ *
+ *  Argument(s): displayPtr (output) - Pointer to the calculated
+ *                                      (true) display point.
+ *               screenPtr (input) - Pointer to the reported touch
+ *                                    screen point.
+ *               matrixPtr (input) - Pointer to calibration factors
+ *                                    matrix previously calculated
+ *                                    from a call to
+ *                                    setCalibrationMatrix()
+ *
+ *
+ *  The function simply solves for Xd and Yd by implementing the
+ *   computations required by the translation matrix.
+ *
+ *                                              /-     -\
+ *              /-    -\     /-            -\   |       |
+ *              |      |     |              |   |   Xs  |
+ *              |  Xd  |     | A    B    C  |   |       |
+ *              |      |  =  |              | * |   Ys  |
+ *              |  Yd  |     | D    E    F  |   |       |
+ *              |      |     |              |   |   1   |
+ *              \-    -/     \-            -/   |       |
+ *                                              \-     -/
+ *
+ *  It must be kept brief to avoid consuming CPU cycles.
+ *
+ *
+ *       Return: OK - the display point was correctly calculated
+ *                     and its value is in the output argument.
+ *               NOT_OK - an error was detected and the function
+ *                         failed to return a valid point.
+ *
+ *
+ *
+ *                 NOTE!    NOTE!    NOTE!
+ *
+ *  setCalibrationMatrix() and getDisplayPoint() will do fine
+ *  for you as they are, provided that your digitizer
+ *  resolution does not exceed 10 bits (1024 values).  Higher
+ *  resolutions may cause the integer operations to overflow
+ *  and return incorrect values.  If you wish to use these
+ *  functions with digitizer resolutions of 12 bits (4096
+ *  values) you will either have to a) use 64-bit signed
+ *  integer variables and math, or b) judiciously modify the
+ *  operations to scale results by a factor of 2 or even 4.
+ *
+ *
+ */
+static int
+getDisplayPoint(
+    point_t* displayPtr,
+    const point_t* screenPtr,
+    const matrix_t* matrixPtr)
+{
+  int  retValue = OK;
+
+  if (matrixPtr->Divider != 0) {
+    /* Operation order is important since we are doing integer */
+    /*  math. Make sure you add all terms together before      */
+    /*  dividing, so that the remainder is not rounded off     */
+    /*  prematurely.                                           */
+
+    displayPtr->x =
+        ((matrixPtr->An * screenPtr->x) +
+         (matrixPtr->Bn * screenPtr->y) +
+         (matrixPtr->Cn)) / matrixPtr->Divider;
+
+    displayPtr->y =
+        ((matrixPtr->Dn * screenPtr->x) +
+         (matrixPtr->En * screenPtr->y) +
+         (matrixPtr->Fn)) / matrixPtr->Divider;
+  }
+  else {
+      retValue = NOT_OK;
+  }
+
+  return retValue;
 }
 
 static msg_t
@@ -238,7 +314,7 @@ touch_thread(void* arg)
       getDisplayPoint(
           &touch_coord_calib[sample_idx],
           &touch_coord_raw[sample_idx],
-          app_cfg_get_touch_calib());
+          &default_calib);
 
       touch_down = 1;
       last_touch_time = chTimeNow();

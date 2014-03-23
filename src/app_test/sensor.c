@@ -1,8 +1,6 @@
 #include "sensor.h"
 #include "onewire.h"
 #include "common.h"
-#include "message.h"
-#include "app_cfg.h"
 
 #include <string.h>
 
@@ -91,7 +89,6 @@ send_sensor_msg(sensor_port_t* tp, quantity_t* sample)
       .sensor = tp->sensor,
       .sample = *sample
   };
-  msg_send(MSG_SENSOR_SAMPLE, &msg);
 }
 
 static void
@@ -100,7 +97,6 @@ send_timeout_msg(sensor_port_t* tp)
   sensor_timeout_msg_t msg = {
       .sensor = tp->sensor
   };
-  msg_send(MSG_SENSOR_TIMEOUT, &msg);
 }
 
 static bool

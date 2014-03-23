@@ -7,13 +7,10 @@
 #include "wifi/socket.h"
 #include "wifi/patch.h"
 #include "xflash.h"
-#include "app_hdr.h"
 #include "common.h"
 #include "crc/crc32.h"
 #include "sxfs.h"
-#include "message.h"
 #include "netapp.h"
-#include "app_cfg.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -138,7 +135,6 @@ wlan_event(long event_type, char * data, unsigned char length)
     // WLAN-connected event
   case HCI_EVNT_WLAN_UNSOL_CONNECT:
     net_status.net_state = NS_CONNECTED;
-    msg_send(MSG_NET_STATUS, &net_status);
     break;
 
     // Notification that CC3000 device is disconnected from the access point (AP)
@@ -147,7 +143,6 @@ wlan_event(long event_type, char * data, unsigned char length)
       net_status.net_state = NS_CONNECT_FAILED;
     else
       net_status.net_state = NS_DISCONNECTED;
-    msg_send(MSG_NET_STATUS, &net_status);
     break;
 
     // Notification of a Dynamic Host Configuration Protocol (DHCP) state change
@@ -298,12 +293,9 @@ save_or_update_network(network_t* network)
 
   if (saved_network == NULL) {
     saved_network = save_network(network);
-    if (saved_network != NULL)
-      msg_send(MSG_NET_NEW_NETWORK, saved_network);
   }
   else {
     *saved_network = *network;
-    msg_send(MSG_NET_NETWORK_UPDATED, saved_network);
   }
 }
 
@@ -330,7 +322,6 @@ prune_networks()
   for (i = 0; i < 16; ++i) {
     if ((strcmp(networks[i].ssid, "") != 0) &&
         (chTimeNow() - networks[i].last_seen) > NETWORK_TIMEOUT) {
-      msg_send(MSG_NET_NETWORK_TIMEOUT, &networks[i]);
       memset(&networks[i], 0, sizeof(networks[i]));
     }
   }
@@ -342,7 +333,6 @@ perform_connect()
   const net_settings_t* ns = app_cfg_get_net_settings();
   if (strlen(ns->ssid) > 0) {
     net_status.net_state = NS_CONNECTING;
-    msg_send(MSG_NET_STATUS, &net_status);
 
     wlan_ioctl_set_connection_policy(0, 0, 0);
 
@@ -408,7 +398,6 @@ wlan_thread(void* arg)
           break;
         }
 
-        msg_send(MSG_NET_STATUS, &net_status);
         last_net_state = net_status.net_state;
       }
     }

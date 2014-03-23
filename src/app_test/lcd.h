@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include "font.h"
-#include "image.h"
 
 #define PORTRAIT 0
 #define LANDSCAPE 1

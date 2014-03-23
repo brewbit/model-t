@@ -16,19 +16,15 @@ PROJECT_INCDIR = \
        wifi
 
 PROJECT_AUTOGEN_CSRC = \
-       image_resources.c \
        font_resources.c \
        bbmt.pb.c
 
 PROJECT_CSRC = \
-       app_cfg.c \
-       app_hdr.c \
        fault.c \
        font.c \
        gfx.c \
        lcd.c \
        main.c \
-       message.c \
        net.c \
        onewire.c \
        sensor.c \

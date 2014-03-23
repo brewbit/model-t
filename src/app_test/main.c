@@ -3,40 +3,14 @@
 #include "hal.h"
 
 #include "lcd.h"
-#include "image.h"
-#include "web_api.h"
 #include "touch.h"
-#include "gui.h"
-#include "temp_control.h"
-#include "gui_home.h"
-#include "gui_recovery.h"
-#include "gfx.h"
-#include "app_cfg.h"
-#include "net.h"
-#include "sntp.h"
-#include "ota_update.h"
-#include "watchdog.h"
+#include "gfx.h"#include "net.h"
 #include <chprintf.h>
-
 #include <stdio.h>
 #include <string.h>
 
 
 char device_id[32];
-
-
-msg_t
-idle_thread(void* arg)
-{
-  (void)arg;
-  chRegSetThreadName("idle");
-
-  while (1) {
-    app_cfg_idle();
-  }
-
-  return 0;
-}
 
 int
 main(void)
@@ -55,12 +29,9 @@ main(void)
 
   rngStart(&RNGD);
 
-  app_cfg_init();
   gfx_init();
   touch_init();
-  temp_control_init();
   net_init();
-  web_api_init();
 
   while (TRUE) {
     palSetPad(PORT_LED1, PAD_LED1);

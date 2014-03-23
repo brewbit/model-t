@@ -31,7 +31,6 @@ typedef enum {
 
 static void draw_horiz_line(int x, int y, int l);
 static void draw_vert_line(int x, int y, int l);
-static uint16_t get_tile_color(const Image_t* img, int x, int y);
 static uint16_t get_bg_color(int x, int y);
 static void fill_rect(rect_t rect, uint16_t color);
 
@@ -39,7 +38,6 @@ typedef struct gfx_ctx_s {
   uint16_t fcolor;
   uint16_t bcolor;
   BackgroundType bg_type;
-  const Image_t* bg_img;
   point_t bg_anchor;
   const font_t* cfont;
   point_t translation;
@@ -138,12 +136,7 @@ gfx_clear_screen()
 void
 gfx_clear_rect(rect_t rect)
 {
-  if (ctx->bg_type == BG_IMAGE) {
-    gfx_tile_bitmap(ctx->bg_img, rect);
-  }
-  else {
-    fill_rect(rect, ctx->bcolor);
-  }
+  fill_rect(rect, ctx->bcolor);
 }
 
 void
@@ -157,14 +150,6 @@ gfx_set_bg_color(uint16_t color)
 {
   ctx->bcolor = color;
   ctx->bg_type = BG_COLOR;
-}
-
-void
-gfx_set_bg_img(const Image_t* img, point_t anchor)
-{
-  ctx->bg_img = img;
-  ctx->bg_anchor = anchor;
-  ctx->bg_type = BG_IMAGE;
 }
 
 void
@@ -313,114 +298,8 @@ gfx_draw_str(const char *str, int n, int x, int y)
   }
 }
 
-static void
-draw_img_rgba(int x, int y, const Image_t* img)
-{
-  int i;
-  for (i = 0; i < (img->width * img->height); i++) {
-    uint8_t alpha = img->alpha[i];
-    uint16_t fcolor = img->px[i];
-
-    if (alpha == 255) {
-      lcd_write_data(fcolor);
-    }
-    else {
-      uint16_t by = y + (i / img->width);
-      uint16_t bx = x + (i % img->width);
-
-      uint16_t bcolor = get_bg_color(bx, by);
-
-      if (alpha == 0) {
-        lcd_write_data(bcolor);
-      }
-      else {
-        lcd_write_data(BLENDED_COLOR(fcolor, bcolor, alpha));
-      }
-    }
-  }
-}
-
-static void
-draw_img_a(int x, int y, const Image_t* img)
-{
-  int i;
-  for (i = 0; i < (img->width * img->height); i++) {
-    uint8_t alpha = img->alpha[i];
-
-    if (alpha == 255) {
-      lcd_write_data(ctx->fcolor);
-    }
-    else {
-      uint16_t by = y + (i / img->width);
-      uint16_t bx = x + (i % img->width);
-
-      uint16_t bcolor = get_bg_color(bx, by);
-
-      if (alpha == 0) {
-        lcd_write_data(bcolor);
-      }
-      else {
-        lcd_write_data(BLENDED_COLOR(ctx->fcolor, bcolor, alpha));
-      }
-    }
-  }
-}
-
-static void
-draw_img_rgb(const Image_t* img)
-{
-  int i;
-  for (i = 0; i < (img->width * img->height); i++) {
-    lcd_write_data(img->px[i]);
-  }
-}
-
-void
-gfx_draw_bitmap(int x, int y, const Image_t* img)
-{
-  gfx_set_cursor(x, y, x + img->width - 1, y + img->height - 1);
-
-  if (img->px != NULL && img->alpha != NULL)
-    draw_img_rgba(x, y, img);
-  else if (img->px != NULL)
-    draw_img_rgb(img);
-  else if (img->alpha != NULL)
-    draw_img_a(x, y, img);
-
-  lcd_clr_cursor();
-}
-
-static uint16_t
-get_tile_color(const Image_t* img, int x, int y)
-{
-  uint16_t imx = x % img->width;
-  uint16_t imy = y % img->height;
-  uint16_t col = img->px[imx + (imy * img->width)];
-  return col;
-}
-
 static uint16_t
 get_bg_color(int x, int y)
 {
-  if (ctx->bg_type == BG_IMAGE) {
-    return get_tile_color(ctx->bg_img, x - ctx->bg_anchor.x, y - ctx->bg_anchor.y);
-  }
-  else {
-    return ctx->bcolor;
-  }
+  return ctx->bcolor;
 }
-
-void
-gfx_tile_bitmap(const Image_t* img, rect_t rect)
-{
-  int i, j;
-
-  gfx_set_cursor(rect.x, rect.y, rect.x + rect.width - 1, rect.y + rect.height - 1);
-  for (i = 0; i < rect.height; ++i) {
-    for (j = 0; j < rect.width; ++j) {
-      lcd_write_data(get_tile_color(img, j, i));
-    }
-  }
-  lcd_clr_cursor();
-}
-

@@ -12,8 +12,7 @@ all: bootloader app_mt app_test
 make_prog = $(MAKE) -f src/$(1)/$(1).mk
 
 app_test:
-	$(call make_prog,app_test) autogen
-	$(call make_prog,app_test)
+	$(call make_prog,app_test) 
 
 app_mt:
 	$(call make_prog,app_mt) autogen
@@ -37,7 +36,12 @@ upgrade_image: app_mt
 	arm-none-eabi-objcopy -O binary --remove-section cfg --remove-section header build/app_mt/app_mt.elf build/app_mt/app_mt_app.bin
 	python scripts/build_app_image.py build/app_mt/app_mt_hdr.bin build/app_mt/app_mt_app.bin build/app_mt/app_mt_update.bin
 
-download_app_test:
+test_image: app_test
+	arm-none-eabi-objcopy -O binary --only-section header build/app_test/app_test.elf build/app_test/app_test_hdr.bin
+	arm-none-eabi-objcopy -O binary --remove-section cfg --remove-section header build/app_test/app_test.elf build/app_test/app_test_app.bin
+	python scripts/build_app_image.py build/app_test/app_test_hdr.bin build/app_test/app_test_app.bin build/app_test/app_test_update.bin
+
+download_app_test: test_image
 	@openocd \
 	-f interface/$(JTAG).cfg \
 	-f target/stm32f2x.cfg \
@@ -68,7 +72,7 @@ download_bootloader: bootloader
 
 download: download_app_test download_app_mt download_bootloader 
 
-build/app_test/app_test.dfu: app_test
+build/app_test/app_test.dfu: test_image
 	python scripts/dfu.py \
 		-b 0x08008000:build/app_test/app_test_hdr.bin \
 		-b 0x08008200:build/app_test/app_test_app.bin \
@@ -94,7 +98,7 @@ download_dfu_app_mt: build/app_mt/app_mt.dfu
 download_dfu_bootloader: build/bootloader/bootloader.dfu
 	dfu-util -a 0 -t 2048 -D build/bootloader/bootloader.dfu
 
-build/all.dfu: upgrade_image bootloader
+build/all.dfu: test_image upgrade_image bootloader
 	python scripts/dfu.py \
 		-b 0x08000000:build/bootloader/bootloader.bin \
 		-b 0x08008000:build/app_mt/app_mt_hdr.bin \
