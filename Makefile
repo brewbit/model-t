@@ -7,9 +7,13 @@ JLINK_JTAG = jlink
 
 JTAG ?= $(JLINK_JTAG)
 
-all: bootloader app_mt
+all: bootloader app_mt app_test
 
 make_prog = $(MAKE) -f src/$(1)/$(1).mk
+
+app_test:
+	$(call make_prog,app_test) autogen
+	$(call make_prog,app_test)
 
 app_mt:
 	$(call make_prog,app_mt) autogen
@@ -33,6 +37,19 @@ upgrade_image: app_mt
 	arm-none-eabi-objcopy -O binary --remove-section cfg --remove-section header build/app_mt/app_mt.elf build/app_mt/app_mt_app.bin
 	python scripts/build_app_image.py build/app_mt/app_mt_hdr.bin build/app_mt/app_mt_app.bin build/app_mt/app_mt_update.bin
 
+download_app_test:
+	@openocd \
+	-f interface/$(JTAG).cfg \
+	-f target/stm32f2x.cfg \
+	-f stm32f2x-setup.cfg \
+	-c "flash erase_sector 0 2 last" \
+	-c "flash write_bank 0 build/app_test/app_test_app.bin 0x8200" \
+	-c "flash write_bank 0 build/app_test/app_test_hdr.bin 0x8000" \
+	-c "reset init" \
+	-c "reset run" \
+	-c shutdown download.log 2>&1 && \
+	echo Download complete
+
 download_app_mt: upgrade_image
 	@openocd \
 	-f interface/$(JTAG).cfg \
@@ -49,7 +66,13 @@ download_app_mt: upgrade_image
 download_bootloader: bootloader
 	$(call prog_download,bootloader)
 
-download: download_app_mt download_bootloader
+download: download_app_test download_app_mt download_bootloader 
+
+build/app_test/app_test.dfu: app_test
+	python scripts/dfu.py \
+		-b 0x08008000:build/app_test/app_test_hdr.bin \
+		-b 0x08008200:build/app_test/app_test_app.bin \
+		build/app_mt/app_mt.dfu
 
 build/app_mt/app_mt.dfu: upgrade_image
 	python scripts/dfu.py \
@@ -61,6 +84,9 @@ build/bootloader/bootloader.dfu: bootloader
 	python scripts/dfu.py \
 		-b 0x08000000:build/bootloader/bootloader.bin \
 		build/bootloader/bootloader.dfu
+
+download_dfu_app_test: build/app_test/app_test.dfu
+	dfu-util -a 0 -t 2048 -D build/app_test/app_test.dfu
 
 download_dfu_app_mt: build/app_mt/app_mt.dfu
 	dfu-util -a 0 -t 2048 -D build/app_mt/app_mt.dfu
