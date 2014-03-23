@@ -222,7 +222,7 @@ web_api_idle(web_api_t* api)
 
     case AS_CONNECT:
       printf("Connecting to: %s:%d\r\n", WEB_API_HOST_STR, WEB_API_PORT);
-      snWebsocket_connect(api->ws, WEB_API_HOST_STR, NULL, NULL, WEB_API_PORT, &device_id_header, 1);
+      snWebsocket_connect(api->ws, WEB_API_HOST_STR, "api", NULL, WEB_API_PORT, &device_id_header, 1);
       set_state(api, AS_CONNECTING);
       break;
 
