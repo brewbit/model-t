@@ -1,4 +1,4 @@
-PROJECT = app_mt
+PROJECT = app_test
 
 MAJOR_VERSION = 1
 MINOR_VERSION = 0
