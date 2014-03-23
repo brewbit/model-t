@@ -26,39 +26,13 @@ PROJECT_CSRC = \
        fault.c \
        font.c \
        gfx.c \
-       gui.c \
-       gui_activation.c \
-       gui_calib.c \
-       gui_history.c \
-       gui_info.c \
-       gui_home.c \
-       gui_output.c \
-       gui_output_function.c \
-       gui_output_mode.c \
-       gui_output_trigger.c \
-       gui_quantity_select.c \
-       gui_recovery.c \
-       gui_settings.c \
-       gui_textentry.c \
-       gui_update.c \
-       gui_wifi.c \
-       gui_wifi_scan.c \
-       image.c \
        lcd.c \
        main.c \
        message.c \
        net.c \
        onewire.c \
-       ota_update.c \
-       pid.c \
-       quantity_widget.c \
        sensor.c \
-       sntp.c \
-       temp_control.c \
        touch.c \
-       touch_calib.c \
-       watchdog.c \
-       web_api.c \
        snacka_backend/cryptocallbacks_chibios.c \
        snacka_backend/iocallbacks_socket.c \
        snacka_backend/socket_bsd.c \
@@ -77,13 +51,6 @@ PROJECT_CSRC = \
        wifi/security.c \
        wifi/socket.c \
        wifi/wlan.c \
-       gui/button.c \
-       gui/icon.c \
-       gui/label.c \
-       gui/listbox.c \
-       gui/progressbar.c \
-       gui/scatter_plot.c \
-       gui/widget.c \
        util/linked_list.c \
        ../common/crc/crc8.c \
        ../common/crc/crc16.c \
