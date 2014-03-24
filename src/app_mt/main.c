@@ -62,7 +62,7 @@ main(void)
   net_init();
   ota_update_init();
   web_api_init();
-//  sntp_init();
+  sntp_init();
   gui_init();
   watchdog_init();
 

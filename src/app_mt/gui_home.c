@@ -178,9 +178,10 @@ dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg)
   /* Update the sensor button icons based on the current sample/setpoint */
   widget_t* btn = s->sensors[msg->sensor].button;
   const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(msg->sensor);
-  if (msg->sample.value > sensor_settings->setpoint.value)
+  float setpoint = sensor_settings_get_current_setpoint(sensor_settings);
+  if (msg->sample.value > setpoint)
     button_set_icon(btn, img_temp_hi);
-  else if (msg->sample.value < sensor_settings->setpoint.value)
+  else if (msg->sample.value < setpoint)
     button_set_icon(btn, img_temp_low);
   else
     button_set_icon(btn, img_temp_med);
@@ -325,7 +326,7 @@ click_sensor_button(button_event_t* event)
   };
 
   widget_t* settings_screen = quantity_select_screen_create(
-      title, settings->setpoint, velocity_steps, 3, update_setpoint, (void*)sensor);
+      title, settings->static_setpoint, velocity_steps, 3, update_setpoint, (void*)sensor);
 
 //  widget_t* settings_screen = sensor_screen_create(sensor);
   gui_push_screen(settings_screen);
@@ -336,7 +337,7 @@ update_setpoint(quantity_t setpoint, void* user_data)
 {
   sensor_id_t sensor = (sensor_id_t)user_data;
   sensor_settings_t settings = *app_cfg_get_sensor_settings(sensor);
-  settings.setpoint = setpoint;
+  settings.static_setpoint = setpoint;
   app_cfg_set_sensor_settings(sensor, &settings);
 }
 

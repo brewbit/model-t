@@ -466,8 +466,55 @@ dispatch_device_settings(DeviceSettingsNotification* settings)
     sensor_settings_t ss;
     SensorSettings* ssm = &settings->sensor[i];
 
-    ss.setpoint.value = ssm->static_setpoint;
-    ss.setpoint.unit = UNIT_TEMP_DEG_C;
+    switch (ssm->setpoint_type) {
+      case SensorSettings_SetpointType_STATIC:
+        if (!ssm->has_static_setpoint)
+          printf("Sensor settings specified static setpoint, but none provided!\r\n");
+        else {
+          ss.setpoint_type = SP_STATIC;
+          ss.static_setpoint.value = ssm->static_setpoint;
+          ss.static_setpoint.unit = UNIT_TEMP_DEG_F;
+        }
+        break;
+
+      case SensorSettings_SetpointType_TEMP_PROFILE:
+        if (!ssm->has_temp_profile)
+          printf("Sensor settings specified temp profile, but none provided!\r\n");
+        else {
+          ss.setpoint_type = SP_TEMP_PROFILE;
+          strncpy(ss.temp_profile.name, ssm->temp_profile.name, sizeof(ss.temp_profile.name));
+          ss.temp_profile.num_steps = ssm->temp_profile.steps_count;
+//          ss.temp_profile.start_time = ssm->temp_profile.start_time;
+          ss.temp_profile.start_value.value = ssm->temp_profile.start_value;
+          ss.temp_profile.start_value.unit = UNIT_TEMP_DEG_F;
+
+          for (i = 0; i < ssm->temp_profile.steps_count; ++i) {
+            temp_profile_step_t* step = &ss.temp_profile.steps[i];
+            TempProfileStep* stepm = &ssm->temp_profile.steps[i];
+            step->duration = stepm->duration;
+            step->value.value = stepm->value;
+            step->value.unit = UNIT_TEMP_DEG_F;
+            switch(stepm->type) {
+              case TempProfileStep_TempProfileStepType_HOLD:
+                step->type = STEP_HOLD;
+                break;
+
+              case TempProfileStep_TempProfileStepType_RAMP:
+                step->type = STEP_RAMP;
+                break;
+
+              default:
+                printf("Invalid step type: %d\r\n", stepm->type);
+                break;
+            }
+          }
+        }
+        break;
+
+      default:
+        printf("Invalid setpoint type: %d\r\n", ssm->setpoint_type);
+        break;
+    }
 
     app_cfg_set_sensor_settings(ssm->id, &ss);
   }

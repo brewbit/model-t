@@ -6,6 +6,7 @@
 #include "message.h"
 #include "app_cfg.h"
 #include "pid.h"
+#include "sensor_settings.h"
 
 #include <stdlib.h>
 
@@ -123,7 +124,8 @@ relay_control(relay_output_t* output)
   switch(output->output_mode) {
   case ON_OFF:
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
-      if (inputs[output->id].last_sample.value < sensor_settings->setpoint.value) {
+
+      if (inputs[output->id].last_sample.value < sensor_settings_get_current_setpoint(sensor_settings)) {
         palSetPad(GPIOC, output->gpio);
         output->status.enabled = true;
         msg_send(MSG_OUTPUT_STATUS, &output->status);
@@ -135,7 +137,7 @@ relay_control(relay_output_t* output)
       }
     }
     else {
-      if (inputs[output->id].last_sample.value > sensor_settings->setpoint.value) {
+      if (inputs[output->id].last_sample.value > sensor_settings_get_current_setpoint(sensor_settings)) {
         palSetPad(GPIOC, output->gpio);
         output->status.enabled = true;
         msg_send(MSG_OUTPUT_STATUS, &output->status);
@@ -189,7 +191,7 @@ manage_pid(output_id_t output)
     const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(output_settings->trigger);
 
     pid_t* pid = &outputs[output].pid_control;
-    pid_exec(pid, sensor_settings->setpoint.value, inputs[output_settings->trigger].last_sample.value);
+    pid_exec(pid, sensor_settings_get_current_setpoint(sensor_settings), inputs[output_settings->trigger].last_sample.value);
 }
 
 static void

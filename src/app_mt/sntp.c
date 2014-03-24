@@ -70,11 +70,6 @@
 #define SNTP_UPDATE_DELAY           300000 /* 5 min */
 #endif
 
-/** SNTP macro to change system time and/or the update the RTC clock */
-#ifndef SNTP_SYSTEM_TIME
-#define SNTP_SYSTEM_TIME(t)
-#endif
-
 /* SNTP protocol defines */
 #define SNTP_MAX_DATA_LEN           48
 #define SNTP_RCV_TIME_OFS           32
@@ -88,17 +83,23 @@
 /* number of seconds between 1900 and 1970 */
 #define DIFF_SEC_1900_1970         (2208988800)
 
+static time_t last_update_time_abs;
+static systime_t last_update_time_rel;
+
 /**
  * SNTP processing
  */
 static void
 sntp_process(time_t t)
 {
-  /* change system time and/or the update the RTC clock */
-  SNTP_SYSTEM_TIME(t);
+  last_update_time_rel = chTimeNow();
+  last_update_time_abs = t;
+}
 
-  /* display local time from GMT time */
-  printf("sntp_process: %d\r\n", t);
+time_t
+sntp_get_time()
+{
+  return last_update_time_abs + ((chTimeNow() - last_update_time_rel) / CH_FREQUENCY);
 }
 
 /**

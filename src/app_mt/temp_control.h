@@ -5,6 +5,8 @@
 #include "common.h"
 #include "sensor.h"
 #include "types.h"
+#include "temp_profile.h"
+#include "sensor_settings.h"
 
 
 typedef enum {
@@ -25,10 +27,6 @@ typedef enum {
   PID,
   MANUAL
 } output_ctrl_t;
-
-typedef struct {
-  quantity_t setpoint;
-} sensor_settings_t;
 
 typedef struct {
   output_function_t function;
