@@ -140,7 +140,7 @@ app_cfg_set_temp_unit(unit_t temp_unit)
 
   for (i = 0; i < NUM_SENSORS; ++i) {
     sensor_settings_t* s = &app_cfg_local.data.sensor_settings[i];
-    s->setpoint = quantity_convert(s->setpoint, temp_unit);
+    s->static_setpoint = quantity_convert(s->static_setpoint, temp_unit);
   }
 
   app_cfg_local.data.temp_unit = temp_unit;
