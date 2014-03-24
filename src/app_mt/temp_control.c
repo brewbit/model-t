@@ -100,15 +100,10 @@ output_thread(void* arg)
 
   while (1) {
     /* If the probe associated with this output is not active disable the output */
-    if (!output->sensor_active) {
-      palClearPad(GPIOC, output->gpio);
-      output->status.enabled = false;
-      msg_send(MSG_OUTPUT_STATUS, &output->status);
-    }
-    else {
+    if (!output->sensor_active)
+      enable_relay(output, false);
+    else
       relay_control(output);
-    }
-    chThdSleepSeconds(1);
   }
 
   return 0;
@@ -136,6 +131,8 @@ relay_control(relay_output_t* output)
       else
         enable_relay(output, false);
     }
+
+    cycle_delay(output->id);
     break;
 
   case PID:
