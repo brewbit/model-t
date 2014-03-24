@@ -552,9 +552,10 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
     printf("      steps %d\r\n", tp.num_steps);
     printf("      start %f\r\n", tp.start_value.value);
 
-    for (i = 0; i < tpm->steps_count; ++i) {
-      temp_profile_step_t* step = &tp.steps[i];
-      TempProfileStep* stepm = &tpm->steps[i];
+    int j;
+    for (j = 0; j < tpm->steps_count; ++j) {
+      temp_profile_step_t* step = &tp.steps[j];
+      TempProfileStep* stepm = &tpm->steps[j];
 
       step->duration = stepm->duration;
       step->value.value = stepm->value;
