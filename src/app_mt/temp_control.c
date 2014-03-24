@@ -39,6 +39,7 @@ static void output_init(relay_output_t* out, output_id_t id, uint32_t gpio);
 static msg_t output_thread(void* arg);
 static void cycle_delay(output_id_t output);
 static void relay_control(relay_output_t* output);
+static void enable_relay(relay_output_t* output, bool enabled);
 
 
 static temp_input_t inputs[NUM_SENSORS];
@@ -124,39 +125,25 @@ relay_control(relay_output_t* output)
   switch(output->output_mode) {
   case ON_OFF:
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
-
-      if (inputs[output->id].last_sample.value < sensor_settings_get_current_setpoint(sensor_settings)) {
-        palSetPad(GPIOC, output->gpio);
-        output->status.enabled = true;
-        msg_send(MSG_OUTPUT_STATUS, &output->status);
-      }
-      else {
-        palClearPad(GPIOC, output->gpio);
-        output->status.enabled = false;
-        msg_send(MSG_OUTPUT_STATUS, &output->status);
-      }
+      if (inputs[output->id].last_sample.value < sensor_settings_get_current_setpoint(sensor_settings))
+        enable_relay(output, true);
+      else
+        enable_relay(output, false);
     }
     else {
-      if (inputs[output->id].last_sample.value > sensor_settings_get_current_setpoint(sensor_settings)) {
-        palSetPad(GPIOC, output->gpio);
-        output->status.enabled = true;
-        msg_send(MSG_OUTPUT_STATUS, &output->status);
-      }
-      else {
-        palClearPad(GPIOC, output->gpio);
-        output->status.enabled = false;
-        msg_send(MSG_OUTPUT_STATUS, &output->status);
-      }
+      if (inputs[output->id].last_sample.value > sensor_settings_get_current_setpoint(sensor_settings))
+        enable_relay(output, true);
+      else
+        enable_relay(output, false);
     }
     break;
+
   case PID:
     if ((chTimeNow() - output->window_start_time) >= output->pid_control.out) {
       systime_t sleepTime;
       int32_t   windowDelay;
 
-      palClearPad(GPIOC, output->gpio);
-      output->status.enabled = false;
-      msg_send(MSG_OUTPUT_STATUS, &output->status);
+      enable_relay(output, false);
 
       /* Make sure thread sleep time is > 0  or else chThdSleep will crap itself */
       windowDelay = output->window_time - output->pid_control.out;
@@ -166,14 +153,21 @@ relay_control(relay_output_t* output)
 
       /* Setup next on window */
       output->window_start_time = chTimeNow();
-      palSetPad(GPIOC, output->gpio);
-      output->status.enabled = true;
-      msg_send(MSG_OUTPUT_STATUS, &output->status);
+      enable_relay(output, true);
     }
     break;
+
   default:
     break;
   }
+}
+
+static void
+enable_relay(relay_output_t* output, bool enabled)
+{
+  palWritePad(GPIOC, output->gpio, enabled);
+  output->status.enabled = enabled;
+  msg_send(MSG_OUTPUT_STATUS, &output->status);
 }
 
 static void
