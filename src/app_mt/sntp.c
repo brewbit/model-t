@@ -40,6 +40,7 @@
 #include <stdio.h>
 
 #include "net.h"
+#include "message.h"
 #include "wifi/wlan.h"
 #include "wifi/socket.h"
 
@@ -67,7 +68,7 @@
 
 /** SNTP update delay - in milliseconds */
 #ifndef SNTP_UPDATE_DELAY
-#define SNTP_UPDATE_DELAY           300000 /* 5 min */
+#define SNTP_UPDATE_DELAY           15000 /* 15 sec */
 #endif
 
 /* SNTP protocol defines */
@@ -83,8 +84,18 @@
 /* number of seconds between 1900 and 1970 */
 #define DIFF_SEC_1900_1970         (2208988800)
 
+
+static void
+dispatch_net_status(const net_status_t* status);
+
+static void
+dispatch_idle(void);
+
+
 static time_t last_update_time_abs;
 static systime_t last_update_time_rel;
+static bool net_connected;
+static uint32_t request_delay;
 
 /**
  * SNTP processing
@@ -105,7 +116,7 @@ sntp_get_time()
 /**
  * SNTP request
  */
-static void
+static bool
 sntp_request(void)
 {
   int                sock;
@@ -119,6 +130,7 @@ sntp_request(void)
   uint32_t    sntp_server_address = 0;
   uint32_t    timestamp;
   time_t      t;
+  bool        ret = false;
 
   /* Lookup SNTP server address */
   const char* server_name = "pool.ntp.org";
@@ -168,6 +180,7 @@ sntp_request(void)
 
               /* do time processing */
               sntp_process(t);
+              ret = true;
             }
             else {
               printf("sntp_request: not response frame code\r\n");
@@ -185,27 +198,56 @@ sntp_request(void)
       closesocket(sock);
     }
   }
+
+  return ret;
 }
 
-/**
- * SNTP thread
- */
-static msg_t
-sntp_thread(void *arg)
+static void
+dispatch_net_status(const net_status_t* status)
 {
-  (void)arg;
+  net_connected = (status->net_state == NS_CONNECTED);
+}
 
-  while(1)
-  {
-    chThdSleepMilliseconds(SNTP_UPDATE_DELAY);
-    sntp_request();
+static void
+dispatch_idle()
+{
+  if (net_connected) {
+    if (request_delay > 0)
+      request_delay--;
+    else {
+      // If the request succeeds, wait 5 minutes to do the next one,
+      // otherwise try again in 15 seconds
+      if (sntp_request())
+        request_delay = 20;
+    }
   }
+}
 
-  return 0;
+static void
+dispatch_sntp_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
+{
+  (void)sub_data;
+  (void)listener_data;
+
+  switch (id) {
+    case MSG_NET_STATUS:
+      dispatch_net_status(msg_data);
+      break;
+
+    case MSG_IDLE:
+      dispatch_idle();
+      break;
+
+    default:
+      break;
+  }
 }
 
 void
 sntp_init(void)
 {
-  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, sntp_thread, NULL);
+  msg_listener_t* listener = msg_listener_create("sntp", 1024, dispatch_sntp_msg, NULL);
+  msg_listener_set_idle_timeout(listener, SNTP_UPDATE_DELAY);
+
+  msg_subscribe(listener, MSG_NET_STATUS, NULL);
 }
