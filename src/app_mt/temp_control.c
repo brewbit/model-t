@@ -34,7 +34,6 @@ static void dispatch_output_settings(output_settings_msg_t* msg);
 static void dispatch_sensor_settings(sensor_settings_msg_t* msg);
 static void dispatch_sensor_sample(sensor_msg_t* msg);
 static void dispatch_sensor_timeout(sensor_timeout_msg_t* msg);
-static void manage_pid(output_id_t output);
 static void output_init(relay_output_t* out, output_id_t id, uint32_t gpio);
 static msg_t output_thread(void* arg);
 static void cycle_delay(output_id_t output);
@@ -178,16 +177,6 @@ cycle_delay(output_id_t output)
 }
 
 static void
-manage_pid(output_id_t output)
-{
-    const output_settings_t* output_settings = app_cfg_get_output_settings(output);
-    const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(output_settings->trigger);
-
-    pid_t* pid = &outputs[output].pid_control;
-    pid_exec(pid, sensor_settings_get_current_setpoint(sensor_settings), inputs[output_settings->trigger].last_sample.value);
-}
-
-static void
 dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
 {
   (void)listener_data;
@@ -221,12 +210,23 @@ dispatch_sensor_sample(sensor_msg_t* msg)
   int i;
 
   inputs[msg->sensor].last_sample = msg->sample;
-  outputs[msg->sensor].sensor_active = true;
 
-  for (i = 0; i < NUM_OUTPUTS; ++i) {
+  for (i = 0; i < NUM_OUTPUTS; i++) {
     const output_settings_t* settings = app_cfg_get_output_settings(i);
     if (msg->sensor == settings->trigger)
-      manage_pid(i);
+      outputs[i].sensor_active = true;
+  }
+
+  for (i = 0; i < NUM_OUTPUTS; ++i) {
+    const output_settings_t* output_settings = app_cfg_get_output_settings(i);
+    if ((msg->sensor == output_settings->trigger) &&
+        (output_settings->output_mode == PID)) {
+      const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(output_settings->trigger);
+
+      pid_exec(&outputs[i].pid_control,
+          sensor_settings_get_current_setpoint(sensor_settings),
+          msg->sample.value);
+    }
   }
 }
 
