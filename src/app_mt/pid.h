@@ -13,7 +13,7 @@
 typedef enum {
   POSITIVE,
   NEGATIVE
-};
+} PidOutputSign;
 
 typedef struct {
   bool enabled;

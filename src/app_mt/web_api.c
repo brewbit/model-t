@@ -530,6 +530,10 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
 {
   int i;
 
+  temp_control_halt();
+
+  temp_control_cmd_t* tcc = calloc(1, sizeof(temp_control_cmd_t));
+
   for (i = 0; i < settings->temp_profiles_count; ++i) {
     temp_profile_t tp;
     TempProfile* tpm = &settings->temp_profiles[i];
@@ -566,19 +570,17 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
   }
 
   for (i = 0; i < settings->output_count; ++i) {
-    output_settings_t os;
+    output_settings_t* os = &tcc->output_settings[i];
     OutputSettings* osm = &settings->output[i];
 
-    os.compressor_delay.value = osm->compressor_delay;
-    os.compressor_delay.unit = UNIT_TIME_MIN;
-    os.function = osm->function;
-    os.trigger = osm->trigger_sensor_id;
-
-    app_cfg_set_output_settings(osm->id, &os);
+    os->compressor_delay.value = osm->compressor_delay;
+    os->compressor_delay.unit = UNIT_TIME_MIN;
+    os->function = osm->function;
+    os->trigger = osm->trigger_sensor_id;
   }
 
   for (i = 0; i < settings->sensor_count; ++i) {
-    sensor_settings_t ss;
+    sensor_settings_t* ss = &tcc->sensor_settings[i];
     SensorSettings* ssm = &settings->sensor[i];
 
     switch (ssm->setpoint_type) {
@@ -586,11 +588,9 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
         if (!ssm->has_static_setpoint)
           printf("Sensor settings specified static setpoint, but none provided!\r\n");
         else {
-          ss.setpoint_type = SP_STATIC;
-          ss.static_setpoint.value = ssm->static_setpoint;
-          ss.static_setpoint.unit = UNIT_TEMP_DEG_F;
-
-          app_cfg_set_sensor_settings(ssm->id, &ss);
+          ss->setpoint_type = SP_STATIC;
+          ss->static_setpoint.value = ssm->static_setpoint;
+          ss->static_setpoint.unit = UNIT_TEMP_DEG_F;
         }
         break;
 
@@ -598,8 +598,8 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
         if (!ssm->has_temp_profile_id)
           printf("Sensor settings specified temp profile, but no provided!\r\n");
         else {
-          ss.setpoint_type = SP_TEMP_PROFILE;
-          temp_control_start_temp_profile(ssm->id, ssm->temp_profile_id);
+          ss->setpoint_type = SP_TEMP_PROFILE;
+          ss->temp_profile_id = ssm->temp_profile_id;
         }
         break;
 
@@ -607,6 +607,9 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
         printf("Invalid setpoint type: %d\r\n", ssm->setpoint_type);
         break;
     }
+
+    temp_control_start(tcc);
+    free(tcc);
   }
 }
 

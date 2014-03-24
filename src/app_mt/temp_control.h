@@ -59,12 +59,20 @@ typedef struct {
   bool enabled;
 } output_status_t;
 
+typedef struct {
+  sensor_settings_t sensor_settings[NUM_SENSORS];
+  output_settings_t output_settings[NUM_OUTPUTS];
+} temp_control_cmd_t;
+
 
 void
 temp_control_init(void);
 
 void
-temp_control_start_temp_profile(sensor_id_t sensor, uint32_t temp_profile_id);
+temp_control_start(temp_control_cmd_t* cmd);
+
+void
+temp_control_halt(void);
 
 float
 temp_control_get_current_setpoint(sensor_id_t sensor);

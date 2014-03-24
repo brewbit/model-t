@@ -10,19 +10,24 @@
 
 #include <stdlib.h>
 
+typedef enum {
+  TC_HALTED,
+  TC_ACTIVE,
+  TC_SENSOR_TIMED_OUT
+} temp_controller_state_t;
+
 typedef struct {
+  temp_controller_state_t state;
   sensor_port_t* port;
   quantity_t last_sample;
   temp_profile_run_t temp_profile_run;
-} temp_input_t;
+} temp_controller_t;
 
 typedef struct {
   output_id_t id;
   uint32_t gpio;
-  pid_t    pid_control;
-  output_ctrl_t output_mode;
-
-  bool sensor_active;
+  pid_t pid_control;
+  temp_controller_t* controller;
 
   systime_t window_start_time;
   systime_t window_time;
@@ -35,25 +40,26 @@ static void dispatch_output_settings(output_settings_msg_t* msg);
 static void dispatch_sensor_settings(sensor_settings_msg_t* msg);
 static void dispatch_sensor_sample(sensor_msg_t* msg);
 static void dispatch_sensor_timeout(sensor_timeout_msg_t* msg);
-static void output_init(relay_output_t* out, output_id_t id, uint32_t gpio);
+static void controller_init(sensor_id_t sensor, SerialDriver* sd);
+static void output_init(output_id_t id, uint32_t gpio);
 static msg_t output_thread(void* arg);
 static void cycle_delay(output_id_t output);
 static void relay_control(relay_output_t* output);
 static void enable_relay(relay_output_t* output, bool enabled);
 
 
-static temp_input_t inputs[NUM_SENSORS];
+static temp_controller_t controller[NUM_SENSORS];
 static relay_output_t outputs[NUM_OUTPUTS];
 
 
 void
 temp_control_init()
 {
-  inputs[SENSOR_1].port = sensor_init(SENSOR_1, SD_OW1);
-  inputs[SENSOR_2].port = sensor_init(SENSOR_2, SD_OW2);
+  controller_init(SENSOR_1, SD_OW1);
+  controller_init(SENSOR_2, SD_OW2);
 
-  output_init(&outputs[OUTPUT_1], OUTPUT_1, PAD_RELAY1);
-  output_init(&outputs[OUTPUT_2], OUTPUT_2, PAD_RELAY2);
+  output_init(OUTPUT_1, PAD_RELAY1);
+  output_init(OUTPUT_2, PAD_RELAY2);
 
   msg_listener_t* l = msg_listener_create("temp_ctrl", 1024, dispatch_temp_input_msg, NULL);
 
@@ -64,12 +70,34 @@ temp_control_init()
 }
 
 void
-temp_control_start_temp_profile(sensor_id_t sensor, uint32_t temp_profile_id)
+temp_control_start(temp_control_cmd_t* cmd)
 {
-  if (sensor >= NUM_SENSORS)
-    return;
+  int i;
 
-  temp_profile_start(&inputs[sensor].temp_profile_run, temp_profile_id);
+  for (i = 0; i < NUM_OUTPUTS; ++i) {
+    app_cfg_set_output_settings(i, &cmd->output_settings[i]);
+    outputs[i].controller = &controller[cmd->output_settings[i].trigger];
+  }
+
+  for (i = 0; i < NUM_SENSORS; ++i) {
+    app_cfg_set_sensor_settings(i, &cmd->sensor_settings[i]);
+
+    if (cmd->sensor_settings[i].setpoint_type == SP_TEMP_PROFILE)
+      temp_profile_start(
+          &controller[i].temp_profile_run,
+          cmd->sensor_settings[i].temp_profile_id);
+
+    controller[i].state = TC_ACTIVE;
+  }
+}
+
+void
+temp_control_halt()
+{
+  int i;
+  for (i = 0; i < NUM_SENSORS; ++i) {
+    controller[i].state = TC_HALTED;
+  }
 }
 
 float
@@ -80,21 +108,29 @@ temp_control_get_current_setpoint(sensor_id_t sensor)
 
   if (settings->setpoint_type == SP_STATIC)
     return settings->static_setpoint.value;
-  else if (temp_profile_get_current_setpoint(&inputs[sensor].temp_profile_run, &sp))
+  else if (temp_profile_get_current_setpoint(&controller[sensor].temp_profile_run, &sp))
     return sp;
 
   return NAN;
 }
 
 static void
-output_init(relay_output_t* out, output_id_t id, uint32_t gpio)
+controller_init(sensor_id_t sensor, SerialDriver* sd)
 {
-  const output_settings_t* settings = app_cfg_get_output_settings(id);
+  controller[sensor].port = sensor_init(sensor, sd);
+  controller[sensor].state = TC_HALTED;
+}
 
-  out->id = id;
+static void
+output_init(output_id_t output, uint32_t gpio)
+{
+  relay_output_t* out = &outputs[output];
+  const output_settings_t* settings = app_cfg_get_output_settings(output);
+
+  out->id = output;
   out->gpio = gpio;
-  out->output_mode = settings->output_mode;
   out->window_time = settings->compressor_delay.value * S2ST(60) * 4;
+  out->controller = &controller[settings->trigger];
 
   pid_init(&out->pid_control);
   pid_set_output_limits(&out->pid_control, 0, out->window_time);
@@ -123,7 +159,7 @@ output_thread(void* arg)
 
   while (1) {
     /* If the probe associated with this output is not active disable the output */
-    if (!output->sensor_active)
+    if (!output->controller->state != TC_ACTIVE)
       enable_relay(output, false);
     else
       relay_control(output);
@@ -141,16 +177,16 @@ relay_control(relay_output_t* output)
 
   output->status.output = output->id;
 
-  switch(output->output_mode) {
+  switch(output_settings->output_mode) {
   case ON_OFF:
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
-      if (inputs[output->id].last_sample.value < temp_control_get_current_setpoint(output_settings->trigger))
+      if (controller[output->id].last_sample.value < temp_control_get_current_setpoint(output_settings->trigger))
         enable_relay(output, true);
       else
         enable_relay(output, false);
     }
     else {
-      if (inputs[output->id].last_sample.value > temp_control_get_current_setpoint(output_settings->trigger))
+      if (controller[output->id].last_sample.value > temp_control_get_current_setpoint(output_settings->trigger))
         enable_relay(output, true);
       else
         enable_relay(output, false);
@@ -232,15 +268,16 @@ dispatch_sensor_sample(sensor_msg_t* msg)
 {
   int i;
 
-  inputs[msg->sensor].last_sample = msg->sample;
-  temp_profile_update(&inputs[msg->sensor].temp_profile_run, msg->sample);
+  controller[msg->sensor].last_sample = msg->sample;
+  if (controller[msg->sensor].state == TC_SENSOR_TIMED_OUT)
+    controller[msg->sensor].state = TC_ACTIVE;
+
+  temp_profile_update(&controller[msg->sensor].temp_profile_run, msg->sample);
 
   for (i = 0; i < NUM_OUTPUTS; ++i) {
     const output_settings_t* output_settings = app_cfg_get_output_settings(i);
 
     if (msg->sensor == output_settings->trigger) {
-      outputs[i].sensor_active = true;
-
       if (output_settings->output_mode == PID) {
         pid_exec(&outputs[i].pid_control,
             temp_control_get_current_setpoint(output_settings->trigger),
@@ -253,12 +290,8 @@ dispatch_sensor_sample(sensor_msg_t* msg)
 static void
 dispatch_sensor_timeout(sensor_timeout_msg_t* msg)
 {
-  int i;
-  for (i = 0; i < NUM_OUTPUTS; i++) {
-    const output_settings_t* settings = app_cfg_get_output_settings(i);
-    if (msg->sensor == settings->trigger)
-      outputs[i].sensor_active = false;
-  }
+  if (controller[msg->sensor].state == TC_ACTIVE)
+    controller[msg->sensor].state = TC_SENSOR_TIMED_OUT;
 }
 
 static void
@@ -284,9 +317,9 @@ dispatch_output_settings(output_settings_msg_t* msg)
           output->window_time - (msg->settings.compressor_delay.value * S2ST(60)));
 
       if (output_settings->trigger == SENSOR_1)
-        pid_reinit(&output->pid_control, inputs[SENSOR_1].last_sample.value);
+        pid_reinit(&output->pid_control, controller[SENSOR_1].last_sample.value);
       else if (output_settings->trigger == SENSOR_2)
-        pid_reinit(&output->pid_control, inputs[SENSOR_2].last_sample.value);
+        pid_reinit(&output->pid_control, controller[SENSOR_2].last_sample.value);
   }
 }
 
@@ -301,8 +334,8 @@ dispatch_sensor_settings(sensor_settings_msg_t* msg)
   for (i = 0; i < NUM_OUTPUTS; ++i) {
       const output_settings_t* output_settings = app_cfg_get_output_settings(i);
       if (output_settings->trigger == SENSOR_1)
-        pid_reinit(&outputs[i].pid_control, inputs[SENSOR_1].last_sample.value);
+        pid_reinit(&outputs[i].pid_control, controller[SENSOR_1].last_sample.value);
       else if (output_settings->trigger == SENSOR_2)
-        pid_reinit(&outputs[i].pid_control, inputs[SENSOR_2].last_sample.value);
+        pid_reinit(&outputs[i].pid_control, controller[SENSOR_2].last_sample.value);
   }
 }
