@@ -1,31 +1,96 @@
 
 #include "temp_profile.h"
 #include "sntp.h"
+#include "message.h"
+#include "app_cfg.h"
 
-float
-temp_profile_get_current_setpoint(const temp_profile_t* profile)
+
+void
+temp_profile_start(temp_profile_run_t* run, uint32_t temp_profile_id)
 {
-  int i;
+  run->temp_profile_id = temp_profile_id;
+  run->state = TPS_SEEKING_START_VALUE;
+  run->current_step = 0;
+  run->current_step_complete_time = 0;
+}
 
-  uint32_t duration_into_profile = sntp_get_time() - profile->start_time;
-  uint32_t step_begin = 0;
-  float last_temp = profile->start_value.value;
+void
+temp_profile_update(temp_profile_run_t* run, quantity_t sample)
+{
+  if (run->state == TPS_SEEKING_START_VALUE) {
+    const temp_profile_t* profile = app_cfg_get_temp_profile(run->temp_profile_id);
+    float start_err = sample.value - profile->start_value.value;
 
-  for (i = 0; i < profile->num_steps; ++i) {
-    const temp_profile_step_t* step = &profile->steps[i];
-    uint32_t step_end = step_begin + step[i].duration;
+    if (start_err < 1 && start_err > -1) {
+      run->start_time = sntp_get_time();
+      run->current_step = 0;
+      run->current_step_complete_time =
+          run->start_time + profile->steps[run->current_step].duration;
+      run->state = TPS_RUNNING;
+    }
+  }
+}
 
-    if (duration_into_profile >= step_begin &&
-        duration_into_profile < step_end) {
-      if (step->type == STEP_HOLD)
-        return step->value.value;
+bool
+temp_profile_get_current_setpoint(temp_profile_run_t* run, float* sp)
+{
+  bool ret = true;
+  const temp_profile_t* profile = app_cfg_get_temp_profile(run->temp_profile_id);
+
+  if (run->state == TPS_RUNNING) {
+    if (sntp_get_time() > run->current_step_complete_time) {
+      if (++run->current_step < profile->num_steps) {
+        run->current_step_complete_time += profile->steps[run->current_step].duration;
+      }
       else {
-        uint32_t duration_into_step = duration_into_profile - step_begin;
-        return last_temp + ((last_temp - step->value.value) * duration_into_step / step->duration);
+        run->state = TPS_COMPLETE;
       }
     }
-    step_begin += step->duration;
   }
 
-  return profile->steps[profile->num_steps-1].value.value;
+  switch (run->state) {
+    case TPS_DOWNLOADING:
+      ret = false;
+      break;
+
+    case TPS_SEEKING_START_VALUE:
+      *sp = profile->start_value.value;
+      break;
+
+    case TPS_RUNNING:
+    {
+      int i;
+      uint32_t duration_into_profile = sntp_get_time() - run->start_time;
+      uint32_t step_begin = 0;
+      float last_temp = profile->start_value.value;
+
+      for (i = 0; i < profile->num_steps; ++i) {
+        const temp_profile_step_t* step = &profile->steps[i];
+        uint32_t step_end = step_begin + step[i].duration;
+
+        if (duration_into_profile >= step_begin &&
+            duration_into_profile < step_end) {
+          if (step->type == STEP_HOLD) {
+            *sp = step->value.value;
+          }
+          else {
+            uint32_t duration_into_step = duration_into_profile - step_begin;
+            *sp = last_temp + ((last_temp - step->value.value) * duration_into_step / step->duration);
+          }
+          break;
+        }
+        step_begin += step->duration;
+      }
+      break;
+    }
+
+    case TPS_COMPLETE:
+      if (profile->num_steps > 0)
+        *sp = profile->steps[profile->num_steps-1].value.value;
+      else
+        *sp = profile->start_value.value;
+      break;
+  }
+
+  return ret;
 }

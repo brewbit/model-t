@@ -51,4 +51,10 @@ app_cfg_get_net_settings(void);
 void
 app_cfg_set_net_settings(const net_settings_t* settings);
 
+const temp_profile_t*
+app_cfg_get_temp_profile(uint32_t temp_profile_id);
+
+void
+app_cfg_set_temp_profile(const temp_profile_t* profile, uint32_t index);
+
 #endif

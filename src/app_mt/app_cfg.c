@@ -14,6 +14,7 @@ typedef struct {
   unit_t temp_unit;
   matrix_t touch_calib;
   sensor_settings_t sensor_settings[NUM_SENSORS];
+  temp_profile_t temp_profiles[NUM_SENSORS];
   output_settings_t output_settings[NUM_OUTPUTS];
   char auth_token[64];
   net_settings_t net_settings;
@@ -242,5 +243,29 @@ app_cfg_set_net_settings(const net_settings_t* settings)
 {
   chMtxLock(&app_cfg_mtx);
   app_cfg_local.data.net_settings = *settings;
+  chMtxUnlock();
+}
+
+const temp_profile_t*
+app_cfg_get_temp_profile(uint32_t temp_profile_id)
+{
+  int i;
+  for (i = 0; i < NUM_SENSORS; ++i) {
+    temp_profile_t* profile = &app_cfg_local.data.temp_profiles[i];
+    if (profile->id == temp_profile_id)
+      return profile;
+  }
+
+  return NULL;
+}
+
+void
+app_cfg_set_temp_profile(const temp_profile_t* profile, uint32_t index)
+{
+  if (index >= 2)
+    return;
+
+  chMtxLock(&app_cfg_mtx);
+  app_cfg_local.data.temp_profiles[index] = *profile;
   chMtxUnlock();
 }

@@ -6,7 +6,6 @@
 #include "sensor.h"
 #include "types.h"
 #include "temp_profile.h"
-#include "sensor_settings.h"
 
 
 typedef enum {
@@ -26,6 +25,17 @@ typedef enum {
   ON_OFF,
   PID,
 } output_ctrl_t;
+
+typedef enum {
+  SP_STATIC,
+  SP_TEMP_PROFILE
+} setpoint_type_t;
+
+typedef struct {
+  setpoint_type_t setpoint_type;
+  quantity_t static_setpoint;
+  uint32_t temp_profile_id;
+} sensor_settings_t;
 
 typedef struct {
   output_function_t function;
@@ -52,5 +62,11 @@ typedef struct {
 
 void
 temp_control_init(void);
+
+void
+temp_control_start_temp_profile(sensor_id_t sensor, uint32_t temp_profile_id);
+
+float
+temp_control_get_current_setpoint(sensor_id_t sensor);
 
 #endif

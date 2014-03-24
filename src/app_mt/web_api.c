@@ -17,6 +17,7 @@
 #include "net.h"
 #include "sensor.h"
 #include "app_cfg.h"
+#include "temp_control.h"
 #include "snacka_backend/iocallbacks_socket.h"
 #include "snacka_backend/cryptocallbacks_chibios.h"
 
@@ -376,7 +377,7 @@ dispatch_device_settings_from_device(
       case SP_TEMP_PROFILE:
         ss->setpoint_type = SensorSettings_SetpointType_TEMP_PROFILE;
         ss->has_temp_profile_id = true;
-        ss->temp_profile_id = ssm->settings.temp_profile.id;
+        ss->temp_profile_id = ssm->settings.temp_profile_id;
         break;
 
       default:
@@ -528,6 +529,42 @@ static void
 dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
 {
   int i;
+
+  for (i = 0; i < settings->temp_profiles_count; ++i) {
+    temp_profile_t tp;
+    TempProfile* tpm = &settings->temp_profiles[i];
+
+    tp.id = tpm->id;
+    strncpy(tp.name, tpm->name, sizeof(tp.name));
+    tp.num_steps = tpm->steps_count;
+    tp.start_value.value = tpm->start_value;
+    tp.start_value.unit = UNIT_TEMP_DEG_F;
+
+    for (i = 0; i < tpm->steps_count; ++i) {
+      temp_profile_step_t* step = &tp.steps[i];
+      TempProfileStep* stepm = &tpm->steps[i];
+
+      step->duration = stepm->duration;
+      step->value.value = stepm->value;
+      step->value.unit = UNIT_TEMP_DEG_F;
+      switch(stepm->type) {
+        case TempProfileStep_TempProfileStepType_HOLD:
+          step->type = STEP_HOLD;
+          break;
+
+        case TempProfileStep_TempProfileStepType_RAMP:
+          step->type = STEP_RAMP;
+          break;
+
+        default:
+          printf("Invalid step type: %d\r\n", stepm->type);
+          break;
+      }
+    }
+
+    app_cfg_set_temp_profile(&tp, i);
+  }
+
   for (i = 0; i < settings->output_count; ++i) {
     output_settings_t os;
     OutputSettings* osm = &settings->output[i];
@@ -552,43 +589,17 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
           ss.setpoint_type = SP_STATIC;
           ss.static_setpoint.value = ssm->static_setpoint;
           ss.static_setpoint.unit = UNIT_TEMP_DEG_F;
+
+          app_cfg_set_sensor_settings(ssm->id, &ss);
         }
         break;
 
       case SensorSettings_SetpointType_TEMP_PROFILE:
-        if (!ssm->has_temp_profile_id ||
-            !settings->has_temp_profile ||
-            (settings->temp_profile.id != ssm->has_temp_profile_id))
+        if (!ssm->has_temp_profile_id)
           printf("Sensor settings specified temp profile, but no provided!\r\n");
         else {
           ss.setpoint_type = SP_TEMP_PROFILE;
-          ss.temp_profile.id = settings->temp_profile.id;
-          strncpy(ss.temp_profile.name, settings->temp_profile.name, sizeof(ss.temp_profile.name));
-          ss.temp_profile.num_steps = settings->temp_profile.steps_count;
-      //          ss.temp_profile.start_time = settings->temp_profile.start_time;
-          ss.temp_profile.start_value.value = settings->temp_profile.start_value;
-          ss.temp_profile.start_value.unit = UNIT_TEMP_DEG_F;
-
-          for (i = 0; i < settings->temp_profile.steps_count; ++i) {
-            temp_profile_step_t* step = &ss.temp_profile.steps[i];
-            TempProfileStep* stepm = &settings->temp_profile.steps[i];
-            step->duration = stepm->duration;
-            step->value.value = stepm->value;
-            step->value.unit = UNIT_TEMP_DEG_F;
-            switch(stepm->type) {
-              case TempProfileStep_TempProfileStepType_HOLD:
-                step->type = STEP_HOLD;
-                break;
-
-              case TempProfileStep_TempProfileStepType_RAMP:
-                step->type = STEP_RAMP;
-                break;
-
-              default:
-                printf("Invalid step type: %d\r\n", stepm->type);
-                break;
-            }
-          }
+          temp_control_start_temp_profile(ssm->id, ssm->temp_profile_id);
         }
         break;
 
@@ -596,8 +607,6 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
         printf("Invalid setpoint type: %d\r\n", ssm->setpoint_type);
         break;
     }
-
-    app_cfg_set_sensor_settings(ssm->id, &ss);
   }
 }
 

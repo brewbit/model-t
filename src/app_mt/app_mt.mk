@@ -54,7 +54,6 @@ PROJECT_CSRC = \
        quantity_widget.c \
        sensor.c \
        sntp.c \
-       sensor_settings.c \
        temp_control.c \
        temp_profile.c \
        touch.c \

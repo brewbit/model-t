@@ -6,13 +6,14 @@
 #include "message.h"
 #include "app_cfg.h"
 #include "pid.h"
-#include "sensor_settings.h"
+#include "temp_profile.h"
 
 #include <stdlib.h>
 
 typedef struct {
   sensor_port_t* port;
   quantity_t last_sample;
+  temp_profile_run_t temp_profile_run;
 } temp_input_t;
 
 typedef struct {
@@ -60,6 +61,29 @@ temp_control_init()
   msg_subscribe(l, MSG_SENSOR_TIMEOUT,  NULL);
   msg_subscribe(l, MSG_SENSOR_SETTINGS, NULL);
   msg_subscribe(l, MSG_OUTPUT_SETTINGS, NULL);
+}
+
+void
+temp_control_start_temp_profile(sensor_id_t sensor, uint32_t temp_profile_id)
+{
+  if (sensor >= NUM_SENSORS)
+    return;
+
+  temp_profile_start(&inputs[sensor].temp_profile_run, temp_profile_id);
+}
+
+float
+temp_control_get_current_setpoint(sensor_id_t sensor)
+{
+  float sp;
+  const sensor_settings_t* settings = app_cfg_get_sensor_settings(sensor);
+
+  if (settings->setpoint_type == SP_STATIC)
+    return settings->static_setpoint.value;
+  else if (temp_profile_get_current_setpoint(&inputs[sensor].temp_profile_run, &sp))
+    return sp;
+
+  return NAN;
 }
 
 static void
@@ -114,20 +138,19 @@ static void
 relay_control(relay_output_t* output)
 {
   const output_settings_t* output_settings = app_cfg_get_output_settings(output->id);
-  const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(output_settings->trigger);
 
   output->status.output = output->id;
 
   switch(output->output_mode) {
   case ON_OFF:
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
-      if (inputs[output->id].last_sample.value < sensor_settings_get_current_setpoint(sensor_settings))
+      if (inputs[output->id].last_sample.value < temp_control_get_current_setpoint(output_settings->trigger))
         enable_relay(output, true);
       else
         enable_relay(output, false);
     }
     else {
-      if (inputs[output->id].last_sample.value > sensor_settings_get_current_setpoint(sensor_settings))
+      if (inputs[output->id].last_sample.value > temp_control_get_current_setpoint(output_settings->trigger))
         enable_relay(output, true);
       else
         enable_relay(output, false);
@@ -210,6 +233,7 @@ dispatch_sensor_sample(sensor_msg_t* msg)
   int i;
 
   inputs[msg->sensor].last_sample = msg->sample;
+  temp_profile_update(&inputs[msg->sensor].temp_profile_run, msg->sample);
 
   for (i = 0; i < NUM_OUTPUTS; ++i) {
     const output_settings_t* output_settings = app_cfg_get_output_settings(i);
@@ -218,10 +242,8 @@ dispatch_sensor_sample(sensor_msg_t* msg)
       outputs[i].sensor_active = true;
 
       if (output_settings->output_mode == PID) {
-        const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(output_settings->trigger);
-
         pid_exec(&outputs[i].pid_control,
-            sensor_settings_get_current_setpoint(sensor_settings),
+            temp_control_get_current_setpoint(output_settings->trigger),
             msg->sample.value);
       }
     }

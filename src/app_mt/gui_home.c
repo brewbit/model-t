@@ -177,8 +177,7 @@ dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg)
 {
   /* Update the sensor button icons based on the current sample/setpoint */
   widget_t* btn = s->sensors[msg->sensor].button;
-  const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(msg->sensor);
-  float setpoint = sensor_settings_get_current_setpoint(sensor_settings);
+  float setpoint = temp_control_get_current_setpoint(msg->sensor);
   if (msg->sample.value > setpoint)
     button_set_icon(btn, img_temp_hi);
   else if (msg->sample.value < setpoint)
