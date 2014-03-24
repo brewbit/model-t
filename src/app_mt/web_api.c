@@ -375,9 +375,8 @@ dispatch_device_settings_from_device(
 
       case SP_TEMP_PROFILE:
         ss->setpoint_type = SensorSettings_SetpointType_TEMP_PROFILE;
-        // TODO change ss->temp_profile to temp_profile_id and send that back instead
-//        ss->has_temp_profile = true;
-//        ss->temp_profile = asdf;
+        ss->has_temp_profile_id = true;
+        ss->temp_profile_id = ssm->settings.temp_profile.id;
         break;
 
       default:
@@ -392,8 +391,19 @@ dispatch_device_settings_from_device(
 
     os->id = osm->output;
     os->function = osm->settings.function;
-    // TODO
-//    os->output_mode = osm->settings.output_mode;
+    switch (osm->settings.output_mode) {
+      case PID:
+        os->output_mode = OutputSettings_OutputControlMode_PID;
+        break;
+
+      case ON_OFF:
+        os->output_mode = OutputSettings_OutputControlMode_ON_OFF;
+        break;
+
+      default:
+        printf("Invalid output control mode: %d\r\n", osm->settings.output_mode);
+        break;
+    }
     os->compressor_delay = osm->settings.compressor_delay.value;
     os->trigger_sensor_id = osm->settings.trigger;
   }
@@ -546,19 +556,22 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
         break;
 
       case SensorSettings_SetpointType_TEMP_PROFILE:
-        if (!ssm->has_temp_profile)
-          printf("Sensor settings specified temp profile, but none provided!\r\n");
+        if (!ssm->has_temp_profile_id ||
+            !settings->has_temp_profile ||
+            (settings->temp_profile.id != ssm->has_temp_profile_id))
+          printf("Sensor settings specified temp profile, but no provided!\r\n");
         else {
           ss.setpoint_type = SP_TEMP_PROFILE;
-          strncpy(ss.temp_profile.name, ssm->temp_profile.name, sizeof(ss.temp_profile.name));
-          ss.temp_profile.num_steps = ssm->temp_profile.steps_count;
-//          ss.temp_profile.start_time = ssm->temp_profile.start_time;
-          ss.temp_profile.start_value.value = ssm->temp_profile.start_value;
+          ss.temp_profile.id = settings->temp_profile.id;
+          strncpy(ss.temp_profile.name, settings->temp_profile.name, sizeof(ss.temp_profile.name));
+          ss.temp_profile.num_steps = settings->temp_profile.steps_count;
+      //          ss.temp_profile.start_time = settings->temp_profile.start_time;
+          ss.temp_profile.start_value.value = settings->temp_profile.start_value;
           ss.temp_profile.start_value.unit = UNIT_TEMP_DEG_F;
 
-          for (i = 0; i < ssm->temp_profile.steps_count; ++i) {
+          for (i = 0; i < settings->temp_profile.steps_count; ++i) {
             temp_profile_step_t* step = &ss.temp_profile.steps[i];
-            TempProfileStep* stepm = &ssm->temp_profile.steps[i];
+            TempProfileStep* stepm = &settings->temp_profile.steps[i];
             step->duration = stepm->duration;
             step->value.value = stepm->value;
             step->value.unit = UNIT_TEMP_DEG_F;

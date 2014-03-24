@@ -16,6 +16,7 @@ typedef struct {
 } temp_profile_step_t;
 
 typedef struct {
+  uint32_t id;
   char name[100];
   uint32_t num_steps;
   uint32_t start_time;

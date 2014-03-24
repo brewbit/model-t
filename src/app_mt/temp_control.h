@@ -25,7 +25,6 @@ typedef enum {
 typedef enum {
   ON_OFF,
   PID,
-  MANUAL
 } output_ctrl_t;
 
 typedef struct {
