@@ -211,21 +211,19 @@ dispatch_sensor_sample(sensor_msg_t* msg)
 
   inputs[msg->sensor].last_sample = msg->sample;
 
-  for (i = 0; i < NUM_OUTPUTS; i++) {
-    const output_settings_t* settings = app_cfg_get_output_settings(i);
-    if (msg->sensor == settings->trigger)
-      outputs[i].sensor_active = true;
-  }
-
   for (i = 0; i < NUM_OUTPUTS; ++i) {
     const output_settings_t* output_settings = app_cfg_get_output_settings(i);
-    if ((msg->sensor == output_settings->trigger) &&
-        (output_settings->output_mode == PID)) {
-      const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(output_settings->trigger);
 
-      pid_exec(&outputs[i].pid_control,
-          sensor_settings_get_current_setpoint(sensor_settings),
-          msg->sample.value);
+    if (msg->sensor == output_settings->trigger) {
+      outputs[i].sensor_active = true;
+
+      if (output_settings->output_mode == PID) {
+        const sensor_settings_t* sensor_settings = app_cfg_get_sensor_settings(output_settings->trigger);
+
+        pid_exec(&outputs[i].pid_control,
+            sensor_settings_get_current_setpoint(sensor_settings),
+            msg->sample.value);
+      }
     }
   }
 }
