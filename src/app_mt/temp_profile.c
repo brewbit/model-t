@@ -9,25 +9,41 @@ void
 temp_profile_start(temp_profile_run_t* run, uint32_t temp_profile_id)
 {
   run->temp_profile_id = temp_profile_id;
-  run->state = TPS_SEEKING_START_VALUE;
   run->current_step = 0;
   run->current_step_complete_time = 0;
+
+  if (sntp_time_available())
+    run->state = TPS_SEEKING_START_VALUE;
+  else
+    run->state = TPS_WAITING_FOR_TIME_SERVER;
 }
 
 void
 temp_profile_update(temp_profile_run_t* run, quantity_t sample)
 {
-  if (run->state == TPS_SEEKING_START_VALUE) {
-    const temp_profile_t* profile = app_cfg_get_temp_profile(run->temp_profile_id);
-    float start_err = sample.value - profile->start_value.value;
+  switch (run->state) {
+    case TPS_WAITING_FOR_TIME_SERVER:
+      if (sntp_time_available())
+        run->state = TPS_SEEKING_START_VALUE;
+      break;
 
-    if (start_err < 1 && start_err > -1) {
-      run->start_time = sntp_get_time();
-      run->current_step = 0;
-      run->current_step_complete_time =
-          run->start_time + profile->steps[run->current_step].duration;
-      run->state = TPS_RUNNING;
+    case TPS_SEEKING_START_VALUE:
+    {
+      const temp_profile_t* profile = app_cfg_get_temp_profile(run->temp_profile_id);
+      float start_err = sample.value - profile->start_value.value;
+
+      if (start_err < 1 && start_err > -1) {
+        run->start_time = sntp_get_time();
+        run->current_step = 0;
+        run->current_step_complete_time =
+            run->start_time + profile->steps[run->current_step].duration;
+        run->state = TPS_RUNNING;
+      }
+      break;
     }
+
+    default:
+      break;
   }
 }
 
@@ -53,6 +69,7 @@ temp_profile_get_current_setpoint(temp_profile_run_t* run, float* sp)
       ret = false;
       break;
 
+    case TPS_WAITING_FOR_TIME_SERVER:
     case TPS_SEEKING_START_VALUE:
       *sp = profile->start_value.value;
       break;

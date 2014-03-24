@@ -96,6 +96,7 @@ static time_t last_update_time_abs;
 static systime_t last_update_time_rel;
 static bool net_connected;
 static uint32_t request_delay;
+static bool time_available;
 
 /**
  * SNTP processing
@@ -105,6 +106,13 @@ sntp_process(time_t t)
 {
   last_update_time_rel = chTimeNow();
   last_update_time_abs = t;
+  time_available = true;
+}
+
+bool
+sntp_time_available()
+{
+  return time_available;
 }
 
 time_t
