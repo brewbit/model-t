@@ -20,7 +20,8 @@ temp_profile_get_current_setpoint(const temp_profile_t* profile)
       if (step->type == STEP_HOLD)
         return step->value.value;
       else {
-        return last_temp + ((last_temp - step->value.value) * (now - profile->start_time - step_begin) / step->duration);
+        uint32_t duration_into_step = duration_into_profile - step_begin;
+        return last_temp + ((last_temp - step->value.value) * duration_into_step / step->duration);
       }
     }
     step_begin += step->duration;
