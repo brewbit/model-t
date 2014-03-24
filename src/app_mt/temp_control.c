@@ -104,6 +104,8 @@ output_thread(void* arg)
       enable_relay(output, false);
     else
       relay_control(output);
+
+    chThdSleepSeconds(1);
   }
 
   return 0;
@@ -172,7 +174,7 @@ cycle_delay(output_id_t output)
 {
   const output_settings_t* settings = app_cfg_get_output_settings(output);
   if (settings->compressor_delay.value > 0)
-    chThdSleep(settings->compressor_delay.value * S2ST(60));
+    chThdSleepSeconds(60 * settings->compressor_delay.value);
 }
 
 static void
