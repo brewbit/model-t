@@ -73,6 +73,11 @@ static void
 dispatch_sensor_sample(web_api_t* api, sensor_msg_t* sample);
 
 static void
+dispatch_device_settings_from_device(web_api_t* api,
+    sensor_settings_msg_t* sensor_settings_msg,
+    output_settings_msg_t* output_settings_msg);
+
+static void
 request_activation_token(web_api_t* api);
 
 static void
@@ -88,7 +93,7 @@ static void
 send_sensor_report(web_api_t* api);
 
 static void
-dispatch_device_settings(DeviceSettingsNotification* settings);
+dispatch_device_settings_from_server(DeviceSettingsNotification* settings);
 
 
 static web_api_t* api;
@@ -139,6 +144,8 @@ web_api_init()
   msg_subscribe(l, MSG_API_FW_UPDATE_CHECK, NULL);
   msg_subscribe(l, MSG_API_FW_DNLD_START, NULL);
   msg_subscribe(l, MSG_SENSOR_SAMPLE, NULL);
+  msg_subscribe(l, MSG_SENSOR_SETTINGS, NULL);
+  msg_subscribe(l, MSG_OUTPUT_SETTINGS, NULL);
   msg_subscribe(l, MSG_HEALTH_CHECK, NULL);
 }
 
@@ -163,6 +170,14 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
 
     case MSG_SENSOR_SAMPLE:
       dispatch_sensor_sample(api, msg_data);
+      break;
+
+    case MSG_SENSOR_SETTINGS:
+      dispatch_device_settings_from_device(api, msg_data, NULL);
+      break;
+
+    case MSG_OUTPUT_SETTINGS:
+      dispatch_device_settings_from_device(api, NULL, msg_data);
       break;
 
     case MSG_IDLE:
@@ -336,6 +351,59 @@ dispatch_sensor_sample(web_api_t* api, sensor_msg_t* sample)
 }
 
 static void
+dispatch_device_settings_from_device(
+    web_api_t* api,
+    sensor_settings_msg_t* ssm,
+    output_settings_msg_t* osm)
+{
+  printf("sending sensor settings to server\r\n");
+  ApiMessage* msg = calloc(1, sizeof(ApiMessage));
+  msg->type = ApiMessage_Type_DEVICE_SETTINGS_NOTIFICATION;
+  msg->has_deviceSettingsNotification = true;
+
+  if (ssm != NULL) {
+    SensorSettings* ss = &msg->deviceSettingsNotification.sensor[0];
+    msg->deviceSettingsNotification.sensor_count = 1;
+
+    ss->id = ssm->sensor;
+    switch (ssm->settings.setpoint_type) {
+      case SP_STATIC:
+        ss->setpoint_type = SensorSettings_SetpointType_STATIC;
+        ss->has_static_setpoint = true;
+        ss->static_setpoint = ssm->settings.static_setpoint.value;
+        break;
+
+      case SP_TEMP_PROFILE:
+        ss->setpoint_type = SensorSettings_SetpointType_TEMP_PROFILE;
+        // TODO change ss->temp_profile to temp_profile_id and send that back instead
+//        ss->has_temp_profile = true;
+//        ss->temp_profile = asdf;
+        break;
+
+      default:
+        printf("Invalid setpoint type: %d\r\n", ssm->settings.setpoint_type);
+        break;
+    }
+  }
+
+  if (osm != NULL) {
+    OutputSettings* os = &msg->deviceSettingsNotification.output[0];
+    msg->deviceSettingsNotification.output_count = 1;
+
+    os->id = osm->output;
+    os->function = osm->settings.function;
+    // TODO
+//    os->output_mode = osm->settings.output_mode;
+    os->compressor_delay = osm->settings.compressor_delay.value;
+    os->trigger_sensor_id = osm->settings.trigger;
+  }
+
+  send_api_msg(api->ws, msg);
+
+  free(msg);
+}
+
+static void
 check_for_update(web_api_t* api)
 {
   printf("sending update check\r\n");
@@ -437,7 +505,7 @@ dispatch_api_msg(web_api_t* api, ApiMessage* msg)
     break;
 
   case ApiMessage_Type_DEVICE_SETTINGS_NOTIFICATION:
-    dispatch_device_settings(&msg->deviceSettingsNotification);
+    dispatch_device_settings_from_server(&msg->deviceSettingsNotification);
     break;
 
   default:
@@ -447,7 +515,7 @@ dispatch_api_msg(web_api_t* api, ApiMessage* msg)
 }
 
 static void
-dispatch_device_settings(DeviceSettingsNotification* settings)
+dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
 {
   int i;
   for (i = 0; i < settings->output_count; ++i) {
