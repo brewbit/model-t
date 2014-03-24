@@ -19,7 +19,7 @@ typedef struct {
   widget_t* back_button;
   widget_t* function_button;
   widget_t* trigger_button;
-  widget_t* compressor_delay_button;
+  widget_t* cycle_delay_button;
   widget_t* output_mode_button;
 
   output_id_t output;
@@ -32,11 +32,11 @@ static void output_settings_screen_msg(msg_event_t* event);
 static void dispatch_output_settings(output_screen_t* s, output_settings_msg_t* msg);
 static void set_output_settings(output_screen_t* s, output_function_t function, sensor_id_t trigger, output_ctrl_t mode);
 static void back_button_clicked(button_event_t* event);
-static void compressor_delay_button_clicked(button_event_t* event);
+static void cycle_delay_button_clicked(button_event_t* event);
 static void output_mode_button_clicked(button_event_t* event);
 static void function_button_clicked(button_event_t* event);
 static void trigger_button_clicked(button_event_t* event);
-static void update_compressor_delay(quantity_t delay, void* user_data);
+static void update_cycle_delay(quantity_t delay, void* user_data);
 
 
 widget_class_t output_settings_widget_class = {
@@ -78,7 +78,7 @@ output_settings_screen_create(output_id_t output)
   s->trigger_button = button_create(s->widget, rect, img_temp_38, WHITE, AMBER, trigger_button_clicked);
 
   rect.x += 84;
-  s->compressor_delay_button = button_create(s->widget, rect, img_stopwatch, WHITE, GREEN, compressor_delay_button_clicked);
+  s->cycle_delay_button = button_create(s->widget, rect, img_stopwatch, WHITE, GREEN, cycle_delay_button_clicked);
 
   rect.x = 48;
   rect.y += 70;
@@ -181,7 +181,7 @@ trigger_button_clicked(button_event_t* event)
 }
 
 static void
-compressor_delay_button_clicked(button_event_t* event)
+cycle_delay_button_clicked(button_event_t* event)
 {
   if (event->id != EVT_BUTTON_CLICK)
     return;
@@ -201,7 +201,7 @@ compressor_delay_button_clicked(button_event_t* event)
       1.0f
   };
   widget_t* output_delay_screen = quantity_select_screen_create(
-      title, s->settings.compressor_delay, velocity_steps, 1, update_compressor_delay, s);
+      title, s->settings.cycle_delay, velocity_steps, 1, update_cycle_delay, s);
   gui_push_screen(output_delay_screen);
 }
 
@@ -218,10 +218,10 @@ output_mode_button_clicked(button_event_t* event)
 }
 
 static void
-update_compressor_delay(quantity_t delay, void* user_data)
+update_cycle_delay(quantity_t delay, void* user_data)
 {
   output_screen_t* s = user_data;
-  s->settings.compressor_delay = delay;
+  s->settings.cycle_delay = delay;
   app_cfg_set_output_settings(s->output, &s->settings);
 }
 

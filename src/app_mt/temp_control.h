@@ -40,7 +40,7 @@ typedef struct {
 typedef struct {
   output_function_t function;
   sensor_id_t trigger;
-  quantity_t compressor_delay;
+  quantity_t cycle_delay;
   output_ctrl_t output_mode;
 } output_settings_t;
 

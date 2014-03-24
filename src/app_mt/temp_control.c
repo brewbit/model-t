@@ -129,7 +129,7 @@ output_init(output_id_t output, uint32_t gpio)
 
   out->id = output;
   out->gpio = gpio;
-  out->window_time = settings->compressor_delay.value * S2ST(60) * 4;
+  out->window_time = settings->cycle_delay.value * S2ST(60) * 4;
   out->controller = &controller[settings->trigger];
 
   pid_init(&out->pid_control);
@@ -149,7 +149,7 @@ output_thread(void* arg)
   relay_output_t* output = arg;
   chRegSetThreadName("output");
 
-  /* Wait 1 compressor delay before starting window */
+  /* Wait 1 cycle delay before starting window */
   cycle_delay(output->id);
 
   output->status.output = output->id;
@@ -231,8 +231,8 @@ static void
 cycle_delay(output_id_t output)
 {
   const output_settings_t* settings = app_cfg_get_output_settings(output);
-  if (settings->compressor_delay.value > 0)
-    chThdSleepSeconds(60 * settings->compressor_delay.value);
+  if (settings->cycle_delay.value > 0)
+    chThdSleepSeconds(60 * settings->cycle_delay.value);
 }
 
 static void
@@ -314,7 +314,7 @@ dispatch_output_settings(output_settings_msg_t* msg)
       pid_set_output_limits(
           &output->pid_control,
           0,
-          output->window_time - (msg->settings.compressor_delay.value * S2ST(60)));
+          output->window_time - (msg->settings.cycle_delay.value * S2ST(60)));
 
       if (output_settings->trigger == SENSOR_1)
         pid_reinit(&output->pid_control, controller[SENSOR_1].last_sample.value);

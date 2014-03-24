@@ -405,7 +405,7 @@ dispatch_device_settings_from_device(
         printf("Invalid output control mode: %d\r\n", osm->settings.output_mode);
         break;
     }
-    os->compressor_delay = osm->settings.compressor_delay.value;
+    os->cycle_delay = osm->settings.cycle_delay.value;
     os->trigger_sensor_id = osm->settings.trigger;
   }
 
@@ -530,10 +530,14 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
 {
   int i;
 
+  printf("got device settings from server\r\n");
+
   temp_control_halt();
 
   temp_control_cmd_t* tcc = calloc(1, sizeof(temp_control_cmd_t));
 
+
+  printf("  got %d temp profiles\r\n", settings->temp_profiles_count);
   for (i = 0; i < settings->temp_profiles_count; ++i) {
     temp_profile_t tp;
     TempProfile* tpm = &settings->temp_profiles[i];
@@ -543,6 +547,10 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
     tp.num_steps = tpm->steps_count;
     tp.start_value.value = tpm->start_value;
     tp.start_value.unit = UNIT_TEMP_DEG_F;
+
+    printf("    profile '%s' (%d)\r\n", tp.name, tp.id);
+    printf("      steps %d\r\n", tp.num_steps);
+    printf("      start %f\r\n", tp.start_value.value);
 
     for (i = 0; i < tpm->steps_count; ++i) {
       temp_profile_step_t* step = &tp.steps[i];
@@ -569,16 +577,23 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
     app_cfg_set_temp_profile(&tp, i);
   }
 
+  printf("  got %d output settings\r\n", settings->output_count);
   for (i = 0; i < settings->output_count; ++i) {
     output_settings_t* os = &tcc->output_settings[i];
     OutputSettings* osm = &settings->output[i];
 
-    os->compressor_delay.value = osm->compressor_delay;
-    os->compressor_delay.unit = UNIT_TIME_MIN;
+    os->cycle_delay.value = osm->cycle_delay;
+    os->cycle_delay.unit = UNIT_TIME_MIN;
     os->function = osm->function;
     os->trigger = osm->trigger_sensor_id;
+
+    printf("    output %d\r\n", i);
+    printf("      delay %f\r\n", os->cycle_delay.value);
+    printf("      function %d\r\n", os->function);
+    printf("      trigger %d\r\n", os->trigger);
   }
 
+  printf("  got %d sensor settings\r\n", settings->sensor_count);
   for (i = 0; i < settings->sensor_count; ++i) {
     sensor_settings_t* ss = &tcc->sensor_settings[i];
     SensorSettings* ssm = &settings->sensor[i];
@@ -608,8 +623,13 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
         break;
     }
 
-    temp_control_start(tcc);
-    free(tcc);
+    printf("    sensor %d\r\n", i);
+    printf("      setpoint_type %d\r\n", ss->setpoint_type);
+    printf("      static %f\r\n", ss->static_setpoint.value);
+    printf("      temp profile %d\r\n", ss->temp_profile_id);
   }
+
+  temp_control_start(tcc);
+  free(tcc);
 }
 
