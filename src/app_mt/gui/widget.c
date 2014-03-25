@@ -185,6 +185,13 @@ widget_unparent(widget_t* w)
   if (w->next_sibling != NULL)
     w->next_sibling->prev_sibling = w->prev_sibling;
 
+  if (w->parent != NULL) {
+    if (w->parent->first_child == w)
+      w->parent->first_child = w->next_sibling;
+    if (w->parent->last_child == w)
+      w->parent->last_child = w->prev_sibling;
+  }
+
   w->next_sibling = NULL;
   w->prev_sibling = NULL;
   w->parent = NULL;
