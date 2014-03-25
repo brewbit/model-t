@@ -38,6 +38,7 @@ PROJECT_CSRC = \
        gui_output_trigger.c \
        gui_quantity_select.c \
        gui_recovery.c \
+       gui_sensor_settings.c \
        gui_settings.c \
        gui_textentry.c \
        gui_update.c \
