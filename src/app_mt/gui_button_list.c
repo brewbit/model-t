@@ -60,6 +60,7 @@ button_list_set_buttons(widget_t* button_list, button_spec_t* buttons, uint32_t 
     rect.width = 240;
     rect.height = 66;
     widget_t* button = button_create(NULL, rect, NULL, WHITE, BLACK, buttons[i].btn_event_handler);
+    widget_set_user_data(button, buttons[i].user_data);
 
     rect.x = 5;
     rect.y = 5;

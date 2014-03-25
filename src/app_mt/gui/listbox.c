@@ -75,6 +75,7 @@ listbox_clear(widget_t* lb)
     widget_unparent(w);
     widget_destroy(w);
   }
+  widget_invalidate(lb);
 }
 
 static void

@@ -11,6 +11,7 @@ typedef struct {
   color_t color;
   const char* text;
   const char* subtext;
+  void* user_data;
 } button_spec_t;
 
 widget_t*

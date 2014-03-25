@@ -90,13 +90,15 @@ add_button_spec(
     const Image_t* img,
     color_t color,
     const char* text,
-    const char* subtext)
+    const char* subtext,
+    void* user_data)
 {
   buttons[*num_buttons].btn_event_handler = btn_event_handler;
   buttons[*num_buttons].img = img;
   buttons[*num_buttons].color = color;
   buttons[*num_buttons].text = text;
   buttons[*num_buttons].subtext = subtext;
+  buttons[*num_buttons].user_data = user_data;
   (*num_buttons)++;
 }
 
@@ -106,14 +108,18 @@ set_sensor_settings(sensor_settings_screen_t* s, setpoint_type_t setpoint_type, 
   uint32_t num_buttons = 0;
   button_spec_t buttons[4];
 
-  add_button_spec(buttons, &num_buttons, setpooint_type_button_clicked, img_snowflake, CYAN, "Setpoint Type", "blah");
+  s->settings.setpoint_type = setpoint_type;
+  s->settings.static_setpoint = static_setpoint;
+  s->settings.temp_profile_id = temp_profile_id;
+
+  add_button_spec(buttons, &num_buttons, setpooint_type_button_clicked, img_snowflake, CYAN, "Setpoint Type", "blah", s);
   switch (setpoint_type) {
     case SP_STATIC:
-      add_button_spec(buttons, &num_buttons, static_setpoint_button_clicked, img_snowflake, CYAN, "Static Setpoint", "blah");
+      add_button_spec(buttons, &num_buttons, static_setpoint_button_clicked, img_snowflake, CYAN, "Static Setpoint", "blah", s);
       break;
 
     case SP_TEMP_PROFILE:
-      add_button_spec(buttons, &num_buttons, temp_profile_button_clicked, img_snowflake, CYAN, "Temp Profile", "blah");
+      add_button_spec(buttons, &num_buttons, temp_profile_button_clicked, img_snowflake, CYAN, "Temp Profile", "blah", s);
       break;
 
     default:
@@ -126,21 +132,32 @@ set_sensor_settings(sensor_settings_screen_t* s, setpoint_type_t setpoint_type, 
 static void
 setpooint_type_button_clicked(button_event_t* event)
 {
-//  if (event->id == EVT_BUTTON_CLICK) {
-//    widget_t* screen = widget_get_parent(event->widget);
-//    sensor_settings_screen_t* s = widget_get_instance_data(screen);
-//
-//    widget_t* setpooint_type_screen = setpooint_type_screen_create(s->sensor);
-//    gui_push_screen(setpooint_type_screen);
-//  }
+  if (event->id == EVT_BUTTON_CLICK) {
+    sensor_settings_screen_t* s = widget_get_user_data(event->widget);
+
+    setpoint_type_t new_sp_type = SP_STATIC;
+    switch (s->settings.setpoint_type) {
+      case SP_STATIC:
+        new_sp_type = SP_TEMP_PROFILE;
+        break;
+
+      case SP_TEMP_PROFILE:
+        new_sp_type = SP_STATIC;
+        break;
+
+      default:
+        break;
+    }
+
+    set_sensor_settings(s, new_sp_type, s->settings.static_setpoint, s->settings.temp_profile_id);
+  }
 }
 
 static void
 temp_profile_button_clicked(button_event_t* event)
 {
 //  if (event->id == EVT_BUTTON_CLICK) {
-//    widget_t* screen = widget_get_parent(event->widget);
-//    sensor_settings_screen_t* s = widget_get_instance_data(screen);
+//  sensor_settings_screen_t* s = widget_get_user_data(event->widget);
 //
 //    widget_t* temp_profile_screen = temp_profile_screen_create(s->sensor);
 //    gui_push_screen(temp_profile_screen);
@@ -153,8 +170,7 @@ static_setpoint_button_clicked(button_event_t* event)
   if (event->id != EVT_BUTTON_CLICK)
     return;
 
-  widget_t* screen = widget_get_parent(event->widget);
-  sensor_settings_screen_t* s = widget_get_instance_data(screen);
+  sensor_settings_screen_t* s = widget_get_user_data(event->widget);
 
   char* title;
   if (s->sensor == SENSOR_1) {
