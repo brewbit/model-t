@@ -8,15 +8,13 @@
 #include "temp_control.h"
 #include "app_cfg.h"
 #include "gui_quantity_select.h"
+#include "gui_button_list.h"
 
 #include <string.h>
 
 typedef struct {
-  widget_t* widget;
-  widget_t* back_button;
-  widget_t* setpooint_type_button;
-  widget_t* static_setpoint_button;
-  widget_t* temp_profile_button;
+  widget_t* screen;
+  widget_t* button_list;
 
   sensor_id_t sensor;
   sensor_settings_t settings;
@@ -27,7 +25,6 @@ static void sensor_settings_screen_destroy(widget_t* w);
 static void sensor_settings_screen_msg(msg_event_t* event);
 static void dispatch_sensor_settings(sensor_settings_screen_t* s, sensor_settings_msg_t* msg);
 static void set_sensor_settings(sensor_settings_screen_t* s, setpoint_type_t setpoint_type, quantity_t static_setpoint, uint32_t temp_profile_id);
-static void back_button_clicked(button_event_t* event);
 static void temp_profile_button_clicked(button_event_t* event);
 static void setpooint_type_button_clicked(button_event_t* event);
 static void static_setpoint_button_clicked(button_event_t* event);
@@ -46,41 +43,19 @@ sensor_settings_screen_create(sensor_id_t sensor)
   sensor_settings_screen_t* s = chHeapAlloc(NULL, sizeof(sensor_settings_screen_t));
   memset(s, 0, sizeof(sensor_settings_screen_t));
 
-  s->widget = widget_create(NULL, &sensor_settings_widget_class, s, display_rect);
-  widget_set_background(s->widget, BLACK, FALSE);
+  s->screen = widget_create(NULL, &sensor_settings_widget_class, s, display_rect);
+  widget_set_background(s->screen, BLACK, FALSE);
 
-  rect_t rect = {
-      .x = 15,
-      .y = 15,
-      .width = 56,
-      .height = 56,
-  };
-  s->back_button = button_create(s->widget, rect, img_left, WHITE, BLACK, back_button_clicked);
-
-  rect.x = 85;
-  rect.y = 26;
-  rect.width = 220;
   char* title = (sensor == SENSOR_1) ? "Sensor 1 Setup" : "Sensor 2 Setup";
-  label_create(s->widget, rect, title, font_opensans_regular_22, WHITE, 1);
-
-  rect.x = 48;
-  rect.y = 86;
-  rect.width = 56;
-  rect.height = 56;
-  s->setpooint_type_button = button_create(s->widget, rect, img_flame, WHITE, ORANGE, setpooint_type_button_clicked);
-
-  rect.x += 84;
-  s->static_setpoint_button = button_create(s->widget, rect, img_temp_38, WHITE, AMBER, static_setpoint_button_clicked);
-
-  s->temp_profile_button = button_create(s->widget, rect, img_stopwatch, WHITE, GREEN, temp_profile_button_clicked);
+  s->button_list = button_list_screen_create(s->screen, title, NULL, 0);
 
   s->sensor = sensor;
   s->settings = *app_cfg_get_sensor_settings(sensor);
 
-  gui_msg_subscribe(MSG_SENSOR_SETTINGS, s->widget);
+  gui_msg_subscribe(MSG_SENSOR_SETTINGS, s->screen);
   set_sensor_settings(s, s->settings.setpoint_type, s->settings.static_setpoint, s->settings.temp_profile_id);
 
-  return s->widget;
+  return s->screen;
 }
 
 static void
@@ -108,38 +83,44 @@ dispatch_sensor_settings(sensor_settings_screen_t* s, sensor_settings_msg_t* msg
 }
 
 static void
+add_button_spec(
+    button_spec_t* buttons,
+    uint32_t* num_buttons,
+    button_event_handler_t btn_event_handler,
+    const Image_t* img,
+    color_t color,
+    const char* text,
+    const char* subtext)
+{
+  buttons[*num_buttons].btn_event_handler = btn_event_handler;
+  buttons[*num_buttons].img = img;
+  buttons[*num_buttons].color = color;
+  buttons[*num_buttons].text = text;
+  buttons[*num_buttons].subtext = subtext;
+  (*num_buttons)++;
+}
+
+static void
 set_sensor_settings(sensor_settings_screen_t* s, setpoint_type_t setpoint_type, quantity_t static_setpoint, uint32_t temp_profile_id)
 {
-  color_t color = 0;
-  const Image_t* img = img_snowflake;
+  uint32_t num_buttons = 0;
+  button_spec_t buttons[4];
+
+  add_button_spec(buttons, &num_buttons, setpooint_type_button_clicked, img_snowflake, CYAN, "Setpoint Type", "blah");
   switch (setpoint_type) {
     case SP_STATIC:
-      color = CYAN;
-      img = img_snowflake;
-      widget_show(s->static_setpoint_button);
-      widget_hide(s->temp_profile_button);
+      add_button_spec(buttons, &num_buttons, static_setpoint_button_clicked, img_snowflake, CYAN, "Static Setpoint", "blah");
       break;
 
     case SP_TEMP_PROFILE:
-      color = ORANGE;
-      img = img_flame;
-      widget_hide(s->static_setpoint_button);
-      widget_show(s->temp_profile_button);
+      add_button_spec(buttons, &num_buttons, temp_profile_button_clicked, img_snowflake, CYAN, "Temp Profile", "blah");
       break;
 
     default:
       break;
   }
 
-  widget_set_background(s->setpooint_type_button, color, FALSE);
-  button_set_icon(s->setpooint_type_button, img);
-}
-
-static void
-back_button_clicked(button_event_t* event)
-{
-  if (event->id == EVT_BUTTON_CLICK)
-    gui_pop_screen();
+  button_list_set_buttons(s->button_list, buttons, num_buttons);
 }
 
 static void

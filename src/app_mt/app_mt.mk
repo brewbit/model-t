@@ -28,6 +28,7 @@ PROJECT_CSRC = \
        gfx.c \
        gui.c \
        gui_activation.c \
+       gui_button_list.c \
        gui_calib.c \
        gui_history.c \
        gui_info.c \

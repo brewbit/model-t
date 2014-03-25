@@ -63,6 +63,20 @@ listbox_create(widget_t* parent, rect_t rect, int item_height)
   return lb;
 }
 
+void
+listbox_clear(widget_t* lb)
+{
+  listbox_t* l = widget_get_instance_data(lb);
+  while (1) {
+    widget_t* w = widget_get_child(l->item_container, 0);
+    if (w == NULL)
+      break;
+
+    widget_unparent(w);
+    widget_destroy(w);
+  }
+}
+
 static void
 listbox_destroy(widget_t* w)
 {

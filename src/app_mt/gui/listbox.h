@@ -21,4 +21,7 @@ listbox_get_item(widget_t* lb, int i);
 void
 listbox_delete_item(widget_t* item);
 
+void
+listbox_clear(widget_t* lb);
+
 #endif
