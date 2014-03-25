@@ -11,6 +11,7 @@
 #include "gui_button_list.h"
 
 #include <string.h>
+#include <stdio.h>
 
 typedef struct {
   widget_t* screen;
@@ -112,21 +113,52 @@ set_sensor_settings(sensor_settings_screen_t* s, setpoint_type_t setpoint_type, 
   s->settings.static_setpoint = static_setpoint;
   s->settings.temp_profile_id = temp_profile_id;
 
-  add_button_spec(buttons, &num_buttons, setpooint_type_button_clicked, img_snowflake, CYAN, "Setpoint Type", "blah", s);
+  char* subtext;
   switch (setpoint_type) {
     case SP_STATIC:
-      add_button_spec(buttons, &num_buttons, static_setpoint_button_clicked, img_snowflake, CYAN, "Static Setpoint", "blah", s);
+      subtext = "Static Setpoint - Temp is held at fixed value";
       break;
 
     case SP_TEMP_PROFILE:
-      add_button_spec(buttons, &num_buttons, temp_profile_button_clicked, img_snowflake, CYAN, "Temp Profile", "blah", s);
+      subtext = "Temp Profile - Temp follows customized profile";
       break;
+
+    default:
+      subtext = "Invalid setpoint type!";
+      break;
+  }
+  add_button_spec(buttons, &num_buttons, setpooint_type_button_clicked, img_snowflake, CYAN,
+      "Setpoint Type", subtext, s);
+
+  subtext = malloc(128);
+  switch (setpoint_type) {
+    case SP_STATIC:
+      snprintf(subtext, 128, "Setpoint value: %d.%d %c",
+          (int)(s->settings.static_setpoint.value),
+          ((int)(s->settings.static_setpoint.value * 10.0f)) % 10, 'F');
+      add_button_spec(buttons, &num_buttons, static_setpoint_button_clicked, img_snowflake, CYAN,
+          "Static Setpoint", subtext, s);
+      break;
+
+    case SP_TEMP_PROFILE:
+    {
+      const temp_profile_t* tp = app_cfg_get_temp_profile(s->settings.temp_profile_id);
+      if (tp != NULL)
+        snprintf(subtext, 128, "Selected profile: '%s'", tp->name);
+      else
+        snprintf(subtext, 128, "Selected profile: id=%d", s->settings.temp_profile_id);
+
+      add_button_spec(buttons, &num_buttons, temp_profile_button_clicked, img_snowflake, CYAN,
+          "Temp Profile", subtext, s);
+      break;
+    }
 
     default:
       break;
   }
 
   button_list_set_buttons(s->button_list, buttons, num_buttons);
+  free(subtext);
 }
 
 static void
@@ -173,12 +205,10 @@ static_setpoint_button_clicked(button_event_t* event)
   sensor_settings_screen_t* s = widget_get_user_data(event->widget);
 
   char* title;
-  if (s->sensor == SENSOR_1) {
+  if (s->sensor == SENSOR_1)
     title = "Sensor 1 Setpoint";
-  }
-  else {
+  else
     title = "Sensor 2 Setpoint";
-  }
 
   float velocity_steps[] = {
       0.1f, 0.5f, 1.0f
@@ -192,7 +222,6 @@ static void
 update_static_setpoint(quantity_t setpoint, void* user_data)
 {
   sensor_settings_screen_t* s = user_data;
-  s->settings.static_setpoint = setpoint;
-  app_cfg_set_sensor_settings(s->sensor, &s->settings);
+  set_sensor_settings(s, s->settings.setpoint_type, setpoint, s->settings.temp_profile_id);
 }
 

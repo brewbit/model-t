@@ -74,7 +74,7 @@ button_list_set_buttons(widget_t* button_list, button_spec_t* buttons, uint32_t 
     label_create(button, rect, buttons[i].text, font_opensans_regular_18, WHITE, 1);
 
     rect.y = 30;
-    label_create(button, rect, buttons[i].subtext, font_opensans_regular_12, WHITE, 1);
+    label_create(button, rect, buttons[i].subtext, font_opensans_regular_12, WHITE, 2);
 
     listbox_add_item(button_list, button);
   }
