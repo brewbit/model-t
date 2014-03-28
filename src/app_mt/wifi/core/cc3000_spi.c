@@ -7,15 +7,12 @@
 
 
 #define ASSERT_CS()    do { \
-                         spiAcquireBus(SPI_WLAN); \
-                         spiStart(SPI_WLAN, &wlan_spi_cfg); \
                          spiSelect(SPI_WLAN); \
                        } while (0)
 
 
 #define DEASSERT_CS()  do { \
                          spiUnselect(SPI_WLAN); \
-                         spiReleaseBus(SPI_WLAN); \
                        } while (0)
 
 
@@ -35,12 +32,14 @@
 typedef enum {
   SPI_STATE_POWERUP,
   SPI_STATE_IDLE,
-  SPI_STATE_WRITE,
 } spi_state_t;
 
 
 static void
 wifi_irq_cb(EXTDriver *extp, expchannel_t channel);
+
+static void
+wait_io_ready(void);
 
 static void
 SpiReadDataCont(void);
@@ -49,7 +48,7 @@ static void
 SpiTriggerRxProcessing(void);
 
 static msg_t
-SpiReadThread(void* arg);
+spi_io_thread(void* arg);
 
 static void
 SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength);
@@ -64,8 +63,8 @@ static unsigned short txPacketLength;
 static unsigned char* rxPacket;
 static unsigned short rxPacketLength;
 static Semaphore sem_init;
-static Semaphore sem_read;
-static Semaphore sem_write;
+static Semaphore sem_spi_io_sleep;
+static Semaphore sem_write_complete;
 
 unsigned char wlan_rx_buffer[CC3000_RX_BUFFER_SIZE];
 unsigned char wlan_tx_buffer[CC3000_TX_BUFFER_SIZE];
@@ -126,11 +125,12 @@ SpiClose(void)
 void
 SpiOpen(gcSpiHandleRx pfRxHandler)
 {
+  spiStart(SPI_WLAN, &wlan_spi_cfg);
   extStart(&EXTD1, &extcfg);
 
   chSemInit(&sem_init, 0);
-  chSemInit(&sem_read, 0);
-  chSemInit(&sem_write, 0);
+  chSemInit(&sem_spi_io_sleep, 0);
+  chSemInit(&sem_write_complete, 0);
 
   spiState = SPI_STATE_POWERUP;
   SPIRxHandler = pfRxHandler;
@@ -144,30 +144,75 @@ SpiOpen(gcSpiHandleRx pfRxHandler)
   // Enable interrupt on WLAN IRQ pin
   extChannelEnable(&EXTD1, 12);
 
-  chThdCreateFromHeap(NULL, 1024, HIGHPRIO, SpiReadThread, NULL);
+  chThdCreateFromHeap(NULL, 1024, HIGHPRIO, spi_io_thread, NULL);
+}
+
+static void
+wait_io_ready()
+{
+  while (1) {
+    /* Wait for the I/O ready semaphore to be signalled. We need to include
+     * a timeout because occasionally we seem to be missing IRQ edges. We
+     * handle this by checking the IRQ line manually when the semaphore wait
+     * times out.
+     */
+    msg_t rdy = chSemWaitTimeout(&sem_spi_io_sleep, S2ST(2));
+
+    /* If the semaphore has been signalled, we are ready to read or write */
+    if (rdy == RDY_OK) {
+      break;
+    }
+    /* Check if IRQ is asserted */
+    else if (palReadPad(PORT_WIFI_IRQ, PAD_WIFI_IRQ) == 0) {
+      break;
+    }
+  }
 }
 
 static msg_t
-SpiReadThread(void* arg)
+spi_io_thread(void* arg)
 {
   (void)arg;
 
   chRegSetThreadName("spi_read");
 
   while (TRUE) {
-    chSemWait(&sem_read);
+    wait_io_ready();
 
-    /* IRQ line goes down - we are start reception */
-    ASSERT_CS();
+    /* If a write is pending, handle that first */
+    if (txPacket != NULL && txPacketLength > 0) {
+      /* Assert the CS line to indicate to the CC3000 that we have data to send */
+      ASSERT_CS();
 
-    spiExchange(SPI_WLAN, 10, tSpiReadHeader, rxPacket);
+      /* Wait for the CC3000 to respond by asserting the IRQ line */
+      wait_io_ready();
 
-    // The header was read - continue with  the payload read
-    SpiReadDataCont();
+      /* Commence write operation */
+      spiSend(SPI_WLAN, txPacketLength, txPacket);
 
-    // All the data was read - finalize handling by switching to the task
-    // and calling from task Event Handler
-    SpiTriggerRxProcessing();
+      DEASSERT_CS();
+
+      /* Clear the pending write vars */
+      txPacket = NULL;
+      txPacketLength = 0;
+      
+      /* Signal the waiting thread that the write is complete */
+      chSemSignal(&sem_write_complete);
+    }
+    else {
+      /* IRQ line goes down - we are start reception */
+      ASSERT_CS();
+
+      spiExchange(SPI_WLAN, 10, tSpiReadHeader, rxPacket);
+
+      /* The header was read - continue with  the payload read */
+      SpiReadDataCont();
+
+      /* All the data was read - finalize handling by switching to the task
+       * and calling from task Event Handler
+       */
+      SpiTriggerRxProcessing();
+    }
   }
 
   return 0;
@@ -240,22 +285,14 @@ SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
     SpiFirstWrite(pUserBuffer, usLength);
   }
   else {
-    spiState = SPI_STATE_WRITE;
-    txPacket = pUserBuffer;
     txPacketLength = usLength;
-
-    // Assert the CS line
-    ASSERT_CS();
-
-    // Wait for the CC3000 to respond by asserting the IRQ line
-    chSemWait(&sem_write);
-
-    // Commence write operation
-    spiSend(SPI_WLAN, usLength, pUserBuffer);
-
-    spiState = SPI_STATE_IDLE;
-
-    DEASSERT_CS();
+    txPacket = pUserBuffer;
+    
+    /* Signal the I/O thread to handle the write */
+    chSemSignal(&sem_spi_io_sleep);
+    
+    /* Wait for write to complete */
+    chSemWait(&sem_write_complete);
   }
 }
 
@@ -371,7 +408,6 @@ SpiTriggerRxProcessing(void)
     chSysHalt();
   }
 
-  spiState = SPI_STATE_IDLE;
   SPIRxHandler(rxPacket + SPI_HEADER_SIZE);
 }
 
@@ -403,11 +439,7 @@ wifi_irq_cb(EXTDriver *extp, expchannel_t channel)
     break;
 
   case SPI_STATE_IDLE:
-    chSemSignalI(&sem_read);
-    break;
-
-  case SPI_STATE_WRITE:
-    chSemSignalI(&sem_write);
+    chSemSignalI(&sem_spi_io_sleep);
     break;
 
   default:
