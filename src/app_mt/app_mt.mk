@@ -58,9 +58,9 @@ PROJECT_CSRC = \
        sntp.c \
        temp_control.c \
        temp_profile.c \
+       thread_watchdog.c \
        touch.c \
        touch_calib.c \
-       watchdog.c \
        web_api.c \
        snacka_backend/cryptocallbacks_chibios.c \
        snacka_backend/iocallbacks_socket.c \

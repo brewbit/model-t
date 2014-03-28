@@ -140,6 +140,7 @@ web_api_init()
 
   msg_listener_t* l = msg_listener_create("web_api", 2048, web_api_dispatch, api);
   msg_listener_set_idle_timeout(l, 250);
+  msg_listener_enable_watchdog(l, 3 * 60 * 1000);
 
   msg_subscribe(l, MSG_NET_STATUS, NULL);
   msg_subscribe(l, MSG_API_FW_UPDATE_CHECK, NULL);
@@ -147,7 +148,6 @@ web_api_init()
   msg_subscribe(l, MSG_SENSOR_SAMPLE, NULL);
   msg_subscribe(l, MSG_SENSOR_SETTINGS, NULL);
   msg_subscribe(l, MSG_OUTPUT_SETTINGS, NULL);
-  msg_subscribe(l, MSG_HEALTH_CHECK, NULL);
 }
 
 const api_status_t*
@@ -183,10 +183,6 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
 
     case MSG_IDLE:
       web_api_idle(api);
-      break;
-
-    case MSG_HEALTH_CHECK:
-      /* just return to prove we are still alive */
       break;
 
     default:

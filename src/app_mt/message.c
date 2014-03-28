@@ -1,6 +1,7 @@
 
 #include "message.h"
 #include "common.h"
+#include "thread_watchdog.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,6 +13,7 @@ typedef struct msg_listener_s {
   thread_msg_dispatch_t dispatch;
   systime_t timeout;
   void* user_data;
+  bool watchdog_enabled;
 } msg_listener_t;
 
 typedef struct msg_subscription_s {
@@ -45,8 +47,16 @@ msg_listener_create(const char* name, int stack_size, thread_msg_dispatch_t disp
   l->dispatch = dispatch;
   l->timeout = TIME_INFINITE;
   l->user_data = user_data;
+  l->watchdog_enabled = false;
   l->thread = chThdCreateFromHeap(NULL, stack_size, NORMALPRIO, msg_thread_func, l);
   return l;
+}
+
+void
+msg_listener_enable_watchdog(msg_listener_t* l, uint32_t period)
+{
+  l->watchdog_enabled = true;
+  thread_watchdog_enable(l->thread, MS2ST(period));
 }
 
 void
@@ -72,6 +82,8 @@ msg_thread_func(void* arg)
     else {
       l->dispatch(MSG_IDLE, NULL, l->user_data, NULL);
     }
+    if (l->watchdog_enabled)
+      thread_watchdog_kick();
   }
 
   return 0;

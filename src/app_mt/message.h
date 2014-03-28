@@ -7,8 +7,6 @@
 typedef enum {
   MSG_IDLE,
 
-  MSG_HEALTH_CHECK,
-
   MSG_TOUCH_INPUT,
 
   MSG_SENSOR_SAMPLE,
@@ -61,6 +59,9 @@ typedef void (*thread_msg_dispatch_t)(msg_id_t id, void* msg_data, void* listene
 
 msg_listener_t*
 msg_listener_create(const char* name, int stack_size, thread_msg_dispatch_t dispatch, void* user_data);
+
+void
+msg_listener_enable_watchdog(msg_listener_t* l, uint32_t period);
 
 void
 msg_listener_set_idle_timeout(msg_listener_t* l, uint32_t idle_timeout);

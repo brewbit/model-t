@@ -15,7 +15,7 @@
 #include "net.h"
 #include "sntp.h"
 #include "ota_update.h"
-#include "watchdog.h"
+#include "thread_watchdog.h"
 #include <chprintf.h>
 
 #include <stdio.h>
@@ -68,7 +68,7 @@ main(void)
   web_api_init();
   sntp_init();
   gui_init();
-  watchdog_init();
+  thread_watchdog_init();
 
   widget_t* home_screen = home_screen_create();
   gui_push_screen(home_screen);
