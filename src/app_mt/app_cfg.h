@@ -57,4 +57,7 @@ app_cfg_get_temp_profile(uint32_t temp_profile_id);
 void
 app_cfg_set_temp_profile(const temp_profile_t* profile, uint32_t index);
 
+uint32_t
+app_cfg_get_reset_count(void);
+
 #endif

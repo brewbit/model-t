@@ -56,6 +56,10 @@ main(void)
   rngStart(&RNGD);
 
   app_cfg_init();
+
+  int resets = app_cfg_get_reset_count();
+  printf("Reset Count: %d\r\n", resets);
+
   gfx_init();
   touch_init();
   temp_control_init();

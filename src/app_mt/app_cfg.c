@@ -11,6 +11,7 @@
 
 
 typedef struct {
+  uint32_t reset_count;
   unit_t temp_unit;
   matrix_t touch_calib;
   sensor_settings_t sensor_settings[NUM_SENSORS];
@@ -45,8 +46,11 @@ app_cfg_init()
 
   if (app_cfg_stored.crc == calc_crc) {
     app_cfg_local = app_cfg_stored;
+    app_cfg_local.data.reset_count++;
   }
   else {
+    app_cfg_local.data.reset_count = 0;
+
     app_cfg_local.data.temp_unit = UNIT_TEMP_DEG_F;
 
     touch_calib_reset();
@@ -268,4 +272,10 @@ app_cfg_set_temp_profile(const temp_profile_t* profile, uint32_t index)
   chMtxLock(&app_cfg_mtx);
   app_cfg_local.data.temp_profiles[index] = *profile;
   chMtxUnlock();
+}
+
+uint32_t
+app_cfg_get_reset_count(void)
+{
+  return app_cfg_local.data.reset_count;
 }
