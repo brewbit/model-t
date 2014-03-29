@@ -139,7 +139,7 @@ hci_data_send(unsigned char ucOpcode,
 void hci_data_command_send(unsigned short usOpcode, unsigned char *pucBuff,
                      unsigned char ucArgsLength,unsigned short ucDataLength)
 { 
-   unsigned char *stream = (pucBuff + SPI_HEADER_SIZE);
+  unsigned char *stream = (pucBuff + SPI_HEADER_SIZE);
 
   UINT8_TO_STREAM(stream, HCI_TYPE_DATA);
   UINT8_TO_STREAM(stream, usOpcode);
@@ -169,7 +169,7 @@ void hci_data_command_send(unsigned short usOpcode, unsigned char *pucBuff,
 void
 hci_patch_send(unsigned char ucOpcode, unsigned char *pucBuff, char *patch, unsigned short usDataLength)
 { 
-   unsigned char *data_ptr = (pucBuff + SPI_HEADER_SIZE);
+  unsigned char *data_ptr = (pucBuff + SPI_HEADER_SIZE);
   unsigned short usTransLength;
   unsigned char *stream = (pucBuff + SPI_HEADER_SIZE);
 
@@ -177,8 +177,7 @@ hci_patch_send(unsigned char ucOpcode, unsigned char *pucBuff, char *patch, unsi
   UINT8_TO_STREAM(stream, ucOpcode);
   stream = UINT16_TO_STREAM(stream, usDataLength + SIMPLE_LINK_HCI_PATCH_HEADER_SIZE);
 
-  if (usDataLength <= SL_PATCH_PORTION_SIZE)
-  {
+  if (usDataLength <= SL_PATCH_PORTION_SIZE) {
     UINT16_TO_STREAM(stream, usDataLength);
     stream = UINT16_TO_STREAM(stream, usDataLength);
     memcpy((pucBuff + SPI_HEADER_SIZE) + HCI_PATCH_HEADER_SIZE, patch, usDataLength);
@@ -186,9 +185,7 @@ hci_patch_send(unsigned char ucOpcode, unsigned char *pucBuff, char *patch, unsi
     // Update the opcode of the event we will be waiting for
     spi_write(pucBuff, usDataLength + HCI_PATCH_HEADER_SIZE);
   }
-  else
-  {
-
+  else {
     usTransLength = (usDataLength/SL_PATCH_PORTION_SIZE);
     UINT16_TO_STREAM(stream, usDataLength + SIMPLE_LINK_HCI_PATCH_HEADER_SIZE + usTransLength*SIMPLE_LINK_HCI_PATCH_HEADER_SIZE);
     stream = UINT16_TO_STREAM(stream, SL_PATCH_PORTION_SIZE);
@@ -199,16 +196,13 @@ hci_patch_send(unsigned char ucOpcode, unsigned char *pucBuff, char *patch, unsi
     // Update the opcode of the event we will be waiting for
     spi_write(pucBuff, SL_PATCH_PORTION_SIZE + HCI_PATCH_HEADER_SIZE);
 
-    while (usDataLength)
-    {
-      if (usDataLength <= SL_PATCH_PORTION_SIZE)
-      {
+    while (usDataLength) {
+      if (usDataLength <= SL_PATCH_PORTION_SIZE) {
         usTransLength = usDataLength;
         usDataLength = 0;
 
       }
-      else
-      {
+      else {
         usTransLength = SL_PATCH_PORTION_SIZE;
         usDataLength -= usTransLength;
       }

@@ -199,6 +199,8 @@ spi_io_thread(void* arg)
 
       /* Read payload */
       uint16_t payload_size = (wlan_rx_buffer[3] << 8) | (wlan_rx_buffer[4]);
+      if ((payload_size & 1) == 0)
+        payload_size++;
 
       if (payload_size)
         spiReceive(SPI_WLAN, payload_size, wlan_rx_buffer + SPI_HEADER_SIZE);
@@ -208,6 +210,7 @@ spi_io_thread(void* arg)
       /* Dispatch the data to the HCI module */
       hci_dispatch_packet(wlan_rx_buffer + SPI_HEADER_SIZE, payload_size);
     }
+    chThdSleepMilliseconds(5);
   }
 
   return 0;
