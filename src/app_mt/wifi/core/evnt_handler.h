@@ -68,7 +68,7 @@ extern "C" {
 extern long hci_unsolicited_event_handler(void);
 
 void
-hci_dispatch_packet(void *pvBuffer);
+hci_dispatch_packet(uint8_t* buffer, uint16_t buffer_size);
 
 #define M_BSD_RESP_PARAMS_OFFSET(hci_event_hdr)((char *)(hci_event_hdr) + HCI_EVENT_HEADER_SIZE)
 

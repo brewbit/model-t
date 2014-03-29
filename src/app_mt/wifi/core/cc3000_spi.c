@@ -198,15 +198,15 @@ spi_io_thread(void* arg)
       spiExchange(SPI_WLAN, SPI_HEADER_SIZE, tSpiReadHeader, wlan_rx_buffer);
 
       /* Read payload */
-      uint16_t data_to_recv = (wlan_rx_buffer[3] << 8) | (wlan_rx_buffer[4]);
+      uint16_t payload_size = (wlan_rx_buffer[3] << 8) | (wlan_rx_buffer[4]);
 
-      if (data_to_recv)
-        spiReceive(SPI_WLAN, data_to_recv, wlan_rx_buffer + SPI_HEADER_SIZE);
+      if (payload_size)
+        spiReceive(SPI_WLAN, payload_size, wlan_rx_buffer + SPI_HEADER_SIZE);
 
       DEASSERT_CS();
 
       /* Dispatch the data to the HCI module */
-      hci_dispatch_packet(wlan_rx_buffer + SPI_HEADER_SIZE);
+      hci_dispatch_packet(wlan_rx_buffer + SPI_HEADER_SIZE, payload_size);
     }
   }
 

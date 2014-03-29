@@ -188,7 +188,6 @@ typedef struct
 {
   Semaphore        sem_recv;
   unsigned short   usRxEventOpcode;
-  uint8_t   *pucReceivedData;
   uint8_t   *pucTxCommandBuffer;
 
   tFWPatches       sFWPatches;
@@ -203,6 +202,10 @@ typedef struct
   unsigned short   usSlBufferLength;
   unsigned short   usBufferSize;
   unsigned short   usRxDataPending;
+
+  uint8_t *from;
+  uint8_t *fromlen;
+  void* pRetParams;
 
   unsigned long    NumberOfSentPackets;
   unsigned long    NumberOfReleasedPackets;
@@ -714,7 +717,7 @@ extern unsigned long STREAM_TO_UINT32_f(char* p, unsigned short offset);
 #define STREAM_TO_UINT16(_p, _offset)  STREAM_TO_UINT16_f((char*)_p, _offset)
 //This macro is used for copying received stream to 32 bit in little endian format.
 #define STREAM_TO_UINT32(_p, _offset)  STREAM_TO_UINT32_f((char*)_p, _offset)
-#define STREAM_TO_STREAM(p, a, l)   {register short _i; for (_i = 0; _i < l; _i++) *(a)++= ((uint8_t *) p)[_i];}
+#define STREAM_TO_STREAM(p, a, l)   memcpy(a, p, l)
 
 
 

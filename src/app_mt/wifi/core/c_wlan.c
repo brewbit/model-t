@@ -228,7 +228,6 @@ c_wlan_start(unsigned short usPatchesAvailableAtHost)
     tSLInformation.usBufferSize = 0;
     tSLInformation.usRxDataPending = 0;
     tSLInformation.slTransmitDataError = 0;
-    tSLInformation.pucReceivedData = 0;
     
     chSemInit(&tSLInformation.sem_recv, 0);
 
