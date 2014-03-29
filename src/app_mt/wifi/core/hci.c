@@ -141,11 +141,13 @@ update_socket_active_status(char *resp_params);
 //!  @brief               Initiate an HCI command.
 //
 //*****************************************************************************
-unsigned short 
-hci_command_send(unsigned short usOpcode, unsigned char *pucBuff,
-                     unsigned char ucArgsLength)
+uint16_t
+hci_command_send(
+    uint16_t usOpcode,
+    uint8_t *pucBuff,
+    uint8_t ucArgsLength)
 { 
-  unsigned char *stream;
+  uint8_t *stream;
 
   stream = (pucBuff + SPI_HEADER_SIZE);
 
@@ -175,14 +177,15 @@ hci_command_send(unsigned short usOpcode, unsigned char *pucBuff,
 //
 //*****************************************************************************
 long
-hci_data_send(unsigned char ucOpcode, 
-              unsigned char *ucArgs,
-              unsigned short usArgsLength,
-              unsigned short usDataLength,
-              const unsigned char *ucTail,
-              unsigned short usTailLength)
+hci_data_send(
+    uint8_t ucOpcode,
+    uint8_t *ucArgs,
+    uint16_t usArgsLength,
+    uint16_t usDataLength,
+    const uint8_t *ucTail,
+    uint16_t usTailLength)
 {
-  unsigned char *stream;
+  uint8_t *stream;
 
   (void)ucTail;
 
@@ -214,10 +217,13 @@ hci_data_send(unsigned char ucOpcode,
 //!  @brief              Prepeare HCI header and initiate an HCI data write operation
 //
 //*****************************************************************************
-void hci_data_command_send(unsigned short usOpcode, unsigned char *pucBuff,
-                     unsigned char ucArgsLength,unsigned short ucDataLength)
+void hci_data_command_send(
+    uint16_t usOpcode,
+    uint8_t *pucBuff,
+    uint8_t ucArgsLength,
+    uint16_t ucDataLength)
 { 
-  unsigned char *stream = (pucBuff + SPI_HEADER_SIZE);
+  uint8_t *stream = (pucBuff + SPI_HEADER_SIZE);
 
   UINT8_TO_STREAM(stream, HCI_TYPE_DATA);
   UINT8_TO_STREAM(stream, usOpcode);
@@ -245,11 +251,15 @@ void hci_data_command_send(unsigned short usOpcode, unsigned char *pucBuff,
 //
 //*****************************************************************************
 void
-hci_patch_send(unsigned char ucOpcode, unsigned char *pucBuff, char *patch, unsigned short usDataLength)
+hci_patch_send(
+    uint8_t ucOpcode,
+    uint8_t *pucBuff,
+    char *patch,
+    uint16_t usDataLength)
 { 
-  unsigned char *data_ptr = (pucBuff + SPI_HEADER_SIZE);
-  unsigned short usTransLength;
-  unsigned char *stream = (pucBuff + SPI_HEADER_SIZE);
+  uint8_t *data_ptr = (pucBuff + SPI_HEADER_SIZE);
+  uint16_t usTransLength;
+  uint8_t *stream = (pucBuff + SPI_HEADER_SIZE);
 
   UINT8_TO_STREAM(stream, HCI_TYPE_PATCH);
   UINT8_TO_STREAM(stream, ucOpcode);
@@ -285,12 +295,12 @@ hci_patch_send(unsigned char ucOpcode, unsigned char *pucBuff, char *patch, unsi
         usDataLength -= usTransLength;
       }
 
-      *(unsigned short *)data_ptr = usTransLength;
+      *(uint16_t *)data_ptr = usTransLength;
       memcpy(data_ptr + SIMPLE_LINK_HCI_PATCH_HEADER_SIZE, patch, usTransLength);
       patch += usTransLength;
 
       // Update the opcode of the event we will be waiting for
-      spi_write((unsigned char *)data_ptr, usTransLength + sizeof(usTransLength));
+      spi_write((uint8_t *)data_ptr, usTransLength + sizeof(usTransLength));
     }
   }
 }
@@ -313,7 +323,9 @@ hci_patch_send(unsigned char ucOpcode, unsigned char *pucBuff, char *patch, unsi
 //
 //*****************************************************************************
 void
-hci_dispatch_packet(uint8_t* buffer, uint16_t buffer_size)
+hci_dispatch_packet(
+    uint8_t* buffer,
+    uint16_t buffer_size)
 {
   uint8_t type = buffer[0];
 
@@ -332,7 +344,9 @@ hci_dispatch_packet(uint8_t* buffer, uint16_t buffer_size)
 }
 
 static void
-hci_dispatch_data(uint8_t* buffer, uint16_t buffer_size)
+hci_dispatch_data(
+    uint8_t* buffer,
+    uint16_t buffer_size)
 {
   uint8_t arg_size = STREAM_TO_UINT8(buffer, HCI_PACKET_ARGSIZE_OFFSET);
   uint16_t pkt_length = STREAM_TO_UINT16(buffer, HCI_PACKET_LENGTH_OFFSET);
@@ -466,7 +480,9 @@ hci_dispatch_data(uint8_t* buffer, uint16_t buffer_size)
 //
 //*****************************************************************************
 static void
-hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
+hci_dispatch_event(
+    uint8_t* event_hdr,
+    uint16_t event_size)
 {
   char * data = NULL;
   uint32_t retValue32;
@@ -766,7 +782,8 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
 //
 //*****************************************************************************
 static int32_t
-hci_event_unsol_flowcontrol_handler(uint8_t* pEvent)
+hci_event_unsol_flowcontrol_handler(
+    uint8_t* pEvent)
 {
   int32_t temp, value;
   uint16_t i;
@@ -801,7 +818,8 @@ hci_event_unsol_flowcontrol_handler(uint8_t* pEvent)
 //
 //*****************************************************************************
 static void
-update_socket_active_status(char *resp_params)
+update_socket_active_status(
+    char *resp_params)
 {
   int32_t status, sd;
 
@@ -826,7 +844,9 @@ update_socket_active_status(char *resp_params)
 //
 //*****************************************************************************
 void
-hci_wait_for_event(uint16_t usOpcode, void *pRetParams)
+hci_wait_for_event(
+    uint16_t usOpcode,
+    void *pRetParams)
 {
   // In the blocking implementation the control to caller will be returned only
   // after the end of current transaction
@@ -850,7 +870,10 @@ hci_wait_for_event(uint16_t usOpcode, void *pRetParams)
 //
 //*****************************************************************************
 void
-hci_wait_for_data(uint8_t *pBuf, uint8_t *from, uint8_t *fromlen)
+hci_wait_for_data(
+    uint8_t *pBuf,
+    uint8_t *from,
+    uint8_t *fromlen)
 {
   // In the blocking implementation the control to caller will be returned only
   // after the end of current transaction, i.e. only after data will be received

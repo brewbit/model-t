@@ -54,9 +54,9 @@ typedef struct _bsd_accept_return_t {
 
 
 typedef struct _bsd_read_return_t {
-  long             iSocketDescriptor;
-  long             iNumberOfBytes;
-  unsigned long   uiFlags;
+  long iSocketDescriptor;
+  long iNumberOfBytes;
+  unsigned long uiFlags;
 } tBsdReadReturnParams;
 
 #define BSD_RECV_FROM_FROMLEN_OFFSET  (4)
