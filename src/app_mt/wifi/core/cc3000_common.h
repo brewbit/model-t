@@ -717,7 +717,6 @@ extern unsigned long STREAM_TO_UINT32_f(char* p, unsigned short offset);
 #define STREAM_TO_UINT16(_p, _offset)  STREAM_TO_UINT16_f((char*)_p, _offset)
 //This macro is used for copying received stream to 32 bit in little endian format.
 #define STREAM_TO_UINT32(_p, _offset)  STREAM_TO_UINT32_f((char*)_p, _offset)
-#define STREAM_TO_STREAM(p, a, l)   memcpy(a, p, l)
 
 
 

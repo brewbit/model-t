@@ -128,7 +128,7 @@ uint32_t socket_active_status = SOCKET_STATUS_INIT_VAL;
 //hci_unsol_handle_patch_request(char *event_hdr);
 
 static void
-hci_event_handler(void);
+hci_wait_response(void);
 
 static void
 hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size);
@@ -287,7 +287,7 @@ hci_dispatch_data(uint8_t* buffer, uint16_t buffer_size)
 
 //*****************************************************************************
 //
-//!  hci_event_handler
+//!  hci_wait_response
 //!
 //!  @param  pRetParams     incoming data buffer
 //!  @param  from           from information (in case of data received)
@@ -300,7 +300,7 @@ hci_dispatch_data(uint8_t* buffer, uint16_t buffer_size)
 //
 //*****************************************************************************
 static void
-hci_event_handler()
+hci_wait_response()
 {
   while (1) {
     chSemWait(&tSLInformation.sem_recv);
@@ -376,19 +376,19 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
         data = (char*)(event_hdr) + HCI_EVENT_HEADER_SIZE;
 
         //Read IP address
-        STREAM_TO_STREAM(data,recParams,NETAPP_IPCONFIG_IP_LENGTH);
+        memcpy(recParams, data, NETAPP_IPCONFIG_IP_LENGTH);
         data += 4;
         //Read subnet
-        STREAM_TO_STREAM(data,recParams,NETAPP_IPCONFIG_IP_LENGTH);
+        memcpy(recParams, data, NETAPP_IPCONFIG_IP_LENGTH);
         data += 4;
         //Read default GW
-        STREAM_TO_STREAM(data,recParams,NETAPP_IPCONFIG_IP_LENGTH);
+        memcpy(recParams, data, NETAPP_IPCONFIG_IP_LENGTH);
         data += 4;
         //Read DHCP server
-        STREAM_TO_STREAM(data,recParams,NETAPP_IPCONFIG_IP_LENGTH);
+        memcpy(recParams, data, NETAPP_IPCONFIG_IP_LENGTH);
         data += 4;
         //Read DNS server
-        STREAM_TO_STREAM(data,recParams,NETAPP_IPCONFIG_IP_LENGTH);
+        memcpy(recParams, data, NETAPP_IPCONFIG_IP_LENGTH);
         // read the status
         *recParams = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
 
@@ -577,34 +577,33 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
 
     case HCI_NETAPP_IPCONFIG:
       //Read IP address
-      STREAM_TO_STREAM(pucReceivedParams,tSLInformation.pRetParams,NETAPP_IPCONFIG_IP_LENGTH);
-      pucReceivedParams += 4;
+      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+      pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
 
       //Read subnet
-      STREAM_TO_STREAM(pucReceivedParams,tSLInformation.pRetParams,NETAPP_IPCONFIG_IP_LENGTH);
-      pucReceivedParams += 4;
+      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+      pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
 
       //Read default GW
-      STREAM_TO_STREAM(pucReceivedParams,tSLInformation.pRetParams,NETAPP_IPCONFIG_IP_LENGTH);
-      pucReceivedParams += 4;
+      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+      pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
 
       //Read DHCP server
-      STREAM_TO_STREAM(pucReceivedParams,tSLInformation.pRetParams,NETAPP_IPCONFIG_IP_LENGTH);
-      pucReceivedParams += 4;
+      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+      pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
 
       //Read DNS server
-      STREAM_TO_STREAM(pucReceivedParams,tSLInformation.pRetParams,NETAPP_IPCONFIG_IP_LENGTH);
-      pucReceivedParams += 4;
+      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+      pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
 
       //Read Mac address
-      STREAM_TO_STREAM(pucReceivedParams,tSLInformation.pRetParams,NETAPP_IPCONFIG_MAC_LENGTH);
-      pucReceivedParams += 6;
+      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_MAC_LENGTH);
+      pucReceivedParams += NETAPP_IPCONFIG_MAC_LENGTH;
 
       //Read SSID
-      STREAM_TO_STREAM(pucReceivedParams,tSLInformation.pRetParams,NETAPP_IPCONFIG_SSID_LENGTH);
+      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_SSID_LENGTH);
       break;
 
-    //'default' case which means "event not supported"
     default:
       break;
   }
@@ -688,11 +687,10 @@ hci_event_unsol_flowcontrol_handler(uint8_t* pEvent)
 //
 //*****************************************************************************
 long
-get_socket_active_status(long Sd)
+get_socket_active_status(long sd)
 {
-  if(M_IS_VALID_SD(Sd))
-  {
-    return (socket_active_status & (1 << Sd)) ? SOCKET_STATUS_INACTIVE : SOCKET_STATUS_ACTIVE;
+  if(M_IS_VALID_SD(sd)) {
+    return (socket_active_status & (1 << sd)) ? SOCKET_STATUS_INACTIVE : SOCKET_STATUS_ACTIVE;
   }
   return SOCKET_STATUS_INACTIVE;
 }
@@ -715,8 +713,7 @@ update_socket_active_status(char *resp_params)
   sd = STREAM_TO_UINT32(resp_params, BSD_RSP_PARAMS_SOCKET_OFFSET);
   status = STREAM_TO_UINT32(resp_params, BSD_RSP_PARAMS_STATUS_OFFSET);
 
-  if(ERROR_SOCKET_INACTIVE == status)
-  {
+  if(ERROR_SOCKET_INACTIVE == status) {
     set_socket_active_status(sd, SOCKET_STATUS_INACTIVE);
   }
 }
@@ -731,7 +728,7 @@ update_socket_active_status(char *resp_params)
 //!
 //!  @return               none
 //!
-//!  @brief                Wait for event, pass it to the hci_event_handler and
+//!  @brief                Wait for event, pass it to the hci_wait_response and
 //!                        update the event opcode in a global variable.
 //
 //*****************************************************************************
@@ -744,7 +741,7 @@ SimpleLinkWaitEvent(unsigned short usOpcode, void *pRetParams)
   tSLInformation.fromlen = NULL;
   tSLInformation.pRetParams = pRetParams;
   tSLInformation.usRxEventOpcode = usOpcode;
-  hci_event_handler();
+  hci_wait_response();
 }
 
 //*****************************************************************************
@@ -757,7 +754,7 @@ SimpleLinkWaitEvent(unsigned short usOpcode, void *pRetParams)
 //!
 //!  @return               none
 //!
-//!  @brief                Wait for data, pass it to the hci_event_handler
+//!  @brief                Wait for data, pass it to the hci_wait_response
 //!              and update in a global variable that there is
 //!               data to read.
 //
@@ -771,7 +768,7 @@ SimpleLinkWaitData(uint8_t *pBuf, uint8_t *from, uint8_t *fromlen)
   tSLInformation.fromlen = fromlen;
   tSLInformation.pRetParams = pBuf;
   tSLInformation.usRxDataPending = 1;
-  hci_event_handler();
+  hci_wait_response();
 }
 
 //*****************************************************************************
