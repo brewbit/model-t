@@ -108,9 +108,6 @@
 //            Prototypes for the static functions
 //*****************************************************************************
 
-//static void
-//hci_unsol_handle_patch_request(char *event_hdr);
-
 static void
 hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size);
 
@@ -382,7 +379,7 @@ hci_dispatch_data(
 
 //*****************************************************************************
 //
-//!  hci_unsol_handle_patch_request
+//!  hci_send_patch
 //!
 //!  @param  event_hdr  event header
 //!
@@ -391,74 +388,66 @@ hci_dispatch_data(
 //!  @brief   Handle unsolicited event from type patch request
 //
 //*****************************************************************************
-//static void
-//hci_unsol_handle_patch_request(char *event_hdr)
-//{
-//  char *params = (char *)(event_hdr) + HCI_EVENT_HEADER_SIZE;
-//  uint32_t ucLength = 0;
-//  char *patch;
-//
-//  switch (*params)
-//  {
-//  case HCI_EVENT_PATCHES_DRV_REQ:
-//
-//    if (tSLInformation.sDriverPatches)
-//    {
-//      patch = tSLInformation.sDriverPatches(&ucLength);
-//
-//      if (patch)
-//      {
-//        hci_patch_send(HCI_EVENT_PATCHES_DRV_REQ,
-//                       tSLInformation.pucTxCommandBuffer, patch, ucLength);
-//        return;
-//      }
-//    }
-//
-//    // Send 0 length Patches response event
-//    hci_patch_send(HCI_EVENT_PATCHES_DRV_REQ,
-//                   tSLInformation.pucTxCommandBuffer, 0, 0);
-//    break;
-//
-//  case HCI_EVENT_PATCHES_FW_REQ:
-//
-//    if (tSLInformation.sFWPatches)
-//    {
-//      patch = tSLInformation.sFWPatches(&ucLength);
-//
-//      // Build and send a patch
-//      if (patch)
-//      {
-//        hci_patch_send(HCI_EVENT_PATCHES_FW_REQ,
-//                       tSLInformation.pucTxCommandBuffer, patch, ucLength);
-//        return;
-//      }
-//    }
-//
-//    // Send 0 length Patches response event
-//    hci_patch_send(HCI_EVENT_PATCHES_FW_REQ,
-//                   tSLInformation.pucTxCommandBuffer, 0, 0);
-//    break;
-//
-//  case HCI_EVENT_PATCHES_BOOTLOAD_REQ:
-//
-//    if (tSLInformation.sBootLoaderPatches)
-//    {
-//      patch = tSLInformation.sBootLoaderPatches(&ucLength);
-//
-//      if (patch)
-//      {
-//        hci_patch_send(HCI_EVENT_PATCHES_BOOTLOAD_REQ,
-//                       tSLInformation.pucTxCommandBuffer, patch, ucLength);
-//        return;
-//      }
-//    }
-//
-//    // Send 0 length Patches response event
-//    hci_patch_send(HCI_EVENT_PATCHES_BOOTLOAD_REQ,
-//                   tSLInformation.pucTxCommandBuffer, 0, 0);
-//    break;
-//  }
-//}
+void
+hci_send_patch(uint8_t patch_type)
+{
+  uint32_t ucLength = 0;
+  char *patch;
+
+  switch (patch_type) {
+  case HCI_EVENT_PATCHES_DRV_REQ:
+    if (tSLInformation.sDriverPatches) {
+      patch = tSLInformation.sDriverPatches(&ucLength);
+
+      if (patch) {
+        hci_patch_send(HCI_EVENT_PATCHES_DRV_REQ,
+                       tSLInformation.pucTxCommandBuffer, patch, ucLength);
+        return;
+      }
+    }
+
+    // Send 0 length Patches response event
+    hci_patch_send(HCI_EVENT_PATCHES_DRV_REQ,
+                   tSLInformation.pucTxCommandBuffer, 0, 0);
+    break;
+
+  case HCI_EVENT_PATCHES_FW_REQ:
+    if (tSLInformation.sFWPatches) {
+      patch = tSLInformation.sFWPatches(&ucLength);
+
+      // Build and send a patch
+      if (patch) {
+        hci_patch_send(HCI_EVENT_PATCHES_FW_REQ,
+                       tSLInformation.pucTxCommandBuffer, patch, ucLength);
+        return;
+      }
+    }
+
+    // Send 0 length Patches response event
+    hci_patch_send(HCI_EVENT_PATCHES_FW_REQ,
+                   tSLInformation.pucTxCommandBuffer, 0, 0);
+    break;
+
+  case HCI_EVENT_PATCHES_BOOTLOAD_REQ:
+    if (tSLInformation.sBootLoaderPatches) {
+      patch = tSLInformation.sBootLoaderPatches(&ucLength);
+
+      if (patch) {
+        hci_patch_send(HCI_EVENT_PATCHES_BOOTLOAD_REQ,
+                       tSLInformation.pucTxCommandBuffer, patch, ucLength);
+        return;
+      }
+    }
+
+    // Send 0 length Patches response event
+    hci_patch_send(HCI_EVENT_PATCHES_BOOTLOAD_REQ,
+                   tSLInformation.pucTxCommandBuffer, 0, 0);
+    break;
+
+  default:
+    break;
+  }
+}
 
 
 //*****************************************************************************
@@ -741,15 +730,16 @@ hci_dispatch_event(
       }
       break;
 
+    case HCI_EVNT_PATCHES_REQ:
+      {
+        uint8_t* patch_req_type = tSLInformation.pRetParams;
+        *patch_req_type = pucReceivedParams[0];
+      }
+      break;
+
     default:
       break;
   }
-
-  // TODO can't transit from the SPI I/O thread because we will deadlock...
-  // Since we are going to TX - we need to handle this event after the
-  // ResumeSPi since we need interrupts
-//    if (opcode == HCI_EVNT_PATCHES_REQ))
-//      hci_unsol_handle_patch_request((char *)pucReceivedData);
 
   // If this is the opcode that the app was waiting for, signal them
   if (opcode == tSLInformation.usRxEventOpcode) {

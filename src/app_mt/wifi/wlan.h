@@ -140,7 +140,7 @@ extern void wlan_init(tWlanCB sWlanCB,
 //!
 //
 //*****************************************************************************
-extern void wlan_start(unsigned short usPatchesAvailableAtHost);
+extern void wlan_start(patch_load_command_t patch_load_cmd);
 
 //*****************************************************************************
 //

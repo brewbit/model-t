@@ -383,7 +383,7 @@ wlan_thread(void* arg)
 
   chRegSetThreadName("wlan");
 
-  wlan_start(0);
+  wlan_start(PATCH_LOAD_DEFAULT);
 
   {
     nvmem_sp_version_t sp_version;

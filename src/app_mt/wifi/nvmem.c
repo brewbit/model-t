@@ -48,7 +48,7 @@
 #include "core/nvmem.h"
 
 /* Handles for making the APIs asychronous and thread-safe */
-extern Mutex             g_main_mutex;
+extern Mutex g_main_mutex;
 
 //*****************************************************************************
 //
@@ -78,13 +78,13 @@ signed long
 nvmem_read(unsigned long ulFileId, unsigned long ulLength,
            unsigned long ulOffset, unsigned char *buff)
 {
-    signed long ret;
+  signed long ret;
 
-    chMtxLock(&g_main_mutex);
-    ret = c_nvmem_read(ulFileId, ulLength, ulOffset, buff);
-    chMtxUnlock();
+  chMtxLock(&g_main_mutex);
+  ret = c_nvmem_read(ulFileId, ulLength, ulOffset, buff);
+  chMtxUnlock();
 
-    return(ret);
+  return(ret);
 }
 
 //*****************************************************************************
@@ -113,13 +113,13 @@ signed long
 nvmem_write(unsigned long ulFileId, unsigned long ulLength,
             unsigned long ulEntryOffset, unsigned char *buff)
 {
-    signed long ret;
+  signed long ret;
 
-    chMtxLock(&g_main_mutex);
-    ret = c_nvmem_write(ulFileId, ulLength, ulEntryOffset, buff);
-    chMtxUnlock();
+  chMtxLock(&g_main_mutex);
+  ret = c_nvmem_write(ulFileId, ulLength, ulEntryOffset, buff);
+  chMtxUnlock();
 
-    return(ret);
+  return(ret);
 }
 
 
@@ -138,13 +138,13 @@ nvmem_write(unsigned long ulFileId, unsigned long ulLength,
 
 unsigned char nvmem_set_mac_address(unsigned char *mac)
 {
-    unsigned char ret;
+  unsigned char ret;
 
-    chMtxLock(&g_main_mutex);
-    ret = c_nvmem_set_mac_address(mac);
-    chMtxUnlock();
+  chMtxLock(&g_main_mutex);
+  ret = c_nvmem_set_mac_address(mac);
+  chMtxUnlock();
 
-    return(ret);
+  return(ret);
 }
 
 //*****************************************************************************
@@ -162,13 +162,13 @@ unsigned char nvmem_set_mac_address(unsigned char *mac)
 
 unsigned char nvmem_get_mac_address(unsigned char *mac)
 {
-    unsigned char ret;
+  unsigned char ret;
 
-    chMtxLock(&g_main_mutex);
-    ret = c_nvmem_get_mac_address(mac);
-    chMtxUnlock();
+  chMtxLock(&g_main_mutex);
+  ret = c_nvmem_get_mac_address(mac);
+  chMtxUnlock();
 
-    return(ret);
+  return(ret);
 }
 
 //*****************************************************************************
@@ -192,13 +192,13 @@ unsigned char nvmem_get_mac_address(unsigned char *mac)
 unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long spLength,
                                 const unsigned char *spData)
 {
-    unsigned char ret;
+  unsigned char ret;
 
-    chMtxLock(&g_main_mutex);
-    ret = c_nvmem_write_patch(ulFileId, spLength, spData);
-    chMtxUnlock();
+  chMtxLock(&g_main_mutex);
+  ret = c_nvmem_write_patch(ulFileId, spLength, spData);
+  chMtxUnlock();
 
-    return(ret);
+  return(ret);
 }
 
 
@@ -218,13 +218,13 @@ unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long spLength,
 //*****************************************************************************
 unsigned char nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 {
-    unsigned char ret;
+  unsigned char ret;
 
-    chMtxLock(&g_main_mutex);
-    ret = c_nvmem_read_sp_version(sp_version);
-    chMtxUnlock();
+  chMtxLock(&g_main_mutex);
+  ret = c_nvmem_read_sp_version(sp_version);
+  chMtxUnlock();
 
-    return(ret);
+  return(ret);
 }
 
 //*****************************************************************************
@@ -252,13 +252,13 @@ unsigned char nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 signed long
 nvmem_create_entry(unsigned long ulFileId, unsigned long ulNewLen)
 {
-    unsigned char ret;
+  unsigned char ret;
 
-    chMtxLock(&g_main_mutex);
-    ret = c_nvmem_create_entry(ulFileId, ulNewLen);
-    chMtxUnlock();
+  chMtxLock(&g_main_mutex);
+  ret = c_nvmem_create_entry(ulFileId, ulNewLen);
+  chMtxUnlock();
 
-    return(ret);
+  return(ret);
 }
 
 //*****************************************************************************

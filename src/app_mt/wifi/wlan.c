@@ -171,8 +171,8 @@ void wlan_init(tWlanCB               sWlanCB,
 //!
 //
 //*****************************************************************************
-
-void wlan_start(unsigned short usPatchesAvailableAtHost)
+void
+wlan_start(patch_load_command_t patch_load_cmd)
 {
   chMtxLock(&g_main_mutex);
 
@@ -189,7 +189,7 @@ void wlan_start(unsigned short usPatchesAvailableAtHost)
   chSemInit(&g_accept_semaphore, 0);
   chSemInit(&g_select_sleep_semaphore, 0);
 
-  c_wlan_start(usPatchesAvailableAtHost);
+  c_wlan_start(patch_load_cmd);
 
   g_wlan_stopped = 0;
   g_should_poll_accept = 0;
@@ -217,26 +217,26 @@ void wlan_start(unsigned short usPatchesAvailableAtHost)
 
 void wlan_stop(void)
 {
-    int i = 0;
+  int i = 0;
 
-    chMtxLock(&g_main_mutex);
+  chMtxLock(&g_main_mutex);
 
-    c_wlan_stop();
+  c_wlan_stop();
 
-    chThdTerminate(g_select_thread);
-    chSemSignal(&g_select_sleep_semaphore);
-    chThdWait(g_select_thread);
-    g_select_thread = NULL;
-    g_wlan_stopped = 1;
+  chThdTerminate(g_select_thread);
+  chSemSignal(&g_select_sleep_semaphore);
+  chThdWait(g_select_thread);
+  g_select_thread = NULL;
+  g_wlan_stopped = 1;
 
-    for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
-        g_sockets[i].sd = -1;
-        g_sockets[i].status = SOC_NOT_INITED;
-    }
+  for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
+    g_sockets[i].sd = -1;
+    g_sockets[i].status = SOC_NOT_INITED;
+  }
 
-    chMtxUnlock();
+  chMtxUnlock();
 
-    chThdSleepMilliseconds(100);
+  chThdSleepMilliseconds(100);
 }
 
 
@@ -728,8 +728,7 @@ SelectThread(void *arg)
   timeout.tv_sec = 0;
   timeout.tv_usec = (200 * 1000);          /* 200 msecs */
 
-  while (1) //run until closed by wlan_stop
-  {
+  while (1) {
     /* first check if recv/recvfrom/accept was called */
     chSemWait(&g_select_sleep_semaphore);
     /* increase the count back by one to be decreased by the original caller */
