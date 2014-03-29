@@ -119,7 +119,7 @@ long c_netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,
     hci_command_send(HCI_NETAPP_DHCP, ptr, NETAPP_DHCP_PARAMS_LEN);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_DHCP, &scRet);
+    hci_wait_for_event(HCI_NETAPP_DHCP, &scRet);
 
     return(scRet);
 }
@@ -203,7 +203,7 @@ long c_netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
     hci_command_send(HCI_NETAPP_SET_TIMERS, ptr, NETAPP_SET_TIMER_PARAMS_LEN);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_SET_TIMERS, &scRet);
+    hci_wait_for_event(HCI_NETAPP_SET_TIMERS, &scRet);
 
     return(scRet);
 }
@@ -252,7 +252,7 @@ long c_netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
     hci_command_send(HCI_NETAPP_PING_SEND, ptr, NETAPP_PING_SEND_PARAMS_LEN);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_PING_SEND, &scRet);
+    hci_wait_for_event(HCI_NETAPP_PING_SEND, &scRet);
 
     return(scRet);
 }
@@ -293,7 +293,7 @@ void c_netapp_ping_report()
     hci_command_send(HCI_NETAPP_PING_REPORT, ptr, 0);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_PING_REPORT, &scRet);
+    hci_wait_for_event(HCI_NETAPP_PING_REPORT, &scRet);
 }
 #endif
 
@@ -322,7 +322,7 @@ long c_netapp_ping_stop()
     hci_command_send(HCI_NETAPP_PING_STOP, ptr, 0);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_PING_STOP, &scRet);
+    hci_wait_for_event(HCI_NETAPP_PING_STOP, &scRet);
 
     return(scRet);
 }
@@ -365,7 +365,7 @@ void c_netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
     hci_command_send(HCI_NETAPP_IPCONFIG, ptr, 0);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_IPCONFIG, ipconfig );
+    hci_wait_for_event(HCI_NETAPP_IPCONFIG, ipconfig );
 
 }
 #else
@@ -400,7 +400,7 @@ long c_netapp_arp_flush(void)
     hci_command_send(HCI_NETAPP_ARP_FLUSH, ptr, 0);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_ARP_FLUSH, &scRet);
+    hci_wait_for_event(HCI_NETAPP_ARP_FLUSH, &scRet);
 
     return(scRet);
 }
@@ -449,7 +449,7 @@ long c_netapp_set_debug_level(unsigned long ulLevel)
     //
     // Wait for command complete event
     //
-    SimpleLinkWaitEvent(HCI_NETAPP_SET_DEBUG_LEVEL, &scRet);
+    hci_wait_for_event(HCI_NETAPP_SET_DEBUG_LEVEL, &scRet);
 
     return(scRet);
 

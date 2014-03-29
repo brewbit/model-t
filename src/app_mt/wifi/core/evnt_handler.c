@@ -136,8 +136,10 @@ update_socket_active_status(char *resp_params);
 //
 //!  hci_dispatch_packet
 //!
-//!  @param         pvBuffer - pointer to the received data buffer
-//!                      The function triggers Received event/data processing
+//!  @param         buffer - pointer to the received data buffer
+//!                 buffer_size - the size of the passed buffer
+//!
+//!                 The function triggers Received event/data processing
 //!
 //!  @param         Pointer to the received data
 //!  @return        none
@@ -650,7 +652,7 @@ update_socket_active_status(char *resp_params)
 
 //*****************************************************************************
 //
-//!  SimpleLinkWaitEvent
+//!  hci_wait_for_event
 //!
 //!  @param  usOpcode      command operation code
 //!  @param  pRetParams    command return parameters
@@ -660,7 +662,7 @@ update_socket_active_status(char *resp_params)
 //
 //*****************************************************************************
 void 
-SimpleLinkWaitEvent(uint16_t usOpcode, void *pRetParams)
+hci_wait_for_event(uint16_t usOpcode, void *pRetParams)
 {
   // In the blocking implementation the control to caller will be returned only
   // after the end of current transaction
@@ -673,7 +675,7 @@ SimpleLinkWaitEvent(uint16_t usOpcode, void *pRetParams)
 
 //*****************************************************************************
 //
-//!  SimpleLinkWaitData
+//!  hci_wait_for_data
 //!
 //!  @param  pBuf       data buffer
 //!  @param  from       from information
@@ -684,7 +686,7 @@ SimpleLinkWaitEvent(uint16_t usOpcode, void *pRetParams)
 //
 //*****************************************************************************
 void 
-SimpleLinkWaitData(uint8_t *pBuf, uint8_t *from, uint8_t *fromlen)
+hci_wait_for_data(uint8_t *pBuf, uint8_t *from, uint8_t *fromlen)
 {
   // In the blocking implementation the control to caller will be returned only
   // after the end of current transaction, i.e. only after data will be received

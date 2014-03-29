@@ -180,7 +180,7 @@ int c_socket(long domain, long type, long protocol)
   hci_command_send(HCI_CMND_SOCKET, ptr, SOCKET_OPEN_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
-  SimpleLinkWaitEvent(HCI_CMND_SOCKET, &ret);
+  hci_wait_for_event(HCI_CMND_SOCKET, &ret);
 
   // Process the event
   errno = ret;
@@ -219,7 +219,7 @@ long c_closesocket(long sd)
       ptr, SOCKET_CLOSE_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
-  SimpleLinkWaitEvent(HCI_CMND_CLOSE_SOCKET, &ret);
+  hci_wait_for_event(HCI_CMND_CLOSE_SOCKET, &ret);
   errno = ret;
 
   // since 'close' call may result in either OK (and then it closed) or error
@@ -291,7 +291,7 @@ long c_accept(long sd, sockaddr *addr, socklen_t *addrlen)
       ptr, SOCKET_ACCEPT_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
-  SimpleLinkWaitEvent(HCI_CMND_ACCEPT, &tAcceptReturnArguments);
+  hci_wait_for_event(HCI_CMND_ACCEPT, &tAcceptReturnArguments);
 
 
   // need specify return parameters!!!
@@ -355,7 +355,7 @@ long c_bind(long sd, const sockaddr *addr, long addrlen)
       ptr, SOCKET_BIND_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
-  SimpleLinkWaitEvent(HCI_CMND_BIND, &ret);
+  hci_wait_for_event(HCI_CMND_BIND, &ret);
 
   errno = ret;
 
@@ -402,7 +402,7 @@ long c_listen(long sd, long backlog)
       ptr, SOCKET_LISTEN_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
-  SimpleLinkWaitEvent(HCI_CMND_LISTEN, &ret);
+  hci_wait_for_event(HCI_CMND_LISTEN, &ret);
   errno = ret;
 
   return(ret);
@@ -453,7 +453,7 @@ c_gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* 
                                      + usNameLen - 1);
 
   // Since we are in blocking state - wait for event complete
-  SimpleLinkWaitEvent(HCI_EVNT_BSD_GETHOSTBYNAME, &ret);
+  hci_wait_for_event(HCI_EVNT_BSD_GETHOSTBYNAME, &ret);
 
   errno = ret.retVal;
 
@@ -512,7 +512,7 @@ long c_connect(long sd, const sockaddr *addr, long addrlen)
       ptr, SOCKET_CONNECT_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
-  SimpleLinkWaitEvent(HCI_CMND_CONNECT, &ret);
+  hci_wait_for_event(HCI_CMND_CONNECT, &ret);
 
   errno = ret;
 
@@ -598,7 +598,7 @@ int c_select(long nfds, wfd_set *readsds, wfd_set *writesds,
   hci_command_send(HCI_CMND_BSD_SELECT, ptr, SOCKET_SELECT_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
-  SimpleLinkWaitEvent(HCI_EVNT_SELECT, &tParams);
+  hci_wait_for_event(HCI_EVNT_SELECT, &tParams);
 
   // Update actually read FD
   if (tParams.iStatus >= 0) {
@@ -689,7 +689,7 @@ c_setsockopt(long sd, long level, long optname, const void *optval, socklen_t op
       ptr, SOCKET_SET_SOCK_OPT_PARAMS_LEN  + optlen);
 
   // Since we are in blocking state - wait for event complete
-  SimpleLinkWaitEvent(HCI_CMND_SETSOCKOPT, &ret);
+  hci_wait_for_event(HCI_CMND_SETSOCKOPT, &ret);
 
   if (ret >= 0) {
     return (0);
@@ -766,7 +766,7 @@ int c_getsockopt(long sd, long level, long optname, void *optval,
       ptr, SOCKET_GET_SOCK_OPT_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
-  SimpleLinkWaitEvent(HCI_CMND_GETSOCKOPT, &tRetParams);
+  hci_wait_for_event(HCI_CMND_GETSOCKOPT, &tRetParams);
 
   if (((signed char)tRetParams.iStatus) >= 0) {
     *optlen = 4;
@@ -820,13 +820,13 @@ simple_link_recv(long sd, void *buf, long len, long flags, sockaddr *from,
   hci_command_send(opcode,  ptr, SOCKET_RECV_FROM_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
-  SimpleLinkWaitEvent(opcode, &tSocketReadEvent);
+  hci_wait_for_event(opcode, &tSocketReadEvent);
 
   // In case the number of bytes is more then zero - read data
   if (tSocketReadEvent.iNumberOfBytes > 0) {
     // Wait for the data in a synchronous way. Here we assume that the bug is
     // big enough to store also parameters of receive from too....
-    SimpleLinkWaitData(buf, (unsigned char *)from, (unsigned char *)fromlen);
+    hci_wait_for_data(buf, (unsigned char *)from, (unsigned char *)fromlen);
     errno = 0;
     ret = tSocketReadEvent.iNumberOfBytes;
   }
@@ -985,9 +985,9 @@ simple_link_send(long sd, const void *buf, long len, long flags,
   // Initiate a HCI command
   hci_data_send(opcode, ptr, uArgSize, len,(unsigned char*)to, tolen);
   if (opcode == HCI_CMND_SENDTO)
-    SimpleLinkWaitEvent(HCI_EVNT_SENDTO, &tSocketSendEvent);
+    hci_wait_for_event(HCI_EVNT_SENDTO, &tSocketSendEvent);
   else
-    SimpleLinkWaitEvent(HCI_EVNT_SEND, &tSocketSendEvent);
+    hci_wait_for_event(HCI_EVNT_SEND, &tSocketSendEvent);
 
   return  (len);
 }
@@ -1089,7 +1089,7 @@ int c_mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsig
   hci_command_send(HCI_CMND_MDNS_ADVERTISE, pTxBuffer, SOCKET_MDNS_ADVERTISE_PARAMS_LEN + deviceServiceNameLength);
 
   // Since we are in blocking state - wait for event complete
-  SimpleLinkWaitEvent(HCI_EVNT_MDNS_ADVERTISE, &ret);
+  hci_wait_for_event(HCI_EVNT_MDNS_ADVERTISE, &ret);
 
   return ret;
 }

@@ -97,7 +97,7 @@ signed long c_nvmem_read(unsigned long ulFileId, unsigned long ulLength,
 
     // Initiate a HCI command
     hci_command_send(HCI_CMND_NVMEM_READ, ptr, NVMEM_READ_PARAMS_LEN);
-    SimpleLinkWaitEvent(HCI_CMND_NVMEM_READ, &ucStatus);
+    hci_wait_for_event(HCI_CMND_NVMEM_READ, &ucStatus);
 
     // In case there is data - read it - even if an error code is returned
    // Note: It is the user responsibility to ignore the data in case of an error code
@@ -105,7 +105,7 @@ signed long c_nvmem_read(unsigned long ulFileId, unsigned long ulLength,
     // Wait for the data in a synchronous way. Here we assume that the buffer is
     // big enough to store also parameters of nvmem
 
-    SimpleLinkWaitData(buff, 0, 0);
+    hci_wait_for_data(buff, 0, 0);
 
     return(ucStatus);
 }
@@ -155,7 +155,7 @@ signed long c_nvmem_write(unsigned long ulFileId, unsigned long ulLength, unsign
     hci_data_command_send(HCI_CMND_NVMEM_WRITE, ptr, NVMEM_WRITE_PARAMS_LEN,
                                                 ulLength);
 
-    SimpleLinkWaitEvent(HCI_EVNT_NVMEM_WRITE, &iRes);
+    hci_wait_for_event(HCI_EVNT_NVMEM_WRITE, &iRes);
 
     return(iRes);
 }
@@ -267,7 +267,7 @@ unsigned char c_nvmem_read_sp_version(unsigned char* patchVer)
 
    // Initiate a HCI command, no args are required
     hci_command_send(HCI_CMND_READ_SP_VERSION, ptr, 0);
-    SimpleLinkWaitEvent(HCI_CMND_READ_SP_VERSION, retBuf);
+    hci_wait_for_event(HCI_CMND_READ_SP_VERSION, retBuf);
 
     // package ID
     *patchVer = retBuf[3];
@@ -316,7 +316,7 @@ signed long c_nvmem_create_entry(unsigned long ulFileId, unsigned long ulNewLen)
     // Initiate a HCI command
     hci_command_send(HCI_CMND_NVMEM_CREATE_ENTRY,ptr, NVMEM_CREATE_PARAMS_LEN);
 
-    SimpleLinkWaitEvent(HCI_CMND_NVMEM_CREATE_ENTRY, &retval);
+    hci_wait_for_event(HCI_CMND_NVMEM_CREATE_ENTRY, &retval);
 
     return(retval);
 }

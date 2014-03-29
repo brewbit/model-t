@@ -598,41 +598,6 @@ extern sSimplLinkInformation tSLInformation;
 // Prototypes for the APIs.
 //*****************************************************************************
 
-
-//*****************************************************************************
-//
-//!  SimpleLinkWaitEvent
-//!
-//!  @param  usOpcode      command operation code
-//!  @param  pRetParams    command return parameters
-//!
-//!  @return               none
-//!
-//!  @brief                Wait for event, pass it to the hci_event_handler and
-//!                        update the event opcode in a global variable.
-//
-//*****************************************************************************
-
-extern void SimpleLinkWaitEvent(unsigned short usOpcode, void *pRetParams);
-
-//*****************************************************************************
-//
-//!  SimpleLinkWaitData
-//!
-//!  @param  pBuf       data buffer
-//!  @param  from       from information
-//!  @param  fromlen    from information length
-//!
-//!  @return               none
-//!
-//!  @brief                Wait for data, pass it to the hci_event_handler
-//!                        and update in a global variable that there is
-//!                        data to read.
-//
-//*****************************************************************************
-
-extern void SimpleLinkWaitData(uint8_t *pBuf, uint8_t *from, uint8_t *fromlen);
-
 //*****************************************************************************
 //
 //!  UINT32_TO_STREAM_f

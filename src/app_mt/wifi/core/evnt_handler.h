@@ -55,63 +55,93 @@ extern "C" {
 
 //*****************************************************************************
 //
-//!  hci_unsolicited_event_handler
+//!  hci_wait_for_event
 //!
-//!  @param None
+//!  @param  usOpcode      command operation code
+//!  @param  pRetParams    command return parameters
 //!
-//!  @return         ESUCCESS if successful, EFAIL if an error occurred
+//!  @return               none
 //!
-//!  @brief          Parse the incoming unsolicited event packets and issues 
-//!                  corresponding event handler.
+//!  @brief                Wait for event, pass it to the hci_event_handler and
+//!                        update the event opcode in a global variable.
 //
 //*****************************************************************************
-extern long hci_unsolicited_event_handler(void);
+void
+hci_wait_for_event(unsigned short usOpcode, void *pRetParams);
 
+//*****************************************************************************
+//
+//!  hci_wait_for_data
+//!
+//!  @param  pBuf       data buffer
+//!  @param  from       from information
+//!  @param  fromlen    from information length
+//!
+//!  @return               none
+//!
+//!  @brief                Wait for data, pass it to the hci_event_handler
+//!                        and update in a global variable that there is
+//!                        data to read.
+//
+//*****************************************************************************
+void
+hci_wait_for_data(uint8_t *pBuf, uint8_t *from, uint8_t *fromlen);
+
+//*****************************************************************************
+//
+//!  hci_dispatch_packet
+//!
+//!  @param         buffer - pointer to the received data buffer
+//!                 buffer_size - the size of the passed buffer
+//!
+//!                 The function triggers Received event/data processing
+//!
+//!  @param         Pointer to the received data
+//!  @return        none
+//!
+//!  @brief         The function triggers Received event/data processing. It is
+//!                       called from the SPI library to receive the data
+//
+//*****************************************************************************
 void
 hci_dispatch_packet(uint8_t* buffer, uint16_t buffer_size);
 
 #define M_BSD_RESP_PARAMS_OFFSET(hci_event_hdr)((char *)(hci_event_hdr) + HCI_EVENT_HEADER_SIZE)
 
 
-typedef struct _bsd_accept_return_t
-{
-    long             iSocketDescriptor;
-    long             iStatus;
-    sockaddr       tSocketAddress;
-    
+typedef struct _bsd_accept_return_t {
+  long iSocketDescriptor;
+  long iStatus;
+  sockaddr tSocketAddress;
 } tBsdReturnParams;
 
 
-typedef struct _bsd_read_return_t
-{
-    long             iSocketDescriptor;
-    long             iNumberOfBytes;
-    unsigned long   uiFlags;
+typedef struct _bsd_read_return_t {
+  long             iSocketDescriptor;
+  long             iNumberOfBytes;
+  unsigned long   uiFlags;
 } tBsdReadReturnParams;
 
 #define BSD_RECV_FROM_FROMLEN_OFFSET  (4)
 #define BSD_RECV_FROM_FROM_OFFSET    (16)
 
 
-typedef struct _bsd_select_return_t
-{
-    long          iStatus;
-  unsigned long       uiRdfd;
-  unsigned long       uiWrfd;
-  unsigned long       uiExfd;
+typedef struct _bsd_select_return_t {
+  long iStatus;
+  unsigned long uiRdfd;
+  unsigned long uiWrfd;
+  unsigned long uiExfd;
 } tBsdSelectRecvParams;
 
 
-typedef struct _bsd_getsockopt_return_t
-{
-  unsigned char      ucOptValue[4];
-  char            iStatus;
+typedef struct _bsd_getsockopt_return_t {
+  unsigned char ucOptValue[4];
+  char iStatus;
 } tBsdGetSockOptReturnParams;
 
-typedef struct _bsd_gethostbyname_return_t
-{
-    long             retVal;
-    long             outputAddress;
+typedef struct _bsd_gethostbyname_return_t {
+  long retVal;
+  long outputAddress;
 } tBsdGethostbynameParams;
 
 //*****************************************************************************

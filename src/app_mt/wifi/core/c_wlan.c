@@ -119,7 +119,7 @@ static void SimpleLink_Init_Start(unsigned short usPatchesAvailableAtHost)
 
     // IRQ Line asserted - send HCI_CMND_SIMPLE_LINK_START to CC3000
     hci_command_send(HCI_CMND_SIMPLE_LINK_START, ptr, WLAN_SL_INIT_START_PARAMS_LEN);
-    SimpleLinkWaitEvent(HCI_CMND_SIMPLE_LINK_START, 0);
+    hci_wait_for_event(HCI_CMND_SIMPLE_LINK_START, 0);
 }
 
 
@@ -244,7 +244,7 @@ c_wlan_start(unsigned short usPatchesAvailableAtHost)
 
     // Read Buffer's size and finish
     hci_command_send(HCI_CMND_READ_BUFFER_SIZE, tSLInformation.pucTxCommandBuffer, 0);
-    SimpleLinkWaitEvent(HCI_CMND_READ_BUFFER_SIZE, 0);
+    hci_wait_for_event(HCI_CMND_READ_BUFFER_SIZE, 0);
 }
 
 
@@ -351,7 +351,7 @@ long c_wlan_connect(unsigned long ulSecType, const char *ssid, long ssid_len,
                                      ssid_len + key_len - 1);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_CMND_WLAN_CONNECT, &ret);
+    hci_wait_for_event(HCI_CMND_WLAN_CONNECT, &ret);
     errno = ret;
 
     return(ret);
@@ -385,7 +385,7 @@ long c_wlan_connect(char *ssid, long ssid_len)
                                      ssid_len  - 1);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_CMND_WLAN_CONNECT, &ret);
+    hci_wait_for_event(HCI_CMND_WLAN_CONNECT, &ret);
     errno = ret;
 
     return(ret);
@@ -414,7 +414,7 @@ long c_wlan_disconnect(void)
     hci_command_send(HCI_CMND_WLAN_DISCONNECT, ptr, 0);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_CMND_WLAN_DISCONNECT, &ret);
+    hci_wait_for_event(HCI_CMND_WLAN_DISCONNECT, &ret);
     errno = ret;
 
     return(ret);
@@ -473,7 +473,7 @@ long c_wlan_ioctl_set_connection_policy(unsigned long should_connect_to_open_ap,
                     ptr, WLAN_SET_CONNECTION_POLICY_PARAMS_LEN);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_CMND_WLAN_IOCTL_SET_CONNECTION_POLICY, &ret);
+    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_SET_CONNECTION_POLICY, &ret);
 
     return(ret);
 }
@@ -626,7 +626,7 @@ long c_wlan_add_profile(unsigned long ulSecType,
         ptr, arg_len);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_CMND_WLAN_IOCTL_ADD_PROFILE, &ret);
+    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_ADD_PROFILE, &ret);
 
     return(ret);
 }
@@ -679,7 +679,7 @@ long c_wlan_ioctl_del_profile(unsigned long ulIndex)
         ptr, WLAN_DEL_PROFILE_PARAMS_LEN);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_CMND_WLAN_IOCTL_DEL_PROFILE, &ret);
+    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_DEL_PROFILE, &ret);
 
     return(ret);
 }
@@ -735,7 +735,7 @@ long c_wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
         ptr, WLAN_GET_SCAN_RESULTS_PARAMS_LEN);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS, ucResults);
+    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS, ucResults);
 
     return(0);
 }
@@ -809,7 +809,7 @@ long c_wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwe
         ptr, WLAN_SET_SCAN_PARAMS_LEN);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_CMND_WLAN_IOCTL_SET_SCANPARAM, &uiRes);
+    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_SET_SCANPARAM, &uiRes);
 
     return(uiRes);
 }
@@ -874,7 +874,7 @@ long c_wlan_set_event_mask(unsigned long ulMask)
         ptr, WLAN_SET_MASK_PARAMS_LEN);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_CMND_EVENT_MASK, &ret);
+    hci_wait_for_event(HCI_CMND_EVENT_MASK, &ret);
 
     return(ret);
 }
@@ -904,7 +904,7 @@ long c_wlan_ioctl_statusget(void)
         ptr, 0);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_CMND_WLAN_IOCTL_STATUSGET, &ret);
+    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_STATUSGET, &ret);
 
     return(ret);
 }
@@ -948,7 +948,7 @@ long c_wlan_smart_config_start(unsigned long algoEncryptedFlag)
                                      WLAN_SMART_CONFIG_START_PARAMS_LEN);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_START, &ret);
+    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_START, &ret);
 
     return(ret);
 }
@@ -977,7 +977,7 @@ long c_wlan_smart_config_stop(void)
     hci_command_send(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_STOP, ptr, 0);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_STOP, &ret);
+    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_STOP, &ret);
 
     return(ret);
 }
@@ -1023,7 +1023,7 @@ long c_wlan_smart_config_set_prefix(char* cNewPrefix)
                                      SL_SIMPLE_CONFIG_PREFIX_LENGTH);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_SET_PREFIX, &ret);
+    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_SET_PREFIX, &ret);
 
     return(ret);
 }
