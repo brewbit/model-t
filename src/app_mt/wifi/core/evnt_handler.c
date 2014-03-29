@@ -135,6 +135,33 @@ static void update_socket_active_status(char *resp_params);
 
 //*****************************************************************************
 //
+//!  hci_dispatch_packet
+//!
+//!  @param         pvBuffer - pointer to the received data buffer
+//!                      The function triggers Received event/data processing
+//!
+//!  @param         Pointer to the received data
+//!  @return        none
+//!
+//!  @brief         The function triggers Received event/data processing. It is
+//!                       called from the SPI library to receive the data
+//
+//*****************************************************************************
+void
+hci_dispatch_packet(void *pvBuffer)
+{
+  tSLInformation.pucReceivedData = (unsigned char     *)pvBuffer;
+
+  if ((tSLInformation.usRxEventOpcode != 0) ||
+      (tSLInformation.usRxDataPending != 0))
+    chSemSignal(&tSLInformation.sem_recv);
+  else
+    hci_unsolicited_event_handler();
+}
+
+
+//*****************************************************************************
+//
 //!  hci_unsol_handle_patch_request
 //!
 //!  @param  event_hdr  event header

@@ -189,31 +189,6 @@ void c_wlan_init(tWlanCB sWlanCB,
     tSLInformation.InformHostOnTxComplete = 1;
 }
 
-//*****************************************************************************
-//
-//!  spi_rx_handler
-//!
-//!  @param         pvBuffer - pointer to the received data buffer
-//!                      The function triggers Received event/data processing
-//!
-//!  @param         Pointer to the received data
-//!  @return        none
-//!
-//!  @brief         The function triggers Received event/data processing. It is
-//!                       called from the SPI library to receive the data
-//
-//*****************************************************************************
-void spi_rx_handler(void *pvBuffer)
-{
-    tSLInformation.pucReceivedData = (unsigned char     *)pvBuffer;
-
-    if ((tSLInformation.usRxEventOpcode != 0) ||
-        (tSLInformation.usRxDataPending != 0))
-      chSemSignal(&tSLInformation.sem_recv);
-    else
-      hci_unsolicited_event_handler();
-}
-
 
 //*****************************************************************************
 //
@@ -242,7 +217,8 @@ void spi_rx_handler(void *pvBuffer)
 //
 //*****************************************************************************
 
-void c_wlan_start(unsigned short usPatchesAvailableAtHost)
+void
+c_wlan_start(unsigned short usPatchesAvailableAtHost)
 {
     tSLInformation.NumberOfSentPackets = 0;
     tSLInformation.NumberOfReleasedPackets = 0;
@@ -260,7 +236,7 @@ void c_wlan_start(unsigned short usPatchesAvailableAtHost)
     tSLInformation.pucTxCommandBuffer = (unsigned char *)wlan_tx_buffer;
 
     // init spi
-    spi_open(spi_rx_handler);
+    spi_open();
 
     // ASIC 1273 chip enable: toggle WLAN EN line
     tSLInformation.WriteWlanPin( WLAN_ENABLE );

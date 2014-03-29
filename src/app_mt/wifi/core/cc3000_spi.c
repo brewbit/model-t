@@ -3,6 +3,7 @@
 #include "hal.h"
 
 #include "hci.h"
+#include "evnt_handler.h"
 #include "cc3000_spi.h"
 
 
@@ -21,13 +22,6 @@
 #define SPI_WRITE_OP 1
 #define SPI_READ_OP  3
 
-// The magic number that resides at the end of the TX/RX buffer (1 byte after
-// the allocated size) for the purpose of detection of the overrun. The location
-// of the memory where the magic number resides shall never be written. In case
-// it is written - the overrun occurred and either receive function or send
-// function will stuck forever.
-#define CC3000_BUFFER_MAGIC_NUMBER (0xDE)
-
 
 typedef enum {
   SPI_STATE_POWERUP,
@@ -44,32 +38,28 @@ wait_io_ready(void);
 static void
 spi_read_payload(void);
 
-static void
-spi_process_rx(void);
-
 static msg_t
 spi_io_thread(void* arg);
 
 static void
-spi_first_write(unsigned char *ucBuf, unsigned short usLength);
+spi_first_write(uint8_t *ucBuf, uint16_t usLength);
 
 
 
 
 static spi_state_t spiState;
-static gcSpiHandleRx SPIRxHandler;
-static unsigned char* txPacket;
-static unsigned short txPacketLength;
-static unsigned char* rxPacket;
-static unsigned short rxPacketLength;
+static uint8_t* txPacket;
+static uint16_t txPacketLength;
+static uint16_t rxPacketLength;
 static Semaphore sem_init;
 Semaphore sem_io_ready;
 Semaphore sem_write_complete;
+Thread* io_thread;
 
 int irq_count, missed_irq_count, irq_timeout_count, io_thread_loc;
 
-unsigned char wlan_rx_buffer[CC3000_RX_BUFFER_SIZE];
-unsigned char wlan_tx_buffer[CC3000_TX_BUFFER_SIZE];
+uint8_t wlan_rx_buffer[CC3000_RX_BUFFER_SIZE];
+uint8_t wlan_tx_buffer[CC3000_TX_BUFFER_SIZE];
 
 static const SPIConfig wlan_spi_cfg = {
     .end_cb = NULL,
@@ -90,7 +80,7 @@ static const EXTConfig extcfg = {
 };
 
 // Static buffer for 5 bytes of SPI HEADER
-static const unsigned char tSpiReadHeader[] = {SPI_READ_OP, 0, 0, 0, 0};
+static const uint8_t tSpiReadHeader[] = {SPI_READ_OP, 0, 0, 0, 0};
 
 //*****************************************************************************
 //
@@ -106,11 +96,15 @@ static const unsigned char tSpiReadHeader[] = {SPI_READ_OP, 0, 0, 0, 0};
 void
 spi_close(void)
 {
-  rxPacket = NULL;
-
   // Disable Interrupt
   if (EXTD1.state == EXT_ACTIVE)
     extChannelDisable(&EXTD1, 12);
+
+  // Shut down I/O thread
+  chThdTerminate(io_thread);
+  chSemSignal(&sem_io_ready);
+  chThdWait(io_thread);
+  io_thread = NULL;
 }
 
 //*****************************************************************************
@@ -125,7 +119,7 @@ spi_close(void)
 //
 //*****************************************************************************
 void
-spi_open(gcSpiHandleRx pfRxHandler)
+spi_open()
 {
   spiStart(SPI_WLAN, &wlan_spi_cfg);
   extStart(&EXTD1, &extcfg);
@@ -135,18 +129,14 @@ spi_open(gcSpiHandleRx pfRxHandler)
   chSemInit(&sem_write_complete, 0);
 
   spiState = SPI_STATE_POWERUP;
-  SPIRxHandler = pfRxHandler;
   txPacketLength = 0;
   txPacket = NULL;
-  rxPacket = wlan_rx_buffer;
   rxPacketLength = 0;
-  wlan_rx_buffer[CC3000_RX_BUFFER_SIZE - 1] = CC3000_BUFFER_MAGIC_NUMBER;
-  wlan_tx_buffer[CC3000_TX_BUFFER_SIZE - 1] = CC3000_BUFFER_MAGIC_NUMBER;
 
   // Enable interrupt on WLAN IRQ pin
   extChannelEnable(&EXTD1, 12);
 
-  chThdCreateFromHeap(NULL, 1024, HIGHPRIO, spi_io_thread, NULL);
+  io_thread = chThdCreateFromHeap(NULL, 1024, HIGHPRIO, spi_io_thread, NULL);
 }
 
 static void
@@ -182,6 +172,9 @@ spi_io_thread(void* arg)
   while (TRUE) {
     wait_io_ready();
 
+    if (chThdShouldTerminate())
+      break;
+
     /* If a write is pending, handle that first */
     if (txPacket != NULL && txPacketLength > 0) {
       /* Assert the CS line to indicate to the CC3000 that we have data to send */
@@ -203,18 +196,19 @@ spi_io_thread(void* arg)
       chSemSignal(&sem_write_complete);
     }
     else {
-      /* IRQ line goes down - we are start reception */
+      /* Assert CS to start read */
       ASSERT_CS();
 
       /* Read header */
-      spiExchange(SPI_WLAN, 10, tSpiReadHeader, rxPacket);
+      spiExchange(SPI_WLAN, 10, tSpiReadHeader, wlan_rx_buffer);
 
       /* Read payload */
       spi_read_payload();
 
       DEASSERT_CS();
 
-      spi_process_rx();
+      /* Dispatch the data to the HCI module */
+      hci_dispatch_packet(wlan_rx_buffer + SPI_HEADER_SIZE);
     }
   }
 
@@ -234,7 +228,7 @@ spi_io_thread(void* arg)
 //
 //*****************************************************************************
 static void
-spi_first_write(unsigned char *ucBuf, unsigned short usLength)
+spi_first_write(uint8_t *ucBuf, uint16_t usLength)
 {
   // workaround for first transaction
   ASSERT_CS();
@@ -267,7 +261,7 @@ spi_first_write(unsigned char *ucBuf, unsigned short usLength)
 //
 //*****************************************************************************
 void
-spi_write(unsigned char *pUserBuffer, unsigned short usLength)
+spi_write(uint8_t *pUserBuffer, uint16_t usLength)
 {
   if((usLength & 1) == 0)
     usLength++;
@@ -290,10 +284,10 @@ spi_write(unsigned char *pUserBuffer, unsigned short usLength)
   else {
     txPacketLength = usLength;
     txPacket = pUserBuffer;
-    
+
     /* Signal the I/O thread to handle the write */
     chSemSignal(&sem_io_ready);
-    
+
     /* Wait for write to complete */
     chSemWait(&sem_write_complete);
   }
@@ -315,10 +309,10 @@ static void
 spi_read_payload(void)
 {
   long data_to_recv;
-  unsigned char *evnt_buff, type;
+  uint8_t *evnt_buff, type;
 
   //determine what type of packet we have
-  evnt_buff =  rxPacket;
+  evnt_buff =  wlan_rx_buffer;
   data_to_recv = 0;
   STREAM_TO_UINT8((char *)(evnt_buff + SPI_HEADER_SIZE), HCI_PACKET_TYPE_OFFSET,
       type);
@@ -349,32 +343,6 @@ spi_read_payload(void)
       spiReceive(SPI_WLAN, data_to_recv, evnt_buff + 10);
     break;
   }
-}
-
-//*****************************************************************************
-//
-//! spi_process_rx
-//!
-//!  @param  none
-//!
-//!  @return none
-//!
-//!  @brief  Spi RX processing
-//
-//*****************************************************************************
-static void
-spi_process_rx(void)
-{
-  // The magic number that resides at the end of the TX/RX buffer (1 byte after
-  // the allocated size) for the purpose of detection of the overrun. If the
-  // magic number is overwritten - buffer overrun occurred - and we will stuck
-  // here forever!
-  if (rxPacket[CC3000_RX_BUFFER_SIZE - 1] != CC3000_BUFFER_MAGIC_NUMBER) {
-    printf("Buffer overflow detected in SPI RX handler!\r\n");
-    return;
-  }
-
-  SPIRxHandler(rxPacket + SPI_HEADER_SIZE);
 }
 
 //*****************************************************************************
