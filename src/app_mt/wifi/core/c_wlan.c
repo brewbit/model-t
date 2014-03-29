@@ -128,18 +128,12 @@ uint8_t profileArray[SMART_CONFIG_PROFILE_SIZE];
 void c_wlan_init(tWlanCB sWlanCB,
                  tFWPatches sFWPatches,
                  tDriverPatches sDriverPatches,
-                 tBootLoaderPatches sBootLoaderPatches,
-                 tWlanReadInteruptPin  sReadWlanInterruptPin,
-                 tWriteWlanPin sWriteWlanPin)
+                 tBootLoaderPatches sBootLoaderPatches)
 {
 
     tSLInformation.sFWPatches = sFWPatches;
     tSLInformation.sDriverPatches = sDriverPatches;
     tSLInformation.sBootLoaderPatches = sBootLoaderPatches;
-
-    /* init io callback */
-    tSLInformation.ReadWlanInterruptPin = sReadWlanInterruptPin;
-    tSLInformation.WriteWlanPin = sWriteWlanPin;
 
     //init asynchronous events callback
     tSLInformation.sWlanCB= sWlanCB;
@@ -193,9 +187,6 @@ c_wlan_start(patch_load_command_t patch_load_cmd)
   // init spi
   spi_open();
 
-  // ASIC 1273 chip enable: toggle WLAN EN line
-  tSLInformation.WriteWlanPin( WLAN_ENABLE );
-
   ptr = tSLInformation.pucTxCommandBuffer;
   args = (uint8_t *)(ptr + HEADERS_SIZE_CMD);
 
@@ -240,17 +231,7 @@ c_wlan_start(patch_load_command_t patch_load_cmd)
 //*****************************************************************************
 void c_wlan_stop(void)
 {
-    // ASIC 1273 chip disable
-    tSLInformation.WriteWlanPin( WLAN_DISABLE );
-
-    // Wait till IRQ line goes high...
-    while(tSLInformation.ReadWlanInterruptPin() == 0)
-        chThdSleepMilliseconds(10);
-
-    // Free the used by WLAN Driver memory
-    tSLInformation.pucTxCommandBuffer = NULL;
-
-    spi_close();
+  spi_close();
 }
 
 

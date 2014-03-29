@@ -109,12 +109,11 @@ typedef enum {
 //!  @warning This function must be called before ANY other wlan driver function
 //
 //*****************************************************************************
-extern void c_wlan_init(tWlanCB sWlanCB,
-                        tFWPatches sFWPatches,
-                        tDriverPatches sDriverPatches,
-                        tBootLoaderPatches sBootLoaderPatches,
-                        tWlanReadInteruptPin  sReadWlanInterruptPin,
-                        tWriteWlanPin sWriteWlanPin);
+void
+c_wlan_init(tWlanCB sWlanCB,
+    tFWPatches sFWPatches,
+    tDriverPatches sDriverPatches,
+    tBootLoaderPatches sBootLoaderPatches);
 
 //*****************************************************************************
 //

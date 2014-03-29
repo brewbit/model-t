@@ -44,12 +44,6 @@ scan_thread(void);
 static void
 wlan_event(long event_type, void* data, unsigned char length);
 
-static long
-wlan_read_interupt_pin(void);
-
-static void
-write_wlan_pin(unsigned char val);
-
 static void
 save_or_update_network(network_t* network);
 
@@ -80,7 +74,7 @@ static network_t networks[16];
 void
 net_init()
 {
-  wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, write_wlan_pin);
+  wlan_init(wlan_event, NULL, NULL, NULL);
 
   /* Thread* thd_wlan = */ chThdCreateFromHeap(NULL, 1024, NORMALPRIO, wlan_thread, NULL);
 
@@ -198,18 +192,6 @@ wlan_event(long event_type, void* data, unsigned char length)
     printf("wlan_event(0x%x)\r\n", (unsigned int)event_type);
     break;
   }
-}
-
-static long
-wlan_read_interupt_pin()
-{
-  return palReadPad(PORT_WIFI_IRQ, PAD_WIFI_IRQ);
-}
-
-static void
-write_wlan_pin(unsigned char val)
-{
-  palWritePad(PORT_WIFI_EN, PAD_WIFI_EN, val);
 }
 
 static msg_t

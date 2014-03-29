@@ -129,9 +129,7 @@ tWlanCB app_evt_cb;
 void wlan_init(tWlanCB               sWlanCB,
                tFWPatches            sFWPatches,
                tDriverPatches        sDriverPatches,
-               tBootLoaderPatches    sBootLoaderPatches,
-               tWlanReadInteruptPin  sReadWlanInterruptPin,
-               tWriteWlanPin         sWriteWlanPin)
+               tBootLoaderPatches    sBootLoaderPatches)
 {
   chMtxInit(&g_main_mutex);
   chSemInit(&g_spi_semaphore, 0);
@@ -139,9 +137,11 @@ void wlan_init(tWlanCB               sWlanCB,
   chMtxLock(&g_main_mutex);
   app_evt_cb = sWlanCB;
   g_select_thread = NULL;
-  c_wlan_init(wlan_evt_cb, sFWPatches, sDriverPatches,
-      sBootLoaderPatches, sReadWlanInterruptPin,
-      sWriteWlanPin);
+  c_wlan_init(
+      wlan_evt_cb,
+      sFWPatches,
+      sDriverPatches,
+      sBootLoaderPatches);
   chMtxUnlock();
 }
 

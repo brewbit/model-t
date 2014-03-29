@@ -34,6 +34,9 @@ wifi_irq_cb(EXTDriver *extp, expchannel_t channel);
 static void
 wait_io_ready(void);
 
+static bool
+irq_asserted(void);
+
 static msg_t
 spi_io_thread(void* arg);
 
@@ -90,15 +93,22 @@ static const uint8_t tSpiReadHeader[] = {SPI_READ_OP, 0, 0, 0, 0};
 void
 spi_close(void)
 {
-  // Disable Interrupt
-  if (EXTD1.state == EXT_ACTIVE)
-    extChannelDisable(&EXTD1, 12);
-
   // Shut down I/O thread
   chThdTerminate(io_thread);
   chSemSignal(&sem_io_ready);
   chThdWait(io_thread);
   io_thread = NULL;
+
+  // Disable Interrupt
+  if (EXTD1.state == EXT_ACTIVE)
+    extChannelDisable(&EXTD1, 12);
+
+  // Clear the device enable pin
+  palClearPad(PORT_WIFI_EN, PAD_WIFI_EN);
+
+  // Wait for IRQ to be deasserted
+  while (irq_asserted())
+    chThdSleepMilliseconds(10);
 }
 
 //*****************************************************************************
@@ -131,6 +141,9 @@ spi_open()
   extChannelEnable(&EXTD1, 12);
 
   io_thread = chThdCreateFromHeap(NULL, 1024, HIGHPRIO, spi_io_thread, NULL);
+
+  // Set the device enable pin
+  palSetPad(PORT_WIFI_EN, PAD_WIFI_EN);
 }
 
 static void
@@ -149,11 +162,17 @@ wait_io_ready()
       break;
     }
     /* Check if IRQ is asserted */
-    else if (palReadPad(PORT_WIFI_IRQ, PAD_WIFI_IRQ) == 0) {
+    else if (irq_asserted()) {
       irq_timeout_count++;
       break;
     }
   }
+}
+
+static bool
+irq_asserted()
+{
+  return (palReadPad(PORT_WIFI_IRQ, PAD_WIFI_IRQ) == 0);
 }
 
 static msg_t

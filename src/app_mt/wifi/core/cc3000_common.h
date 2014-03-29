@@ -66,9 +66,6 @@ extern "C" {
 //*****************************************************************************
 #define ERROR_SOCKET_INACTIVE   -57
 
-#define WLAN_ENABLE      (1)
-#define WLAN_DISABLE     (0)
-
 #define MAC_ADDR_LEN     (6)
 
   
@@ -164,10 +161,6 @@ typedef char *(*tBootLoaderPatches)(unsigned long *usLength);
 
 typedef void (*tWlanCB)(long event_type, void* data, uint8_t length );
 
-typedef long (*tWlanReadInteruptPin)(void);
-
-typedef void (*tWriteWlanPin)(uint8_t val);
-
 typedef struct {
   Semaphore        sem_recv;
   unsigned short   usRxEventOpcode;
@@ -177,8 +170,6 @@ typedef struct {
   tDriverPatches     sDriverPatches;
   tBootLoaderPatches   sBootLoaderPatches;
   tWlanCB         sWlanCB;
-  tWlanReadInteruptPin  ReadWlanInterruptPin;
-  tWriteWlanPin         WriteWlanPin;
 
   signed long     slTransmitDataError;
   unsigned short   usNumberOfFreeBuffers;
