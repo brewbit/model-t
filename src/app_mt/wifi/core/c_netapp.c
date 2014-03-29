@@ -36,7 +36,6 @@
 #include "netapp.h"
 #include "hci.h"
 #include "socket.h"
-#include "evnt_handler.h"
 #include "nvmem.h"
 
 #define MIN_TIMER_VAL_SECONDS      20

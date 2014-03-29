@@ -1,6 +1,6 @@
 /*****************************************************************************
 *
-*  evnt_handler.h  - CC3000 Host Driver Implementation.
+*  hci_msg.h  - CC3000 Host Driver Implementation.
 *  Copyright (C) 2011 Texas Instruments Incorporated - http://www.ti.com/
 *
 *  Redistribution and use in source and binary forms, with or without
@@ -32,8 +32,8 @@
 *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 *
 *****************************************************************************/
-#ifndef __EVENT_HANDLER_H__
-#define __EVENT_HANDLER_H__
+#ifndef __HCI_MSG_H__
+#define __HCI_MSG_H__
 #include "hci.h"
 #include "socket.h"
 
@@ -47,16 +47,16 @@ extern "C" {
 
 
 typedef struct _bsd_accept_return_t {
-  long iSocketDescriptor;
-  long iStatus;
+  int32_t iSocketDescriptor;
+  int32_t iStatus;
   sockaddr tSocketAddress;
 } tBsdReturnParams;
 
 
 typedef struct _bsd_read_return_t {
-  long iSocketDescriptor;
-  long iNumberOfBytes;
-  unsigned long uiFlags;
+  int32_t iSocketDescriptor;
+  int32_t iNumberOfBytes;
+  uint32_t uiFlags;
 } tBsdReadReturnParams;
 
 #define BSD_RECV_FROM_FROMLEN_OFFSET  (4)
@@ -64,21 +64,21 @@ typedef struct _bsd_read_return_t {
 
 
 typedef struct _bsd_select_return_t {
-  long iStatus;
-  unsigned long uiRdfd;
-  unsigned long uiWrfd;
-  unsigned long uiExfd;
+  int32_t iStatus;
+  uint32_t uiRdfd;
+  uint32_t uiWrfd;
+  uint32_t uiExfd;
 } tBsdSelectRecvParams;
 
 
 typedef struct _bsd_getsockopt_return_t {
-  unsigned char ucOptValue[4];
+  uint8_t ucOptValue[4];
   char iStatus;
 } tBsdGetSockOptReturnParams;
 
 typedef struct _bsd_gethostbyname_return_t {
-  long retVal;
-  long outputAddress;
+  int32_t retVal;
+  int32_t outputAddress;
 } tBsdGethostbynameParams;
 
 
@@ -86,5 +86,5 @@ typedef struct _bsd_gethostbyname_return_t {
 }
 #endif // __cplusplus
 
-#endif // __EVENT_HANDLER_H__
+#endif // __HCI_MSG_H__
 

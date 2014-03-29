@@ -44,7 +44,6 @@
 #include "nvmem.h"
 #include "hci.h"
 #include "socket.h"
-#include "evnt_handler.h"
 
 //*****************************************************************************
 //

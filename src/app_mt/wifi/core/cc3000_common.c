@@ -46,7 +46,6 @@
 #include "cc3000_common.h"
 #include "socket.h"
 #include "wlan.h"
-#include "evnt_handler.h"
 
 
 //*****************************************************************************

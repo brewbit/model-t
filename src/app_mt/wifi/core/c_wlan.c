@@ -48,7 +48,6 @@
 #include "socket.h"
 #include "nvmem.h"
 #include "security.h"
-#include "evnt_handler.h"
 
 
 sSimplLinkInformation tSLInformation;

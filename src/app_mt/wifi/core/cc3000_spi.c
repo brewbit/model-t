@@ -3,7 +3,6 @@
 #include "hal.h"
 
 #include "hci.h"
-#include "evnt_handler.h"
 #include "cc3000_spi.h"
 
 

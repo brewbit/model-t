@@ -12,7 +12,6 @@
 
 
 #include "wlan.h" 
-#include "core/evnt_handler.h"
 #include "nvmem.h"
 #include "socket.h"
 #include "core/cc3000_common.h"
