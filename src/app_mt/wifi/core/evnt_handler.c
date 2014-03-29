@@ -112,14 +112,6 @@
 #define GET_SCAN_RESULTS_SSID_MAC_LENGTH        (38)
 
 
-
-//*****************************************************************************
-//                  GLOBAL VARAIABLES
-//*****************************************************************************
-
-uint32_t socket_active_status = SOCKET_STATUS_INIT_VAL;
-
-
 //*****************************************************************************
 //            Prototypes for the static functions
 //*****************************************************************************
@@ -425,7 +417,7 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
         // command complete is "Command Complete" on data sent, in case SL device
         // was unable to transmit
         tSLInformation.slTransmitDataError = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
-        update_socket_active_status(M_BSD_RESP_PARAMS_OFFSET(event_hdr));
+        update_socket_active_status(pArg);
       }
       break;
     }
@@ -503,16 +495,13 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
     case HCI_EVNT_RECV:
     case HCI_EVNT_RECVFROM:
       {
-        *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams,SL_RECEIVE_SD_OFFSET);
-        tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 4;
-        *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams,SL_RECEIVE_NUM_BYTES_OFFSET);
-        tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 4;
-        *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams,SL_RECEIVE__FLAGS__OFFSET);
+        tBsdReadReturnParams* params = tSLInformation.pRetParams;
+        params->iSocketDescriptor = STREAM_TO_UINT32(pucReceivedParams,SL_RECEIVE_SD_OFFSET);
+        params->iNumberOfBytes = STREAM_TO_UINT32(pucReceivedParams,SL_RECEIVE_NUM_BYTES_OFFSET);
+        params->uiFlags = STREAM_TO_UINT32(pucReceivedParams,SL_RECEIVE__FLAGS__OFFSET);
 
-        if(((tBsdReadReturnParams *)tSLInformation.pRetParams)->iNumberOfBytes == ERROR_SOCKET_INACTIVE)
-        {
-          set_socket_active_status(((tBsdReadReturnParams *)tSLInformation.pRetParams)->iSocketDescriptor,SOCKET_STATUS_INACTIVE);
-        }
+        if (params->iNumberOfBytes == ERROR_SOCKET_INACTIVE)
+          set_socket_active_status(params->iSocketDescriptor, SOCKET_STATUS_INACTIVE);
         break;
       }
 
@@ -596,27 +585,6 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
   }
 }
 
-//*****************************************************************************
-//
-//!  set_socket_active_status
-//!
-//!  @param Sd
-//!   @param Status
-//!  @return         none
-//!
-//!  @brief          Check if the socket ID and status are valid and set 
-//!                  accordingly  the global socket status
-//
-//*****************************************************************************
-void
-set_socket_active_status(int32_t sd, int32_t status)
-{
-  if(M_IS_VALID_SD(sd) && M_IS_VALID_STATUS(status)) {
-    socket_active_status &= ~(1 << sd);      /* clean socket's mask */
-    socket_active_status |= (status << sd); /* set new socket's mask */
-  }
-}
-
 
 //*****************************************************************************
 //
@@ -658,34 +626,15 @@ hci_event_unsol_flowcontrol_handler(uint8_t* pEvent)
 
 //*****************************************************************************
 //
-//!  get_socket_active_status
-//!
-//!  @param  Sd  Socket IS
-//!  @return     Current status of the socket.   
-//!
-//!  @brief  Retrieve socket status
-//
-//*****************************************************************************
-int32_t
-get_socket_active_status(int32_t sd)
-{
-  if(M_IS_VALID_SD(sd)) {
-    return (socket_active_status & (1 << sd)) ? SOCKET_STATUS_INACTIVE : SOCKET_STATUS_ACTIVE;
-  }
-  return SOCKET_STATUS_INACTIVE;
-}
-
-//*****************************************************************************
-//
 //!  update_socket_active_status
 //!
 //!  @param  resp_params  Socket IS
-//!  @return     Current status of the socket.   
+//!  @return     Current status of the socket.
 //!
 //!  @brief  Retrieve socket status
 //
 //*****************************************************************************
-void
+static void
 update_socket_active_status(char *resp_params)
 {
   int32_t status, sd;

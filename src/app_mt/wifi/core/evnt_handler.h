@@ -72,18 +72,6 @@ hci_dispatch_packet(uint8_t* buffer, uint16_t buffer_size);
 
 #define M_BSD_RESP_PARAMS_OFFSET(hci_event_hdr)((char *)(hci_event_hdr) + HCI_EVENT_HEADER_SIZE)
 
-#define SOCKET_STATUS_ACTIVE       0
-#define SOCKET_STATUS_INACTIVE     1
-/* Init socket_active_status = 'all ones': init all sockets with SOCKET_STATUS_INACTIVE.
-   Will be changed by 'set_socket_active_status' upon 'connect' and 'accept' calls */
-#define SOCKET_STATUS_INIT_VAL  0xFFFF
-#define M_IS_VALID_SD(sd) ((0 <= (sd)) && ((sd) <= 7))
-#define M_IS_VALID_STATUS(status) (((status) == SOCKET_STATUS_ACTIVE)||((status) == SOCKET_STATUS_INACTIVE))
-
-extern unsigned long socket_active_status;
-
-extern void set_socket_active_status(long Sd, long Status);
-extern long get_socket_active_status(long Sd);
 
 typedef struct _bsd_accept_return_t
 {

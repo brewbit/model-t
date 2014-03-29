@@ -88,6 +88,19 @@
 
 #define MDNS_DEVICE_SERVICE_MAX_LENGTH  (32)
 
+/* Init socket_active_status = 'all ones': init all sockets with SOCKET_STATUS_INACTIVE.
+   Will be changed by 'set_socket_active_status' upon 'connect' and 'accept' calls */
+#define SOCKET_STATUS_INIT_VAL  0xFFFF
+#define M_IS_VALID_SD(sd) ((0 <= (sd)) && ((sd) <= 7))
+#define M_IS_VALID_STATUS(status) (((status) == SOCKET_STATUS_ACTIVE)||((status) == SOCKET_STATUS_INACTIVE))
+
+
+static int32_t
+get_socket_active_status(int32_t sd);
+
+
+static uint32_t socket_active_status = SOCKET_STATUS_INIT_VAL;
+
 
 //*****************************************************************************
 //
@@ -112,7 +125,7 @@ consume_buf(int sd)
     return errno;
   }
 
-  if(SOCKET_STATUS_ACTIVE != get_socket_active_status(sd))
+  if (SOCKET_STATUS_ACTIVE != get_socket_active_status(sd))
     return -1;
 
   //If there are no available buffers, return -2. It is recommended to use
@@ -1079,4 +1092,44 @@ int c_mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsig
   SimpleLinkWaitEvent(HCI_EVNT_MDNS_ADVERTISE, &ret);
 
   return ret;
+}
+
+//*****************************************************************************
+//
+//!  get_socket_active_status
+//!
+//!  @param  Sd  Socket IS
+//!  @return     Current status of the socket.
+//!
+//!  @brief  Retrieve socket status
+//
+//*****************************************************************************
+static int32_t
+get_socket_active_status(int32_t sd)
+{
+  if(M_IS_VALID_SD(sd)) {
+    return (socket_active_status & (1 << sd)) ? SOCKET_STATUS_INACTIVE : SOCKET_STATUS_ACTIVE;
+  }
+  return SOCKET_STATUS_INACTIVE;
+}
+
+//*****************************************************************************
+//
+//!  set_socket_active_status
+//!
+//!  @param Sd
+//!   @param Status
+//!  @return         none
+//!
+//!  @brief          Check if the socket ID and status are valid and set
+//!                  accordingly  the global socket status
+//
+//*****************************************************************************
+void
+set_socket_active_status(int32_t sd, int32_t status)
+{
+  if(M_IS_VALID_SD(sd) && M_IS_VALID_STATUS(status)) {
+    socket_active_status &= ~(1 << sd);      /* clean socket's mask */
+    socket_active_status |= (status << sd); /* set new socket's mask */
+  }
 }

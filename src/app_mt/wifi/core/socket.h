@@ -55,16 +55,18 @@
 extern "C" {
 #endif
 
+#define SOCKET_STATUS_ACTIVE       0
+#define SOCKET_STATUS_INACTIVE     1
+
 #define MAX_NUM_OF_SOCKETS 4
 
-typedef struct _wlan_socket_t
-{
+typedef struct {
   int sd;
   long status;
   BinarySemaphore sd_semaphore;
   systime_t recv_timeout;
   long nonblock;
-}wlan_socket_t;
+} wlan_socket_t;
 
 //*****************************************************************************
 //
@@ -517,6 +519,20 @@ extern int c_sendto(long sd, const void *buf, long len, long flags,
 //
 //*****************************************************************************
 extern int c_mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsigned short deviceServiceNameLength);
+
+//*****************************************************************************
+//
+//!  set_socket_active_status
+//!
+//!  @param Sd
+//!   @param Status
+//!  @return         none
+//!
+//!  @brief          Check if the socket ID and status are valid and set
+//!                  accordingly  the global socket status
+//
+//*****************************************************************************
+extern void set_socket_active_status(long sd, long status);
 
 //*****************************************************************************
 //
