@@ -67,7 +67,6 @@ PROJECT_CSRC = \
        snacka_backend/socket_bsd.c \
        wifi/core/cc3000_common.c \
        wifi/core/cc3000_spi.c \
-       wifi/core/evnt_handler.c \
        wifi/core/hci.c \
        wifi/core/c_netapp.c \
        wifi/core/c_nvmem.c \
