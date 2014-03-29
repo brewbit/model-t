@@ -128,9 +128,6 @@ uint32_t socket_active_status = SOCKET_STATUS_INIT_VAL;
 //hci_unsol_handle_patch_request(char *event_hdr);
 
 static void
-hci_wait_response(void);
-
-static void
 hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size);
 
 static void
@@ -298,41 +295,6 @@ hci_dispatch_data(uint8_t* buffer, uint16_t buffer_size)
 //}
 
 
-
-//*****************************************************************************
-//
-//!  hci_wait_response
-//!
-//!  @param  pRetParams     incoming data buffer
-//!  @param  from           from information (in case of data received)
-//!  @param  fromlen        from information length (in case of data received)
-//!
-//!  @return         none
-//!
-//!  @brief          Parse the incoming events packets and issues corresponding
-//!                  event handler from global array of handlers pointers
-//
-//*****************************************************************************
-static void
-hci_wait_response()
-{
-  while (1) {
-    chSemWait(&tSLInformation.sem_recv);
-
-    // TODO
-    // Since we are going to TX - we need to handle this event after the
-    // ResumeSPi since we need interrupts
-//    if ((buffer[0] == HCI_TYPE_EVNT) &&
-//        (usReceivedEventOpcode == HCI_EVNT_PATCHES_REQ))
-//    {
-//      hci_unsol_handle_patch_request((char *)pucReceivedData);
-//    }
-
-    if ((tSLInformation.usRxEventOpcode == 0) && (tSLInformation.usRxDataPending == 0))
-        return;
-  }
-}
-
 //*****************************************************************************
 //
 //!  hci_dispatch_event
@@ -349,19 +311,18 @@ static void
 hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
 {
   char * data = NULL;
-  long event_type;
   uint32_t retValue32;
 
-  event_type = STREAM_TO_UINT16(event_hdr, HCI_EVENT_OPCODE_OFFSET);
+  uint16_t opcode = STREAM_TO_UINT16(event_hdr, HCI_EVENT_OPCODE_OFFSET);
   uint16_t usLength = STREAM_TO_UINT8(event_hdr, HCI_DATA_LENGTH_OFFSET);
   uint8_t* pucReceivedParams = event_hdr + HCI_EVENT_HEADER_SIZE;
 
   if (usLength + HCI_EVENT_HEADER_SIZE - 1 > event_size) {
-    printf("Invalid event size: %d %d %d\r\n", event_type, usLength, event_size);
+    printf("Invalid event size: %d %d %d\r\n", opcode, usLength, event_size);
     return;
   }
 
-  switch(event_type) {
+  switch(opcode) {
     case HCI_EVNT_DATA_UNSOL_FREE_BUFF:
       hci_event_unsol_flowcontrol_handler(event_hdr);
 
@@ -378,7 +339,7 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
     case HCI_EVNT_WLAN_UNSOL_INIT:
     case HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE:
       if (tSLInformation.sWlanCB) {
-        tSLInformation.sWlanCB(event_type, 0, 0);
+        tSLInformation.sWlanCB(opcode, 0, 0);
       }
       break;
 
@@ -408,7 +369,7 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
 
 
         if (tSLInformation.sWlanCB) {
-          tSLInformation.sWlanCB(event_type, (char *)params, sizeof(params));
+          tSLInformation.sWlanCB(opcode, (char *)params, sizeof(params));
         }
       }
       break;
@@ -424,7 +385,7 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
         params.avg_round_time = STREAM_TO_UINT32(data, NETAPP_PING_AVG_RTT_OFFSET);
 
         if (tSLInformation.sWlanCB) {
-          tSLInformation.sWlanCB(event_type, (char*)&params, sizeof(params));
+          tSLInformation.sWlanCB(opcode, (char*)&params, sizeof(params));
         }
       }
       break;
@@ -434,7 +395,7 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
         data = (char*)(event_hdr) + HCI_EVENT_HEADER_SIZE;
         sd = STREAM_TO_UINT32(data, 0);
         if (tSLInformation.sWlanCB) {
-          tSLInformation.sWlanCB(event_type, (char *)&sd, sizeof(sd));
+          tSLInformation.sWlanCB(opcode, (char *)&sd, sizeof(sd));
         }
       }
       break;
@@ -622,7 +583,14 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
       break;
   }
 
-  if (event_type == tSLInformation.usRxEventOpcode) {
+  // TODO can't transit from the SPI I/O thread because we will deadlock...
+  // Since we are going to TX - we need to handle this event after the
+  // ResumeSPi since we need interrupts
+//    if (opcode == HCI_EVNT_PATCHES_REQ))
+//      hci_unsol_handle_patch_request((char *)pucReceivedData);
+
+  // If this is the opcode that the app was waiting for, signal them
+  if (opcode == tSLInformation.usRxEventOpcode) {
     tSLInformation.usRxEventOpcode = 0;
     chSemSignal(&tSLInformation.sem_recv);
   }
@@ -742,8 +710,6 @@ update_socket_active_status(char *resp_params)
 //!
 //!  @return               none
 //!
-//!  @brief                Wait for event, pass it to the hci_wait_response and
-//!                        update the event opcode in a global variable.
 //
 //*****************************************************************************
 void 
@@ -755,7 +721,7 @@ SimpleLinkWaitEvent(unsigned short usOpcode, void *pRetParams)
   tSLInformation.fromlen = NULL;
   tSLInformation.pRetParams = pRetParams;
   tSLInformation.usRxEventOpcode = usOpcode;
-  hci_wait_response();
+  chSemWait(&tSLInformation.sem_recv);
 }
 
 //*****************************************************************************
@@ -768,9 +734,6 @@ SimpleLinkWaitEvent(unsigned short usOpcode, void *pRetParams)
 //!
 //!  @return               none
 //!
-//!  @brief                Wait for data, pass it to the hci_wait_response
-//!              and update in a global variable that there is
-//!               data to read.
 //
 //*****************************************************************************
 void 
@@ -782,7 +745,7 @@ SimpleLinkWaitData(uint8_t *pBuf, uint8_t *from, uint8_t *fromlen)
   tSLInformation.fromlen = fromlen;
   tSLInformation.pRetParams = pBuf;
   tSLInformation.usRxDataPending = 1;
-  hci_wait_response();
+  chSemWait(&tSLInformation.sem_recv);
 }
 
 //*****************************************************************************
