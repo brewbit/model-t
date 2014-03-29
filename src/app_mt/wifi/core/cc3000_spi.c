@@ -35,16 +35,11 @@ wifi_irq_cb(EXTDriver *extp, expchannel_t channel);
 static void
 wait_io_ready(void);
 
-static void
-spi_read_payload(void);
-
 static msg_t
 spi_io_thread(void* arg);
 
 static void
 spi_first_write(uint8_t *ucBuf, uint16_t usLength);
-
-
 
 
 static spi_state_t spiState;
@@ -203,7 +198,10 @@ spi_io_thread(void* arg)
       spiExchange(SPI_WLAN, SPI_HEADER_SIZE, tSpiReadHeader, wlan_rx_buffer);
 
       /* Read payload */
-      spi_read_payload();
+      uint16_t data_to_recv = (wlan_rx_buffer[3] << 8) | (wlan_rx_buffer[4]);
+
+      if (data_to_recv)
+        spiReceive(SPI_WLAN, data_to_recv, wlan_rx_buffer + SPI_HEADER_SIZE);
 
       DEASSERT_CS();
 
@@ -291,27 +289,6 @@ spi_write(uint8_t *pUserBuffer, uint16_t usLength)
     /* Wait for write to complete */
     chSemWait(&sem_write_complete);
   }
-}
-
-//*****************************************************************************
-//
-//!  spi_read_payload
-//!
-//!  @param  None
-//!
-//!  @return None
-//!
-//!  @brief  This function processes received SPI Header and in accordance with
-//!              it - continues reading the packet
-//
-//*****************************************************************************
-static void
-spi_read_payload(void)
-{
-  uint16_t data_to_recv = (wlan_rx_buffer[3] << 8) | (wlan_rx_buffer[4]);
-
-  if (data_to_recv)
-    spiReceive(SPI_WLAN, data_to_recv, wlan_rx_buffer + SPI_HEADER_SIZE);
 }
 
 //*****************************************************************************
