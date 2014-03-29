@@ -54,7 +54,7 @@
 
 
 static void
-wlan_evt_cb(long event_type, char * data, unsigned char length);
+wlan_evt_cb(long event_type, void* data, unsigned char length);
 
 static msg_t
 SelectThread(void* arg);
@@ -716,7 +716,7 @@ long wlan_smart_config_process()
 #endif
 
 static void
-wlan_evt_cb(long event_type, char* data, unsigned char length)
+wlan_evt_cb(long event_type, void* data, unsigned char length)
 {
 
   switch (event_type) {

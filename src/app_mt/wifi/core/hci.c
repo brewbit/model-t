@@ -75,6 +75,8 @@
 #define SL_RECEIVE__FLAGS__OFFSET    (8)
 
 
+
+
 #define SELECT_STATUS_OFFSET      (0)
 #define SELECT_READFD_OFFSET      (4)
 #define SELECT_WRITEFD_OFFSET      (8)
@@ -88,10 +90,6 @@
 #define NETAPP_IPCONFIG_DNS_OFFSET        (16)
 #define NETAPP_IPCONFIG_MAC_OFFSET        (20)
 #define NETAPP_IPCONFIG_SSID_OFFSET        (26)
-
-#define NETAPP_IPCONFIG_IP_LENGTH        (4)
-#define NETAPP_IPCONFIG_MAC_LENGTH        (6)
-#define NETAPP_IPCONFIG_SSID_LENGTH        (32)
 
 
 #define NETAPP_PING_PACKETS_SENT_OFFSET      (0)
@@ -483,9 +481,7 @@ hci_dispatch_event(
     uint8_t* event_hdr,
     uint16_t event_size)
 {
-  char * data = NULL;
   uint32_t retValue32;
-
   uint16_t opcode = STREAM_TO_UINT16(event_hdr, HCI_EVENT_OPCODE_OFFSET);
   uint16_t usLength = STREAM_TO_UINT8(event_hdr, HCI_DATA_LENGTH_OFFSET);
   uint8_t* pucReceivedParams = event_hdr + HCI_EVENT_HEADER_SIZE;
@@ -518,31 +514,28 @@ hci_dispatch_event(
 
     case HCI_EVNT_WLAN_UNSOL_DHCP:
       {
-        uint8_t  params[NETAPP_IPCONFIG_MAC_OFFSET + 1];  // extra byte is for the status
-        uint8_t *recParams = params;
-
-        data = (char*)(event_hdr) + HCI_EVENT_HEADER_SIZE;
+        dhcp_status_t params;
 
         //Read IP address
-        memcpy(recParams, data, NETAPP_IPCONFIG_IP_LENGTH);
-        data += 4;
+        memcpy(params.ip_addr, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+        pucReceivedParams += 4;
         //Read subnet
-        memcpy(recParams, data, NETAPP_IPCONFIG_IP_LENGTH);
-        data += 4;
+        memcpy(params.subnet_mask, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+        pucReceivedParams += 4;
         //Read default GW
-        memcpy(recParams, data, NETAPP_IPCONFIG_IP_LENGTH);
-        data += 4;
+        memcpy(params.default_gateway, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+        pucReceivedParams += 4;
         //Read DHCP server
-        memcpy(recParams, data, NETAPP_IPCONFIG_IP_LENGTH);
-        data += 4;
+        memcpy(params.dhcp_server, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+        pucReceivedParams += 4;
         //Read DNS server
-        memcpy(recParams, data, NETAPP_IPCONFIG_IP_LENGTH);
+        memcpy(params.dns_server, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
         // read the status
-        *recParams = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
+        params.status = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
 
 
         if (tSLInformation.sWlanCB) {
-          tSLInformation.sWlanCB(opcode, (char *)params, sizeof(params));
+          tSLInformation.sWlanCB(opcode, &params, sizeof(params));
         }
       }
       break;
@@ -550,12 +543,11 @@ hci_dispatch_event(
     case HCI_EVNT_WLAN_ASYNC_PING_REPORT:
       {
         netapp_pingreport_args_t params;
-        data = (char*)(event_hdr) + HCI_EVENT_HEADER_SIZE;
-        params.packets_sent = STREAM_TO_UINT32(data, NETAPP_PING_PACKETS_SENT_OFFSET);
-        params.packets_received = STREAM_TO_UINT32(data, NETAPP_PING_PACKETS_RCVD_OFFSET);
-        params.min_round_time = STREAM_TO_UINT32(data, NETAPP_PING_MIN_RTT_OFFSET);
-        params.max_round_time = STREAM_TO_UINT32(data, NETAPP_PING_MAX_RTT_OFFSET);
-        params.avg_round_time = STREAM_TO_UINT32(data, NETAPP_PING_AVG_RTT_OFFSET);
+        params.packets_sent = STREAM_TO_UINT32(pucReceivedParams, NETAPP_PING_PACKETS_SENT_OFFSET);
+        params.packets_received = STREAM_TO_UINT32(pucReceivedParams, NETAPP_PING_PACKETS_RCVD_OFFSET);
+        params.min_round_time = STREAM_TO_UINT32(pucReceivedParams, NETAPP_PING_MIN_RTT_OFFSET);
+        params.max_round_time = STREAM_TO_UINT32(pucReceivedParams, NETAPP_PING_MAX_RTT_OFFSET);
+        params.avg_round_time = STREAM_TO_UINT32(pucReceivedParams, NETAPP_PING_AVG_RTT_OFFSET);
 
         if (tSLInformation.sWlanCB) {
           tSLInformation.sWlanCB(opcode, (char*)&params, sizeof(params));
@@ -565,9 +557,7 @@ hci_dispatch_event(
 
     case HCI_EVNT_BSD_TCP_CLOSE_WAIT:
       {
-        int32_t sd;
-        data = (char*)(event_hdr) + HCI_EVENT_HEADER_SIZE;
-        sd = STREAM_TO_UINT32(data, 0);
+        int32_t sd = STREAM_TO_UINT32(pucReceivedParams, 0);
         if (tSLInformation.sWlanCB) {
           tSLInformation.sWlanCB(opcode, (char *)&sd, sizeof(sd));
         }
@@ -585,18 +575,14 @@ hci_dispatch_event(
 
     case HCI_EVNT_WRITE:
       {
-        char *pArg;
-        int32_t status;
-
-        pArg = M_BSD_RESP_PARAMS_OFFSET(event_hdr);
-        status = STREAM_TO_UINT32(pArg, BSD_RSP_PARAMS_STATUS_OFFSET);
+        int32_t status = STREAM_TO_UINT32(pucReceivedParams, BSD_RSP_PARAMS_STATUS_OFFSET);
 
         if (ERROR_SOCKET_INACTIVE == status) {
           // The only synchronous event that can come from SL device in form of
           // command complete is "Command Complete" on data sent, in case SL device
           // was unable to transmit
           tSLInformation.slTransmitDataError = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
-          update_socket_active_status(pArg);
+          update_socket_active_status(pucReceivedParams);
         }
       }
       break;

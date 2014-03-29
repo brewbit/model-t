@@ -43,7 +43,9 @@ extern "C" {
 #endif
 
 
-#define M_BSD_RESP_PARAMS_OFFSET(hci_event_hdr)((char *)(hci_event_hdr) + HCI_EVENT_HEADER_SIZE)
+#define NETAPP_IPCONFIG_IP_LENGTH         (4)
+#define NETAPP_IPCONFIG_MAC_LENGTH        (6)
+#define NETAPP_IPCONFIG_SSID_LENGTH       (32)
 
 
 typedef struct _bsd_accept_return_t {
@@ -80,6 +82,15 @@ typedef struct _bsd_gethostbyname_return_t {
   int32_t retVal;
   int32_t outputAddress;
 } tBsdGethostbynameParams;
+
+typedef struct {
+  uint8_t status;
+  uint8_t ip_addr[NETAPP_IPCONFIG_IP_LENGTH];
+  uint8_t subnet_mask[NETAPP_IPCONFIG_IP_LENGTH];
+  uint8_t default_gateway[NETAPP_IPCONFIG_IP_LENGTH];
+  uint8_t dhcp_server[NETAPP_IPCONFIG_IP_LENGTH];
+  uint8_t dns_server[NETAPP_IPCONFIG_IP_LENGTH];
+} dhcp_status_t;
 
 
 #ifdef  __cplusplus

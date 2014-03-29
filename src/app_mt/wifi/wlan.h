@@ -37,6 +37,7 @@
 
 #include "core/cc3000_common.h"
 #include "core/wlan.h"
+#include "core/hci_msg.h"
 
 //*****************************************************************************
 //

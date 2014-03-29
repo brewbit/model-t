@@ -42,7 +42,7 @@ static void
 scan_thread(void);
 
 static void
-wlan_event(long event_type, char * data, unsigned char length);
+wlan_event(long event_type, void* data, unsigned char length);
 
 static long
 wlan_read_interupt_pin(void);
@@ -122,7 +122,7 @@ net_connect(network_t* net, const char* passphrase)
 }
 
 static void
-wlan_event(long event_type, char * data, unsigned char length)
+wlan_event(long event_type, void* data, unsigned char length)
 {
   (void)length;
 
@@ -152,12 +152,35 @@ wlan_event(long event_type, char * data, unsigned char length)
 
     // Notification of a Dynamic Host Configuration Protocol (DHCP) state change
   case HCI_EVNT_WLAN_UNSOL_DHCP:
-    net_status.dhcp_resolved = (data[20] == 0);
-    sprintf(net_status.ip_addr, "%d.%d.%d.%d", data[3], data[2], data[1], data[0]);
-    sprintf(net_status.subnet_mask, "%d.%d.%d.%d", data[7], data[6], data[5], data[4]);
-    sprintf(net_status.default_gateway, "%d.%d.%d.%d", data[11], data[10], data[9], data[8]);
-    sprintf(net_status.dhcp_server, "%d.%d.%d.%d", data[15], data[14], data[13], data[12]);
-    sprintf(net_status.dns_server, "%d.%d.%d.%d", data[19], data[18], data[17], data[16]);
+    {
+      dhcp_status_t* dhcp = data;
+      net_status.dhcp_resolved = (dhcp->status == 0);
+      sprintf(net_status.ip_addr, "%d.%d.%d.%d",
+          dhcp->ip_addr[3],
+          dhcp->ip_addr[2],
+          dhcp->ip_addr[1],
+          dhcp->ip_addr[0]);
+      sprintf(net_status.subnet_mask, "%d.%d.%d.%d",
+          dhcp->subnet_mask[3],
+          dhcp->subnet_mask[2],
+          dhcp->subnet_mask[1],
+          dhcp->subnet_mask[0]);
+      sprintf(net_status.default_gateway, "%d.%d.%d.%d",
+          dhcp->default_gateway[3],
+          dhcp->default_gateway[2],
+          dhcp->default_gateway[1],
+          dhcp->default_gateway[0]);
+      sprintf(net_status.dhcp_server, "%d.%d.%d.%d",
+          dhcp->dhcp_server[3],
+          dhcp->dhcp_server[2],
+          dhcp->dhcp_server[1],
+          dhcp->dhcp_server[0]);
+      sprintf(net_status.dns_server, "%d.%d.%d.%d",
+          dhcp->dns_server[3],
+          dhcp->dns_server[2],
+          dhcp->dns_server[1],
+          dhcp->dns_server[0]);
+    }
     break;
 
     // Notification that the CC3000 device finished the initialization process

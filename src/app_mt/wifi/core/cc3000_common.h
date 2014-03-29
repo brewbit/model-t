@@ -178,7 +178,7 @@ typedef char *(*tDriverPatches)(unsigned long *usLength);
 
 typedef char *(*tBootLoaderPatches)(unsigned long *usLength);
 
-typedef void (*tWlanCB)(long event_type, char * data, uint8_t length );
+typedef void (*tWlanCB)(long event_type, void* data, uint8_t length );
 
 typedef long (*tWlanReadInteruptPin)(void);
 
