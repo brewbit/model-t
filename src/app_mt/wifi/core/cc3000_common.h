@@ -178,18 +178,18 @@ typedef char *(*tDriverPatches)(unsigned long *usLength);
 
 typedef char *(*tBootLoaderPatches)(unsigned long *usLength);
 
-typedef void (*tWlanCB)(long event_type, char * data, unsigned char length );
+typedef void (*tWlanCB)(long event_type, char * data, uint8_t length );
 
 typedef long (*tWlanReadInteruptPin)(void);
 
-typedef void (*tWriteWlanPin)(unsigned char val);
+typedef void (*tWriteWlanPin)(uint8_t val);
 
 typedef struct
 {
   Semaphore        sem_recv;
   unsigned short   usRxEventOpcode;
-  unsigned char   *pucReceivedData;
-  unsigned char   *pucTxCommandBuffer;
+  uint8_t   *pucReceivedData;
+  uint8_t   *pucTxCommandBuffer;
 
   tFWPatches       sFWPatches;
   tDriverPatches     sDriverPatches;
@@ -207,7 +207,7 @@ typedef struct
   unsigned long    NumberOfSentPackets;
   unsigned long    NumberOfReleasedPackets;
 
-  unsigned char   InformHostOnTxComplete;
+  uint8_t   InformHostOnTxComplete;
 }sSimplLinkInformation;
 
 
@@ -217,22 +217,22 @@ typedef struct
 
 typedef struct _netapp_dhcp_ret_args_t
 {
-    unsigned char aucIP[4];
-    unsigned char aucSubnetMask[4];
-    unsigned char aucDefaultGateway[4];
-    unsigned char aucDHCPServer[4];
-    unsigned char aucDNSServer[4];
+  uint8_t aucIP[4];
+  uint8_t aucSubnetMask[4];
+  uint8_t aucDefaultGateway[4];
+  uint8_t aucDHCPServer[4];
+  uint8_t aucDNSServer[4];
 }tNetappDhcpParams;
 
 typedef struct _netapp_ipconfig_ret_args_t
 {
-    unsigned char aucIP[4];
-    unsigned char aucSubnetMask[4];
-    unsigned char aucDefaultGateway[4];
-    unsigned char aucDHCPServer[4];
-    unsigned char aucDNSServer[4];
-    unsigned char uaMacAddr[6];
-    unsigned char uaSSID[32];
+  uint8_t aucIP[4];
+  uint8_t aucSubnetMask[4];
+  uint8_t aucDefaultGateway[4];
+  uint8_t aucDHCPServer[4];
+  uint8_t aucDNSServer[4];
+  uint8_t uaMacAddr[6];
+  uint8_t uaSSID[32];
 }tNetappIpconfigRetArgs;
 
 /*Ping send report parameters*/
@@ -325,7 +325,7 @@ typedef struct _in_addr_t
 typedef struct _sockaddr_t
 {
     unsigned short int    sa_family;
-    unsigned char         sa_data[14];
+    uint8_t         sa_data[14];
 } sockaddr;
 
 typedef struct _sockaddr_in_t
@@ -628,7 +628,7 @@ extern void SimpleLinkWaitEvent(unsigned short usOpcode, void *pRetParams);
 //
 //*****************************************************************************
 
-extern void SimpleLinkWaitData(unsigned char *pBuf, unsigned char *from, unsigned char *fromlen);
+extern void SimpleLinkWaitData(uint8_t *pBuf, uint8_t *from, uint8_t *fromlen);
 
 //*****************************************************************************
 //
@@ -644,7 +644,7 @@ extern void SimpleLinkWaitData(unsigned char *pBuf, unsigned char *from, unsigne
 //
 //*****************************************************************************
 
-extern unsigned char* UINT32_TO_STREAM_f (unsigned char *p, unsigned long u32);
+extern uint8_t* UINT32_TO_STREAM_f (uint8_t *p, unsigned long u32);
 
 //*****************************************************************************
 //
@@ -660,7 +660,7 @@ extern unsigned char* UINT32_TO_STREAM_f (unsigned char *p, unsigned long u32);
 //
 //*****************************************************************************
 
-extern unsigned char* UINT16_TO_STREAM_f (unsigned char *p, unsigned short u16);
+extern uint8_t* UINT16_TO_STREAM_f (uint8_t *p, unsigned short u16);
 
 //*****************************************************************************
 //
@@ -707,14 +707,14 @@ extern unsigned long STREAM_TO_UINT32_f(char* p, unsigned short offset);
 //This macro is used for copying 32 bit to stream while converting to little endian format.
 #define UINT32_TO_STREAM(_p, _u32)  (UINT32_TO_STREAM_f(_p, _u32))
 //This macro is used for copying a specified value length bits (l) to stream while converting to little endian format.
-#define ARRAY_TO_STREAM(p, a, l)   {register short _i; for (_i = 0; _i < (short)l; _i++) *(p)++ = ((unsigned char *) a)[_i];}
+#define ARRAY_TO_STREAM(p, a, l)   {register short _i; for (_i = 0; _i < (short)l; _i++) *(p)++ = ((uint8_t *) a)[_i];}
 //This macro is used for copying received stream to 8 bit in little endian format.
-#define STREAM_TO_UINT8(_p, _offset, _u8)  {_u8 = (unsigned char)(*(_p + _offset));}
+#define STREAM_TO_UINT8(_p, _offset)  (uint8_t)(*((char*)_p + _offset))
 //This macro is used for copying received stream to 16 bit in little endian format.
-#define STREAM_TO_UINT16(_p, _offset, _u16)  {_u16 = STREAM_TO_UINT16_f(_p, _offset);}
+#define STREAM_TO_UINT16(_p, _offset)  STREAM_TO_UINT16_f((char*)_p, _offset)
 //This macro is used for copying received stream to 32 bit in little endian format.
-#define STREAM_TO_UINT32(_p, _offset, _u32)  {_u32 = STREAM_TO_UINT32_f(_p, _offset);}
-#define STREAM_TO_STREAM(p, a, l)   {register short _i; for (_i = 0; _i < l; _i++) *(a)++= ((unsigned char *) p)[_i];}
+#define STREAM_TO_UINT32(_p, _offset)  STREAM_TO_UINT32_f((char*)_p, _offset)
+#define STREAM_TO_STREAM(p, a, l)   {register short _i; for (_i = 0; _i < l; _i++) *(a)++= ((uint8_t *) p)[_i];}
 
 
 

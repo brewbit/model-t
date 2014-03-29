@@ -200,7 +200,7 @@ spi_io_thread(void* arg)
       ASSERT_CS();
 
       /* Read header */
-      spiExchange(SPI_WLAN, 10, tSpiReadHeader, wlan_rx_buffer);
+      spiExchange(SPI_WLAN, HEADERS_SIZE_EVNT, tSpiReadHeader, wlan_rx_buffer);
 
       /* Read payload */
       spi_read_payload();
@@ -312,37 +312,31 @@ spi_read_payload(void)
   uint8_t *evnt_buff, type;
 
   //determine what type of packet we have
-  evnt_buff =  wlan_rx_buffer;
+  evnt_buff =  wlan_rx_buffer + SPI_HEADER_SIZE;
   data_to_recv = 0;
-  STREAM_TO_UINT8((char *)(evnt_buff + SPI_HEADER_SIZE), HCI_PACKET_TYPE_OFFSET,
-      type);
+  type = STREAM_TO_UINT8(evnt_buff, HCI_PACKET_TYPE_OFFSET);
 
   switch(type) {
   case HCI_TYPE_DATA:
     // We need to read the rest of data..
-    STREAM_TO_UINT16((char *)(evnt_buff + SPI_HEADER_SIZE),
-        HCI_DATA_LENGTH_OFFSET, data_to_recv);
-    if (!((HEADERS_SIZE_EVNT + data_to_recv) & 1))
+    data_to_recv = STREAM_TO_UINT16(evnt_buff, HCI_DATA_LENGTH_OFFSET);
+    if (((HEADERS_SIZE_EVNT + data_to_recv) & 1) == 0)
       data_to_recv++;
-
-    if (data_to_recv)
-      spiReceive(SPI_WLAN, data_to_recv, evnt_buff + 10);
     break;
 
   case HCI_TYPE_EVNT:
     // Calculate the rest length of the data
-    STREAM_TO_UINT8((char *)(evnt_buff + SPI_HEADER_SIZE),
-        HCI_EVENT_LENGTH_OFFSET, data_to_recv);
+    data_to_recv = STREAM_TO_UINT8(evnt_buff, HCI_EVENT_LENGTH_OFFSET);
     data_to_recv -= 1;
 
     // Add padding byte if needed
     if ((HEADERS_SIZE_EVNT + data_to_recv) & 1)
       data_to_recv++;
-
-    if (data_to_recv)
-      spiReceive(SPI_WLAN, data_to_recv, evnt_buff + 10);
     break;
   }
+
+  if (data_to_recv)
+    spiReceive(SPI_WLAN, data_to_recv, evnt_buff + 5);
 }
 
 //*****************************************************************************
