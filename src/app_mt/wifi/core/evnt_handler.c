@@ -133,7 +133,7 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size);
 static void
 hci_dispatch_data(uint8_t* buffer, uint16_t buffer_size);
 
-static long
+static int32_t
 hci_event_unsol_flowcontrol_handler(uint8_t* pEvent);
 
 static void
@@ -391,7 +391,7 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
       break;
     case HCI_EVNT_BSD_TCP_CLOSE_WAIT:
       {
-        long sd;
+        int32_t sd;
         data = (char*)(event_hdr) + HCI_EVENT_HEADER_SIZE;
         sd = STREAM_TO_UINT32(data, 0);
         if (tSLInformation.sWlanCB) {
@@ -415,7 +415,7 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
     case HCI_EVNT_WRITE:
     {
       char *pArg;
-      long status;
+      int32_t status;
 
       pArg = M_BSD_RESP_PARAMS_OFFSET(event_hdr);
       status = STREAM_TO_UINT32(pArg, BSD_RSP_PARAMS_STATUS_OFFSET);
@@ -609,12 +609,11 @@ hci_dispatch_event(uint8_t* event_hdr, uint16_t event_size)
 //
 //*****************************************************************************
 void
-set_socket_active_status(long Sd, long Status)
+set_socket_active_status(int32_t sd, int32_t status)
 {
-  if(M_IS_VALID_SD(Sd) && M_IS_VALID_STATUS(Status))
-  {
-    socket_active_status &= ~(1 << Sd);      /* clean socket's mask */
-    socket_active_status |= (Status << Sd); /* set new socket's mask */
+  if(M_IS_VALID_SD(sd) && M_IS_VALID_STATUS(status)) {
+    socket_active_status &= ~(1 << sd);      /* clean socket's mask */
+    socket_active_status |= (status << sd); /* set new socket's mask */
   }
 }
 
@@ -632,12 +631,12 @@ set_socket_active_status(long Sd, long Status)
 //!           number of free buffer in the SL device.
 //
 //*****************************************************************************
-static long
+static int32_t
 hci_event_unsol_flowcontrol_handler(uint8_t* pEvent)
 {
-  long temp, value;
-  unsigned short i;
-  unsigned short  pusNumberOfHandles=0;
+  int32_t temp, value;
+  uint16_t i;
+  uint16_t  pusNumberOfHandles=0;
   char *pReadPayload;
 
   pusNumberOfHandles = STREAM_TO_UINT16(pEvent, HCI_EVENT_HEADER_SIZE);
@@ -645,8 +644,7 @@ hci_event_unsol_flowcontrol_handler(uint8_t* pEvent)
                   HCI_EVENT_HEADER_SIZE + sizeof(pusNumberOfHandles));
   temp = 0;
 
-  for(i = 0; i < pusNumberOfHandles ; i++)
-  {
+  for(i = 0; i < pusNumberOfHandles; i++) {
     value = STREAM_TO_UINT16(pReadPayload, FLOW_CONTROL_EVENT_FREE_BUFFS_OFFSET);
     temp += value;
     pReadPayload += FLOW_CONTROL_EVENT_SIZE;
@@ -668,8 +666,8 @@ hci_event_unsol_flowcontrol_handler(uint8_t* pEvent)
 //!  @brief  Retrieve socket status
 //
 //*****************************************************************************
-long
-get_socket_active_status(long sd)
+int32_t
+get_socket_active_status(int32_t sd)
 {
   if(M_IS_VALID_SD(sd)) {
     return (socket_active_status & (1 << sd)) ? SOCKET_STATUS_INACTIVE : SOCKET_STATUS_ACTIVE;
@@ -690,7 +688,7 @@ get_socket_active_status(long sd)
 void
 update_socket_active_status(char *resp_params)
 {
-  long status, sd;
+  int32_t status, sd;
 
   sd = STREAM_TO_UINT32(resp_params, BSD_RSP_PARAMS_SOCKET_OFFSET);
   status = STREAM_TO_UINT32(resp_params, BSD_RSP_PARAMS_STATUS_OFFSET);
@@ -713,7 +711,7 @@ update_socket_active_status(char *resp_params)
 //
 //*****************************************************************************
 void 
-SimpleLinkWaitEvent(unsigned short usOpcode, void *pRetParams)
+SimpleLinkWaitEvent(uint16_t usOpcode, void *pRetParams)
 {
   // In the blocking implementation the control to caller will be returned only
   // after the end of current transaction
