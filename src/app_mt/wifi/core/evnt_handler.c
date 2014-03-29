@@ -179,11 +179,12 @@ hci_dispatch_packet(uint8_t* buffer, uint16_t buffer_size)
 static void
 hci_dispatch_data(uint8_t* buffer, uint16_t buffer_size)
 {
-  uint8_t argsize = STREAM_TO_UINT8(buffer, HCI_PACKET_ARGSIZE_OFFSET);
-  uint16_t pktLength = STREAM_TO_UINT16(buffer, HCI_PACKET_LENGTH_OFFSET);
+  uint8_t arg_size = STREAM_TO_UINT8(buffer, HCI_PACKET_ARGSIZE_OFFSET);
+  uint16_t pkt_length = STREAM_TO_UINT16(buffer, HCI_PACKET_LENGTH_OFFSET);
 
-  if (pktLength + HCI_DATA_HEADER_SIZE > buffer_size) {
-    printf("Invalid data length: %d %d\r\n", pktLength, buffer_size);
+  // Don't copy data over if the app is not expecting it
+  if (tSLInformation.usRxDataPending == 0) {
+    printf("Received unrequested data packet! %d %d %d\r\n", buffer[0], arg_size, pkt_length);
     return;
   }
 
@@ -194,9 +195,22 @@ hci_dispatch_data(uint8_t* buffer, uint16_t buffer_size)
     memcpy(tSLInformation.from, (buffer + HCI_DATA_HEADER_SIZE + BSD_RECV_FROM_FROM_OFFSET), *tSLInformation.fromlen);
   }
 
-  memcpy(tSLInformation.pRetParams,
-      buffer + HCI_DATA_HEADER_SIZE + argsize,
-      pktLength - argsize);
+  // Let's vet length
+  int32_t data_length = pkt_length - arg_size;
+  if ((data_length <= 0) ||
+      (pkt_length + HCI_DATA_HEADER_SIZE > buffer_size)) {
+    printf("Invalid data length: %d %d %d\r\n", pkt_length, arg_size, buffer_size);
+    data_length = -1;
+  }
+  else {
+    memcpy(tSLInformation.pRetParams,
+        buffer + HCI_DATA_HEADER_SIZE + arg_size,
+        data_length);
+  }
+
+  // fixes the Nvram read not returning length
+  if (tSLInformation.fromlen)
+    *tSLInformation.fromlen = data_length;
 
   tSLInformation.usRxDataPending = 0;
   chSemSignal(&tSLInformation.sem_recv);
