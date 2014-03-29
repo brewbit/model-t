@@ -291,14 +291,14 @@ long netapp_ping_stop()
 //*****************************************************************************
 
 #ifndef CC3000_TINY_DRIVER
-void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
+void netapp_ipconfig(netapp_ipconfig_args_t* ipconfig )
 {
     chMtxLock(&g_main_mutex);
     c_netapp_ipconfig(ipconfig);
     chMtxUnlock();
 }
 #else
-void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
+void netapp_ipconfig(netapp_ipconfig_args_t* ipconfig )
 {
 
 }

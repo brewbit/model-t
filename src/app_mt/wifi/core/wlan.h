@@ -36,6 +36,7 @@
 #define __C_WLAN_H__
 
 #include "cc3000_common.h"
+#include "hci_msg.h"
 
 //*****************************************************************************
 //
@@ -365,8 +366,10 @@ extern long c_wlan_ioctl_set_connection_policy(unsigned long should_connect_to_o
 //!  @sa        wlan_ioctl_set_scan_params
 //
 //*****************************************************************************
-extern long c_wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
-                                          unsigned char *ucResults);
+void
+c_wlan_ioctl_get_scan_results(
+    unsigned long ulScanTimeout,
+    wlan_scan_results_t* results);
 
 //*****************************************************************************
 //

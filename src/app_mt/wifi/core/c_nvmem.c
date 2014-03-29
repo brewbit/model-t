@@ -256,11 +256,10 @@ unsigned char c_nvmem_write_patch(unsigned long ulFileId, unsigned long spLength
 //*****************************************************************************
 
 #ifndef CC3000_TINY_DRIVER
-unsigned char c_nvmem_read_sp_version(unsigned char* patchVer)
+unsigned char c_nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 {
     unsigned char *ptr;
-    // 1st byte is the status and the rest is the SP version
-    unsigned char   retBuf[5];
+    unsigned char retBuf[3];
 
     ptr = tSLInformation.pucTxCommandBuffer;
 
@@ -268,12 +267,10 @@ unsigned char c_nvmem_read_sp_version(unsigned char* patchVer)
     hci_command_send(HCI_CMND_READ_SP_VERSION, ptr, 0);
     hci_wait_for_event(HCI_CMND_READ_SP_VERSION, retBuf);
 
-    // package ID
-    *patchVer = retBuf[3];
-    // package build number
-    *(patchVer+1) = retBuf[4];
+    sp_version->package_id = retBuf[3];
+    sp_version->package_build = retBuf[4];
 
-    return(retBuf[0]);
+    return retBuf[0];
 }
 #endif
 

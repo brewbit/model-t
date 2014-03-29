@@ -184,8 +184,7 @@ typedef long (*tWlanReadInteruptPin)(void);
 
 typedef void (*tWriteWlanPin)(uint8_t val);
 
-typedef struct
-{
+typedef struct {
   Semaphore        sem_recv;
   unsigned short   usRxEventOpcode;
   uint8_t   *pucTxCommandBuffer;
@@ -211,48 +210,7 @@ typedef struct
   unsigned long    NumberOfReleasedPackets;
 
   uint8_t   InformHostOnTxComplete;
-}sSimplLinkInformation;
-
-
-
-//*************************************************************************************
-//@@@ NetApp Common Header - Start
-
-typedef struct _netapp_dhcp_ret_args_t
-{
-  uint8_t aucIP[4];
-  uint8_t aucSubnetMask[4];
-  uint8_t aucDefaultGateway[4];
-  uint8_t aucDHCPServer[4];
-  uint8_t aucDNSServer[4];
-}tNetappDhcpParams;
-
-typedef struct _netapp_ipconfig_ret_args_t
-{
-  uint8_t aucIP[4];
-  uint8_t aucSubnetMask[4];
-  uint8_t aucDefaultGateway[4];
-  uint8_t aucDHCPServer[4];
-  uint8_t aucDNSServer[4];
-  uint8_t uaMacAddr[6];
-  uint8_t uaSSID[32];
-}tNetappIpconfigRetArgs;
-
-/*Ping send report parameters*/
-typedef struct _netapp_pingreport_args
-{
-    unsigned long packets_sent;
-    unsigned long packets_received;
-    unsigned long min_round_time;
-    unsigned long max_round_time;
-    unsigned long avg_round_time;
-} netapp_pingreport_args_t;
-
-//@@@ NetApp Common Header - End
-//**************************************************************************************
-
-
-
+} sSimplLinkInformation;
 
 //*************************************************************************************
 //@@@ Socket Common Header - Start
@@ -320,23 +278,20 @@ typedef struct _netapp_pingreport_args
 #define NO_QUERY_RECIVED        -3
 
 
-typedef struct _in_addr_t
-{
-    unsigned long s_addr;                   // load with inet_aton()
+typedef struct {
+  unsigned long s_addr;                   // load with inet_aton()
 } in_addr;
 
-typedef struct _sockaddr_t
-{
-    unsigned short int    sa_family;
-    uint8_t         sa_data[14];
+typedef struct {
+  unsigned short int    sa_family;
+  uint8_t         sa_data[14];
 } sockaddr;
 
-typedef struct _sockaddr_in_t
-{
-    short            sin_family;            // e.g. AF_INET
-    unsigned short   sin_port;              // e.g. htons(3490)
-    in_addr          sin_addr;              // see struct in_addr, below
-    char             sin_zero[8];           // zero this if you want to
+typedef struct {
+  short            sin_family;            // e.g. AF_INET
+  unsigned short   sin_port;              // e.g. htons(3490)
+  in_addr          sin_addr;              // see struct in_addr, below
+  char             sin_zero[8];           // zero this if you want to
 } sockaddr_in;
 
 typedef unsigned long socklen_t;
@@ -350,8 +305,7 @@ typedef long int __wfd_mask;
 #define __WFDMASK(d)             ((__wfd_mask) 1 << ((d) % __NWFDBITS))
 
 // wfd_set for select and pselect.
-typedef struct
-{
+typedef struct {
     __wfd_mask wfds_bits[__WFD_SETSIZE / __NWFDBITS];
 #define __WFDS_BITS(set)        ((set)->wfds_bits)
 } wfd_set;

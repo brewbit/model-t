@@ -48,24 +48,21 @@ extern "C" {
 #define NETAPP_IPCONFIG_SSID_LENGTH       (32)
 
 
-typedef struct _bsd_accept_return_t {
+typedef struct {
   int32_t iSocketDescriptor;
   int32_t iStatus;
   sockaddr tSocketAddress;
 } tBsdReturnParams;
 
 
-typedef struct _bsd_read_return_t {
+typedef struct {
   int32_t iSocketDescriptor;
   int32_t iNumberOfBytes;
   uint32_t uiFlags;
 } tBsdReadReturnParams;
 
-#define BSD_RECV_FROM_FROMLEN_OFFSET  (4)
-#define BSD_RECV_FROM_FROM_OFFSET    (16)
 
-
-typedef struct _bsd_select_return_t {
+typedef struct {
   int32_t iStatus;
   uint32_t uiRdfd;
   uint32_t uiWrfd;
@@ -73,12 +70,12 @@ typedef struct _bsd_select_return_t {
 } tBsdSelectRecvParams;
 
 
-typedef struct _bsd_getsockopt_return_t {
+typedef struct {
   uint8_t ucOptValue[4];
   char iStatus;
 } tBsdGetSockOptReturnParams;
 
-typedef struct _bsd_gethostbyname_return_t {
+typedef struct {
   int32_t retVal;
   int32_t outputAddress;
 } tBsdGethostbynameParams;
@@ -90,7 +87,42 @@ typedef struct {
   uint8_t default_gateway[NETAPP_IPCONFIG_IP_LENGTH];
   uint8_t dhcp_server[NETAPP_IPCONFIG_IP_LENGTH];
   uint8_t dns_server[NETAPP_IPCONFIG_IP_LENGTH];
-} dhcp_status_t;
+} netapp_dhcp_params_t;
+
+typedef struct {
+  uint8_t ip_addr[NETAPP_IPCONFIG_IP_LENGTH];
+  uint8_t subnet_mask[NETAPP_IPCONFIG_IP_LENGTH];
+  uint8_t default_gateway[NETAPP_IPCONFIG_IP_LENGTH];
+  uint8_t dhcp_server[NETAPP_IPCONFIG_IP_LENGTH];
+  uint8_t dns_server[NETAPP_IPCONFIG_IP_LENGTH];
+  uint8_t mac_addr[NETAPP_IPCONFIG_MAC_LENGTH];
+  uint8_t ssid[NETAPP_IPCONFIG_SSID_LENGTH];
+} netapp_ipconfig_args_t;
+
+typedef struct {
+  uint32_t packets_sent;
+  uint32_t packets_received;
+  uint32_t min_round_time;
+  uint32_t max_round_time;
+  uint32_t avg_round_time;
+} netapp_pingreport_args_t;
+
+typedef struct {
+  uint8_t package_id;
+  uint8_t package_build;
+} nvmem_sp_version_t;
+
+typedef struct {
+  uint32_t result_count;
+  uint32_t scan_status;
+  uint8_t valid;
+  uint8_t rssi;
+  uint8_t security_mode;
+  uint8_t ssid_len;
+  uint16_t frame_time;
+  uint8_t ssid[NETAPP_IPCONFIG_SSID_LENGTH];
+  uint8_t bssid[NETAPP_IPCONFIG_MAC_LENGTH];
+} wlan_scan_results_t;
 
 
 #ifdef  __cplusplus

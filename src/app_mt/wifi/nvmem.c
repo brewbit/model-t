@@ -218,12 +218,12 @@ unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long spLength,
 //*****************************************************************************
 
 #ifndef CC3000_TINY_DRIVER
-unsigned char nvmem_read_sp_version(unsigned char* patchVer)
+unsigned char nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 {
     unsigned char ret;
 
     chMtxLock(&g_main_mutex);
-    ret = c_nvmem_read_sp_version(patchVer);
+    ret = c_nvmem_read_sp_version(sp_version);
     chMtxUnlock();
 
     return(ret);

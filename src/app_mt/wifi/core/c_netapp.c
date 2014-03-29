@@ -354,7 +354,7 @@ long c_netapp_ping_stop()
 //*****************************************************************************
 
 #ifndef CC3000_TINY_DRIVER
-void c_netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
+void c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig)
 {
     unsigned char *ptr;
 
@@ -368,7 +368,7 @@ void c_netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
 
 }
 #else
-void c_netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
+void c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig)
 {
 
 }

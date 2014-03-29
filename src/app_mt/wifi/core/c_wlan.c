@@ -716,29 +716,27 @@ long c_wlan_ioctl_del_profile(unsigned long ulIndex)
 //!  @sa        wlan_ioctl_set_scan_params
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
-long c_wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
-                                   unsigned char *ucResults)
+void
+c_wlan_ioctl_get_scan_results(
+    unsigned long ulScanTimeout,
+    wlan_scan_results_t* results)
 {
-    unsigned char *ptr;
-    unsigned char *args;
+  unsigned char *ptr;
+  unsigned char *args;
 
-    ptr = tSLInformation.pucTxCommandBuffer;
-    args = (ptr + HEADERS_SIZE_CMD);
+  ptr = tSLInformation.pucTxCommandBuffer;
+  args = (ptr + HEADERS_SIZE_CMD);
 
-    // Fill in temporary command buffer
-    args = UINT32_TO_STREAM(args, ulScanTimeout);
+  // Fill in temporary command buffer
+  args = UINT32_TO_STREAM(args, ulScanTimeout);
 
-    // Initiate a HCI command
-    hci_command_send(HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS,
-        ptr, WLAN_GET_SCAN_RESULTS_PARAMS_LEN);
+  // Initiate a HCI command
+  hci_command_send(HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS,
+      ptr, WLAN_GET_SCAN_RESULTS_PARAMS_LEN);
 
-    // Wait for command complete event
-    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS, ucResults);
-
-    return(0);
+  // Wait for command complete event
+  hci_wait_for_event(HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS, results);
 }
-#endif
 
 //*****************************************************************************
 //

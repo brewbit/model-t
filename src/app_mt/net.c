@@ -153,7 +153,7 @@ wlan_event(long event_type, void* data, unsigned char length)
     // Notification of a Dynamic Host Configuration Protocol (DHCP) state change
   case HCI_EVNT_WLAN_UNSOL_DHCP:
     {
-      dhcp_status_t* dhcp = data;
+      netapp_dhcp_params_t* dhcp = data;
       net_status.dhcp_resolved = (dhcp->status == 0);
       sprintf(net_status.ip_addr, "%d.%d.%d.%d",
           dhcp->ip_addr[3],
@@ -257,24 +257,20 @@ perform_scan()
 static long
 get_scan_result(net_scan_result_t* result)
 {
-  unsigned char scan_buf[50];
+  wlan_scan_results_t results;
 
-  long ret = wlan_ioctl_get_scan_results(0, scan_buf);
-  if (ret != 0)
-    return ret;
+  wlan_ioctl_get_scan_results(0, &results);
 
-  result->networks_found = (scan_buf[3] << 24) | (scan_buf[2] << 16) | (scan_buf[1] << 8) | scan_buf[0];
-  result->scan_status = (scan_buf[7] << 24) | (scan_buf[6] << 16) | (scan_buf[5] << 8) | scan_buf[4];
-  result->valid = (scan_buf[8] & 0x01);
-
-  result->network.rssi = (scan_buf[8] >> 1) - 128;
-  result->network.security_mode = (scan_buf[9] & 0x03);
-
-  int ssid_len = (scan_buf[9] >> 2);
-  memcpy(result->network.ssid, &scan_buf[12], ssid_len);
+  result->networks_found = results.result_count;
+  result->scan_status = results.scan_status;
+  result->valid = results.valid;
+  result->network.rssi = results.rssi;
+  result->network.security_mode = results.security_mode;
+  int ssid_len = results.ssid_len;
+  memcpy(result->network.ssid, results.ssid, ssid_len);
   result->network.ssid[ssid_len] = 0;
 
-  memcpy(result->network.bssid, &scan_buf[44], 6);
+  memcpy(result->network.bssid, results.bssid, 6);
 
   result->network.last_seen = chTimeNow();
 
@@ -390,12 +386,12 @@ wlan_thread(void* arg)
   wlan_start(0);
 
   {
-    unsigned char patchVer[2];
-    nvmem_read_sp_version(patchVer);
-    sprintf(net_status.sp_ver, "%d.%d", patchVer[0], patchVer[1]);
+    nvmem_sp_version_t sp_version;
+    nvmem_read_sp_version(&sp_version);
+    sprintf(net_status.sp_ver, "%d.%d", sp_version.package_id, sp_version.package_build);
     printf("CC3000 Service Pack Version: %s\r\n", net_status.sp_ver);
 
-    if (patchVer[0] != 1 || patchVer[1] != 24) {
+    if (sp_version.package_id != 1 || sp_version.package_build != 24) {
       printf("  Not up to date. Applying patch.\r\n");
       wlan_apply_patch();
       printf("  Update complete\r\n");

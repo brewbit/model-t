@@ -36,6 +36,7 @@
 #define __NVRAM_H__
 
 #include "core/cc3000_common.h"
+#include "core/hci_msg.h"
 
 
 //*****************************************************************************
@@ -199,7 +200,7 @@ extern  unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long sp
 //!
 //*****************************************************************************
 #ifndef CC3000_TINY_DRIVER
-extern  unsigned char nvmem_read_sp_version(unsigned char* patchVer);
+extern  unsigned char nvmem_read_sp_version(nvmem_sp_version_t* sp_version);
 #endif
 
 //*****************************************************************************

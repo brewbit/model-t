@@ -477,16 +477,14 @@ long wlan_ioctl_del_profile(unsigned long ulIndex)
 //
 //*****************************************************************************
 #ifndef CC3000_TINY_DRIVER
-long wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
-                                 unsigned char *ucResults)
+void
+wlan_ioctl_get_scan_results(
+    unsigned long ulScanTimeout,
+    wlan_scan_results_t* results)
 {
-    long ret;
-
-    chMtxLock(&g_main_mutex);
-    ret = c_wlan_ioctl_get_scan_results(ulScanTimeout, ucResults);
-    chMtxUnlock();
-
-    return(ret);
+  chMtxLock(&g_main_mutex);
+  c_wlan_ioctl_get_scan_results(ulScanTimeout, results);
+  chMtxUnlock();
 }
 #endif
 

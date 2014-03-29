@@ -53,56 +53,55 @@
 //                  COMMON DEFINES
 //*****************************************************************************
 
-#define SL_PATCH_PORTION_SIZE    (1000)
+#define SL_PATCH_PORTION_SIZE                     (1000)
 
-#define FLOW_CONTROL_EVENT_HANDLE_OFFSET    (0)
-#define FLOW_CONTROL_EVENT_BLOCK_MODE_OFFSET  (1)
-#define FLOW_CONTROL_EVENT_FREE_BUFFS_OFFSET  (2)
-#define FLOW_CONTROL_EVENT_SIZE          (4)
+#define FLOW_CONTROL_EVENT_HANDLE_OFFSET           (0)
+#define FLOW_CONTROL_EVENT_BLOCK_MODE_OFFSET       (1)
+#define FLOW_CONTROL_EVENT_FREE_BUFFS_OFFSET       (2)
+#define FLOW_CONTROL_EVENT_SIZE                    (4)
 
-#define BSD_RSP_PARAMS_SOCKET_OFFSET    (0)
-#define BSD_RSP_PARAMS_STATUS_OFFSET    (4)
+#define BSD_RSP_PARAMS_SOCKET_OFFSET               (0)
+#define BSD_RSP_PARAMS_STATUS_OFFSET               (4)
 
-#define GET_HOST_BY_NAME_RETVAL_OFFSET  (0)
-#define GET_HOST_BY_NAME_ADDR_OFFSET  (4)
+#define GET_HOST_BY_NAME_RETVAL_OFFSET             (0)
+#define GET_HOST_BY_NAME_ADDR_OFFSET               (4)
 
-#define ACCEPT_SD_OFFSET      (0)
-#define ACCEPT_RETURN_STATUS_OFFSET  (4)
-#define ACCEPT_ADDRESS__OFFSET    (8)
+#define ACCEPT_SD_OFFSET                           (0)
+#define ACCEPT_RETURN_STATUS_OFFSET                (4)
+#define ACCEPT_ADDRESS__OFFSET                     (8)
 
-#define SL_RECEIVE_SD_OFFSET      (0)
-#define SL_RECEIVE_NUM_BYTES_OFFSET    (4)
-#define SL_RECEIVE__FLAGS__OFFSET    (8)
+#define SL_RECEIVE_SD_OFFSET                       (0)
+#define SL_RECEIVE_NUM_BYTES_OFFSET                (4)
+#define SL_RECEIVE__FLAGS__OFFSET                  (8)
 
+#define BSD_RECV_FROM_FROMLEN_OFFSET               (4)
+#define BSD_RECV_FROM_FROM_OFFSET                  (16)
 
+#define SELECT_STATUS_OFFSET                       (0)
+#define SELECT_READFD_OFFSET                       (4)
+#define SELECT_WRITEFD_OFFSET                      (8)
+#define SELECT_EXFD_OFFSET                         (12)
 
+#define NETAPP_IPCONFIG_IP_OFFSET                  (0)
+#define NETAPP_IPCONFIG_SUBNET_OFFSET              (4)
+#define NETAPP_IPCONFIG_GW_OFFSET                  (8)
+#define NETAPP_IPCONFIG_DHCP_OFFSET                (12)
+#define NETAPP_IPCONFIG_DNS_OFFSET                 (16)
+#define NETAPP_IPCONFIG_MAC_OFFSET                 (20)
+#define NETAPP_IPCONFIG_SSID_OFFSET                (26)
 
-#define SELECT_STATUS_OFFSET      (0)
-#define SELECT_READFD_OFFSET      (4)
-#define SELECT_WRITEFD_OFFSET      (8)
-#define SELECT_EXFD_OFFSET        (12)
+#define NETAPP_PING_PACKETS_SENT_OFFSET            (0)
+#define NETAPP_PING_PACKETS_RCVD_OFFSET            (4)
+#define NETAPP_PING_MIN_RTT_OFFSET                 (8)
+#define NETAPP_PING_MAX_RTT_OFFSET                 (12)
+#define NETAPP_PING_AVG_RTT_OFFSET                 (16)
 
-
-#define NETAPP_IPCONFIG_IP_OFFSET        (0)
-#define NETAPP_IPCONFIG_SUBNET_OFFSET      (4)
-#define NETAPP_IPCONFIG_GW_OFFSET        (8)
-#define NETAPP_IPCONFIG_DHCP_OFFSET        (12)
-#define NETAPP_IPCONFIG_DNS_OFFSET        (16)
-#define NETAPP_IPCONFIG_MAC_OFFSET        (20)
-#define NETAPP_IPCONFIG_SSID_OFFSET        (26)
-
-
-#define NETAPP_PING_PACKETS_SENT_OFFSET      (0)
-#define NETAPP_PING_PACKETS_RCVD_OFFSET      (4)
-#define NETAPP_PING_MIN_RTT_OFFSET        (8)
-#define NETAPP_PING_MAX_RTT_OFFSET        (12)
-#define NETAPP_PING_AVG_RTT_OFFSET        (16)
-
-#define GET_SCAN_RESULTS_TABlE_COUNT_OFFSET        (0)
-#define GET_SCAN_RESULTS_SCANRESULT_STATUS_OFFSET    (4)
-#define GET_SCAN_RESULTS_ISVALID_TO_SSIDLEN_OFFSET    (8)
-#define GET_SCAN_RESULTS_FRAME_TIME_OFFSET        (10)
-#define GET_SCAN_RESULTS_SSID_MAC_LENGTH        (38)
+#define GET_SCAN_RESULTS_TABLE_COUNT_OFFSET        (0)
+#define GET_SCAN_RESULTS_SCANRESULT_STATUS_OFFSET  (4)
+#define GET_SCAN_RESULTS_ISVALID_TO_SSIDLEN_OFFSET (8)
+#define GET_SCAN_RESULTS_FRAME_TIME_OFFSET         (10)
+#define GET_SCAN_RESULTS_SSID_OFFSET               (12)
+#define GET_SCAN_RESULTS_BSSID_OFFSET              (44)
 
 
 //*****************************************************************************
@@ -122,7 +121,7 @@ static int32_t
 hci_event_unsol_flowcontrol_handler(uint8_t* pEvent);
 
 static void
-update_socket_active_status(char *resp_params);
+update_socket_active_status(uint8_t* resp_params);
 
 
 //*****************************************************************************
@@ -481,7 +480,6 @@ hci_dispatch_event(
     uint8_t* event_hdr,
     uint16_t event_size)
 {
-  uint32_t retValue32;
   uint16_t opcode = STREAM_TO_UINT16(event_hdr, HCI_EVENT_OPCODE_OFFSET);
   uint16_t usLength = STREAM_TO_UINT8(event_hdr, HCI_DATA_LENGTH_OFFSET);
   uint8_t* pucReceivedParams = event_hdr + HCI_EVENT_HEADER_SIZE;
@@ -507,14 +505,13 @@ hci_dispatch_event(
     case HCI_EVNT_WLAN_UNSOL_DISCONNECT:
     case HCI_EVNT_WLAN_UNSOL_INIT:
     case HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE:
-      if (tSLInformation.sWlanCB) {
+      if (tSLInformation.sWlanCB)
         tSLInformation.sWlanCB(opcode, 0, 0);
-      }
       break;
 
     case HCI_EVNT_WLAN_UNSOL_DHCP:
       {
-        dhcp_status_t params;
+        netapp_dhcp_params_t params;
 
         //Read IP address
         memcpy(params.ip_addr, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
@@ -533,10 +530,8 @@ hci_dispatch_event(
         // read the status
         params.status = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
 
-
-        if (tSLInformation.sWlanCB) {
+        if (tSLInformation.sWlanCB)
           tSLInformation.sWlanCB(opcode, &params, sizeof(params));
-        }
       }
       break;
 
@@ -549,18 +544,16 @@ hci_dispatch_event(
         params.max_round_time = STREAM_TO_UINT32(pucReceivedParams, NETAPP_PING_MAX_RTT_OFFSET);
         params.avg_round_time = STREAM_TO_UINT32(pucReceivedParams, NETAPP_PING_AVG_RTT_OFFSET);
 
-        if (tSLInformation.sWlanCB) {
+        if (tSLInformation.sWlanCB)
           tSLInformation.sWlanCB(opcode, (char*)&params, sizeof(params));
-        }
       }
       break;
 
     case HCI_EVNT_BSD_TCP_CLOSE_WAIT:
       {
         int32_t sd = STREAM_TO_UINT32(pucReceivedParams, 0);
-        if (tSLInformation.sWlanCB) {
+        if (tSLInformation.sWlanCB)
           tSLInformation.sWlanCB(opcode, (char *)&sd, sizeof(sd));
-        }
       }
       break;
 
@@ -606,7 +599,10 @@ hci_dispatch_event(
     case HCI_CMND_NVMEM_WRITE_PATCH:
     case HCI_NETAPP_PING_REPORT:
     case HCI_EVNT_MDNS_ADVERTISE:
-      (*(uint8_t *)tSLInformation.pRetParams) = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
+      {
+        uint8_t* status = tSLInformation.pRetParams;
+        *status = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
+      }
       break;
 
     case HCI_CMND_SETSOCKOPT:
@@ -627,14 +623,19 @@ hci_dispatch_event(
     case HCI_EVNT_CLOSE_SOCKET:
     case HCI_EVNT_CONNECT:
     case HCI_EVNT_NVMEM_WRITE:
-      *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams, 0);
+      {
+        uint32_t* param = tSLInformation.pRetParams;
+        *param = STREAM_TO_UINT32(pucReceivedParams, 0);
+      }
       break;
 
     case HCI_EVNT_READ_SP_VERSION:
-      (*(uint8_t *)tSLInformation.pRetParams) = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
-      tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 1;
-      retValue32 = STREAM_TO_UINT32(pucReceivedParams, 0);
-      UINT32_TO_STREAM((uint8_t *)tSLInformation.pRetParams, retValue32);
+      {
+        uint8_t* params = tSLInformation.pRetParams;
+
+        params[0] = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
+        memcpy(&params[1], pucReceivedParams, 4);
+      }
       break;
 
     case HCI_EVNT_BSD_GETHOSTBYNAME:
@@ -691,44 +692,55 @@ hci_dispatch_event(
       break;
 
     case HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS:
-      *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams,GET_SCAN_RESULTS_TABlE_COUNT_OFFSET);
-      tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 4;
-      *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams,GET_SCAN_RESULTS_SCANRESULT_STATUS_OFFSET);
-      tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 4;
-      *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT16(pucReceivedParams,GET_SCAN_RESULTS_ISVALID_TO_SSIDLEN_OFFSET);
-      tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 2;
-      *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT16(pucReceivedParams,GET_SCAN_RESULTS_FRAME_TIME_OFFSET);
-      tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 2;
-      memcpy((uint8_t *)tSLInformation.pRetParams, (char *)(pucReceivedParams + GET_SCAN_RESULTS_FRAME_TIME_OFFSET + 2), GET_SCAN_RESULTS_SSID_MAC_LENGTH);
+      {
+        wlan_scan_results_t* params = tSLInformation.pRetParams;
+
+
+
+        params->result_count = STREAM_TO_UINT32(pucReceivedParams, GET_SCAN_RESULTS_TABLE_COUNT_OFFSET);
+        params->scan_status = STREAM_TO_UINT32(pucReceivedParams, GET_SCAN_RESULTS_SCANRESULT_STATUS_OFFSET);
+
+        uint16_t packed_fields = STREAM_TO_UINT16(pucReceivedParams, GET_SCAN_RESULTS_ISVALID_TO_SSIDLEN_OFFSET);
+        params->valid = (packed_fields & 0x01);
+        params->rssi = ((packed_fields & 0xFF) >> 1) - 128;
+        params->security_mode = ((packed_fields >> 8) & 0x03);
+        params->ssid_len = (packed_fields >> 10);
+        params->frame_time = STREAM_TO_UINT16(pucReceivedParams, GET_SCAN_RESULTS_FRAME_TIME_OFFSET);
+        memcpy(params->ssid, &pucReceivedParams[12], NETAPP_IPCONFIG_SSID_LENGTH);
+        memcpy(params->bssid, &pucReceivedParams[44], NETAPP_IPCONFIG_MAC_LENGTH);
+      }
       break;
 
     case HCI_NETAPP_IPCONFIG:
-      //Read IP address
-      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
-      pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
+      {
+        netapp_ipconfig_args_t* params = tSLInformation.pRetParams;
+        //Read IP address
+        memcpy(params->ip_addr, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+        pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
 
-      //Read subnet
-      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
-      pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
+        //Read subnet
+        memcpy(params->subnet_mask, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+        pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
 
-      //Read default GW
-      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
-      pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
+        //Read default GW
+        memcpy(params->default_gateway, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+        pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
 
-      //Read DHCP server
-      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
-      pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
+        //Read DHCP server
+        memcpy(params->dhcp_server, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+        pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
 
-      //Read DNS server
-      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
-      pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
+        //Read DNS server
+        memcpy(params->dns_server, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
+        pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
 
-      //Read Mac address
-      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_MAC_LENGTH);
-      pucReceivedParams += NETAPP_IPCONFIG_MAC_LENGTH;
+        //Read Mac address
+        memcpy(params->mac_addr, pucReceivedParams, NETAPP_IPCONFIG_MAC_LENGTH);
+        pucReceivedParams += NETAPP_IPCONFIG_MAC_LENGTH;
 
-      //Read SSID
-      memcpy(tSLInformation.pRetParams, pucReceivedParams, NETAPP_IPCONFIG_SSID_LENGTH);
+        //Read SSID
+        memcpy(params->ssid, pucReceivedParams, NETAPP_IPCONFIG_SSID_LENGTH);
+      }
       break;
 
     default:
@@ -800,7 +812,7 @@ hci_event_unsol_flowcontrol_handler(
 //*****************************************************************************
 static void
 update_socket_active_status(
-    char *resp_params)
+    uint8_t* resp_params)
 {
   int32_t status, sd;
 

@@ -36,6 +36,7 @@
 #define __C_NETAPP_H__
 
 #include "cc3000_common.h"
+#include "hci_msg.h"
 
 //*****************************************************************************
 //
@@ -248,7 +249,8 @@ extern void c_netapp_ping_report(void);
 //!             the Wireless network the device is associated with.
 //!
 //*****************************************************************************
-extern void c_netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig );
+void
+c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig);
 
 
 //*****************************************************************************

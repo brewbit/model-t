@@ -36,6 +36,7 @@
 #define __NETAPP_H__
 
 #include "core/cc3000_common.h"
+#include "core/hci_msg.h"
 
 //*****************************************************************************
 //
@@ -248,7 +249,7 @@ extern long netapp_ping_stop(void);
 //!
 //*****************************************************************************
 
-extern void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig );
+extern void netapp_ipconfig(netapp_ipconfig_args_t* ipconfig);
 
 
 //*****************************************************************************

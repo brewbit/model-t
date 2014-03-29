@@ -374,9 +374,10 @@ extern long wlan_ioctl_set_connection_policy(
 //
 //*****************************************************************************
 
-
-extern long wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
-                                       unsigned char *ucResults);
+void
+wlan_ioctl_get_scan_results(
+    unsigned long ulScanTimeout,
+    wlan_scan_results_t* results);
 
 //*****************************************************************************
 //
