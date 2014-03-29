@@ -490,7 +490,7 @@ hci_dispatch_event(
   uint16_t usLength = STREAM_TO_UINT8(event_hdr, HCI_DATA_LENGTH_OFFSET);
   uint8_t* pucReceivedParams = event_hdr + HCI_EVENT_HEADER_SIZE;
 
-  if (usLength + HCI_EVENT_HEADER_SIZE - 1 > event_size) {
+  if ((usLength + HCI_EVENT_HEADER_SIZE - 1) > event_size) {
     printf("Invalid event size: %d %d %d\r\n", opcode, usLength, event_size);
     return;
   }
@@ -562,6 +562,7 @@ hci_dispatch_event(
         }
       }
       break;
+
     case HCI_EVNT_BSD_TCP_CLOSE_WAIT:
       {
         int32_t sd;
@@ -576,32 +577,29 @@ hci_dispatch_event(
     case HCI_EVNT_SEND:
     case HCI_EVNT_SENDTO:
       {
-        *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams,SL_RECEIVE_SD_OFFSET);
-        tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 4;
-        *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams,SL_RECEIVE_NUM_BYTES_OFFSET);
-        tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 4;
-
-        break;
+        tBsdReadReturnParams* params = tSLInformation.pRetParams;
+        params->iSocketDescriptor = STREAM_TO_UINT32(pucReceivedParams, SL_RECEIVE_SD_OFFSET);
+        params->iNumberOfBytes = STREAM_TO_UINT32(pucReceivedParams, SL_RECEIVE_NUM_BYTES_OFFSET);
       }
       /* Intentional fall-through */
 
     case HCI_EVNT_WRITE:
-    {
-      char *pArg;
-      int32_t status;
+      {
+        char *pArg;
+        int32_t status;
 
-      pArg = M_BSD_RESP_PARAMS_OFFSET(event_hdr);
-      status = STREAM_TO_UINT32(pArg, BSD_RSP_PARAMS_STATUS_OFFSET);
+        pArg = M_BSD_RESP_PARAMS_OFFSET(event_hdr);
+        status = STREAM_TO_UINT32(pArg, BSD_RSP_PARAMS_STATUS_OFFSET);
 
-      if (ERROR_SOCKET_INACTIVE == status) {
-        // The only synchronous event that can come from SL device in form of
-        // command complete is "Command Complete" on data sent, in case SL device
-        // was unable to transmit
-        tSLInformation.slTransmitDataError = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
-        update_socket_active_status(pArg);
+        if (ERROR_SOCKET_INACTIVE == status) {
+          // The only synchronous event that can come from SL device in form of
+          // command complete is "Command Complete" on data sent, in case SL device
+          // was unable to transmit
+          tSLInformation.slTransmitDataError = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
+          update_socket_active_status(pArg);
+        }
       }
       break;
-    }
 
     case HCI_CMND_READ_BUFFER_SIZE:
       {
@@ -654,24 +652,25 @@ hci_dispatch_event(
       break;
 
     case HCI_EVNT_BSD_GETHOSTBYNAME:
-
-      *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams, GET_HOST_BY_NAME_RETVAL_OFFSET);
-      tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 4;
-      *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams, GET_HOST_BY_NAME_ADDR_OFFSET);
+      {
+        tBsdGethostbynameParams* params = tSLInformation.pRetParams;
+        params->retVal = STREAM_TO_UINT32(pucReceivedParams, GET_HOST_BY_NAME_RETVAL_OFFSET);
+        params->outputAddress = STREAM_TO_UINT32(pucReceivedParams, GET_HOST_BY_NAME_ADDR_OFFSET);
+      }
       break;
 
     case HCI_EVNT_ACCEPT:
       {
-        *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams, ACCEPT_SD_OFFSET);
-        tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 4;
-        *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams, ACCEPT_RETURN_STATUS_OFFSET);
-        tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 4;
+        tBsdReturnParams* params = tSLInformation.pRetParams;
+        params->iSocketDescriptor = STREAM_TO_UINT32(pucReceivedParams, ACCEPT_SD_OFFSET);
+        params->iStatus = STREAM_TO_UINT32(pucReceivedParams, ACCEPT_RETURN_STATUS_OFFSET);
 
         //This argument returns in network order
-        memcpy((uint8_t *)tSLInformation.pRetParams,
-            pucReceivedParams + ACCEPT_ADDRESS__OFFSET, sizeof(sockaddr));
-        break;
+        memcpy(&params->tSocketAddress,
+            pucReceivedParams + ACCEPT_ADDRESS__OFFSET,
+            sizeof(sockaddr));
       }
+      break;
 
     case HCI_EVNT_RECV:
     case HCI_EVNT_RECVFROM:
@@ -683,29 +682,29 @@ hci_dispatch_event(
 
         if (params->iNumberOfBytes == ERROR_SOCKET_INACTIVE)
           set_socket_active_status(params->iSocketDescriptor, SOCKET_STATUS_INACTIVE);
-        break;
       }
+      break;
 
     case HCI_EVNT_SELECT:
       {
-        *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams,SELECT_STATUS_OFFSET);
-        tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 4;
-        *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams,SELECT_READFD_OFFSET);
-        tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 4;
-        *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams,SELECT_WRITEFD_OFFSET);
-        tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 4;
-        *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams,SELECT_EXFD_OFFSET);
-        break;
+        tBsdSelectRecvParams* params = tSLInformation.pRetParams;
+        params->iStatus = STREAM_TO_UINT32(pucReceivedParams, SELECT_STATUS_OFFSET);
+        params->uiRdfd = STREAM_TO_UINT32(pucReceivedParams, SELECT_READFD_OFFSET);
+        params->uiWrfd = STREAM_TO_UINT32(pucReceivedParams, SELECT_WRITEFD_OFFSET);
+        params->uiExfd = STREAM_TO_UINT32(pucReceivedParams, SELECT_EXFD_OFFSET);
       }
+      break;
 
     case HCI_CMND_GETSOCKOPT:
-      ((tBsdGetSockOptReturnParams *)tSLInformation.pRetParams)->iStatus = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
-      //This argument returns in network order
-      memcpy((uint8_t *)tSLInformation.pRetParams, pucReceivedParams, 4);
+      {
+        tBsdGetSockOptReturnParams* params = tSLInformation.pRetParams;
+        params->iStatus = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
+        //This argument returns in network order
+        memcpy(&params->ucOptValue, pucReceivedParams, 4);
+      }
       break;
 
     case HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS:
-
       *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams,GET_SCAN_RESULTS_TABlE_COUNT_OFFSET);
       tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 4;
       *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT32(pucReceivedParams,GET_SCAN_RESULTS_SCANRESULT_STATUS_OFFSET);
@@ -715,9 +714,6 @@ hci_dispatch_event(
       *(uint32_t *)tSLInformation.pRetParams = STREAM_TO_UINT16(pucReceivedParams,GET_SCAN_RESULTS_FRAME_TIME_OFFSET);
       tSLInformation.pRetParams = ((char *)tSLInformation.pRetParams) + 2;
       memcpy((uint8_t *)tSLInformation.pRetParams, (char *)(pucReceivedParams + GET_SCAN_RESULTS_FRAME_TIME_OFFSET + 2), GET_SCAN_RESULTS_SSID_MAC_LENGTH);
-      break;
-
-    case HCI_CMND_SIMPLE_LINK_START:
       break;
 
     case HCI_NETAPP_IPCONFIG:
