@@ -76,7 +76,7 @@ hci_command_send(unsigned short usOpcode, unsigned char *pucBuff,
   UINT8_TO_STREAM(stream, ucArgsLength);
 
   //Update the opcode of the event we will be waiting for
-  SpiWrite(pucBuff, ucArgsLength + SIMPLE_LINK_HCI_CMND_HEADER_SIZE);
+  spi_write(pucBuff, ucArgsLength + SIMPLE_LINK_HCI_CMND_HEADER_SIZE);
 
   return(0);
 }
@@ -116,7 +116,7 @@ hci_data_send(unsigned char ucOpcode,
   stream = UINT16_TO_STREAM(stream, usArgsLength + usDataLength + usTailLength);
 
   // Send the packet over the SPI
-  SpiWrite(ucArgs, SIMPLE_LINK_HCI_DATA_HEADER_SIZE + usArgsLength + usDataLength + usTailLength);
+  spi_write(ucArgs, SIMPLE_LINK_HCI_DATA_HEADER_SIZE + usArgsLength + usDataLength + usTailLength);
 
   return(ESUCCESS);
 }
@@ -147,7 +147,7 @@ void hci_data_command_send(unsigned short usOpcode, unsigned char *pucBuff,
   stream = UINT16_TO_STREAM(stream, ucArgsLength + ucDataLength);
 
   // Send the command over SPI on data channel
-  SpiWrite(pucBuff, ucArgsLength + ucDataLength + SIMPLE_LINK_HCI_DATA_CMND_HEADER_SIZE);
+  spi_write(pucBuff, ucArgsLength + ucDataLength + SIMPLE_LINK_HCI_DATA_CMND_HEADER_SIZE);
 
   return;
 }
@@ -184,7 +184,7 @@ hci_patch_send(unsigned char ucOpcode, unsigned char *pucBuff, char *patch, unsi
     memcpy((pucBuff + SPI_HEADER_SIZE) + HCI_PATCH_HEADER_SIZE, patch, usDataLength);
 
     // Update the opcode of the event we will be waiting for
-    SpiWrite(pucBuff, usDataLength + HCI_PATCH_HEADER_SIZE);
+    spi_write(pucBuff, usDataLength + HCI_PATCH_HEADER_SIZE);
   }
   else
   {
@@ -197,7 +197,7 @@ hci_patch_send(unsigned char ucOpcode, unsigned char *pucBuff, char *patch, unsi
     patch += SL_PATCH_PORTION_SIZE;
 
     // Update the opcode of the event we will be waiting for
-    SpiWrite(pucBuff, SL_PATCH_PORTION_SIZE + HCI_PATCH_HEADER_SIZE);
+    spi_write(pucBuff, SL_PATCH_PORTION_SIZE + HCI_PATCH_HEADER_SIZE);
 
     while (usDataLength)
     {
@@ -218,7 +218,7 @@ hci_patch_send(unsigned char ucOpcode, unsigned char *pucBuff, char *patch, unsi
       patch += usTransLength;
 
       // Update the opcode of the event we will be waiting for
-      SpiWrite((unsigned char *)data_ptr, usTransLength + sizeof(usTransLength));
+      spi_write((unsigned char *)data_ptr, usTransLength + sizeof(usTransLength));
     }
   }
 }

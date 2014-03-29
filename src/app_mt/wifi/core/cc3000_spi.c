@@ -42,16 +42,16 @@ static void
 wait_io_ready(void);
 
 static void
-SpiReadDataCont(void);
+spi_read_payload(void);
 
 static void
-SpiTriggerRxProcessing(void);
+spi_process_rx(void);
 
 static msg_t
 spi_io_thread(void* arg);
 
 static void
-SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength);
+spi_first_write(unsigned char *ucBuf, unsigned short usLength);
 
 
 
@@ -94,7 +94,7 @@ static const unsigned char tSpiReadHeader[] = {SPI_READ_OP, 0, 0, 0, 0};
 
 //*****************************************************************************
 //
-//!  SpiClose
+//!  spi_close
 //!
 //!  @param  none
 //!
@@ -104,7 +104,7 @@ static const unsigned char tSpiReadHeader[] = {SPI_READ_OP, 0, 0, 0, 0};
 //
 //*****************************************************************************
 void
-SpiClose(void)
+spi_close(void)
 {
   rxPacket = NULL;
 
@@ -115,7 +115,7 @@ SpiClose(void)
 
 //*****************************************************************************
 //
-//!  SpiOpen
+//!  spi_open
 //!
 //!  @param  none
 //!
@@ -125,7 +125,7 @@ SpiClose(void)
 //
 //*****************************************************************************
 void
-SpiOpen(gcSpiHandleRx pfRxHandler)
+spi_open(gcSpiHandleRx pfRxHandler)
 {
   spiStart(SPI_WLAN, &wlan_spi_cfg);
   extStart(&EXTD1, &extcfg);
@@ -206,15 +206,15 @@ spi_io_thread(void* arg)
       /* IRQ line goes down - we are start reception */
       ASSERT_CS();
 
+      /* Read header */
       spiExchange(SPI_WLAN, 10, tSpiReadHeader, rxPacket);
 
-      /* The header was read - continue with  the payload read */
-      SpiReadDataCont();
+      /* Read payload */
+      spi_read_payload();
 
-      /* All the data was read - finalize handling by switching to the task
-       * and calling from task Event Handler
-       */
-      SpiTriggerRxProcessing();
+      DEASSERT_CS();
+
+      spi_process_rx();
     }
   }
 
@@ -223,7 +223,7 @@ spi_io_thread(void* arg)
 
 //*****************************************************************************
 //
-//! SpiFirstWrite
+//! spi_first_write
 //!
 //!  @param  ucBuf     buffer to write
 //!  @param  usLength  buffer's length
@@ -234,7 +234,7 @@ spi_io_thread(void* arg)
 //
 //*****************************************************************************
 static void
-SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength)
+spi_first_write(unsigned char *ucBuf, unsigned short usLength)
 {
   // workaround for first transaction
   ASSERT_CS();
@@ -256,7 +256,7 @@ SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength)
 
 //*****************************************************************************
 //
-//!  SpiWrite
+//!  spi_write
 //!
 //!  @param  pUserBuffer  buffer to write
 //!  @param  usLength     buffer's length
@@ -267,7 +267,7 @@ SpiFirstWrite(unsigned char *ucBuf, unsigned short usLength)
 //
 //*****************************************************************************
 void
-SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
+spi_write(unsigned char *pUserBuffer, unsigned short usLength)
 {
   if((usLength & 1) == 0)
     usLength++;
@@ -285,7 +285,7 @@ SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
 
     // This is time for first TX/RX transactions over SPI: the IRQ is down -
     // so need to send read buffer size command
-    SpiFirstWrite(pUserBuffer, usLength);
+    spi_first_write(pUserBuffer, usLength);
   }
   else {
     txPacketLength = usLength;
@@ -301,7 +301,7 @@ SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
 
 //*****************************************************************************
 //
-//!  SpiReadDataCont
+//!  spi_read_payload
 //!
 //!  @param  None
 //!
@@ -312,7 +312,7 @@ SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
 //
 //*****************************************************************************
 static void
-SpiReadDataCont(void)
+spi_read_payload(void)
 {
   long data_to_recv;
   unsigned char *evnt_buff, type;
@@ -353,45 +353,7 @@ SpiReadDataCont(void)
 
 //*****************************************************************************
 //
-//! SpiPauseSpi
-//!
-//!  @param  none
-//!
-//!  @return none
-//!
-//!  @brief  Spi pause operation
-//
-//*****************************************************************************
-void
-SpiPauseSpi(void)
-{
-  extChannelDisable(&EXTD1, 12);
-}
-
-//*****************************************************************************
-//
-//! SpiResumeSpi
-//!
-//!  @param  none
-//!
-//!  @return none
-//!
-//!  @brief  Spi resume operation
-//
-//*****************************************************************************
-void
-SpiResumeSpi(void)
-{
-  int irq_pending = (palReadPad(PORT_WIFI_IRQ, PAD_WIFI_IRQ) == 0);
-  int start_irq_count = irq_count;
-  extChannelEnable(&EXTD1, 12);
-  if (irq_pending && (start_irq_count == irq_count))
-    missed_irq_count++;
-}
-
-//*****************************************************************************
-//
-//! SpiTriggerRxProcessing
+//! spi_process_rx
 //!
 //!  @param  none
 //!
@@ -401,18 +363,15 @@ SpiResumeSpi(void)
 //
 //*****************************************************************************
 static void
-SpiTriggerRxProcessing(void)
+spi_process_rx(void)
 {
-  // Trigger Rx processing
-  SpiPauseSpi();
-  DEASSERT_CS();
-
   // The magic number that resides at the end of the TX/RX buffer (1 byte after
   // the allocated size) for the purpose of detection of the overrun. If the
   // magic number is overwritten - buffer overrun occurred - and we will stuck
   // here forever!
   if (rxPacket[CC3000_RX_BUFFER_SIZE - 1] != CC3000_BUFFER_MAGIC_NUMBER) {
-    chSysHalt();
+    printf("Buffer overflow detected in SPI RX handler!\r\n");
+    return;
   }
 
   SPIRxHandler(rxPacket + SPI_HEADER_SIZE);

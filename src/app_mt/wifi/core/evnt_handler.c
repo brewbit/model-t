@@ -463,8 +463,6 @@ hci_event_handler(void *pRetParams, unsigned char *from, unsigned char *fromlen)
       tSLInformation.usRxDataPending = 0;
     }
 
-    SpiResumeSpi();
-
     // Since we are going to TX - we need to handle this event after the
     // ResumeSPi since we need interrupts
     if ((*pucReceivedData == HCI_TYPE_EVNT) &&
@@ -650,7 +648,6 @@ hci_unsolicited_event_handler(void)
     if (hci_unsol_event_handler((char *)pucReceivedData) == 1)
     {
       res = 1;
-      SpiResumeSpi();
     }
   }
 

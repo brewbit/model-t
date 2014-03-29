@@ -15,10 +15,9 @@ extern unsigned char wlan_tx_buffer[];
 extern unsigned char wlan_rx_buffer[];
 
 
-void SpiOpen(gcSpiHandleRx pfRxHandler);
-void SpiClose(void);
-void SpiWrite(unsigned char *pUserBuffer, unsigned short usLength);
-void SpiResumeSpi(void);
+void spi_open(gcSpiHandleRx pfRxHandler);
+void spi_close(void);
+void spi_write(unsigned char *pUserBuffer, unsigned short usLength);
 
 #endif
 
