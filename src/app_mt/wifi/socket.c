@@ -354,8 +354,6 @@ listen(long sd, long backlog)
 //!          the function requires DNS server to be configured prior to its usage.
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 int
 gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr)
 {
@@ -367,7 +365,6 @@ gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* ou
 
     return(ret);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -397,7 +394,6 @@ gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* ou
 //!  @sa socket
 //
 //*****************************************************************************
-
 long
 connect(long sd, const sockaddr *addr, long addrlen)
 {
@@ -448,7 +444,6 @@ connect(long sd, const sockaddr *addr, long addrlen)
 //!  @sa socket
 //
 //*****************************************************************************
-
 int
 select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *exceptsds, struct timeval *timeout)
 {
@@ -507,8 +502,6 @@ select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *exceptsds, struc
 //!  @sa getsockopt
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 int
 setsockopt(long sd, long level, long optname, const void *optval, socklen_t optlen)
 {
@@ -562,7 +555,6 @@ setsockopt(long sd, long level, long optname, const void *optval, socklen_t optl
 
     return ret;
 }
-#endif
 
 //*****************************************************************************
 //
@@ -610,7 +602,6 @@ setsockopt(long sd, long level, long optname, const void *optval, socklen_t optl
 //!  @sa setsockopt
 //
 //*****************************************************************************
-
 int
 getsockopt(long sd, long level, long optname, void *optval, socklen_t *optlen)
 {
@@ -644,7 +635,6 @@ getsockopt(long sd, long level, long optname, void *optval, socklen_t *optlen)
 //!  @Note On this version, only blocking mode is supported.
 //
 //*****************************************************************************
-
 int
 recv(long sd, void *buf, long len, long flags)
 {
@@ -765,7 +755,6 @@ common_recv(long sd, void *buf, long len, long flags,
 //!  @sa             sendto
 //
 //*****************************************************************************
-
 int
 send(long sd, const void *buf, long len, long flags)
 {
@@ -803,7 +792,6 @@ send(long sd, const void *buf, long len, long flags)
 //!  @sa             send
 //
 //*****************************************************************************
-
 int
 sendto(long sd, const void *buf, long len, long flags,
        const sockaddr *to, socklen_t tolen)
@@ -833,7 +821,6 @@ sendto(long sd, const void *buf, long len, long flags,
 //!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
 //
 //*****************************************************************************
-
 int
 mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsigned short deviceServiceNameLength)
 {

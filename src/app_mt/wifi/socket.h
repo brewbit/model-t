@@ -209,9 +209,7 @@ extern long listen(long sd, long backlog);
 //!          the function requires DNS server to be configured prior to its usage.
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 extern int gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr);
-#endif
 
 
 //*****************************************************************************
@@ -329,10 +327,9 @@ extern int select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *excep
 //!  @sa getsockopt
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 extern int setsockopt(long sd, long level, long optname, const void *optval,
                       socklen_t optlen);
-#endif
+
 //*****************************************************************************
 //
 //! getsockopt
@@ -457,7 +454,6 @@ extern int recvfrom(long sd, void *buf, long len, long flags, sockaddr *from,
 //!  @sa             sendto
 //
 //*****************************************************************************
-
 extern int send(long sd, const void *buf, long len, long flags);
 
 //*****************************************************************************
@@ -485,7 +481,6 @@ extern int send(long sd, const void *buf, long len, long flags);
 //!  @sa             send
 //
 //*****************************************************************************
-
 extern int sendto(long sd, const void *buf, long len, long flags,
                   const sockaddr *to, socklen_t tolen);
 

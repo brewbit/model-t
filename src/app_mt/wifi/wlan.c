@@ -270,8 +270,6 @@ void wlan_stop(void)
 //!  @sa         wlan_disconnect
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long wlan_connect(unsigned long ulSecType, const char *ssid, long ssid_len,
              const unsigned char *bssid, const unsigned char *key, long key_len)
 {
@@ -283,18 +281,6 @@ long wlan_connect(unsigned long ulSecType, const char *ssid, long ssid_len,
 
     return(ret);
 }
-#else
-long wlan_connect(char *ssid, long ssid_len)
-{
-    long ret;
-
-    chMtxLock(&g_main_mutex);
-    ret = c_wlan_connect(ssid, ssid_len);
-    chMtxUnlock();
-
-    return(ret);
-}
-#endif
 
 //*****************************************************************************
 //
@@ -307,7 +293,6 @@ long wlan_connect(char *ssid, long ssid_len)
 //!  @sa         wlan_connect
 //
 //*****************************************************************************
-
 long wlan_disconnect()
 {
     long ret;
@@ -350,7 +335,6 @@ long wlan_disconnect()
 //!  @sa         wlan_add_profile , wlan_ioctl_del_profile
 //
 //*****************************************************************************
-
 long
 wlan_ioctl_set_connection_policy(unsigned long should_connect_to_open_ap,
                                  unsigned long ulShouldUseFastConnect,
@@ -416,7 +400,6 @@ long wlan_add_profile(unsigned long ulSecType,
     return(ret);
 }
 
-
 //*****************************************************************************
 //
 //!  wlan_ioctl_del_profile
@@ -476,7 +459,6 @@ long wlan_ioctl_del_profile(unsigned long ulIndex)
 //!  @sa        wlan_ioctl_set_scan_params
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 void
 wlan_ioctl_get_scan_results(
     unsigned long ulScanTimeout,
@@ -486,7 +468,6 @@ wlan_ioctl_get_scan_results(
   c_wlan_ioctl_get_scan_results(ulScanTimeout, results);
   chMtxUnlock();
 }
-#endif
 
 //*****************************************************************************
 //
@@ -524,8 +505,6 @@ wlan_ioctl_get_scan_results(
 //!  @sa        wlan_ioctl_get_scan_results
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwellTime,
                                 unsigned long uiMaxDwellTime, unsigned long uiNumOfProbeRequests,
                                 unsigned long uiChannelMask, long iRSSIThreshold,
@@ -542,7 +521,6 @@ long wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwell
 
     return (uiRes);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -565,7 +543,6 @@ long wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwell
 //!            masked (1), the device will not send the masked event to host.
 //
 //*****************************************************************************
-
 long wlan_set_event_mask(unsigned long ulMask)
 {
     long ret;
@@ -589,8 +566,6 @@ long wlan_set_event_mask(unsigned long ulMask)
 //!  @brief    get wlan status: disconnected, scanning, connecting or connected
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long wlan_ioctl_statusget(void)
 {
     long ret;
@@ -601,7 +576,6 @@ long wlan_ioctl_statusget(void)
 
     return(ret);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -699,8 +673,6 @@ long wlan_smart_config_set_prefix(char* cNewPrefix)
 //!           behavior is as defined by connection policy.
 //
 //*****************************************************************************
-
-#ifndef CC3000_UNENCRYPTED_SMART_CONFIG
 long wlan_smart_config_process()
 {
     long ret;
@@ -711,7 +683,6 @@ long wlan_smart_config_process()
 
     return(ret);
 }
-#endif
 
 static void
 wlan_evt_cb(long event_type, void* data, unsigned char length)

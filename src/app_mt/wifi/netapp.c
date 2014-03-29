@@ -154,8 +154,6 @@ long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsigned lon
 //!               it will be set automatically to 20s.
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long
 netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
                       unsigned long *aucKeepalive,    unsigned long *aucInactivity)
@@ -168,8 +166,6 @@ netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
 
     return(ret);
 }
-#endif
-
 
 //*****************************************************************************
 //
@@ -191,8 +187,6 @@ netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
 //! @warning      Calling this function while a previous Ping Requests are in
 //!               progress will stop the previous ping request.
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long
 netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
                  unsigned long ulPingSize, unsigned long ulPingTimeout)
@@ -203,7 +197,6 @@ netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
     chMtxUnlock();
     return(ret);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -227,16 +220,12 @@ netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
 //!           fields are 0.
 //!
 //*****************************************************************************
-
-
-#ifndef CC3000_TINY_DRIVER
 void netapp_ping_report()
 {
     chMtxLock(&g_main_mutex);
     c_netapp_ping_report();
     chMtxUnlock();
 }
-#endif
 
 //*****************************************************************************
 //
@@ -250,8 +239,6 @@ void netapp_ping_report()
 //!
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long netapp_ping_stop()
 {
     long ret;
@@ -262,7 +249,6 @@ long netapp_ping_stop()
 
     return(ret);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -289,20 +275,12 @@ long netapp_ping_stop()
 //!             the Wireless network the device is associated with.
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 void netapp_ipconfig(netapp_ipconfig_args_t* ipconfig )
 {
     chMtxLock(&g_main_mutex);
     c_netapp_ipconfig(ipconfig);
     chMtxUnlock();
 }
-#else
-void netapp_ipconfig(netapp_ipconfig_args_t* ipconfig )
-{
-
-}
-#endif
 
 //*****************************************************************************
 //
@@ -315,8 +293,6 @@ void netapp_ipconfig(netapp_ipconfig_args_t* ipconfig )
 //!  @brief  Flushes ARP table
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long netapp_arp_flush(void)
 {
     long ret;
@@ -327,7 +303,6 @@ long netapp_arp_flush(void)
 
     return(ret);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -346,9 +321,6 @@ long netapp_arp_flush(void)
 //!              enable/disable the debug level
 //!
 //*****************************************************************************
-
-
-#ifndef CC3000_TINY_DRIVER
 long netapp_set_debug_level(unsigned long ulLevel)
 {
     long ret;
@@ -359,4 +331,3 @@ long netapp_set_debug_level(unsigned long ulLevel)
 
     return(ret);
 }
-#endif

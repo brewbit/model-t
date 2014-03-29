@@ -128,12 +128,6 @@ extern "C" {
 #define  CC3000_MINIMAL_TX_SIZE      (130 + 1)
 #define  CC3000_MAXIMAL_TX_SIZE      (1519 + 1)
 
-//TX and RX buffer sizes, allow to receive and transmit maximum data at length 8.
-#ifdef CC3000_TINY_DRIVER
-#define TINY_CC3000_MAXIMAL_RX_SIZE 44
-#define TINY_CC3000_MAXIMAL_TX_SIZE 59
-#endif
-
 /*In order to determine your preferred buffer size, 
   change CC3000_MAXIMAL_RX_SIZE and CC3000_MAXIMAL_TX_SIZE to a value between
   the minimal and maximal specified above. 
@@ -143,19 +137,9 @@ extern "C" {
   allocated in the FRAM section that is allocated manually and not by IDE.
 */
   
-#ifndef CC3000_TINY_DRIVER
-
-    #define CC3000_RX_BUFFER_SIZE   (CC3000_MAXIMAL_RX_SIZE)
-    #define CC3000_TX_BUFFER_SIZE   (CC3000_MAXIMAL_TX_SIZE)
-    #define SP_PORTION_SIZE         512
-
-//if defined TINY DRIVER we use smaller rx and tx buffer in order to minimize RAM consumption
-#else
-    #define CC3000_RX_BUFFER_SIZE   (TINY_CC3000_MAXIMAL_RX_SIZE)
-    #define CC3000_TX_BUFFER_SIZE   (TINY_CC3000_MAXIMAL_TX_SIZE)
-    #define SP_PORTION_SIZE      32
-
-#endif
+#define CC3000_RX_BUFFER_SIZE   (CC3000_MAXIMAL_RX_SIZE)
+#define CC3000_TX_BUFFER_SIZE   (CC3000_MAXIMAL_TX_SIZE)
+#define SP_PORTION_SIZE         512
 
 //*****************************************************************************
 //                  Compound Types

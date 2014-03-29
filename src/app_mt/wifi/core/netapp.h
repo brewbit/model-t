@@ -152,10 +152,8 @@ extern  long c_netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,
 //!               it will be set automatically to 20s.
 //!
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 extern long c_netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
                         unsigned long *aucKeepalive, unsigned long *aucInactivity);
-#endif
 
 //*****************************************************************************
 //
@@ -177,10 +175,8 @@ extern long c_netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucAR
 //! @warning      Calling this function while a previous Ping Requests are in
 //!               progress will stop the previous ping request.
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 extern long c_netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
                                unsigned long ulPingSize, unsigned long ulPingTimeout);
-#endif
 
 //*****************************************************************************
 //
@@ -194,9 +190,7 @@ extern long c_netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
 //!
 //!
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 extern long c_netapp_ping_stop(void);
-#endif
 
 //*****************************************************************************
 //
@@ -220,9 +214,7 @@ extern long c_netapp_ping_stop(void);
 //!           fields are 0.
 //!
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 extern void c_netapp_ping_report(void);
-#endif
 
 //*****************************************************************************
 //
@@ -264,9 +256,7 @@ c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig);
 //!  @brief  Flushes ARP table
 //!
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 extern long c_netapp_arp_flush(void);
-#endif
 
 
 //*****************************************************************************
@@ -286,9 +276,7 @@ extern long c_netapp_arp_flush(void);
 //!              enable/disable the debug level
 //!
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 extern long c_netapp_set_debug_level(unsigned long ulLevel);
-#endif
 
 //*****************************************************************************
 //

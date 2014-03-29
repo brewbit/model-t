@@ -228,8 +228,6 @@ void hci_data_command_send(
 
   // Send the command over SPI on data channel
   spi_write(pucBuff, ucArgsLength + ucDataLength + SIMPLE_LINK_HCI_DATA_CMND_HEADER_SIZE);
-
-  return;
 }
 
 //*****************************************************************************

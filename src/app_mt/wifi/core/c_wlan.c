@@ -306,8 +306,6 @@ void c_wlan_stop(void)
 //!  @sa         wlan_disconnect
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long c_wlan_connect(unsigned long ulSecType, const char *ssid, long ssid_len,
                     const unsigned char *bssid, const unsigned char *key, long key_len)
 {
@@ -355,41 +353,6 @@ long c_wlan_connect(unsigned long ulSecType, const char *ssid, long ssid_len,
 
     return(ret);
 }
-#else
-long c_wlan_connect(char *ssid, long ssid_len)
-{
-    long ret;
-    unsigned char *ptr;
-    unsigned char *args;
-    unsigned char bssid_zero[] = {0, 0, 0, 0, 0, 0};
-
-    ret     = EFAIL;
-    ptr     = tSLInformation.pucTxCommandBuffer;
-    args    = (ptr + HEADERS_SIZE_CMD);
-
-    // Fill in command buffer
-    args = UINT32_TO_STREAM(args, 0x0000001c);
-    args = UINT32_TO_STREAM(args, ssid_len);
-    args = UINT32_TO_STREAM(args, 0);
-    args = UINT32_TO_STREAM(args, 0x00000010 + ssid_len);
-    args = UINT32_TO_STREAM(args, 0);
-    args = UINT16_TO_STREAM(args, 0);
-
-    // padding shall be zeroed
-    ARRAY_TO_STREAM(args, bssid_zero, ETH_ALEN);
-    ARRAY_TO_STREAM(args, ssid, ssid_len);
-
-    // Initiate a HCI command
-    hci_command_send(HCI_CMND_WLAN_CONNECT, ptr, WLAN_CONNECT_PARAM_LEN +
-                                     ssid_len  - 1);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_CMND_WLAN_CONNECT, &ret);
-    errno = ret;
-
-    return(ret);
-}
-#endif
 
 //*****************************************************************************
 //
@@ -504,8 +467,6 @@ long c_wlan_ioctl_set_connection_policy(unsigned long should_connect_to_open_ap,
 //!  @sa        wlan_ioctl_del_profile
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long c_wlan_add_profile(unsigned long ulSecType,
                                         unsigned char* ucSsid,
                                         unsigned long ulSsidLen,
@@ -629,21 +590,6 @@ long c_wlan_add_profile(unsigned long ulSecType,
 
     return(ret);
 }
-#else
-long c_wlan_add_profile(unsigned long ulSecType,
-                                        unsigned char* ucSsid,
-                                        unsigned long ulSsidLen,
-                                        unsigned char *ucBssid,
-                                        unsigned long ulPriority,
-                                        unsigned long ulPairwiseCipher_Or_TxKeyLen,
-                                        unsigned long ulGroupCipher_TxKeyIndex,
-                                        unsigned long ulKeyMgmt,
-                                        unsigned char* ucPf_OrKey,
-                                        unsigned long ulPassPhraseLen)
-{
-    return -1;
-}
-#endif
 
 //*****************************************************************************
 //
@@ -774,7 +720,6 @@ c_wlan_ioctl_get_scan_results(
 //!  @sa        wlan_ioctl_get_scan_results
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 long c_wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwellTime,
                                   unsigned long uiMaxDwellTime, unsigned long uiNumOfProbeRequests,
                                   unsigned long uiChannelMask, long iRSSIThreshold,
@@ -810,7 +755,6 @@ long c_wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwe
 
     return(uiRes);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -888,7 +832,6 @@ long c_wlan_set_event_mask(unsigned long ulMask)
 //!  @brief    get wlan status: disconnected, scanning, connecting or connected
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 long c_wlan_ioctl_statusget(void)
 {
     long ret;
@@ -905,7 +848,6 @@ long c_wlan_ioctl_statusget(void)
 
     return(ret);
 }
-#endif
 
 //*****************************************************************************
 //

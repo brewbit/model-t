@@ -164,7 +164,7 @@ consume_buf(int sd)
 int c_socket(long domain, long type, long protocol)
 {
   long ret;
-  unsigned char *ptr, *args;
+  uint8_t *ptr, *args;
 
   ret = EFAIL;
   ptr = tSLInformation.pucTxCommandBuffer;
@@ -204,7 +204,7 @@ int c_socket(long domain, long type, long protocol)
 long c_closesocket(long sd)
 {
   long ret;
-  unsigned char *ptr, *args;
+  uint8_t *ptr, *args;
 
   ret = EFAIL;
   ptr = tSLInformation.pucTxCommandBuffer;
@@ -275,7 +275,7 @@ long c_closesocket(long sd)
 long c_accept(long sd, sockaddr *addr, socklen_t *addrlen)
 {
   long ret;
-  unsigned char *ptr, *args;
+  uint8_t *ptr, *args;
   tBsdReturnParams tAcceptReturnArguments;
 
   ret = EFAIL;
@@ -335,7 +335,7 @@ long c_accept(long sd, sockaddr *addr, socklen_t *addrlen)
 long c_bind(long sd, const sockaddr *addr, long addrlen)
 {
   long ret;
-  unsigned char *ptr, *args;
+  uint8_t *ptr, *args;
 
   ret = EFAIL;
   ptr = tSLInformation.pucTxCommandBuffer;
@@ -347,7 +347,7 @@ long c_bind(long sd, const sockaddr *addr, long addrlen)
   args = UINT32_TO_STREAM(args, sd);
   args = UINT32_TO_STREAM(args, 0x00000008);
   args = UINT32_TO_STREAM(args, addrlen);
-  ARRAY_TO_STREAM(args, ((unsigned char *)addr), addrlen);
+  ARRAY_TO_STREAM(args, ((uint8_t *)addr), addrlen);
 
   // Initiate a HCI command
   hci_command_send(HCI_CMND_BIND,
@@ -386,7 +386,7 @@ long c_bind(long sd, const sockaddr *addr, long addrlen)
 long c_listen(long sd, long backlog)
 {
   long ret;
-  unsigned char *ptr, *args;
+  uint8_t *ptr, *args;
 
   ret = EFAIL;
   ptr = tSLInformation.pucTxCommandBuffer;
@@ -425,13 +425,11 @@ long c_listen(long sd, long backlog)
 //!          the function requires DNS server to be configured prior to its usage.
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 int
 c_gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr)
 {
   tBsdGethostbynameParams ret;
-  unsigned char *ptr, *args;
+  uint8_t *ptr, *args;
 
   errno = EFAIL;
 
@@ -460,7 +458,6 @@ c_gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* 
 
   return (errno);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -493,7 +490,7 @@ c_gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* 
 long c_connect(long sd, const sockaddr *addr, long addrlen)
 {
   long ret;
-  unsigned char *ptr, *args;
+  uint8_t *ptr, *args;
 
   ret = EFAIL;
   ptr = tSLInformation.pucTxCommandBuffer;
@@ -504,7 +501,7 @@ long c_connect(long sd, const sockaddr *addr, long addrlen)
   args = UINT32_TO_STREAM(args, sd);
   args = UINT32_TO_STREAM(args, 0x00000008);
   args = UINT32_TO_STREAM(args, addrlen);
-  ARRAY_TO_STREAM(args, ((unsigned char *)addr), addrlen);
+  ARRAY_TO_STREAM(args, ((uint8_t *)addr), addrlen);
 
   // Initiate a HCI command
   hci_command_send(HCI_CMND_CONNECT,
@@ -559,7 +556,7 @@ long c_connect(long sd, const sockaddr *addr, long addrlen)
 int c_select(long nfds, wfd_set *readsds, wfd_set *writesds,
     wfd_set *exceptsds, struct timeval *timeout)
 {
-  unsigned char *ptr, *args;
+  uint8_t *ptr, *args;
   tBsdSelectRecvParams tParams;
   unsigned long is_blocking;
 
@@ -664,13 +661,11 @@ int c_select(long nfds, wfd_set *readsds, wfd_set *writesds,
 //!  @sa getsockopt
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 int
 c_setsockopt(long sd, long level, long optname, const void *optval, socklen_t optlen)
 {
   int ret;
-  unsigned char *ptr, *args;
+  uint8_t *ptr, *args;
 
   ptr = tSLInformation.pucTxCommandBuffer;
   args = (ptr + HEADERS_SIZE_CMD);
@@ -681,7 +676,7 @@ c_setsockopt(long sd, long level, long optname, const void *optval, socklen_t op
   args = UINT32_TO_STREAM(args, optname);
   args = UINT32_TO_STREAM(args, 0x00000008);
   args = UINT32_TO_STREAM(args, optlen);
-  ARRAY_TO_STREAM(args, ((unsigned char *)optval), optlen);
+  ARRAY_TO_STREAM(args, ((uint8_t *)optval), optlen);
 
   // Initiate a HCI command
   hci_command_send(HCI_CMND_SETSOCKOPT,
@@ -698,7 +693,6 @@ c_setsockopt(long sd, long level, long optname, const void *optval, socklen_t op
     return (errno);
   }
 }
-#endif
 
 //*****************************************************************************
 //
@@ -749,7 +743,7 @@ c_setsockopt(long sd, long level, long optname, const void *optval, socklen_t op
 int c_getsockopt(long sd, long level, long optname, void *optval,
                          socklen_t *optlen)
 {
-  unsigned char *ptr, *args;
+  uint8_t *ptr, *args;
   tBsdGetSockOptReturnParams  tRetParams;
 
   ptr = tSLInformation.pucTxCommandBuffer;
@@ -804,7 +798,7 @@ simple_link_recv(long sd, void *buf, long len, long flags, sockaddr *from,
                 socklen_t *fromlen, long opcode)
 {
   int ret;
-  unsigned char *ptr, *args;
+  uint8_t *ptr, *args;
   tBsdReadReturnParams tSocketReadEvent;
 
   ptr = tSLInformation.pucTxCommandBuffer;
@@ -825,7 +819,7 @@ simple_link_recv(long sd, void *buf, long len, long flags, sockaddr *from,
   if (tSocketReadEvent.iNumberOfBytes > 0) {
     // Wait for the data in a synchronous way. Here we assume that the bug is
     // big enough to store also parameters of receive from too....
-    hci_wait_for_data(buf, (unsigned char *)from, (unsigned char *)fromlen);
+    hci_wait_for_data(buf, (uint8_t *)from, (uint8_t *)fromlen);
     errno = 0;
     ret = tSocketReadEvent.iNumberOfBytes;
   }
@@ -924,8 +918,8 @@ static int
 simple_link_send(long sd, const void *buf, long len, long flags,
               const sockaddr *to, long tolen, long opcode)
 {
-  unsigned char uArgSize,  addrlen;
-  unsigned char *ptr, *pDataPtr, *args;
+  uint8_t uArgSize,  addrlen;
+  uint8_t *ptr, *pDataPtr, *args;
   unsigned long addr_offset = 0;
   int res;
   tBsdReadReturnParams tSocketSendEvent;
@@ -974,15 +968,15 @@ simple_link_send(long sd, const void *buf, long len, long flags,
   }
 
   // Copy the data received from user into the TX Buffer
-  ARRAY_TO_STREAM(pDataPtr, ((unsigned char *)buf), len);
+  ARRAY_TO_STREAM(pDataPtr, ((uint8_t *)buf), len);
 
   // In case we are using SendTo, copy the to parameters
   if (opcode == HCI_CMND_SENDTO) {
-    ARRAY_TO_STREAM(pDataPtr, ((unsigned char *)to), tolen);
+    ARRAY_TO_STREAM(pDataPtr, ((uint8_t *)to), tolen);
   }
 
   // Initiate a HCI command
-  hci_data_send(opcode, ptr, uArgSize, len,(unsigned char*)to, tolen);
+  hci_data_send(opcode, ptr, uArgSize, len,(uint8_t*)to, tolen);
   if (opcode == HCI_CMND_SENDTO)
     hci_wait_for_event(HCI_EVNT_SENDTO, &tSocketSendEvent);
   else
@@ -1069,7 +1063,7 @@ int c_sendto(long sd, const void *buf, long len, long flags,
 int c_mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsigned short deviceServiceNameLength)
 {
   int ret;
-  unsigned char *pTxBuffer, *pArgs;
+  uint8_t *pTxBuffer, *pArgs;
 
   if (deviceServiceNameLength > MDNS_DEVICE_SERVICE_MAX_LENGTH) {
     return EFAIL;

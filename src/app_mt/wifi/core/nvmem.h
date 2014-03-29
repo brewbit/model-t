@@ -197,9 +197,7 @@ extern  unsigned char c_nvmem_write_patch(unsigned long ulFileId, unsigned long 
 //!              driver-supplicant-NS patch, bootloader patch)
 //!
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 extern  unsigned char c_nvmem_read_sp_version(nvmem_sp_version_t* sp_version);
-#endif
 
 //*****************************************************************************
 //

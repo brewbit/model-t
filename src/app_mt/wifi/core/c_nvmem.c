@@ -254,8 +254,6 @@ unsigned char c_nvmem_write_patch(unsigned long ulFileId, unsigned long spLength
 //!              driver-supplicant-NS patch, bootloader patch)
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 unsigned char c_nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 {
     unsigned char *ptr;
@@ -272,7 +270,6 @@ unsigned char c_nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 
     return retBuf[0];
 }
-#endif
 
 //*****************************************************************************
 //

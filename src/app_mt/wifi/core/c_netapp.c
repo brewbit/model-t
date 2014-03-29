@@ -173,8 +173,6 @@ long c_netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,
 //!               it will be set automatically to 20s.
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long c_netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
                         unsigned long *aucKeepalive, unsigned long *aucInactivity)
 {
@@ -206,8 +204,6 @@ long c_netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
 
     return(scRet);
 }
-#endif
-
 
 //*****************************************************************************
 //
@@ -229,8 +225,6 @@ long c_netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
 //! @warning      Calling this function while a previous Ping Requests are in
 //!               progress will stop the previous ping request.
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long c_netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
                    unsigned long ulPingSize, unsigned long ulPingTimeout)
 {
@@ -255,7 +249,6 @@ long c_netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
 
     return(scRet);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -279,7 +272,6 @@ long c_netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
 //!           fields are 0.
 //!
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 void c_netapp_ping_report()
 {
     unsigned char *ptr;
@@ -294,7 +286,6 @@ void c_netapp_ping_report()
     // Wait for command complete event
     hci_wait_for_event(HCI_NETAPP_PING_REPORT, &scRet);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -308,7 +299,6 @@ void c_netapp_ping_report()
 //!
 //!
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 long c_netapp_ping_stop()
 {
     signed char scRet;
@@ -325,7 +315,6 @@ long c_netapp_ping_stop()
 
     return(scRet);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -352,8 +341,6 @@ long c_netapp_ping_stop()
 //!             the Wireless network the device is associated with.
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 void c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig)
 {
     unsigned char *ptr;
@@ -367,12 +354,6 @@ void c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig)
     hci_wait_for_event(HCI_NETAPP_IPCONFIG, ipconfig );
 
 }
-#else
-void c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig)
-{
-
-}
-#endif
 
 //*****************************************************************************
 //
@@ -385,8 +366,6 @@ void c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig)
 //!  @brief  Flushes ARP table
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long c_netapp_arp_flush(void)
 {
     signed char scRet;
@@ -403,7 +382,6 @@ long c_netapp_arp_flush(void)
 
     return(scRet);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -422,9 +400,6 @@ long c_netapp_arp_flush(void)
 //!              enable/disable the debug level
 //!
 //*****************************************************************************
-
-
-#ifndef CC3000_TINY_DRIVER
 long c_netapp_set_debug_level(unsigned long ulLevel)
 {
     signed char scRet;
@@ -453,4 +428,3 @@ long c_netapp_set_debug_level(unsigned long ulLevel)
     return(scRet);
 
 }
-#endif

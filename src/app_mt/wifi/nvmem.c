@@ -216,8 +216,6 @@ unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long spLength,
 //!              driver-supplicant-NS patch, bootloader patch)
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 unsigned char nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 {
     unsigned char ret;
@@ -228,7 +226,6 @@ unsigned char nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 
     return(ret);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -252,7 +249,6 @@ unsigned char nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 //!              set ulNewLen=0.
 //!
 //*****************************************************************************
-
 signed long
 nvmem_create_entry(unsigned long ulFileId, unsigned long ulNewLen)
 {
@@ -264,8 +260,6 @@ nvmem_create_entry(unsigned long ulFileId, unsigned long ulNewLen)
 
     return(ret);
 }
-
-
 
 //*****************************************************************************
 //

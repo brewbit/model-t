@@ -222,9 +222,7 @@ extern long c_listen(long sd, long backlog);
 //!          the function requires DNS server to be configured prior to its usage.
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 extern int c_gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr);
-#endif
 
 
 //*****************************************************************************
@@ -343,10 +341,8 @@ extern int c_select(long nfds, wfd_set *readsds, wfd_set *writesds,
 //!  @sa getsockopt
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 extern int c_setsockopt(long sd, long level, long optname, const void *optval,
                       socklen_t optlen);
-#endif
 
 //*****************************************************************************
 //
