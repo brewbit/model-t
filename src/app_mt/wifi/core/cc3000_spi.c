@@ -63,8 +63,10 @@ static unsigned short txPacketLength;
 static unsigned char* rxPacket;
 static unsigned short rxPacketLength;
 static Semaphore sem_init;
-static Semaphore sem_spi_io_sleep;
-static Semaphore sem_write_complete;
+Semaphore sem_io_ready;
+Semaphore sem_write_complete;
+
+int irq_count, missed_irq_count, irq_timeout_count, io_thread_loc;
 
 unsigned char wlan_rx_buffer[CC3000_RX_BUFFER_SIZE];
 unsigned char wlan_tx_buffer[CC3000_TX_BUFFER_SIZE];
@@ -129,7 +131,7 @@ SpiOpen(gcSpiHandleRx pfRxHandler)
   extStart(&EXTD1, &extcfg);
 
   chSemInit(&sem_init, 0);
-  chSemInit(&sem_spi_io_sleep, 0);
+  chSemInit(&sem_io_ready, 0);
   chSemInit(&sem_write_complete, 0);
 
   spiState = SPI_STATE_POWERUP;
@@ -156,7 +158,7 @@ wait_io_ready()
      * handle this by checking the IRQ line manually when the semaphore wait
      * times out.
      */
-    msg_t rdy = chSemWaitTimeout(&sem_spi_io_sleep, S2ST(2));
+    msg_t rdy = chSemWaitTimeout(&sem_io_ready, S2ST(2));
 
     /* If the semaphore has been signalled, we are ready to read or write */
     if (rdy == RDY_OK) {
@@ -164,6 +166,7 @@ wait_io_ready()
     }
     /* Check if IRQ is asserted */
     else if (palReadPad(PORT_WIFI_IRQ, PAD_WIFI_IRQ) == 0) {
+      irq_timeout_count++;
       break;
     }
   }
@@ -289,7 +292,7 @@ SpiWrite(unsigned char *pUserBuffer, unsigned short usLength)
     txPacket = pUserBuffer;
     
     /* Signal the I/O thread to handle the write */
-    chSemSignal(&sem_spi_io_sleep);
+    chSemSignal(&sem_io_ready);
     
     /* Wait for write to complete */
     chSemWait(&sem_write_complete);
@@ -379,7 +382,11 @@ SpiPauseSpi(void)
 void
 SpiResumeSpi(void)
 {
+  int irq_pending = (palReadPad(PORT_WIFI_IRQ, PAD_WIFI_IRQ) == 0);
+  int start_irq_count = irq_count;
   extChannelEnable(&EXTD1, 12);
+  if (irq_pending && (start_irq_count == irq_count))
+    missed_irq_count++;
 }
 
 //*****************************************************************************
@@ -433,13 +440,15 @@ wifi_irq_cb(EXTDriver *extp, expchannel_t channel)
 
   chSysLockFromIsr();
 
+  irq_count++;
+
   switch (spiState) {
   case SPI_STATE_POWERUP:
     chSemSignalI(&sem_init);
     break;
 
   case SPI_STATE_IDLE:
-    chSemSignalI(&sem_spi_io_sleep);
+    chSemSignalI(&sem_io_ready);
     break;
 
   default:

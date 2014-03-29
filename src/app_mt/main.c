@@ -38,6 +38,11 @@ idle_thread(void* arg)
   return 0;
 }
 
+extern Semaphore sem_io_ready;
+extern Semaphore sem_write_complete;
+extern int irq_count, missed_irq_count, irq_timeout_count, io_thread_loc;
+
+
 int
 main(void)
 {
@@ -79,8 +84,19 @@ main(void)
 
   while (TRUE) {
     palSetPad(PORT_LED1, PAD_LED1);
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(1000);
     palClearPad(PORT_LED1, PAD_LED1);
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(1000);
+      printf("%d %d %d | %d %d %d | %d %d %d %d\r\n",
+          resets,
+          !palReadPad(PORT_WIFI_IRQ, PAD_WIFI_IRQ),
+          io_thread_loc,
+          sem_io_ready.s_cnt,
+          sem_write_complete.s_cnt,
+          tSLInformation.sem_recv.s_cnt,
+          tSLInformation.usNumberOfFreeBuffers,
+          irq_count,
+          missed_irq_count,
+          irq_timeout_count);
   }
 }
