@@ -81,10 +81,6 @@
 
 #define SELECT_TIMEOUT_MIN_MICRO_SECONDS  5000
 
-#define HEADERS_SIZE_DATA       (SPI_HEADER_SIZE + 5)
-
-#define SIMPLE_LINK_HCI_CMND_TRANSPORT_HEADER_SIZE  (SPI_HEADER_SIZE + SIMPLE_LINK_HCI_CMND_HEADER_SIZE)
-
 #define MDNS_DEVICE_SERVICE_MAX_LENGTH  (32)
 
 /* Init socket_active_status = 'all ones': init all sockets with SOCKET_STATUS_INACTIVE.
@@ -164,11 +160,10 @@ consume_buf(int sd)
 int c_socket(long domain, long type, long protocol)
 {
   long ret;
-  uint8_t *ptr, *args;
+  uint8_t *args;
 
   ret = EFAIL;
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + HEADERS_SIZE_CMD);
+  args = hci_get_cmd_buffer();
 
   // Fill in HCI packet structure
   args = UINT32_TO_STREAM(args, domain);
@@ -176,7 +171,7 @@ int c_socket(long domain, long type, long protocol)
   args = UINT32_TO_STREAM(args, protocol);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_SOCKET, ptr, SOCKET_OPEN_PARAMS_LEN);
+  hci_command_send(HCI_CMND_SOCKET, SOCKET_OPEN_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(HCI_CMND_SOCKET, &ret);
@@ -204,18 +199,16 @@ int c_socket(long domain, long type, long protocol)
 long c_closesocket(long sd)
 {
   long ret;
-  uint8_t *ptr, *args;
+  uint8_t *args;
 
   ret = EFAIL;
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + HEADERS_SIZE_CMD);
+  args = hci_get_cmd_buffer();
 
   // Fill in HCI packet structure
   args = UINT32_TO_STREAM(args, sd);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_CLOSE_SOCKET,
-      ptr, SOCKET_CLOSE_PARAMS_LEN);
+  hci_command_send(HCI_CMND_CLOSE_SOCKET, SOCKET_CLOSE_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(HCI_CMND_CLOSE_SOCKET, &ret);
@@ -275,19 +268,17 @@ long c_closesocket(long sd)
 long c_accept(long sd, sockaddr *addr, socklen_t *addrlen)
 {
   long ret;
-  uint8_t *ptr, *args;
+  uint8_t *args;
   tBsdReturnParams tAcceptReturnArguments;
 
   ret = EFAIL;
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + HEADERS_SIZE_CMD);
+  args = hci_get_cmd_buffer();
 
   // Fill in temporary command buffer
   args = UINT32_TO_STREAM(args, sd);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_ACCEPT,
-      ptr, SOCKET_ACCEPT_PARAMS_LEN);
+  hci_command_send(HCI_CMND_ACCEPT, SOCKET_ACCEPT_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(HCI_CMND_ACCEPT, &tAcceptReturnArguments);
@@ -335,11 +326,10 @@ long c_accept(long sd, sockaddr *addr, socklen_t *addrlen)
 long c_bind(long sd, const sockaddr *addr, long addrlen)
 {
   long ret;
-  uint8_t *ptr, *args;
+  uint8_t *args;
 
   ret = EFAIL;
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + HEADERS_SIZE_CMD);
+  args = hci_get_cmd_buffer();
 
   addrlen = ASIC_ADDR_LEN;
 
@@ -350,8 +340,7 @@ long c_bind(long sd, const sockaddr *addr, long addrlen)
   ARRAY_TO_STREAM(args, ((uint8_t *)addr), addrlen);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_BIND,
-      ptr, SOCKET_BIND_PARAMS_LEN);
+  hci_command_send(HCI_CMND_BIND, SOCKET_BIND_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(HCI_CMND_BIND, &ret);
@@ -386,19 +375,17 @@ long c_bind(long sd, const sockaddr *addr, long addrlen)
 long c_listen(long sd, long backlog)
 {
   long ret;
-  uint8_t *ptr, *args;
+  uint8_t *args;
 
   ret = EFAIL;
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + HEADERS_SIZE_CMD);
+  args = hci_get_cmd_buffer();
 
   // Fill in temporary command buffer
   args = UINT32_TO_STREAM(args, sd);
   args = UINT32_TO_STREAM(args, backlog);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_LISTEN,
-      ptr, SOCKET_LISTEN_PARAMS_LEN);
+  hci_command_send(HCI_CMND_LISTEN, SOCKET_LISTEN_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(HCI_CMND_LISTEN, &ret);
@@ -429,7 +416,7 @@ int
 c_gethostbyname(const char * hostname, uint16_t usNameLen, uint32_t* out_ip_addr)
 {
   tBsdGethostbynameParams ret;
-  uint8_t *ptr, *args;
+  uint8_t *args;
 
   errno = EFAIL;
 
@@ -437,8 +424,7 @@ c_gethostbyname(const char * hostname, uint16_t usNameLen, uint32_t* out_ip_addr
     return errno;
   }
 
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + SIMPLE_LINK_HCI_CMND_TRANSPORT_HEADER_SIZE);
+  args = hci_get_cmd_buffer();
 
   // Fill in HCI packet structure
   args = UINT32_TO_STREAM(args, 8);
@@ -446,8 +432,7 @@ c_gethostbyname(const char * hostname, uint16_t usNameLen, uint32_t* out_ip_addr
   ARRAY_TO_STREAM(args, hostname, usNameLen);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_GETHOSTNAME, ptr, SOCKET_GET_HOST_BY_NAME_PARAMS_LEN
-                                     + usNameLen - 1);
+  hci_command_send(HCI_CMND_GETHOSTNAME, SOCKET_GET_HOST_BY_NAME_PARAMS_LEN + usNameLen - 1);
 
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(HCI_EVNT_BSD_GETHOSTBYNAME, &ret);
@@ -490,11 +475,10 @@ c_gethostbyname(const char * hostname, uint16_t usNameLen, uint32_t* out_ip_addr
 long c_connect(long sd, const sockaddr *addr, long addrlen)
 {
   long ret;
-  uint8_t *ptr, *args;
+  uint8_t *args;
 
   ret = EFAIL;
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + SIMPLE_LINK_HCI_CMND_TRANSPORT_HEADER_SIZE);
+  args = hci_get_cmd_buffer();
   addrlen = 8;
 
   // Fill in temporary command buffer
@@ -504,8 +488,7 @@ long c_connect(long sd, const sockaddr *addr, long addrlen)
   ARRAY_TO_STREAM(args, ((uint8_t *)addr), addrlen);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_CONNECT,
-      ptr, SOCKET_CONNECT_PARAMS_LEN);
+  hci_command_send(HCI_CMND_CONNECT, SOCKET_CONNECT_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(HCI_CMND_CONNECT, &ret);
@@ -556,7 +539,7 @@ long c_connect(long sd, const sockaddr *addr, long addrlen)
 int c_select(long nfds, wfd_set *readsds, wfd_set *writesds,
     wfd_set *exceptsds, struct timeval *timeout)
 {
-  uint8_t *ptr, *args;
+  uint8_t *args;
   tBsdSelectRecvParams tParams;
   uint32_t is_blocking;
 
@@ -568,8 +551,7 @@ int c_select(long nfds, wfd_set *readsds, wfd_set *writesds,
   }
 
   // Fill in HCI packet structure
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + HEADERS_SIZE_CMD);
+  args = hci_get_cmd_buffer();
 
   // Fill in temporary command buffer
   args = UINT32_TO_STREAM(args, nfds);
@@ -591,7 +573,7 @@ int c_select(long nfds, wfd_set *readsds, wfd_set *writesds,
   }
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_BSD_SELECT, ptr, SOCKET_SELECT_PARAMS_LEN);
+  hci_command_send(HCI_CMND_BSD_SELECT, SOCKET_SELECT_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(HCI_EVNT_SELECT, &tParams);
@@ -665,10 +647,9 @@ int
 c_setsockopt(long sd, long level, long optname, const void *optval, socklen_t optlen)
 {
   int ret;
-  uint8_t *ptr, *args;
+  uint8_t *args;
 
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + HEADERS_SIZE_CMD);
+  args = hci_get_cmd_buffer();
 
   // Fill in temporary command buffer
   args = UINT32_TO_STREAM(args, sd);
@@ -679,8 +660,7 @@ c_setsockopt(long sd, long level, long optname, const void *optval, socklen_t op
   ARRAY_TO_STREAM(args, ((uint8_t *)optval), optlen);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_SETSOCKOPT,
-      ptr, SOCKET_SET_SOCK_OPT_PARAMS_LEN  + optlen);
+  hci_command_send(HCI_CMND_SETSOCKOPT, SOCKET_SET_SOCK_OPT_PARAMS_LEN  + optlen);
 
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(HCI_CMND_SETSOCKOPT, &ret);
@@ -743,11 +723,10 @@ c_setsockopt(long sd, long level, long optname, const void *optval, socklen_t op
 int c_getsockopt(long sd, long level, long optname, void *optval,
                          socklen_t *optlen)
 {
-  uint8_t *ptr, *args;
+  uint8_t *args;
   tBsdGetSockOptReturnParams  tRetParams;
 
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + HEADERS_SIZE_CMD);
+  args = hci_get_cmd_buffer();
 
   // Fill in temporary command buffer
   args = UINT32_TO_STREAM(args, sd);
@@ -755,8 +734,7 @@ int c_getsockopt(long sd, long level, long optname, void *optval,
   args = UINT32_TO_STREAM(args, optname);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_GETSOCKOPT,
-      ptr, SOCKET_GET_SOCK_OPT_PARAMS_LEN);
+  hci_command_send(HCI_CMND_GETSOCKOPT, SOCKET_GET_SOCK_OPT_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(HCI_CMND_GETSOCKOPT, &tRetParams);
@@ -798,11 +776,10 @@ simple_link_recv(long sd, void *buf, long len, long flags, sockaddr *from,
                 socklen_t *fromlen, long opcode)
 {
   int ret;
-  uint8_t *ptr, *args;
+  uint8_t *args;
   tBsdReadReturnParams tSocketReadEvent;
 
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + HEADERS_SIZE_CMD);
+  args = hci_get_cmd_buffer();
 
   // Fill in HCI packet structure
   args = UINT32_TO_STREAM(args, sd);
@@ -810,7 +787,7 @@ simple_link_recv(long sd, void *buf, long len, long flags, sockaddr *from,
   args = UINT32_TO_STREAM(args, flags);
 
   // Generate the read command, and wait for the
-  hci_command_send(opcode,  ptr, SOCKET_RECV_FROM_PARAMS_LEN);
+  hci_command_send(opcode,  SOCKET_RECV_FROM_PARAMS_LEN);
 
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(opcode, &tSocketReadEvent);
@@ -919,7 +896,7 @@ simple_link_send(long sd, const void *buf, long len, long flags,
               const sockaddr *to, long tolen, long opcode)
 {
   uint8_t uArgSize,  addrlen;
-  uint8_t *ptr, *pDataPtr, *args;
+  uint8_t *pDataPtr, *args;
   uint32_t addr_offset = 0;
   int res;
   tBsdReadReturnParams tSocketSendEvent;
@@ -933,8 +910,7 @@ simple_link_send(long sd, const void *buf, long len, long flags,
   tSLInformation.NumberOfSentPackets++;
 
   // Allocate a buffer and construct a packet and send it over spi
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + HEADERS_SIZE_DATA);
+  args = hci_get_data_buffer();
 
   // Update the offset of data and parameters according to the command
   switch(opcode) {
@@ -942,14 +918,14 @@ simple_link_send(long sd, const void *buf, long len, long flags,
       addr_offset = len + sizeof(len) + sizeof(len);
       addrlen = 8;
       uArgSize = SOCKET_SENDTO_PARAMS_LEN;
-      pDataPtr = ptr + HEADERS_SIZE_DATA + SOCKET_SENDTO_PARAMS_LEN;
+      pDataPtr = args + SOCKET_SENDTO_PARAMS_LEN;
       break;
 
     case HCI_CMND_SEND:
       tolen = 0;
       to = NULL;
       uArgSize = HCI_CMND_SEND_ARG_LENGTH;
-      pDataPtr = ptr + HEADERS_SIZE_DATA + HCI_CMND_SEND_ARG_LENGTH;
+      pDataPtr = args + HCI_CMND_SEND_ARG_LENGTH;
       break;
 
     default:
@@ -976,7 +952,7 @@ simple_link_send(long sd, const void *buf, long len, long flags,
   }
 
   // Initiate a HCI command
-  hci_data_send(opcode, ptr, uArgSize, len,(uint8_t*)to, tolen);
+  hci_data_send(opcode, uArgSize, len,(uint8_t*)to, tolen);
   if (opcode == HCI_CMND_SENDTO)
     hci_wait_for_event(HCI_EVNT_SENDTO, &tSocketSendEvent);
   else
@@ -1063,14 +1039,13 @@ int c_sendto(long sd, const void *buf, long len, long flags,
 int c_mdnsAdvertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength)
 {
   int ret;
-  uint8_t *pTxBuffer, *pArgs;
+  uint8_t *pArgs;
 
   if (deviceServiceNameLength > MDNS_DEVICE_SERVICE_MAX_LENGTH) {
     return EFAIL;
   }
 
-  pTxBuffer = tSLInformation.pucTxCommandBuffer;
-  pArgs = (pTxBuffer + SIMPLE_LINK_HCI_CMND_TRANSPORT_HEADER_SIZE);
+  pArgs = hci_get_cmd_buffer();
 
   // Fill in HCI packet structure
   pArgs = UINT32_TO_STREAM(pArgs, mdnsEnabled);
@@ -1079,7 +1054,7 @@ int c_mdnsAdvertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t de
   ARRAY_TO_STREAM(pArgs, deviceServiceName, deviceServiceNameLength);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_MDNS_ADVERTISE, pTxBuffer, SOCKET_MDNS_ADVERTISE_PARAMS_LEN + deviceServiceNameLength);
+  hci_command_send(HCI_CMND_MDNS_ADVERTISE, SOCKET_MDNS_ADVERTISE_PARAMS_LEN + deviceServiceNameLength);
 
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(HCI_EVNT_MDNS_ADVERTISE, &ret);

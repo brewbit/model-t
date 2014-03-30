@@ -103,22 +103,20 @@ long c_netapp_dhcp(
     uint32_t *aucDNSServer)
 {
     signed char scRet;
-    uint8_t *ptr;
     uint8_t *args;
 
     scRet = EFAIL;
-    ptr = tSLInformation.pucTxCommandBuffer;
-    args = (ptr + HEADERS_SIZE_CMD);
+    args = hci_get_cmd_buffer();
 
     // Fill in temporary command buffer
-    ARRAY_TO_STREAM(args,aucIP,4);
-    ARRAY_TO_STREAM(args,aucSubnetMask,4);
-    ARRAY_TO_STREAM(args,aucDefaultGateway,4);
+    ARRAY_TO_STREAM(args, aucIP, 4);
+    ARRAY_TO_STREAM(args, aucSubnetMask, 4);
+    ARRAY_TO_STREAM(args, aucDefaultGateway, 4);
     args = UINT32_TO_STREAM(args, 0);
-    ARRAY_TO_STREAM(args,aucDNSServer,4);
+    ARRAY_TO_STREAM(args, aucDNSServer, 4);
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_DHCP, ptr, NETAPP_DHCP_PARAMS_LEN);
+    hci_command_send(HCI_NETAPP_DHCP, NETAPP_DHCP_PARAMS_LEN);
 
     // Wait for command complete event
     hci_wait_for_event(HCI_NETAPP_DHCP, &scRet);
@@ -183,12 +181,10 @@ long c_netapp_timeout_values(
     uint32_t *aucInactivity)
 {
     signed char scRet;
-    uint8_t *ptr;
     uint8_t *args;
 
     scRet = EFAIL;
-    ptr = tSLInformation.pucTxCommandBuffer;
-    args = (ptr + HEADERS_SIZE_CMD);
+    args = hci_get_cmd_buffer();
 
     // Set minimal values of timers
     MIN_TIMER_SET(*aucDHCP)
@@ -203,7 +199,7 @@ long c_netapp_timeout_values(
     args = UINT32_TO_STREAM(args, *aucInactivity);
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_SET_TIMERS, ptr, NETAPP_SET_TIMER_PARAMS_LEN);
+    hci_command_send(HCI_NETAPP_SET_TIMERS, NETAPP_SET_TIMER_PARAMS_LEN);
 
     // Wait for command complete event
     hci_wait_for_event(HCI_NETAPP_SET_TIMERS, &scRet);
@@ -238,11 +234,10 @@ long c_netapp_ping_send(
     uint32_t ulPingTimeout)
 {
     signed char scRet;
-    uint8_t *ptr, *args;
+    uint8_t *args;
 
     scRet = EFAIL;
-    ptr = tSLInformation.pucTxCommandBuffer;
-    args = (ptr + HEADERS_SIZE_CMD);
+    args = hci_get_cmd_buffer();
 
     // Fill in temporary command buffer
     args = UINT32_TO_STREAM(args, *ip);
@@ -251,7 +246,7 @@ long c_netapp_ping_send(
     args = UINT32_TO_STREAM(args, ulPingTimeout);
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_PING_SEND, ptr, NETAPP_PING_SEND_PARAMS_LEN);
+    hci_command_send(HCI_NETAPP_PING_SEND, NETAPP_PING_SEND_PARAMS_LEN);
 
     // Wait for command complete event
     hci_wait_for_event(HCI_NETAPP_PING_SEND, &scRet);
@@ -283,14 +278,12 @@ long c_netapp_ping_send(
 //*****************************************************************************
 void c_netapp_ping_report()
 {
-  uint8_t *ptr;
-    ptr = tSLInformation.pucTxCommandBuffer;
     signed char scRet;
 
     scRet = EFAIL;
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_PING_REPORT, ptr, 0);
+    hci_command_send(HCI_NETAPP_PING_REPORT, 0);
 
     // Wait for command complete event
     hci_wait_for_event(HCI_NETAPP_PING_REPORT, &scRet);
@@ -311,13 +304,11 @@ void c_netapp_ping_report()
 long c_netapp_ping_stop()
 {
     signed char scRet;
-    uint8_t *ptr;
 
     scRet = EFAIL;
-    ptr = tSLInformation.pucTxCommandBuffer;
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_PING_STOP, ptr, 0);
+    hci_command_send(HCI_NETAPP_PING_STOP, 0);
 
     // Wait for command complete event
     hci_wait_for_event(HCI_NETAPP_PING_STOP, &scRet);
@@ -352,16 +343,11 @@ long c_netapp_ping_stop()
 //*****************************************************************************
 void c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig)
 {
-  uint8_t *ptr;
+  // Initiate a HCI command
+  hci_command_send(HCI_NETAPP_IPCONFIG, 0);
 
-    ptr = tSLInformation.pucTxCommandBuffer;
-
-    // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_IPCONFIG, ptr, 0);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_NETAPP_IPCONFIG, ipconfig );
-
+  // Wait for command complete event
+  hci_wait_for_event(HCI_NETAPP_IPCONFIG, ipconfig );
 }
 
 //*****************************************************************************
@@ -378,13 +364,11 @@ void c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig)
 long c_netapp_arp_flush(void)
 {
     signed char scRet;
-    uint8_t *ptr;
 
     scRet = EFAIL;
-    ptr = tSLInformation.pucTxCommandBuffer;
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_ARP_FLUSH, ptr, 0);
+    hci_command_send(HCI_NETAPP_ARP_FLUSH, 0);
 
     // Wait for command complete event
     hci_wait_for_event(HCI_NETAPP_ARP_FLUSH, &scRet);
@@ -411,29 +395,16 @@ long c_netapp_arp_flush(void)
 //*****************************************************************************
 long c_netapp_set_debug_level(uint32_t ulLevel)
 {
-    signed char scRet;
-    uint8_t *ptr, *args;
+  signed char scRet;
+  uint8_t *args;
 
-    scRet = EFAIL;
-    ptr = tSLInformation.pucTxCommandBuffer;
-    args = (ptr + HEADERS_SIZE_CMD);
+  scRet = EFAIL;
+  args = hci_get_cmd_buffer();
 
-    //
-    // Fill in temporary command buffer
-    //
-    args = UINT32_TO_STREAM(args, ulLevel);
+  args = UINT32_TO_STREAM(args, ulLevel);
 
+  hci_command_send(HCI_NETAPP_SET_DEBUG_LEVEL, NETAPP_SET_DEBUG_LEVEL_PARAMS_LEN);
+  hci_wait_for_event(HCI_NETAPP_SET_DEBUG_LEVEL, &scRet);
 
-    //
-    // Initiate a HCI command
-    //
-    hci_command_send(HCI_NETAPP_SET_DEBUG_LEVEL, ptr, NETAPP_SET_DEBUG_LEVEL_PARAMS_LEN);
-
-    //
-    // Wait for command complete event
-    //
-    hci_wait_for_event(HCI_NETAPP_SET_DEBUG_LEVEL, &scRet);
-
-    return(scRet);
-
+  return(scRet);
 }

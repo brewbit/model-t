@@ -84,7 +84,7 @@ extern "C" {
   application, the required buffer is:
   Using recv() or recvfrom():
  
-    max(CC3000_MINIMAL_RX_SIZE, MAX_DATA + HEADERS_SIZE_DATA + fromlen
+    max(CC3000_MINIMAL_RX_SIZE, MAX_DATA + SPI_HEADER_SIZE + HCI_DATA_HEADER_SIZE + fromlen
     + ucArgsize + 1)
  
   Using gethostbyname() with minimal buffer size will limit the host name
@@ -112,12 +112,12 @@ extern "C" {
   Using Sendto():
 
    max(CC3000_MINIMAL_TX_SIZE, MAX_DATA + SPI_HEADER_SIZE
-   + SOCKET_SENDTO_PARAMS_LEN + SIMPLE_LINK_HCI_DATA_HEADER_SIZE + 1)
+   + SOCKET_SENDTO_PARAMS_LEN + HCI_DATA_HEADER_SIZE + 1)
 
   Using Send():
 
    max(CC3000_MINIMAL_TX_SIZE, MAX_DATA + SPI_HEADER_SIZE
-   + HCI_CMND_SEND_ARG_LENGTH + SIMPLE_LINK_HCI_DATA_HEADER_SIZE + 1)
+   + HCI_CMND_SEND_ARG_LENGTH + HCI_DATA_HEADER_SIZE + 1)
 
   The 1 is used for the overrun detection */
 
@@ -162,7 +162,6 @@ typedef void (*tWlanCB)(long event_type, void* data, uint8_t length );
 typedef struct {
   Semaphore sem_recv;
   uint16_t usRxEventOpcode;
-  uint8_t *pucTxCommandBuffer;
 
   tFWPatches sFWPatches;
   tDriverPatches sDriverPatches;
@@ -338,11 +337,13 @@ typedef struct {
 //@@@ HCI Common Header - Start
 
 #define SPI_HEADER_SIZE                             (5)
-#define SIMPLE_LINK_HCI_CMND_HEADER_SIZE            (4)
-#define HEADERS_SIZE_CMD                            (SPI_HEADER_SIZE + SIMPLE_LINK_HCI_CMND_HEADER_SIZE)
-#define SIMPLE_LINK_HCI_DATA_CMND_HEADER_SIZE       (5)
-#define SIMPLE_LINK_HCI_DATA_HEADER_SIZE            (5)
-#define SIMPLE_LINK_HCI_PATCH_HEADER_SIZE           (2)
+
+#define HCI_CMND_HEADER_SIZE                        (4)
+#define HCI_DATA_HEADER_SIZE                        (5)
+#define HCI_DATA_CMD_HEADER_SIZE                    (5)
+#define HCI_PATCH_HEADER_SIZE                       (6)
+#define HCI_PATCH_PORTION_HEADER_SIZE               (2)
+#define HCI_EVENT_HEADER_SIZE                       (5)
 
 
 //*****************************************************************************
@@ -487,11 +488,6 @@ typedef struct {
 // Prototypes for the structures for APIs.
 //
 //*****************************************************************************
-#define HCI_DATA_HEADER_SIZE                    (5)
-#define HCI_EVENT_HEADER_SIZE                   (5)
-#define HCI_DATA_CMD_HEADER_SIZE                (5)
-#define HCI_PATCH_HEADER_SIZE                   (6)
-
 #define HCI_PACKET_TYPE_OFFSET                  (0)
 #define HCI_PACKET_ARGSIZE_OFFSET               (2)
 #define HCI_PACKET_LENGTH_OFFSET                (3)

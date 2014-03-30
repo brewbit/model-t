@@ -83,11 +83,9 @@ signed long c_nvmem_read(uint32_t ulFileId, uint32_t ulLength,
     uint32_t ulOffset, uint8_t *buff)
 {
   uint8_t ucStatus = 0xFF;
-  uint8_t *ptr;
   uint8_t *args;
 
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + HEADERS_SIZE_CMD);
+  args = hci_get_cmd_buffer();
 
   // Fill in HCI packet structure
   args = UINT32_TO_STREAM(args, ulFileId);
@@ -95,7 +93,7 @@ signed long c_nvmem_read(uint32_t ulFileId, uint32_t ulLength,
   args = UINT32_TO_STREAM(args, ulOffset);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_NVMEM_READ, ptr, NVMEM_READ_PARAMS_LEN);
+  hci_command_send(HCI_CMND_NVMEM_READ, NVMEM_READ_PARAMS_LEN);
   hci_wait_for_event(HCI_CMND_NVMEM_READ, &ucStatus);
 
   // In case there is data - read it - even if an error code is returned
@@ -133,13 +131,11 @@ signed long c_nvmem_read(uint32_t ulFileId, uint32_t ulLength,
 signed long c_nvmem_write(uint32_t ulFileId, uint32_t ulLength, uint32_t ulEntryOffset, uint8_t *buff)
 {
   long iRes;
-  uint8_t *ptr;
   uint8_t *args;
 
   iRes = EFAIL;
 
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + SPI_HEADER_SIZE + HCI_DATA_CMD_HEADER_SIZE);
+  args = hci_get_data_cmd_buffer();
 
   // Fill in HCI packet structure
   args = UINT32_TO_STREAM(args, ulFileId);
@@ -147,11 +143,10 @@ signed long c_nvmem_write(uint32_t ulFileId, uint32_t ulLength, uint32_t ulEntry
   args = UINT32_TO_STREAM(args, ulLength);
   args = UINT32_TO_STREAM(args, ulEntryOffset);
 
-  memcpy((ptr + SPI_HEADER_SIZE + HCI_DATA_CMD_HEADER_SIZE +
-      NVMEM_WRITE_PARAMS_LEN),buff,ulLength);
+  memcpy((args + NVMEM_WRITE_PARAMS_LEN), buff, ulLength);
 
   // Initiate a HCI command but it will come on data channel
-  hci_data_command_send(HCI_CMND_NVMEM_WRITE, ptr, NVMEM_WRITE_PARAMS_LEN,
+  hci_data_command_send(HCI_CMND_NVMEM_WRITE, NVMEM_WRITE_PARAMS_LEN,
       ulLength);
 
   hci_wait_for_event(HCI_EVNT_NVMEM_WRITE, &iRes);
@@ -253,13 +248,10 @@ uint8_t c_nvmem_write_patch(uint32_t ulFileId, uint32_t spLength,
 //*****************************************************************************
 uint8_t c_nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 {
-  uint8_t *ptr;
   uint8_t retBuf[5];
 
-  ptr = tSLInformation.pucTxCommandBuffer;
-
   // Initiate a HCI command, no args are required
-  hci_command_send(HCI_CMND_READ_SP_VERSION, ptr, 0);
+  hci_command_send(HCI_CMND_READ_SP_VERSION, 0);
   hci_wait_for_event(HCI_CMND_READ_SP_VERSION, retBuf);
 
   sp_version->package_id = retBuf[3];
@@ -292,19 +284,17 @@ uint8_t c_nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 //*****************************************************************************
 signed long c_nvmem_create_entry(uint32_t ulFileId, uint32_t ulNewLen)
 {
-  uint8_t *ptr;
   uint8_t *args;
   uint16_t retval;
 
-  ptr = tSLInformation.pucTxCommandBuffer;
-  args = (ptr + HEADERS_SIZE_CMD);
+  args = hci_get_cmd_buffer();
 
   // Fill in HCI packet structure
   args = UINT32_TO_STREAM(args, ulFileId);
   args = UINT32_TO_STREAM(args, ulNewLen);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_NVMEM_CREATE_ENTRY,ptr, NVMEM_CREATE_PARAMS_LEN);
+  hci_command_send(HCI_CMND_NVMEM_CREATE_ENTRY, NVMEM_CREATE_PARAMS_LEN);
 
   hci_wait_for_event(HCI_CMND_NVMEM_CREATE_ENTRY, &retval);
 

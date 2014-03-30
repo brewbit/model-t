@@ -137,19 +137,18 @@ update_socket_active_status(uint8_t* resp_params);
 uint16_t
 hci_command_send(
     uint16_t usOpcode,
-    uint8_t *pucBuff,
     uint8_t ucArgsLength)
 { 
   uint8_t *stream;
 
-  stream = (pucBuff + SPI_HEADER_SIZE);
+  stream = spi_get_buffer();
 
   UINT8_TO_STREAM(stream, HCI_TYPE_CMND);
   stream = UINT16_TO_STREAM(stream, usOpcode);
   UINT8_TO_STREAM(stream, ucArgsLength);
 
   //Update the opcode of the event we will be waiting for
-  spi_write(pucBuff, ucArgsLength + SIMPLE_LINK_HCI_CMND_HEADER_SIZE);
+  spi_write(ucArgsLength + HCI_CMND_HEADER_SIZE);
 
   return(0);
 }
@@ -172,7 +171,6 @@ hci_command_send(
 long
 hci_data_send(
     uint8_t ucOpcode,
-    uint8_t *ucArgs,
     uint16_t usArgsLength,
     uint16_t usDataLength,
     const uint8_t *ucTail,
@@ -182,7 +180,7 @@ hci_data_send(
 
   (void)ucTail;
 
-  stream = ((ucArgs) + SPI_HEADER_SIZE);
+  stream = spi_get_buffer();
 
   UINT8_TO_STREAM(stream, HCI_TYPE_DATA);
   UINT8_TO_STREAM(stream, ucOpcode);
@@ -190,7 +188,7 @@ hci_data_send(
   stream = UINT16_TO_STREAM(stream, usArgsLength + usDataLength + usTailLength);
 
   // Send the packet over the SPI
-  spi_write(ucArgs, SIMPLE_LINK_HCI_DATA_HEADER_SIZE + usArgsLength + usDataLength + usTailLength);
+  spi_write(HCI_DATA_HEADER_SIZE + usArgsLength + usDataLength + usTailLength);
 
   return(ESUCCESS);
 }
@@ -212,11 +210,10 @@ hci_data_send(
 //*****************************************************************************
 void hci_data_command_send(
     uint16_t usOpcode,
-    uint8_t *pucBuff,
     uint8_t ucArgsLength,
     uint16_t ucDataLength)
 { 
-  uint8_t *stream = (pucBuff + SPI_HEADER_SIZE);
+  uint8_t *stream = spi_get_buffer();
 
   UINT8_TO_STREAM(stream, HCI_TYPE_DATA);
   UINT8_TO_STREAM(stream, usOpcode);
@@ -224,7 +221,7 @@ void hci_data_command_send(
   stream = UINT16_TO_STREAM(stream, ucArgsLength + ucDataLength);
 
   // Send the command over SPI on data channel
-  spi_write(pucBuff, ucArgsLength + ucDataLength + SIMPLE_LINK_HCI_DATA_CMND_HEADER_SIZE);
+  spi_write(ucArgsLength + ucDataLength + HCI_DATA_CMD_HEADER_SIZE);
 }
 
 //*****************************************************************************
@@ -244,36 +241,35 @@ void hci_data_command_send(
 void
 hci_patch_send(
     uint8_t ucOpcode,
-    uint8_t *pucBuff,
     char *patch,
     uint16_t usDataLength)
 { 
-  uint8_t *data_ptr = (pucBuff + SPI_HEADER_SIZE);
   uint16_t usTransLength;
-  uint8_t *stream = (pucBuff + SPI_HEADER_SIZE);
+  uint8_t *stream = spi_get_buffer();
+  uint8_t *data_ptr = stream;
 
   UINT8_TO_STREAM(stream, HCI_TYPE_PATCH);
   UINT8_TO_STREAM(stream, ucOpcode);
-  stream = UINT16_TO_STREAM(stream, usDataLength + SIMPLE_LINK_HCI_PATCH_HEADER_SIZE);
+  stream = UINT16_TO_STREAM(stream, usDataLength + HCI_PATCH_PORTION_HEADER_SIZE);
 
   if (usDataLength <= SL_PATCH_PORTION_SIZE) {
     UINT16_TO_STREAM(stream, usDataLength);
     stream = UINT16_TO_STREAM(stream, usDataLength);
-    memcpy((pucBuff + SPI_HEADER_SIZE) + HCI_PATCH_HEADER_SIZE, patch, usDataLength);
+    memcpy(hci_get_patch_buffer(), patch, usDataLength);
 
     // Update the opcode of the event we will be waiting for
-    spi_write(pucBuff, usDataLength + HCI_PATCH_HEADER_SIZE);
+    spi_write(usDataLength + HCI_PATCH_HEADER_SIZE);
   }
   else {
     usTransLength = (usDataLength/SL_PATCH_PORTION_SIZE);
-    UINT16_TO_STREAM(stream, usDataLength + SIMPLE_LINK_HCI_PATCH_HEADER_SIZE + usTransLength*SIMPLE_LINK_HCI_PATCH_HEADER_SIZE);
+    UINT16_TO_STREAM(stream, usDataLength + HCI_PATCH_PORTION_HEADER_SIZE + usTransLength*HCI_PATCH_PORTION_HEADER_SIZE);
     stream = UINT16_TO_STREAM(stream, SL_PATCH_PORTION_SIZE);
-    memcpy(pucBuff + SPI_HEADER_SIZE + HCI_PATCH_HEADER_SIZE, patch, SL_PATCH_PORTION_SIZE);
+    memcpy(hci_get_patch_buffer(), patch, SL_PATCH_PORTION_SIZE);
     usDataLength -= SL_PATCH_PORTION_SIZE;
     patch += SL_PATCH_PORTION_SIZE;
 
     // Update the opcode of the event we will be waiting for
-    spi_write(pucBuff, SL_PATCH_PORTION_SIZE + HCI_PATCH_HEADER_SIZE);
+    spi_write(SL_PATCH_PORTION_SIZE + HCI_PATCH_HEADER_SIZE);
 
     while (usDataLength) {
       if (usDataLength <= SL_PATCH_PORTION_SIZE) {
@@ -287,11 +283,11 @@ hci_patch_send(
       }
 
       *(uint16_t *)data_ptr = usTransLength;
-      memcpy(data_ptr + SIMPLE_LINK_HCI_PATCH_HEADER_SIZE, patch, usTransLength);
+      memcpy(data_ptr + HCI_PATCH_PORTION_HEADER_SIZE, patch, usTransLength);
       patch += usTransLength;
 
       // Update the opcode of the event we will be waiting for
-      spi_write((uint8_t *)data_ptr, usTransLength + sizeof(usTransLength));
+      spi_write(usTransLength + sizeof(usTransLength));
     }
   }
 }
@@ -400,15 +396,13 @@ hci_send_patch(uint8_t patch_type)
       patch = tSLInformation.sDriverPatches(&ucLength);
 
       if (patch) {
-        hci_patch_send(HCI_EVENT_PATCHES_DRV_REQ,
-                       tSLInformation.pucTxCommandBuffer, patch, ucLength);
+        hci_patch_send(HCI_EVENT_PATCHES_DRV_REQ, patch, ucLength);
         return;
       }
     }
 
     // Send 0 length Patches response event
-    hci_patch_send(HCI_EVENT_PATCHES_DRV_REQ,
-                   tSLInformation.pucTxCommandBuffer, 0, 0);
+    hci_patch_send(HCI_EVENT_PATCHES_DRV_REQ, 0, 0);
     break;
 
   case HCI_EVENT_PATCHES_FW_REQ:
@@ -417,15 +411,13 @@ hci_send_patch(uint8_t patch_type)
 
       // Build and send a patch
       if (patch) {
-        hci_patch_send(HCI_EVENT_PATCHES_FW_REQ,
-                       tSLInformation.pucTxCommandBuffer, patch, ucLength);
+        hci_patch_send(HCI_EVENT_PATCHES_FW_REQ, patch, ucLength);
         return;
       }
     }
 
     // Send 0 length Patches response event
-    hci_patch_send(HCI_EVENT_PATCHES_FW_REQ,
-                   tSLInformation.pucTxCommandBuffer, 0, 0);
+    hci_patch_send(HCI_EVENT_PATCHES_FW_REQ, 0, 0);
     break;
 
   case HCI_EVENT_PATCHES_BOOTLOAD_REQ:
@@ -433,15 +425,13 @@ hci_send_patch(uint8_t patch_type)
       patch = tSLInformation.sBootLoaderPatches(&ucLength);
 
       if (patch) {
-        hci_patch_send(HCI_EVENT_PATCHES_BOOTLOAD_REQ,
-                       tSLInformation.pucTxCommandBuffer, patch, ucLength);
+        hci_patch_send(HCI_EVENT_PATCHES_BOOTLOAD_REQ, patch, ucLength);
         return;
       }
     }
 
     // Send 0 length Patches response event
-    hci_patch_send(HCI_EVENT_PATCHES_BOOTLOAD_REQ,
-                   tSLInformation.pucTxCommandBuffer, 0, 0);
+    hci_patch_send(HCI_EVENT_PATCHES_BOOTLOAD_REQ, 0, 0);
     break;
 
   default:

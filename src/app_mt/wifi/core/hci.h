@@ -37,6 +37,7 @@
 
 #include "cc3000_common.h"
 #include "hci_msg.h"
+#include "cc3000_spi.h"
 
 //*****************************************************************************
 //
@@ -47,6 +48,13 @@
 #ifdef  __cplusplus
 extern "C" {
 #endif
+
+
+#define hci_get_cmd_buffer()      (spi_get_buffer() + HCI_CMND_HEADER_SIZE)
+#define hci_get_data_buffer()     (spi_get_buffer() + HCI_DATA_HEADER_SIZE)
+#define hci_get_data_cmd_buffer() (spi_get_buffer() + HCI_DATA_CMD_HEADER_SIZE)
+#define hci_get_patch_buffer()    (spi_get_buffer() + HCI_PATCH_HEADER_SIZE)
+
 
 //*****************************************************************************
 //
@@ -72,7 +80,6 @@ extern "C" {
 uint16_t
 hci_command_send(
     uint16_t usOpcode,
-    uint8_t *ucArgs,
     uint8_t ucArgsLength);
 
 
@@ -94,7 +101,6 @@ hci_command_send(
 long
 hci_data_send(
     uint8_t ucOpcode,
-    uint8_t *ucArgs,
     uint16_t usArgsLength,
     uint16_t usDataLength,
     const uint8_t *ucTail,
@@ -118,7 +124,6 @@ hci_data_send(
 void
 hci_data_command_send(
     uint16_t usOpcode,
-    uint8_t *pucBuff,
     uint8_t ucArgsLength,
     uint16_t ucDataLength);
 
@@ -139,7 +144,6 @@ hci_data_command_send(
 void
 hci_patch_send(
     uint8_t ucOpcode,
-    uint8_t *pucBuff,
     char *patch,
     uint16_t usDataLength);
 

@@ -7,13 +7,10 @@
 #include "types.h"
 
 
-extern uint8_t wlan_tx_buffer[];
-extern uint8_t wlan_rx_buffer[];
-
-
 void spi_open(void);
 void spi_close(void);
-void spi_write(uint8_t *pUserBuffer, uint16_t usLength);
+uint8_t* spi_get_buffer(void);
+void spi_write(uint16_t usLength);
 
 #endif
 

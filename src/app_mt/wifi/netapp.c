@@ -38,7 +38,7 @@
 #define MIN_TIMER_VAL_SECONDS      20
 
 /* Handles for making the APIs asychronous and thread-safe */
-extern Mutex             g_main_mutex;
+extern Mutex g_main_mutex;
 
 
 

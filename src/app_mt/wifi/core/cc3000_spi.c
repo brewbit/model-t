@@ -267,11 +267,16 @@ spi_first_write(uint8_t *ucBuf, uint16_t usLength)
   DEASSERT_CS();
 }
 
+uint8_t*
+spi_get_buffer(void)
+{
+  return wlan_tx_buffer + SPI_HEADER_SIZE;
+}
+
 //*****************************************************************************
 //
 //!  spi_write
 //!
-//!  @param  pUserBuffer  buffer to write
 //!  @param  usLength     buffer's length
 //!
 //!  @return none
@@ -280,16 +285,16 @@ spi_first_write(uint8_t *ucBuf, uint16_t usLength)
 //
 //*****************************************************************************
 void
-spi_write(uint8_t *pUserBuffer, uint16_t usLength)
+spi_write(uint16_t usLength)
 {
   if((usLength & 1) == 0)
     usLength++;
 
-  pUserBuffer[0] = SPI_WRITE_OP;
-  pUserBuffer[1] = (usLength >> 8) & 0xFF;
-  pUserBuffer[2] = (usLength) & 0xFF;
-  pUserBuffer[3] = 0;
-  pUserBuffer[4] = 0;
+  wlan_tx_buffer[0] = SPI_WRITE_OP;
+  wlan_tx_buffer[1] = (usLength >> 8) & 0xFF;
+  wlan_tx_buffer[2] = (usLength) & 0xFF;
+  wlan_tx_buffer[3] = 0;
+  wlan_tx_buffer[4] = 0;
 
   usLength += SPI_HEADER_SIZE;
 
@@ -298,11 +303,11 @@ spi_write(uint8_t *pUserBuffer, uint16_t usLength)
 
     // This is time for first TX/RX transactions over SPI: the IRQ is down -
     // so need to send read buffer size command
-    spi_first_write(pUserBuffer, usLength);
+    spi_first_write(wlan_tx_buffer, usLength);
   }
   else {
     txPacketLength = usLength;
-    txPacket = pUserBuffer;
+    txPacket = wlan_tx_buffer;
 
     /* Signal the I/O thread to handle the write */
     chSemSignal(&sem_io_ready);
