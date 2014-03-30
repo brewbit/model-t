@@ -171,9 +171,10 @@ c_wlan_start(patch_load_command_t patch_load_cmd)
   // IRQ Line asserted - send HCI_CMND_SIMPLE_LINK_START to CC3000
   hci_command_send(HCI_CMND_SIMPLE_LINK_START, WLAN_SL_INIT_START_PARAMS_LEN);
 
+  // Host loaded patches not supported, just send zero-length responses
   if (patch_load_cmd == PATCH_LOAD_FROM_HOST) {
-    // wait for the device to request patches
     uint8_t patch_req_type;
+
     hci_wait_for_event(HCI_EVNT_PATCHES_REQ, &patch_req_type);
     hci_patch_send(patch_req_type, 0, 0);
 
