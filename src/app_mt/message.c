@@ -72,6 +72,8 @@ msg_thread_func(void* arg)
 
   chRegSetThreadName(l->name);
 
+  l->dispatch(MSG_INIT, NULL, l->user_data, NULL);
+
   while (1) {
     thread_msg_t* msg = msg_get(l);
 

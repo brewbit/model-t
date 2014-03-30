@@ -84,18 +84,8 @@ main(void)
 
   while (TRUE) {
     palSetPad(PORT_LED1, PAD_LED1);
-    chThdSleepMilliseconds(1000);
+    chThdSleepMilliseconds(500);
     palClearPad(PORT_LED1, PAD_LED1);
-    chThdSleepMilliseconds(1000);
-      printf("%d %d %d | %d %d %d | %d %d %d\r\n",
-          resets,
-          !palReadPad(PORT_WIFI_IRQ, PAD_WIFI_IRQ),
-          io_thread_loc,
-          sem_io_ready.s_cnt,
-          sem_write_complete.s_cnt,
-          tSLInformation.sem_recv.s_cnt,
-          tSLInformation.usNumberOfFreeBuffers,
-          irq_count,
-          irq_timeout_count);
+    chThdSleepMilliseconds(500);
   }
 }

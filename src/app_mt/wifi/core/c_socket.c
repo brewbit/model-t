@@ -45,19 +45,6 @@
 #include "cc3000_spi.h"
 
 
-//Enable this flag if and only if you must comply with BSD socket
-//close() function
-#ifdef _API_USE_BSD_CLOSE
-   #define close(sd) closesocket(sd)
-#endif
-
-//Enable this flag if and only if you must comply with BSD socket read() and
-//write() functions
-#ifdef _API_USE_BSD_READ_WRITE
-              #define read(sd, buf, len, flags) recv(sd, buf, len, flags)
-              #define write(sd, buf, len, flags) send(sd, buf, len, flags)
-#endif
-
 #define SOCKET_OPEN_PARAMS_LEN              (12)
 #define SOCKET_CLOSE_PARAMS_LEN             (4)
 #define SOCKET_ACCEPT_PARAMS_LEN            (4)
@@ -83,18 +70,7 @@
 
 #define MDNS_DEVICE_SERVICE_MAX_LENGTH  (32)
 
-/* Init socket_active_status = 'all ones': init all sockets with SOCKET_STATUS_INACTIVE.
-   Will be changed by 'set_socket_active_status' upon 'connect' and 'accept' calls */
-#define SOCKET_STATUS_INIT_VAL  0xFFFF
-#define M_IS_VALID_SD(sd) ((0 <= (sd)) && ((sd) <= 7))
-#define M_IS_VALID_STATUS(status) (((status) == SOCKET_STATUS_ACTIVE)||((status) == SOCKET_STATUS_INACTIVE))
 
-
-static int32_t
-get_socket_active_status(int32_t sd);
-
-
-static uint32_t socket_active_status = SOCKET_STATUS_INIT_VAL;
 
 
 //*****************************************************************************
@@ -114,9 +90,9 @@ consume_buf(int sd)
   // In case last transmission failed then we will return the last failure
   // reason here.
   // Note that the buffer will not be allocated in this case
-  if (tSLInformation.slTransmitDataError != 0) {
-    errno = tSLInformation.slTransmitDataError;
-    tSLInformation.slTransmitDataError = 0;
+  int err = socket_get_last_error(sd);
+  if (err != 0) {
+    errno = err;
     return errno;
   }
 
@@ -126,13 +102,11 @@ consume_buf(int sd)
   //If there are no available buffers, return -2. It is recommended to use
   // select or receive to see if there is any buffer occupied with received data
   // If so, call receive() to release the buffer.
-  if(0 == tSLInformation.usNumberOfFreeBuffers) {
+  if (!hci_claim_buffer()) {
     return -2;
   }
-  else {
-    tSLInformation.usNumberOfFreeBuffers--;
-    return 0;
-  }
+
+  return 0;
 }
 
 //*****************************************************************************
@@ -179,8 +153,6 @@ int c_socket(long domain, long type, long protocol)
   // Process the event
   errno = ret;
 
-  set_socket_active_status(ret, SOCKET_STATUS_ACTIVE);
-
   return(ret);
 }
 
@@ -213,10 +185,6 @@ long c_closesocket(long sd)
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(HCI_CMND_CLOSE_SOCKET, &ret);
   errno = ret;
-
-  // since 'close' call may result in either OK (and then it closed) or error
-  // mark this socket as invalid
-  set_socket_active_status(sd, SOCKET_STATUS_INACTIVE);
 
   return(ret);
 }
@@ -283,20 +251,11 @@ long c_accept(long sd, sockaddr *addr, socklen_t *addrlen)
   // Since we are in blocking state - wait for event complete
   hci_wait_for_event(HCI_CMND_ACCEPT, &tAcceptReturnArguments);
 
-
   // need specify return parameters!!!
   memcpy(addr, &tAcceptReturnArguments.tSocketAddress, ASIC_ADDR_LEN);
   *addrlen = ASIC_ADDR_LEN;
   errno = tAcceptReturnArguments.iStatus;
   ret = errno;
-
-  // if succeeded, iStatus = new socket descriptor. otherwise - error number
-  if(M_IS_VALID_SD(ret)) {
-    set_socket_active_status(ret, SOCKET_STATUS_ACTIVE);
-  }
-  else {
-    set_socket_active_status(sd, SOCKET_STATUS_INACTIVE);
-  }
 
   return(ret);
 }
@@ -902,12 +861,8 @@ simple_link_send(long sd, const void *buf, long len, long flags,
   tBsdReadReturnParams tSocketSendEvent;
 
   // Check the bsd_arguments
-  if ((res = consume_buf(sd)) != 0) {
+  if ((res = consume_buf(sd)) != 0)
     return res;
-  }
-
-  //Update the number of sent packets
-  tSLInformation.NumberOfSentPackets++;
 
   // Allocate a buffer and construct a packet and send it over spi
   args = hci_get_data_buffer();
@@ -1022,7 +977,7 @@ int c_sendto(long sd, const void *buf, long len, long flags,
 
 //*****************************************************************************
 //
-//!  mdnsAdvertiser
+//!  c_mdns_advertiser
 //!
 //!  @param[in] mdnsEnabled         flag to enable/disable the mDNS feature
 //!  @param[in] deviceServiceName   Service name as part of the published
@@ -1036,7 +991,7 @@ int c_sendto(long sd, const void *buf, long len, long flags,
 //!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
 //
 //*****************************************************************************
-int c_mdnsAdvertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength)
+int c_mdns_advertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength)
 {
   int ret;
   uint8_t *pArgs;
@@ -1060,44 +1015,4 @@ int c_mdnsAdvertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t de
   hci_wait_for_event(HCI_EVNT_MDNS_ADVERTISE, &ret);
 
   return ret;
-}
-
-//*****************************************************************************
-//
-//!  get_socket_active_status
-//!
-//!  @param  Sd  Socket IS
-//!  @return     Current status of the socket.
-//!
-//!  @brief  Retrieve socket status
-//
-//*****************************************************************************
-static int32_t
-get_socket_active_status(int32_t sd)
-{
-  if(M_IS_VALID_SD(sd)) {
-    return (socket_active_status & (1 << sd)) ? SOCKET_STATUS_INACTIVE : SOCKET_STATUS_ACTIVE;
-  }
-  return SOCKET_STATUS_INACTIVE;
-}
-
-//*****************************************************************************
-//
-//!  set_socket_active_status
-//!
-//!  @param Sd
-//!   @param Status
-//!  @return         none
-//!
-//!  @brief          Check if the socket ID and status are valid and set
-//!                  accordingly  the global socket status
-//
-//*****************************************************************************
-void
-set_socket_active_status(int32_t sd, int32_t status)
-{
-  if(M_IS_VALID_SD(sd) && M_IS_VALID_STATUS(status)) {
-    socket_active_status &= ~(1 << sd);      /* clean socket's mask */
-    socket_active_status |= (status << sd); /* set new socket's mask */
-  }
 }

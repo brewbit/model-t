@@ -55,11 +55,54 @@
 extern "C" {
 #endif
 
+typedef enum {
+  SOCKET_STATUS_ACTIVE,
+  SOCKET_STATUS_INACTIVE
+} wlan_socket_status_t;
+
 //*****************************************************************************
 //
 // Prototypes for the APIs.
 //
 //*****************************************************************************
+
+
+void
+socket_start(void);
+
+void
+socket_stop(void);
+
+int
+socket_get_last_error(int32_t sd);
+
+//*****************************************************************************
+//
+//!  set_socket_active_status
+//!
+//!  @param Sd
+//!   @param Status
+//!  @return         none
+//!
+//!  @brief          Check if the socket ID and status are valid and set
+//!                  accordingly  the global socket status
+//
+//*****************************************************************************
+void
+set_socket_active_status(int32_t sd, wlan_socket_status_t status, int error);
+
+//*****************************************************************************
+//
+//!  get_socket_active_status
+//!
+//!  @param  Sd  Socket IS
+//!  @return     Current status of the socket.
+//!
+//!  @brief  Retrieve socket status
+//
+//*****************************************************************************
+wlan_socket_status_t
+get_socket_active_status(int32_t sd);
 
 //*****************************************************************************
 //
@@ -483,24 +526,6 @@ extern int send(long sd, const void *buf, long len, long flags);
 //*****************************************************************************
 extern int sendto(long sd, const void *buf, long len, long flags,
                   const sockaddr *to, socklen_t tolen);
-
-//*****************************************************************************
-//
-//!  mdnsAdvertiser
-//!
-//!  @param[in] mdnsEnabled         flag to enable/disable the mDNS feature
-//!  @param[in] deviceServiceName   Service name as part of the published
-//!                                 canonical domain name
-//!  @param[in] deviceServiceNameLength   Length of the service name
-//!
-//!
-//!  @return   On success, zero is returned, return SOC_ERROR if socket was not
-//!            opened successfully, or if an error occurred.
-//!
-//!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
-//
-//*****************************************************************************
-extern int mdnsAdvertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength);
 
 //*****************************************************************************
 //

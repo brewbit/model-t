@@ -49,8 +49,6 @@
 extern "C" {
 #endif
 
-#define      SOC_NOT_INITED (-3)   /* socket in progress */
-#define      SOC_NOT_CONN   (-4)   /* socket disconnected */
 
 //*****************************************************************************
 //
@@ -64,26 +62,6 @@ extern "C" {
 //
 //!  wlan_init
 //!
-//!  @param  sWlanCB   Asynchronous events callback.
-//!                    0 no event call back.
-//!                  -call back parameters:
-//!                   1) event_type: HCI_EVNT_WLAN_UNSOL_CONNECT connect event,
-//!                     HCI_EVNT_WLAN_UNSOL_DISCONNECT disconnect event,
-//!                     HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE config done,
-//!                     HCI_EVNT_WLAN_UNSOL_DHCP dhcp report,
-//!                     HCI_EVNT_WLAN_ASYNC_PING_REPORT ping report OR
-//!                     HCI_EVNT_WLAN_KEEPALIVE keepalive.
-//!                   2) data: pointer to extra data that received by the event
-//!                     (NULL no data).
-//!                   3) length: data length.
-//!                  -Events with extra data:
-//!                     HCI_EVNT_WLAN_UNSOL_DHCP: 4 bytes IP, 4 bytes Mask,
-//!                     4 bytes default gateway, 4 bytes DHCP server and 4 bytes
-//!                     for DNS server.
-//!                     HCI_EVNT_WLAN_ASYNC_PING_REPORT: 4 bytes Packets sent,
-//!                     4 bytes Packets received, 4 bytes Min round time,
-//!                     4 bytes Max round time and 4 bytes for Avg round time.
-//!
 //!  @return   none
 //!
 //!  @sa       wlan_set_event_mask , wlan_start , wlan_stop
@@ -94,7 +72,7 @@ extern "C" {
 //
 //*****************************************************************************
 void
-wlan_init(tWlanCB sWlanCB);
+wlan_init(void);
 
 
 

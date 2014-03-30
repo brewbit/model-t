@@ -50,8 +50,6 @@
 #include "security.h"
 
 
-sSimplLinkInformation tSLInformation;
-
 #define SMART_CONFIG_PROFILE_SIZE       67      // 67 = 32 (max ssid) + 32 (max key) + 1 (SSID length) + 1 (security type) + 1 (key length)
 
 #ifndef CC3000_UNENCRYPTED_SMART_CONFIG
@@ -83,46 +81,6 @@ uint8_t profileArray[SMART_CONFIG_PROFILE_SIZE];
 #define WLAN_SMART_CONFIG_START_PARAMS_LEN      (4)
 
 
-//*****************************************************************************
-//
-//!  wlan_init
-//!
-//!  @param  sWlanCB   Asynchronous events callback.
-//!                    0 no event call back.
-//!                  -call back parameters:
-//!                   1) event_type: HCI_EVNT_WLAN_UNSOL_CONNECT connect event,
-//!                     HCI_EVNT_WLAN_UNSOL_DISCONNECT disconnect event,
-//!                     HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE config done,
-//!                     HCI_EVNT_WLAN_UNSOL_DHCP dhcp report,
-//!                     HCI_EVNT_WLAN_ASYNC_PING_REPORT ping report OR
-//!                     HCI_EVNT_WLAN_KEEPALIVE keepalive.
-//!                   2) data: pointer to extra data that received by the event
-//!                     (NULL no data).
-//!                   3) length: data length.
-//!                  -Events with extra data:
-//!                     HCI_EVNT_WLAN_UNSOL_DHCP: 4 bytes IP, 4 bytes Mask,
-//!                     4 bytes default gateway, 4 bytes DHCP server and 4 bytes
-//!                     for DNS server.
-//!                     HCI_EVNT_WLAN_ASYNC_PING_REPORT: 4 bytes Packets sent,
-//!                     4 bytes Packets received, 4 bytes Min round time,
-//!                     4 bytes Max round time and 4 bytes for Avg round time.
-//!
-//!  @return   none
-//!
-//!  @sa       wlan_set_event_mask , wlan_start , wlan_stop
-//!
-//!  @brief    Initialize wlan driver
-//!
-//!  @warning This function must be called before ANY other wlan driver function
-//
-//*****************************************************************************
-
-void c_wlan_init(tWlanCB sWlanCB)
-{
-  //init asynchronous events callback
-  tSLInformation.sWlanCB = sWlanCB;
-}
-
 
 //*****************************************************************************
 //
@@ -150,18 +108,8 @@ c_wlan_start(patch_load_command_t patch_load_cmd)
 {
   uint8_t *args;
 
-  tSLInformation.NumberOfSentPackets = 0;
-  tSLInformation.NumberOfReleasedPackets = 0;
-  tSLInformation.usRxEventOpcode = 0;
-  tSLInformation.usNumberOfFreeBuffers = 0;
-  tSLInformation.usSlBufferLength = 0;
-  tSLInformation.usBufferSize = 0;
-  tSLInformation.usRxDataPending = 0;
-  tSLInformation.slTransmitDataError = 0;
-    
-  chSemInit(&tSLInformation.sem_recv, 0);
+  hci_init();
 
-  // init spi
   spi_open();
 
   args = hci_get_cmd_buffer();

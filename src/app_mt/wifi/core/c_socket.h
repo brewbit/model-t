@@ -55,18 +55,6 @@
 extern "C" {
 #endif
 
-#define SOCKET_STATUS_ACTIVE       0
-#define SOCKET_STATUS_INACTIVE     1
-
-#define MAX_NUM_OF_SOCKETS 4
-
-typedef struct {
-  int sd;
-  long status;
-  BinarySemaphore sd_semaphore;
-  systime_t recv_timeout;
-  long nonblock;
-} wlan_socket_t;
 
 //*****************************************************************************
 //
@@ -500,7 +488,7 @@ extern int c_sendto(long sd, const void *buf, long len, long flags,
 
 //*****************************************************************************
 //
-//!  mdnsAdvertiser
+//!  mdns_advertiser
 //!
 //!  @param[in] mdnsEnabled         flag to enable/disable the mDNS feature
 //!  @param[in] deviceServiceName   Service name as part of the published
@@ -514,21 +502,7 @@ extern int c_sendto(long sd, const void *buf, long len, long flags,
 //!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
 //
 //*****************************************************************************
-extern int c_mdnsAdvertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength);
-
-//*****************************************************************************
-//
-//!  set_socket_active_status
-//!
-//!  @param Sd
-//!   @param Status
-//!  @return         none
-//!
-//!  @brief          Check if the socket ID and status are valid and set
-//!                  accordingly  the global socket status
-//
-//*****************************************************************************
-extern void set_socket_active_status(long sd, long status);
+extern int c_mdns_advertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength);
 
 //*****************************************************************************
 //

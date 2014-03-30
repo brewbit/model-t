@@ -50,34 +50,13 @@
 #include "socket.h"
 
 #include "core/wlan.h"
-#include "core/socket.h"
+#include "core/c_socket.h"
 
-
-static void
-wlan_evt_cb(long event_type, void* data, uint8_t length);
-
-static msg_t
-SelectThread(void* arg);
-
-
-wlan_socket_t           g_sockets[MAX_NUM_OF_SOCKETS];
 
 /* Handles for making the APIs asychronous and thread-safe */
-Semaphore         g_accept_semaphore;
-Semaphore         g_select_sleep_semaphore;
-Semaphore         g_spi_semaphore;
-Mutex             g_main_mutex;
-Thread*           g_select_thread;
+Mutex g_main_mutex;
 
-sockaddr                g_accept_sock_addr;
-
-int                     g_wlan_stopped;
-int                     g_accept_new_sd;
-int                     g_accept_socket;
-int                     g_accept_addrlen;
-int                     g_should_poll_accept;
-
-tWlanCB app_evt_cb;
+int g_wlan_stopped;
 
 
 //*****************************************************************************
@@ -114,16 +93,9 @@ tWlanCB app_evt_cb;
 //
 //*****************************************************************************
 
-void wlan_init(tWlanCB               sWlanCB)
+void wlan_init()
 {
   chMtxInit(&g_main_mutex);
-  chSemInit(&g_spi_semaphore, 0);
-
-  chMtxLock(&g_main_mutex);
-  app_evt_cb = sWlanCB;
-  g_select_thread = NULL;
-  c_wlan_init(wlan_evt_cb);
-  chMtxUnlock();
 }
 
 //*****************************************************************************
@@ -157,26 +129,11 @@ wlan_start(patch_load_command_t patch_load_cmd)
 {
   chMtxLock(&g_main_mutex);
 
-  int i = 0;
-
-  for(i = 0; i < MAX_NUM_OF_SOCKETS; i++){
-    g_sockets[i].sd = -1;
-    g_sockets[i].status = SOC_NOT_INITED;
-    g_sockets[i].recv_timeout = TIME_INFINITE;
-    g_sockets[i].nonblock = SOCK_OFF;
-    chBSemInit(&g_sockets[i].sd_semaphore, FALSE);
-  }
-
-  chSemInit(&g_accept_semaphore, 0);
-  chSemInit(&g_select_sleep_semaphore, 0);
+  socket_start();
 
   c_wlan_start(patch_load_cmd);
 
   g_wlan_stopped = 0;
-  g_should_poll_accept = 0;
-  g_accept_socket = -1;
-
-  g_select_thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, SelectThread, NULL);
 
   chMtxUnlock();
 }
@@ -198,22 +155,13 @@ wlan_start(patch_load_command_t patch_load_cmd)
 
 void wlan_stop(void)
 {
-  int i = 0;
-
   chMtxLock(&g_main_mutex);
 
   c_wlan_stop();
 
-  chThdTerminate(g_select_thread);
-  chSemSignal(&g_select_sleep_semaphore);
-  chThdWait(g_select_thread);
-  g_select_thread = NULL;
-  g_wlan_stopped = 1;
+  socket_stop();
 
-  for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
-    g_sockets[i].sd = -1;
-    g_sockets[i].status = SOC_NOT_INITED;
-  }
+  g_wlan_stopped = 1;
 
   chMtxUnlock();
 
@@ -666,97 +614,32 @@ long wlan_smart_config_process()
     return(ret);
 }
 
-static void
-wlan_evt_cb(long event_type, void* data, uint8_t length)
+//*****************************************************************************
+//
+//!  mdns_advertiser
+//!
+//!  @param[in] mdnsEnabled         flag to enable/disable the mDNS feature
+//!  @param[in] deviceServiceName   Service name as part of the published
+//!                                 canonical domain name
+//!  @param[in] deviceServiceNameLength   Length of the service name
+//!
+//!
+//!  @return   On success, zero is returned, return SOC_ERROR if socket was not
+//!            opened successfully, or if an error occurred.
+//!
+//!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
+//
+//*****************************************************************************
+int
+mdns_advertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength)
 {
+  int ret;
 
-  switch (event_type) {
-  case HCI_EVNT_BSD_TCP_CLOSE_WAIT:
-  {
-    long sd = *(long*)data;
+  chMtxLock(&g_main_mutex);
+  ret = c_mdns_advertiser(mdnsEnabled, deviceServiceName, deviceServiceNameLength);
+  chMtxUnlock();
 
-    int i;
-    for (i = 0; i < MAX_NUM_OF_SOCKETS; i++) {
-      if (g_sockets[i].sd == sd) {
-        g_sockets[i].status = SOC_NOT_CONN;
-
-      }
-    }
-    break;
-  }
-
-  default:
-    if (app_evt_cb != NULL)
-      app_evt_cb(event_type, data, length);
-    break;
-  }
-}
-
-static msg_t
-SelectThread(void *arg)
-{
-  (void)arg;
-
-  struct timeval timeout;
-  wfd_set readsds;
-
-  int ret = 0;
-  int maxFD = 0;
-  int i = 0;
-
-  chRegSetThreadName("SelectThread");
-
-  memset(&timeout, 0, sizeof(struct timeval));
-  timeout.tv_sec = 0;
-  timeout.tv_usec = (200 * 1000);          /* 200 msecs */
-
-  while (1) {
-    /* first check if recv/recvfrom/accept was called */
-    chSemWait(&g_select_sleep_semaphore);
-    /* increase the count back by one to be decreased by the original caller */
-    chSemSignal(&g_select_sleep_semaphore);
-
-    if (chThdShouldTerminate()) {
-      /* Wlan_stop will terminate the thread and by that all
-         sync objects owned by it will be released */
-      return 0;
-    }
-
-    WFD_ZERO(&readsds);
-
-    /* ping correct socket descriptor param for select */
-    for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
-      if (g_sockets[i].status == SOCK_ON){
-        WFD_SET(g_sockets[i].sd, &readsds);
-        if (maxFD <= g_sockets[i].sd)
-          maxFD = g_sockets[i].sd + 1;
-      }
-    }
-
-    ret = select(maxFD, &readsds, NULL, NULL, &timeout); /* Polling instead of blocking here\
-                                                              to process "accept" below */
-
-    if (ret>0) {
-      for (i = 0; i < MAX_NUM_OF_SOCKETS; i++) {
-        if (g_sockets[i].status == SOCK_ON && //check that the socket is valid
-            g_sockets[i].sd != g_accept_socket &&    //verify this is not an accept socket
-            WFD_ISSET(g_sockets[i].sd, &readsds)) {    //and has pending data
-          chBSemSignal(&g_sockets[i].sd_semaphore); //release the semaphore
-        }
-      }
-    }
-
-    if (g_should_poll_accept) {
-      chMtxLock(&g_main_mutex);
-      g_accept_new_sd = c_accept(g_accept_socket, &g_accept_sock_addr, (socklen_t*)&g_accept_addrlen);
-      chMtxUnlock();
-
-      if (g_accept_new_sd != SOC_IN_PROGRESS)
-        chSemSignal(&g_accept_semaphore);
-    }
-  }
-
-  return 0;
+  return(ret);
 }
 
 //*****************************************************************************

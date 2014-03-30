@@ -53,7 +53,7 @@ Semaphore sem_io_ready;
 Semaphore sem_write_complete;
 Thread* io_thread;
 
-int irq_count, missed_irq_count, irq_timeout_count, io_thread_loc;
+int irq_count, missed_irq_count, irq_timeout_count;
 
 uint8_t wlan_rx_buffer[CC3000_RX_BUFFER_SIZE];
 uint8_t wlan_tx_buffer[CC3000_TX_BUFFER_SIZE];

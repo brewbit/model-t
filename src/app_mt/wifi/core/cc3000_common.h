@@ -43,6 +43,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 //*****************************************************************************
 //
@@ -150,28 +151,6 @@ struct timeval {
   time_t tv_sec;       /* seconds */
   suseconds_t tv_usec; /* microseconds */
 };
-
-typedef void (*tWlanCB)(long event_type, void* data, uint8_t length );
-
-typedef struct {
-  Semaphore sem_recv;
-  uint16_t usRxEventOpcode;
-
-  tWlanCB sWlanCB;
-
-  int32_t slTransmitDataError;
-  uint16_t usNumberOfFreeBuffers;
-  uint16_t usSlBufferLength;
-  uint16_t usBufferSize;
-  uint16_t usRxDataPending;
-
-  uint8_t *from;
-  uint8_t *fromlen;
-  void* pRetParams;
-
-  uint32_t NumberOfSentPackets;
-  uint32_t NumberOfReleasedPackets;
-} sSimplLinkInformation;
 
 //*************************************************************************************
 //@@@ Socket Common Header - Start
@@ -492,9 +471,6 @@ typedef struct {
 
 
 #define AES128_KEY_SIZE     16
-
-
-extern sSimplLinkInformation tSLInformation;
 
 
 //*****************************************************************************

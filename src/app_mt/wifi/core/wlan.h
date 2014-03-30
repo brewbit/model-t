@@ -70,42 +70,6 @@ typedef enum {
 
 //*****************************************************************************
 //
-//!  wlan_init
-//!
-//!  @param  sWlanCB   Asynchronous events callback.
-//!                    0 no event call back.
-//!                  -call back parameters:
-//!                   1) event_type: HCI_EVNT_WLAN_UNSOL_CONNECT connect event,
-//!                     HCI_EVNT_WLAN_UNSOL_DISCONNECT disconnect event,
-//!                     HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE config done,
-//!                     HCI_EVNT_WLAN_UNSOL_DHCP dhcp report,
-//!                     HCI_EVNT_WLAN_ASYNC_PING_REPORT ping report OR
-//!                     HCI_EVNT_WLAN_KEEPALIVE keepalive.
-//!                   2) data: pointer to extra data that received by the event
-//!                     (NULL no data).
-//!                   3) length: data length.
-//!                  -Events with extra data:
-//!                     HCI_EVNT_WLAN_UNSOL_DHCP: 4 bytes IP, 4 bytes Mask,
-//!                     4 bytes default gateway, 4 bytes DHCP server and 4 bytes
-//!                     for DNS server.
-//!                     HCI_EVNT_WLAN_ASYNC_PING_REPORT: 4 bytes Packets sent,
-//!                     4 bytes Packets received, 4 bytes Min round time,
-//!                     4 bytes Max round time and 4 bytes for Avg round time.
-//!
-//!  @return   none
-//!
-//!  @sa       wlan_set_event_mask , wlan_start , wlan_stop
-//!
-//!  @brief    Initialize wlan driver
-//!
-//!  @warning This function must be called before ANY other wlan driver function
-//
-//*****************************************************************************
-void
-c_wlan_init(tWlanCB sWlanCB);
-
-//*****************************************************************************
-//
 //!  wlan_start
 //!
 //!  @param   usPatchesAvailableAtHost -  flag to indicate if patches available
@@ -482,6 +446,25 @@ extern long c_wlan_smart_config_set_prefix(char* cNewPrefix);
 //
 //*****************************************************************************
 extern long c_wlan_smart_config_process(void);
+
+//*****************************************************************************
+//
+//!  mdnsAdvertiser
+//!
+//!  @param[in] mdnsEnabled         flag to enable/disable the mDNS feature
+//!  @param[in] deviceServiceName   Service name as part of the published
+//!                                 canonical domain name
+//!  @param[in] deviceServiceNameLength   Length of the service name
+//!
+//!
+//!  @return   On success, zero is returned, return SOC_ERROR if socket was not
+//!            opened successfully, or if an error occurred.
+//!
+//!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
+//
+//*****************************************************************************
+extern int mdns_advertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength);
+
 
 //*****************************************************************************
 //
