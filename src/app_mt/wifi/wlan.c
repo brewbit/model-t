@@ -50,34 +50,13 @@
 #include "socket.h"
 
 #include "core/wlan.h"
-#include "core/socket.h"
+#include "core/c_socket.h"
 
-
-static void
-wlan_evt_cb(long event_type, char * data, unsigned char length);
-
-static msg_t
-SelectThread(void* arg);
-
-
-wlan_socket_t           g_sockets[MAX_NUM_OF_SOCKETS];
 
 /* Handles for making the APIs asychronous and thread-safe */
-Semaphore         g_accept_semaphore;
-Semaphore         g_select_sleep_semaphore;
-Semaphore         g_spi_semaphore;
-Mutex             g_main_mutex;
-Thread*           g_select_thread;
+Mutex g_main_mutex;
 
-sockaddr                g_accept_sock_addr;
-
-int                     g_wlan_stopped;
-int                     g_accept_new_sd;
-int                     g_accept_socket;
-int                     g_accept_addrlen;
-int                     g_should_poll_accept;
-
-tWlanCB app_evt_cb;
+int g_wlan_stopped;
 
 
 //*****************************************************************************
@@ -104,18 +83,6 @@ tWlanCB app_evt_cb;
 //!                     4 bytes Packets received, 4 bytes Min round time,
 //!                     4 bytes Max round time and 4 bytes for Avg round time.
 //!
-//!  @param    sFWPatches  0 no patch or pointer to FW patches
-//!  @param    sDriverPatches  0 no patch or pointer to driver patches
-//!  @param    sBootLoaderPatches  0 no patch or pointer to bootloader patches
-//!  @param    sReadWlanInterruptPin    init callback. the callback read wlan
-//!            interrupt status.
-//!  @param    sWlanInterruptEnable   init callback. the callback enable wlan
-//!            interrupt.
-//!  @param    sWlanInterruptDisable   init callback. the callback disable wlan
-//!            interrupt.
-//!  @param    sWriteWlanPin      init callback. the callback write value
-//!            to device pin.
-//!
 //!  @return   none
 //!
 //!  @sa       wlan_set_event_mask , wlan_start , wlan_stop
@@ -126,23 +93,9 @@ tWlanCB app_evt_cb;
 //
 //*****************************************************************************
 
-void wlan_init(tWlanCB               sWlanCB,
-               tFWPatches            sFWPatches,
-               tDriverPatches        sDriverPatches,
-               tBootLoaderPatches    sBootLoaderPatches,
-               tWlanReadInteruptPin  sReadWlanInterruptPin,
-               tWriteWlanPin         sWriteWlanPin)
+void wlan_init()
 {
   chMtxInit(&g_main_mutex);
-  chSemInit(&g_spi_semaphore, 0);
-
-  chMtxLock(&g_main_mutex);
-  app_evt_cb = sWlanCB;
-  g_select_thread = NULL;
-  c_wlan_init(wlan_evt_cb, sFWPatches, sDriverPatches,
-      sBootLoaderPatches, sReadWlanInterruptPin,
-      sWriteWlanPin);
-  chMtxUnlock();
 }
 
 //*****************************************************************************
@@ -171,31 +124,16 @@ void wlan_init(tWlanCB               sWlanCB,
 //!
 //
 //*****************************************************************************
-
-void wlan_start(unsigned short usPatchesAvailableAtHost)
+void
+wlan_start(patch_load_command_t patch_load_cmd)
 {
   chMtxLock(&g_main_mutex);
 
-  int i = 0;
+  socket_start();
 
-  for(i = 0; i < MAX_NUM_OF_SOCKETS; i++){
-    g_sockets[i].sd = -1;
-    g_sockets[i].status = SOC_NOT_INITED;
-    g_sockets[i].recv_timeout = TIME_INFINITE;
-    g_sockets[i].nonblock = SOCK_OFF;
-    chBSemInit(&g_sockets[i].sd_semaphore, FALSE);
-  }
-
-  chSemInit(&g_accept_semaphore, 0);
-  chSemInit(&g_select_sleep_semaphore, 0);
-
-  c_wlan_start(usPatchesAvailableAtHost);
+  c_wlan_start(patch_load_cmd);
 
   g_wlan_stopped = 0;
-  g_should_poll_accept = 0;
-  g_accept_socket = -1;
-
-  g_select_thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, SelectThread, NULL);
 
   chMtxUnlock();
 }
@@ -217,26 +155,17 @@ void wlan_start(unsigned short usPatchesAvailableAtHost)
 
 void wlan_stop(void)
 {
-    int i = 0;
+  chMtxLock(&g_main_mutex);
 
-    chMtxLock(&g_main_mutex);
+  c_wlan_stop();
 
-    c_wlan_stop();
+  socket_stop();
 
-    chThdTerminate(g_select_thread);
-    chSemSignal(&g_select_sleep_semaphore);
-    chThdWait(g_select_thread);
-    g_select_thread = NULL;
-    g_wlan_stopped = 1;
+  g_wlan_stopped = 1;
 
-    for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
-        g_sockets[i].sd = -1;
-        g_sockets[i].status = SOC_NOT_INITED;
-    }
+  chMtxUnlock();
 
-    chMtxUnlock();
-
-    chThdSleepMilliseconds(100);
+  chThdSleepMilliseconds(100);
 }
 
 
@@ -270,10 +199,8 @@ void wlan_stop(void)
 //!  @sa         wlan_disconnect
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
-long wlan_connect(unsigned long ulSecType, const char *ssid, long ssid_len,
-             const unsigned char *bssid, const unsigned char *key, long key_len)
+long wlan_connect(uint32_t ulSecType, const char *ssid, long ssid_len,
+             const uint8_t *bssid, const uint8_t *key, long key_len)
 {
     long ret;
 
@@ -283,18 +210,6 @@ long wlan_connect(unsigned long ulSecType, const char *ssid, long ssid_len,
 
     return(ret);
 }
-#else
-long wlan_connect(char *ssid, long ssid_len)
-{
-    long ret;
-
-    chMtxLock(&g_main_mutex);
-    ret = c_wlan_connect(ssid, ssid_len);
-    chMtxUnlock();
-
-    return(ret);
-}
-#endif
 
 //*****************************************************************************
 //
@@ -307,7 +222,6 @@ long wlan_connect(char *ssid, long ssid_len)
 //!  @sa         wlan_connect
 //
 //*****************************************************************************
-
 long wlan_disconnect()
 {
     long ret;
@@ -350,11 +264,10 @@ long wlan_disconnect()
 //!  @sa         wlan_add_profile , wlan_ioctl_del_profile
 //
 //*****************************************************************************
-
 long
-wlan_ioctl_set_connection_policy(unsigned long should_connect_to_open_ap,
-                                 unsigned long ulShouldUseFastConnect,
-                                 unsigned long ulUseProfiles)
+wlan_ioctl_set_connection_policy(uint32_t should_connect_to_open_ap,
+    uint32_t ulShouldUseFastConnect,
+    uint32_t ulUseProfiles)
 {
     long ret;
 
@@ -394,16 +307,17 @@ wlan_ioctl_set_connection_policy(unsigned long should_connect_to_open_ap,
 //!  @sa        wlan_ioctl_del_profile
 //
 //*****************************************************************************
-long wlan_add_profile(unsigned long ulSecType,
-                      unsigned char* ucSsid,
-                      unsigned long ulSsidLen,
-                      unsigned char *ucBssid,
-                      unsigned long ulPriority,
-                      unsigned long ulPairwiseCipher_Or_TxKeyLen,
-                      unsigned long ulGroupCipher_TxKeyIndex,
-                      unsigned long ulKeyMgmt,
-                      unsigned char* ucPf_OrKey,
-                      unsigned long ulPassPhraseLen)
+long wlan_add_profile(
+    uint32_t ulSecType,
+    uint8_t* ucSsid,
+    uint32_t ulSsidLen,
+    uint8_t *ucBssid,
+    uint32_t ulPriority,
+    uint32_t ulPairwiseCipher_Or_TxKeyLen,
+    uint32_t ulGroupCipher_TxKeyIndex,
+    uint32_t ulKeyMgmt,
+    uint8_t* ucPf_OrKey,
+    uint32_t ulPassPhraseLen)
 {
     long ret;
 
@@ -415,7 +329,6 @@ long wlan_add_profile(unsigned long ulSecType,
 
     return(ret);
 }
-
 
 //*****************************************************************************
 //
@@ -432,7 +345,7 @@ long wlan_add_profile(unsigned long ulSecType,
 //!  @sa        wlan_add_profile
 //
 //*****************************************************************************
-long wlan_ioctl_del_profile(unsigned long ulIndex)
+long wlan_ioctl_del_profile(uint32_t ulIndex)
 {
     long ret;
 
@@ -476,19 +389,15 @@ long wlan_ioctl_del_profile(unsigned long ulIndex)
 //!  @sa        wlan_ioctl_set_scan_params
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
-long wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
-                                 unsigned char *ucResults)
+void
+wlan_ioctl_get_scan_results(
+    uint32_t ulScanTimeout,
+    wlan_scan_results_t* results)
 {
-    long ret;
-
-    chMtxLock(&g_main_mutex);
-    ret = c_wlan_ioctl_get_scan_results(ulScanTimeout, ucResults);
-    chMtxUnlock();
-
-    return(ret);
+  chMtxLock(&g_main_mutex);
+  c_wlan_ioctl_get_scan_results(ulScanTimeout, results);
+  chMtxUnlock();
 }
-#endif
 
 //*****************************************************************************
 //
@@ -514,7 +423,7 @@ long wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
 //!  @param   uiSNRThreshold    NSR threshold. Saved: yes (Default: 0)
 //!  @param   uiDefaultTxPower  probe Tx power. Saved: yes (Default: 205)
 //!  @param   aiIntervalList    pointer to array with 16 entries (16 channels)
-//!           each entry (unsigned long) holds timeout between periodic scan
+//!           each entry (uint32_t) holds timeout between periodic scan
 //!           (connection scan) - in millisecond. Saved: yes. Default 2000ms.
 //!
 //!  @return    On success, zero is returned. On error, -1 is returned
@@ -526,15 +435,13 @@ long wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
 //!  @sa        wlan_ioctl_get_scan_results
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
-long wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwellTime,
-                                unsigned long uiMaxDwellTime, unsigned long uiNumOfProbeRequests,
-                                unsigned long uiChannelMask, long iRSSIThreshold,
-                                unsigned long uiSNRThreshold, unsigned long uiDefaultTxPower,
-                                const unsigned long *aiIntervalList)
+long wlan_ioctl_set_scan_params(uint32_t uiEnable, uint32_t uiMinDwellTime,
+    uint32_t uiMaxDwellTime, uint32_t uiNumOfProbeRequests,
+    uint32_t uiChannelMask, long iRSSIThreshold,
+    uint32_t uiSNRThreshold, uint32_t uiDefaultTxPower,
+    const uint32_t *aiIntervalList)
 {
-    unsigned long  uiRes;
+  uint32_t  uiRes;
 
     chMtxLock(&g_main_mutex);
     uiRes = c_wlan_ioctl_set_scan_params(uiEnable, uiMinDwellTime, uiMaxDwellTime,\
@@ -544,7 +451,6 @@ long wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwell
 
     return (uiRes);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -567,8 +473,7 @@ long wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwell
 //!            masked (1), the device will not send the masked event to host.
 //
 //*****************************************************************************
-
-long wlan_set_event_mask(unsigned long ulMask)
+long wlan_set_event_mask(uint32_t ulMask)
 {
     long ret;
 
@@ -591,8 +496,6 @@ long wlan_set_event_mask(unsigned long ulMask)
 //!  @brief    get wlan status: disconnected, scanning, connecting or connected
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long wlan_ioctl_statusget(void)
 {
     long ret;
@@ -603,7 +506,6 @@ long wlan_ioctl_statusget(void)
 
     return(ret);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -625,7 +527,7 @@ long wlan_ioctl_statusget(void)
 //!  @sa      wlan_smart_config_set_prefix , wlan_smart_config_stop
 //
 //*****************************************************************************
-long wlan_smart_config_start(unsigned long algoEncryptedFlag)
+long wlan_smart_config_start(uint32_t algoEncryptedFlag)
 {
     long ret;
 
@@ -701,8 +603,6 @@ long wlan_smart_config_set_prefix(char* cNewPrefix)
 //!           behavior is as defined by connection policy.
 //
 //*****************************************************************************
-
-#ifndef CC3000_UNENCRYPTED_SMART_CONFIG
 long wlan_smart_config_process()
 {
     long ret;
@@ -713,100 +613,33 @@ long wlan_smart_config_process()
 
     return(ret);
 }
-#endif
 
-static void
-wlan_evt_cb(long event_type, char* data, unsigned char length)
+//*****************************************************************************
+//
+//!  mdns_advertiser
+//!
+//!  @param[in] mdnsEnabled         flag to enable/disable the mDNS feature
+//!  @param[in] deviceServiceName   Service name as part of the published
+//!                                 canonical domain name
+//!  @param[in] deviceServiceNameLength   Length of the service name
+//!
+//!
+//!  @return   On success, zero is returned, return SOC_ERROR if socket was not
+//!            opened successfully, or if an error occurred.
+//!
+//!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
+//
+//*****************************************************************************
+int
+mdns_advertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength)
 {
+  int ret;
 
-  switch (event_type) {
-  case HCI_EVNT_BSD_TCP_CLOSE_WAIT:
-  {
-    long sd = *(long*)data;
+  chMtxLock(&g_main_mutex);
+  ret = c_mdns_advertiser(mdnsEnabled, deviceServiceName, deviceServiceNameLength);
+  chMtxUnlock();
 
-    int i;
-    for (i = 0; i < MAX_NUM_OF_SOCKETS; i++) {
-      if (g_sockets[i].sd == sd) {
-        g_sockets[i].status = SOC_NOT_CONN;
-
-      }
-    }
-    break;
-  }
-
-  default:
-    if (app_evt_cb != NULL)
-      app_evt_cb(event_type, data, length);
-    break;
-  }
-}
-
-static msg_t
-SelectThread(void *arg)
-{
-  (void)arg;
-
-  struct timeval timeout;
-  wfd_set readsds;
-
-  int ret = 0;
-  int maxFD = 0;
-  int i = 0;
-
-  chRegSetThreadName("SelectThread");
-
-  memset(&timeout, 0, sizeof(struct timeval));
-  timeout.tv_sec = 0;
-  timeout.tv_usec = (200 * 1000);          /* 200 msecs */
-
-  while (1) //run until closed by wlan_stop
-  {
-    /* first check if recv/recvfrom/accept was called */
-    chSemWait(&g_select_sleep_semaphore);
-    /* increase the count back by one to be decreased by the original caller */
-    chSemSignal(&g_select_sleep_semaphore);
-
-    if (chThdShouldTerminate()) {
-      /* Wlan_stop will terminate the thread and by that all
-         sync objects owned by it will be released */
-      return 0;
-    }
-
-    WFD_ZERO(&readsds);
-
-    /* ping correct socket descriptor param for select */
-    for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
-      if (g_sockets[i].status == SOCK_ON){
-        WFD_SET(g_sockets[i].sd, &readsds);
-        if (maxFD <= g_sockets[i].sd)
-          maxFD = g_sockets[i].sd + 1;
-      }
-    }
-
-    ret = select(maxFD, &readsds, NULL, NULL, &timeout); /* Polling instead of blocking here\
-                                                              to process "accept" below */
-
-    if (ret>0) {
-      for (i = 0; i < MAX_NUM_OF_SOCKETS; i++) {
-        if (g_sockets[i].status == SOCK_ON && //check that the socket is valid
-            g_sockets[i].sd != g_accept_socket &&    //verify this is not an accept socket
-            WFD_ISSET(g_sockets[i].sd, &readsds)) {    //and has pending data
-          chBSemSignal(&g_sockets[i].sd_semaphore); //release the semaphore
-        }
-      }
-    }
-
-    if (g_should_poll_accept) {
-      chMtxLock(&g_main_mutex);
-      g_accept_new_sd = c_accept(g_accept_socket, &g_accept_sock_addr, (socklen_t*)&g_accept_addrlen);
-      chMtxUnlock();
-
-      if (g_accept_new_sd != SOC_IN_PROGRESS)
-        chSemSignal(&g_accept_semaphore);
-    }
-  }
-
-  return 0;
+  return(ret);
 }
 
 //*****************************************************************************

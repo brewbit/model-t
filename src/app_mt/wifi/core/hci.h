@@ -36,6 +36,8 @@
 #define __HCI_H__
 
 #include "cc3000_common.h"
+#include "hci_msg.h"
+#include "cc3000_spi.h"
 
 //*****************************************************************************
 //
@@ -47,6 +49,13 @@
 extern "C" {
 #endif
 
+
+#define hci_get_cmd_buffer()      (spi_get_buffer() + HCI_CMND_HEADER_SIZE)
+#define hci_get_data_buffer()     (spi_get_buffer() + HCI_DATA_HEADER_SIZE)
+#define hci_get_data_cmd_buffer() (spi_get_buffer() + HCI_DATA_CMD_HEADER_SIZE)
+#define hci_get_patch_buffer()    (spi_get_buffer() + HCI_PATCH_HEADER_SIZE)
+
+
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -54,6 +63,9 @@ extern "C" {
 // Prototypes for the APIs.
 //
 //*****************************************************************************
+
+void
+hci_init(void);
 
 //*****************************************************************************
 //
@@ -68,9 +80,10 @@ extern "C" {
 //!  @brief               Initiate an HCI command.
 //
 //*****************************************************************************
-extern unsigned short hci_command_send(unsigned short usOpcode,
-                                   unsigned char *ucArgs,
-                                   unsigned char ucArgsLength);
+uint16_t
+hci_command_send(
+    uint16_t usOpcode,
+    uint8_t ucArgsLength);
 
 
 //*****************************************************************************
@@ -88,12 +101,13 @@ extern unsigned short hci_command_send(unsigned short usOpcode,
 //!  @brief              Initiate an HCI data write operation
 //
 //*****************************************************************************
-extern long hci_data_send(unsigned char ucOpcode,
-                                      unsigned char *ucArgs,
-                                      unsigned short usArgsLength,
-                                      unsigned short usDataLength,
-                                      const unsigned char *ucTail,
-                                      unsigned short usTailLength);
+long
+hci_data_send(
+    uint8_t ucOpcode,
+    uint16_t usArgsLength,
+    uint16_t usDataLength,
+    const uint8_t *ucTail,
+    uint16_t usTailLength);
 
 
 //*****************************************************************************
@@ -110,8 +124,11 @@ extern long hci_data_send(unsigned char ucOpcode,
 //!  @brief              Prepare HCI header and initiate an HCI data write operation
 //
 //*****************************************************************************
-extern void hci_data_command_send(unsigned short usOpcode, unsigned char *pucBuff,
-                     unsigned char ucArgsLength, unsigned short ucDataLength);
+void
+hci_data_command_send(
+    uint16_t usOpcode,
+    uint8_t ucArgsLength,
+    uint16_t ucDataLength);
 
 //*****************************************************************************
 //
@@ -127,9 +144,75 @@ extern void hci_data_command_send(unsigned short usOpcode, unsigned char *pucBuf
 //!  @brief               Prepare HCI header and initiate an HCI patch write operation
 //
 //*****************************************************************************
-extern void hci_patch_send(unsigned char ucOpcode, unsigned char *pucBuff, char *patch, unsigned short usDataLength);
+void
+hci_patch_send(
+    uint8_t ucOpcode,
+    char *patch,
+    uint16_t usDataLength);
 
 
+//*****************************************************************************
+//
+//!  hci_wait_for_event
+//!
+//!  @param  usOpcode      command operation code
+//!  @param  pRetParams    command return parameters
+//!
+//!  @return               none
+//!
+//!  @brief                Wait for event, pass it to the hci_event_handler and
+//!                        update the event opcode in a global variable.
+//
+//*****************************************************************************
+void
+hci_wait_for_event(
+    uint16_t usOpcode,
+    void *pRetParams);
+
+//*****************************************************************************
+//
+//!  hci_wait_for_data
+//!
+//!  @param  pBuf       data buffer
+//!  @param  from       from information
+//!  @param  fromlen    from information length
+//!
+//!  @return               none
+//!
+//!  @brief                Wait for data, pass it to the hci_event_handler
+//!                        and update in a global variable that there is
+//!                        data to read.
+//
+//*****************************************************************************
+void
+hci_wait_for_data(
+    uint8_t *pBuf,
+    uint8_t *from,
+    uint8_t *fromlen);
+
+//*****************************************************************************
+//
+//!  hci_dispatch_packet
+//!
+//!  @param         buffer - pointer to the received data buffer
+//!                 buffer_size - the size of the passed buffer
+//!
+//!                 The function triggers Received event/data processing
+//!
+//!  @param         Pointer to the received data
+//!  @return        none
+//!
+//!  @brief         The function triggers Received event/data processing. It is
+//!                       called from the SPI library to receive the data
+//
+//*****************************************************************************
+void
+hci_dispatch_packet(
+    uint8_t* buffer,
+    uint16_t buffer_size);
+
+bool
+hci_claim_buffer(void);
 
 //*****************************************************************************
 //

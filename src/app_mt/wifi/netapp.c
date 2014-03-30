@@ -38,7 +38,7 @@
 #define MIN_TIMER_VAL_SECONDS      20
 
 /* Handles for making the APIs asychronous and thread-safe */
-extern Mutex             g_main_mutex;
+extern Mutex g_main_mutex;
 
 
 
@@ -56,7 +56,7 @@ extern Mutex             g_main_mutex;
 //!                over resets.
 //
 //*****************************************************************************
-long netapp_config_mac_adrress(unsigned char * mac)
+long netapp_config_mac_adrress(uint8_t * mac)
 {
     long ret;
 
@@ -93,7 +93,7 @@ long netapp_config_mac_adrress(unsigned char * mac)
 //!               AP was established.
 //!
 //*****************************************************************************
-long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsigned long *aucDefaultGateway, unsigned long *aucDNSServer)
+long netapp_dhcp(uint32_t *aucIP, uint32_t *aucSubnetMask,uint32_t *aucDefaultGateway, uint32_t *aucDNSServer)
 {
     long ret;
 
@@ -154,11 +154,9 @@ long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsigned lon
 //!               it will be set automatically to 20s.
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long
-netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
-                      unsigned long *aucKeepalive,    unsigned long *aucInactivity)
+netapp_timeout_values(uint32_t *aucDHCP, uint32_t *aucARP,
+    uint32_t *aucKeepalive,    uint32_t *aucInactivity)
 {
     long ret;
 
@@ -168,8 +166,6 @@ netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
 
     return(ret);
 }
-#endif
-
 
 //*****************************************************************************
 //
@@ -191,11 +187,9 @@ netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
 //! @warning      Calling this function while a previous Ping Requests are in
 //!               progress will stop the previous ping request.
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long
-netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
-                 unsigned long ulPingSize, unsigned long ulPingTimeout)
+netapp_ping_send(uint32_t *ip, uint32_t ulPingAttempts,
+    uint32_t ulPingSize, uint32_t ulPingTimeout)
 {
     long ret;
     chMtxLock(&g_main_mutex);
@@ -203,7 +197,6 @@ netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
     chMtxUnlock();
     return(ret);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -227,16 +220,12 @@ netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
 //!           fields are 0.
 //!
 //*****************************************************************************
-
-
-#ifndef CC3000_TINY_DRIVER
 void netapp_ping_report()
 {
     chMtxLock(&g_main_mutex);
     c_netapp_ping_report();
     chMtxUnlock();
 }
-#endif
 
 //*****************************************************************************
 //
@@ -250,8 +239,6 @@ void netapp_ping_report()
 //!
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long netapp_ping_stop()
 {
     long ret;
@@ -262,7 +249,6 @@ long netapp_ping_stop()
 
     return(ret);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -289,20 +275,12 @@ long netapp_ping_stop()
 //!             the Wireless network the device is associated with.
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
-void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
+void netapp_ipconfig(netapp_ipconfig_args_t* ipconfig )
 {
     chMtxLock(&g_main_mutex);
     c_netapp_ipconfig(ipconfig);
     chMtxUnlock();
 }
-#else
-void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
-{
-
-}
-#endif
 
 //*****************************************************************************
 //
@@ -315,8 +293,6 @@ void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
 //!  @brief  Flushes ARP table
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long netapp_arp_flush(void)
 {
     long ret;
@@ -327,7 +303,6 @@ long netapp_arp_flush(void)
 
     return(ret);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -346,10 +321,7 @@ long netapp_arp_flush(void)
 //!              enable/disable the debug level
 //!
 //*****************************************************************************
-
-
-#ifndef CC3000_TINY_DRIVER
-long netapp_set_debug_level(unsigned long ulLevel)
+long netapp_set_debug_level(uint32_t ulLevel)
 {
     long ret;
 
@@ -359,4 +331,3 @@ long netapp_set_debug_level(unsigned long ulLevel)
 
     return(ret);
 }
-#endif

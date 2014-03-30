@@ -5,6 +5,7 @@
 #include "ch.h"
 
 typedef enum {
+  MSG_INIT,
   MSG_IDLE,
 
   MSG_TOUCH_INPUT,
@@ -21,6 +22,12 @@ typedef enum {
   MSG_GUI_HIDE_SCREEN,
 
   MSG_TEMP_UNIT,
+
+  MSG_WLAN_FLUSHED,
+  MSG_WLAN_CONNECT,
+  MSG_WLAN_DISCONNECT,
+  MSG_WLAN_DHCP,
+  MSG_WLAN_PING_REPORT,
 
   MSG_NET_STATUS,
   MSG_NET_NEW_NETWORK,     // a new wireless network is now available

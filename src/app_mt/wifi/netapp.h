@@ -36,6 +36,7 @@
 #define __NETAPP_H__
 
 #include "core/cc3000_common.h"
+#include "core/hci_msg.h"
 
 //*****************************************************************************
 //
@@ -68,7 +69,7 @@ extern "C" {
 //!                over resets.
 //
 //*****************************************************************************
-extern long  netapp_config_mac_adrress( unsigned char *mac );
+extern long  netapp_config_mac_adrress( uint8_t *mac );
 
 //*****************************************************************************
 //
@@ -96,7 +97,7 @@ extern long  netapp_config_mac_adrress( unsigned char *mac );
 //!               AP was established.
 //!
 //*****************************************************************************
-extern  long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsigned long *aucDefaultGateway, unsigned long *aucDNSServer);
+extern  long netapp_dhcp(uint32_t *aucIP, uint32_t *aucSubnetMask,uint32_t *aucDefaultGateway, uint32_t *aucDNSServer);
 
 
 
@@ -149,10 +150,8 @@ extern  long netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,unsi
 //!               it will be set automatically to 20s.
 //!
 //*****************************************************************************
- #ifndef CC3000_TINY_DRIVER
-extern long netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
-                                  unsigned long *aucKeepalive,    unsigned long *aucInactivity);
-#endif
+extern long netapp_timeout_values(uint32_t *aucDHCP, uint32_t *aucARP,
+    uint32_t *aucKeepalive,    uint32_t *aucInactivity);
 
 //*****************************************************************************
 //
@@ -174,10 +173,7 @@ extern long netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
 //! @warning      Calling this function while a previous Ping Requests are in
 //!               progress will stop the previous ping request.
 //*****************************************************************************
-
- #ifndef CC3000_TINY_DRIVER
-extern long netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts, unsigned long ulPingSize, unsigned long ulPingTimeout);
-#endif
+extern long netapp_ping_send(uint32_t *ip, uint32_t ulPingAttempts, uint32_t ulPingSize, uint32_t ulPingTimeout);
 
 //*****************************************************************************
 //
@@ -191,10 +187,8 @@ extern long netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts, un
 //!
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 extern void netapp_ping_report(void);
-#endif
+
 //*****************************************************************************
 //
 //!  netapp_ping_report
@@ -217,10 +211,7 @@ extern void netapp_ping_report(void);
 //!           fields are 0.
 //!
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 extern long netapp_ping_stop(void);
-#endif
-
 
 //*****************************************************************************
 //
@@ -247,8 +238,7 @@ extern long netapp_ping_stop(void);
 //!             the Wireless network the device is associated with.
 //!
 //*****************************************************************************
-
-extern void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig );
+extern void netapp_ipconfig(netapp_ipconfig_args_t* ipconfig);
 
 
 //*****************************************************************************
@@ -262,10 +252,7 @@ extern void netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig );
 //!  @brief  Flushes ARP table
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 extern long netapp_arp_flush(void);
-#endif
 
 
 //*****************************************************************************
@@ -285,11 +272,8 @@ extern long netapp_arp_flush(void);
 //!              enable/disable the debug level
 //!
 //*****************************************************************************
+extern long netapp_set_debug_level(uint32_t ulLevel);
 
-
-#ifndef CC3000_TINY_DRIVER
-extern long netapp_set_debug_level(unsigned long ulLevel);
-#endif
 //*****************************************************************************
 //
 // Close the Doxygen group.

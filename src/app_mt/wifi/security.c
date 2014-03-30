@@ -65,8 +65,8 @@ extern Mutex             g_main_mutex;
 //!
 //*****************************************************************************
 
-void aes_encrypt(unsigned char *state,
-                 unsigned char *key)
+void aes_encrypt(uint8_t *state,
+    uint8_t *key)
 {
     chMtxLock(&g_main_mutex);
     c_aes_encrypt(state, key);
@@ -90,8 +90,8 @@ void aes_encrypt(unsigned char *state,
 //!
 //*****************************************************************************
 
-void aes_decrypt(unsigned char *state,
-                 unsigned char *key)
+void aes_decrypt(uint8_t *state,
+    uint8_t *key)
 {
     chMtxLock(&g_main_mutex);
     c_aes_decrypt(state, key);
@@ -113,7 +113,7 @@ void aes_decrypt(unsigned char *state,
 //!
 //*****************************************************************************
 
-signed long aes_read_key(unsigned char *key)
+signed long aes_read_key(uint8_t *key)
 {
     long ret;
     chMtxLock(&g_main_mutex);
@@ -136,7 +136,7 @@ signed long aes_read_key(unsigned char *key)
 //!
 //*****************************************************************************
 
-signed long aes_write_key(unsigned char *key)
+signed long aes_write_key(uint8_t *key)
 {
     long ret;
     chMtxLock(&g_main_mutex);

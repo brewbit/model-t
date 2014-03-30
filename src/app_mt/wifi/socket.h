@@ -55,11 +55,54 @@
 extern "C" {
 #endif
 
+typedef enum {
+  SOCKET_STATUS_ACTIVE,
+  SOCKET_STATUS_INACTIVE
+} wlan_socket_status_t;
+
 //*****************************************************************************
 //
 // Prototypes for the APIs.
 //
 //*****************************************************************************
+
+
+void
+socket_start(void);
+
+void
+socket_stop(void);
+
+int
+socket_get_last_error(int32_t sd);
+
+//*****************************************************************************
+//
+//!  set_socket_active_status
+//!
+//!  @param Sd
+//!   @param Status
+//!  @return         none
+//!
+//!  @brief          Check if the socket ID and status are valid and set
+//!                  accordingly  the global socket status
+//
+//*****************************************************************************
+void
+set_socket_active_status(int32_t sd, wlan_socket_status_t status, int error);
+
+//*****************************************************************************
+//
+//!  get_socket_active_status
+//!
+//!  @param  Sd  Socket IS
+//!  @return     Current status of the socket.
+//!
+//!  @brief  Retrieve socket status
+//
+//*****************************************************************************
+wlan_socket_status_t
+get_socket_active_status(int32_t sd);
 
 //*****************************************************************************
 //
@@ -209,9 +252,7 @@ extern long listen(long sd, long backlog);
 //!          the function requires DNS server to be configured prior to its usage.
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
-extern int gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr);
-#endif
+extern int gethostbyname(const char * hostname, uint16_t usNameLen, uint32_t* out_ip_addr);
 
 
 //*****************************************************************************
@@ -321,7 +362,7 @@ extern int select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *excep
 //!            1. SOCKOPT_RECV_TIMEOUT (optname)
 //!               SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout
 //!           in milliseconds.
-//!             In that case optval should be pointer to unsigned long.
+//!             In that case optval should be pointer to uint32_t.
 //!            2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on
 //!           or off.
 //!             In that case optval should be SOCK_ON or SOCK_OFF (optval).
@@ -329,10 +370,9 @@ extern int select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *excep
 //!  @sa getsockopt
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 extern int setsockopt(long sd, long level, long optname, const void *optval,
                       socklen_t optlen);
-#endif
+
 //*****************************************************************************
 //
 //! getsockopt
@@ -371,7 +411,7 @@ extern int setsockopt(long sd, long level, long optname, const void *optval,
 //!            1. SOCKOPT_RECV_TIMEOUT (optname)
 //!               SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout
 //!           in milliseconds.
-//!             In that case optval should be pointer to unsigned long.
+//!             In that case optval should be pointer to uint32_t.
 //!            2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on
 //!           or off.
 //!             In that case optval should be SOCK_ON or SOCK_OFF (optval).
@@ -457,7 +497,6 @@ extern int recvfrom(long sd, void *buf, long len, long flags, sockaddr *from,
 //!  @sa             sendto
 //
 //*****************************************************************************
-
 extern int send(long sd, const void *buf, long len, long flags);
 
 //*****************************************************************************
@@ -485,27 +524,8 @@ extern int send(long sd, const void *buf, long len, long flags);
 //!  @sa             send
 //
 //*****************************************************************************
-
 extern int sendto(long sd, const void *buf, long len, long flags,
                   const sockaddr *to, socklen_t tolen);
-
-//*****************************************************************************
-//
-//!  mdnsAdvertiser
-//!
-//!  @param[in] mdnsEnabled         flag to enable/disable the mDNS feature
-//!  @param[in] deviceServiceName   Service name as part of the published
-//!                                 canonical domain name
-//!  @param[in] deviceServiceNameLength   Length of the service name
-//!
-//!
-//!  @return   On success, zero is returned, return SOC_ERROR if socket was not
-//!            opened successfully, or if an error occurred.
-//!
-//!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
-//
-//*****************************************************************************
-extern int mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsigned short deviceServiceNameLength);
 
 //*****************************************************************************
 //

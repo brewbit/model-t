@@ -32,23 +32,17 @@ typedef struct {
 } net_scan_result_t;
 
 
-static msg_t
-mdns_thread(void* arg);
-
-static msg_t
-wlan_thread(void* arg);
+static void
+dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_data);
 
 static void
-scan_thread(void);
+dispatch_init(void);
 
 static void
-wlan_event(long event_type, char * data, unsigned char length);
-
-static long
-wlan_read_interupt_pin(void);
+dispatch_idle(void);
 
 static void
-write_wlan_pin(unsigned char val);
+dispatch_dhcp(netapp_dhcp_params_t* dhcp);
 
 static void
 save_or_update_network(network_t* network);
@@ -80,11 +74,13 @@ static network_t networks[16];
 void
 net_init()
 {
-  wlan_init(wlan_event, NULL, NULL, NULL, wlan_read_interupt_pin, write_wlan_pin);
+  wlan_init();
 
-  /* Thread* thd_wlan = */ chThdCreateFromHeap(NULL, 1024, NORMALPRIO, wlan_thread, NULL);
-
-//  msg_subscribe(MSG_SHUTDOWN, thd_wlan, dispatch, NULL);
+  msg_listener_t* l = msg_listener_create("net", 1024, dispatch_net_msg, NULL);
+  msg_listener_set_idle_timeout(l, 500);
+  msg_subscribe(l, MSG_WLAN_CONNECT, NULL);
+  msg_subscribe(l, MSG_WLAN_DISCONNECT, NULL);
+  msg_subscribe(l, MSG_WLAN_DHCP, NULL);
 }
 
 const net_status_t*
@@ -122,86 +118,71 @@ net_connect(network_t* net, const char* passphrase)
 }
 
 static void
-wlan_event(long event_type, char * data, unsigned char length)
+dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
 {
-  (void)length;
+  (void)sub_data;
+  (void)listener_data;
 
-  switch (event_type) {
-    // Notification that the first-time configuration process is complete
-  case HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE:
-    break;
+  switch (id) {
+    case MSG_INIT:
+      dispatch_init();
+      break;
 
-    // Periodic keep-alive event between the CC3000 and the host microcontroller unit (MCU)
-  case HCI_EVNT_WLAN_KEEPALIVE:
-    break;
+    case MSG_IDLE:
+      dispatch_idle();
+      break;
 
-    // WLAN-connected event
-  case HCI_EVNT_WLAN_UNSOL_CONNECT:
-    net_status.net_state = NS_CONNECTED;
-    msg_send(MSG_NET_STATUS, &net_status);
-    break;
+    case MSG_WLAN_CONNECT:
+      net_status.net_state = NS_CONNECTED;
+      msg_send(MSG_NET_STATUS, &net_status);
+      break;
 
-    // Notification that CC3000 device is disconnected from the access point (AP)
-  case HCI_EVNT_WLAN_UNSOL_DISCONNECT:
-    if (net_status.net_state == NS_CONNECTING)
-      net_status.net_state = NS_CONNECT_FAILED;
-    else
-      net_status.net_state = NS_DISCONNECTED;
-    msg_send(MSG_NET_STATUS, &net_status);
-    break;
+    case MSG_WLAN_DISCONNECT:
+      if (net_status.net_state == NS_CONNECTING)
+        net_status.net_state = NS_CONNECT_FAILED;
+      else
+        net_status.net_state = NS_DISCONNECTED;
+      msg_send(MSG_NET_STATUS, &net_status);
+      break;
 
-    // Notification of a Dynamic Host Configuration Protocol (DHCP) state change
-  case HCI_EVNT_WLAN_UNSOL_DHCP:
-    net_status.dhcp_resolved = (data[20] == 0);
-    sprintf(net_status.ip_addr, "%d.%d.%d.%d", data[3], data[2], data[1], data[0]);
-    sprintf(net_status.subnet_mask, "%d.%d.%d.%d", data[7], data[6], data[5], data[4]);
-    sprintf(net_status.default_gateway, "%d.%d.%d.%d", data[11], data[10], data[9], data[8]);
-    sprintf(net_status.dhcp_server, "%d.%d.%d.%d", data[15], data[14], data[13], data[12]);
-    sprintf(net_status.dns_server, "%d.%d.%d.%d", data[19], data[18], data[17], data[16]);
-    break;
+    case MSG_WLAN_DHCP:
+      dispatch_dhcp(msg_data);
+      break;
 
-    // Notification that the CC3000 device finished the initialization process
-  case HCI_EVNT_WLAN_UNSOL_INIT:
-    break;
-
-  // Notification of ping results
-  case HCI_EVNT_WLAN_ASYNC_PING_REPORT:
-    break;
-
-  case HCI_EVENT_CC3000_CAN_SHUT_DOWN:
-    break;
-
-  default:
-    printf("wlan_event(0x%x)\r\n", (unsigned int)event_type);
-    break;
+    default:
+      break;
   }
-}
-
-static long
-wlan_read_interupt_pin()
-{
-  return palReadPad(PORT_WIFI_IRQ, PAD_WIFI_IRQ);
 }
 
 static void
-write_wlan_pin(unsigned char val)
+dispatch_dhcp(netapp_dhcp_params_t* dhcp)
 {
-  palWritePad(PORT_WIFI_EN, PAD_WIFI_EN, val);
-}
-
-static msg_t
-mdns_thread(void* arg)
-{
-  (void)arg;
-
-  while (1) {
-    if (net_status.dhcp_resolved) {
-      mdnsAdvertiser(1, SERVICE_NAME, strlen(SERVICE_NAME));
-    }
-    chThdSleepSeconds(5);
-  }
-
-  return 0;
+  net_status.dhcp_resolved = (dhcp->status == 0);
+  sprintf(net_status.ip_addr, "%d.%d.%d.%d",
+      dhcp->ip_addr[3],
+      dhcp->ip_addr[2],
+      dhcp->ip_addr[1],
+      dhcp->ip_addr[0]);
+  sprintf(net_status.subnet_mask, "%d.%d.%d.%d",
+      dhcp->subnet_mask[3],
+      dhcp->subnet_mask[2],
+      dhcp->subnet_mask[1],
+      dhcp->subnet_mask[0]);
+  sprintf(net_status.default_gateway, "%d.%d.%d.%d",
+      dhcp->default_gateway[3],
+      dhcp->default_gateway[2],
+      dhcp->default_gateway[1],
+      dhcp->default_gateway[0]);
+  sprintf(net_status.dhcp_server, "%d.%d.%d.%d",
+      dhcp->dhcp_server[3],
+      dhcp->dhcp_server[2],
+      dhcp->dhcp_server[1],
+      dhcp->dhcp_server[0]);
+  sprintf(net_status.dns_server, "%d.%d.%d.%d",
+      dhcp->dns_server[3],
+      dhcp->dns_server[2],
+      dhcp->dns_server[1],
+      dhcp->dns_server[0]);
 }
 
 static int
@@ -234,49 +215,24 @@ perform_scan()
 static long
 get_scan_result(net_scan_result_t* result)
 {
-  unsigned char scan_buf[50];
+  wlan_scan_results_t results;
 
-  long ret = wlan_ioctl_get_scan_results(0, scan_buf);
-  if (ret != 0)
-    return ret;
+  wlan_ioctl_get_scan_results(0, &results);
 
-  result->networks_found = (scan_buf[3] << 24) | (scan_buf[2] << 16) | (scan_buf[1] << 8) | scan_buf[0];
-  result->scan_status = (scan_buf[7] << 24) | (scan_buf[6] << 16) | (scan_buf[5] << 8) | scan_buf[4];
-  result->valid = (scan_buf[8] & 0x01);
-
-  result->network.rssi = (scan_buf[8] >> 1) - 128;
-  result->network.security_mode = (scan_buf[9] & 0x03);
-
-  int ssid_len = (scan_buf[9] >> 2);
-  memcpy(result->network.ssid, &scan_buf[12], ssid_len);
+  result->networks_found = results.result_count;
+  result->scan_status = results.scan_status;
+  result->valid = results.valid;
+  result->network.rssi = results.rssi;
+  result->network.security_mode = results.security_mode;
+  int ssid_len = results.ssid_len;
+  memcpy(result->network.ssid, results.ssid, ssid_len);
   result->network.ssid[ssid_len] = 0;
 
-  memcpy(result->network.bssid, &scan_buf[44], 6);
+  memcpy(result->network.bssid, results.bssid, 6);
 
   result->network.last_seen = chTimeNow();
 
   return 0;
-}
-
-static void
-scan_thread()
-{
-  while (net_status.scan_active) {
-    if (perform_scan() == 0) {
-      net_scan_result_t result;
-      do {
-        if (get_scan_result(&result) != 0)
-          break;
-
-        if (result.scan_status == 1 && result.valid)
-          save_or_update_network(&result.network);
-      } while (result.networks_found > 1);
-
-      prune_networks();
-    }
-
-    chThdSleepMilliseconds(500);
-  }
 }
 
 static network_t*
@@ -353,26 +309,22 @@ perform_connect()
     wlan_connect(ns->security_mode,
         ns->ssid, strlen(ns->ssid),
         NULL,
-        (const unsigned char*)ns->passphrase, strlen(ns->passphrase));
+        (const uint8_t*)ns->passphrase, strlen(ns->passphrase));
   }
 }
 
-static msg_t
-wlan_thread(void* arg)
+static void
+dispatch_init()
 {
-  (void)arg;
-
-  chRegSetThreadName("wlan");
-
-  wlan_start(0);
+  wlan_start(PATCH_LOAD_DEFAULT);
 
   {
-    unsigned char patchVer[2];
-    nvmem_read_sp_version(patchVer);
-    sprintf(net_status.sp_ver, "%d.%d", patchVer[0], patchVer[1]);
+    nvmem_sp_version_t sp_version;
+    nvmem_read_sp_version(&sp_version);
+    sprintf(net_status.sp_ver, "%d.%d", sp_version.package_id, sp_version.package_build);
     printf("CC3000 Service Pack Version: %s\r\n", net_status.sp_ver);
 
-    if (patchVer[0] != 1 || patchVer[1] != 24) {
+    if (sp_version.package_id != 1 || sp_version.package_build != 24) {
       printf("  Not up to date. Applying patch.\r\n");
       wlan_apply_patch();
       printf("  Update complete\r\n");
@@ -380,41 +332,49 @@ wlan_thread(void* arg)
   }
 
   {
-    unsigned char mac[6];
+    uint8_t mac[6];
     nvmem_get_mac_address(mac);
     sprintf(net_status.mac_addr, "%02X:%02X:%02X:%02X:%02X:%02X",
         mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
   }
 
   perform_connect();
+}
 
-  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, mdns_thread, NULL);
-
-  while (1) {
-    if (net_status.scan_active)
-      scan_thread();
-    else {
-      if (net_status.net_state != last_net_state) {
-        switch (net_status.net_state) {
-        case NS_CONNECT:
-          perform_connect();
+static void
+dispatch_idle()
+{
+  if (net_status.scan_active) {
+    if (perform_scan() == 0) {
+      net_scan_result_t result;
+      do {
+        if (get_scan_result(&result) != 0)
           break;
 
-        case NS_CONNECTED:
-        case NS_CONNECTING:
-        case NS_CONNECT_FAILED:
-        case NS_DISCONNECTED:
-        default:
-          break;
-        }
+        if (result.scan_status == 1 && result.valid)
+          save_or_update_network(&result.network);
+      } while (result.networks_found > 1);
 
-        msg_send(MSG_NET_STATUS, &net_status);
-        last_net_state = net_status.net_state;
-      }
+      prune_networks();
     }
-
-    chThdSleepMilliseconds(500);
   }
+  else {
+    if (net_status.net_state != last_net_state) {
+      switch (net_status.net_state) {
+      case NS_CONNECT:
+        perform_connect();
+        break;
 
-  return 0;
+      case NS_CONNECTED:
+      case NS_CONNECTING:
+      case NS_CONNECT_FAILED:
+      case NS_DISCONNECTED:
+      default:
+        break;
+      }
+
+      msg_send(MSG_NET_STATUS, &net_status);
+      last_net_state = net_status.net_state;
+    }
+  }
 }

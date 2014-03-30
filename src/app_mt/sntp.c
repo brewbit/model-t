@@ -104,6 +104,8 @@ static bool time_available;
 static void
 sntp_process(time_t t)
 {
+  printf("SNTP time sync succeeded: %ld\r\n", t);
+
   last_update_time_rel = chTimeNow();
   last_update_time_abs = t;
   time_available = true;

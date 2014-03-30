@@ -37,6 +37,7 @@
 
 #include "core/cc3000_common.h"
 #include "core/wlan.h"
+#include "core/hci_msg.h"
 
 //*****************************************************************************
 //
@@ -48,8 +49,6 @@
 extern "C" {
 #endif
 
-#define      SOC_NOT_INITED (-3)   /* socket in progress */
-#define      SOC_NOT_CONN   (-4)   /* socket disconnected */
 
 //*****************************************************************************
 //
@@ -63,38 +62,6 @@ extern "C" {
 //
 //!  wlan_init
 //!
-//!  @param  sWlanCB   Asynchronous events callback.
-//!                    0 no event call back.
-//!                  -call back parameters:
-//!                   1) event_type: HCI_EVNT_WLAN_UNSOL_CONNECT connect event,
-//!                     HCI_EVNT_WLAN_UNSOL_DISCONNECT disconnect event,
-//!                     HCI_EVNT_WLAN_ASYNC_SIMPLE_CONFIG_DONE config done,
-//!                     HCI_EVNT_WLAN_UNSOL_DHCP dhcp report,
-//!                     HCI_EVNT_WLAN_ASYNC_PING_REPORT ping report OR
-//!                     HCI_EVNT_WLAN_KEEPALIVE keepalive.
-//!                   2) data: pointer to extra data that received by the event
-//!                     (NULL no data).
-//!                   3) length: data length.
-//!                  -Events with extra data:
-//!                     HCI_EVNT_WLAN_UNSOL_DHCP: 4 bytes IP, 4 bytes Mask,
-//!                     4 bytes default gateway, 4 bytes DHCP server and 4 bytes
-//!                     for DNS server.
-//!                     HCI_EVNT_WLAN_ASYNC_PING_REPORT: 4 bytes Packets sent,
-//!                     4 bytes Packets received, 4 bytes Min round time,
-//!                     4 bytes Max round time and 4 bytes for Avg round time.
-//!
-//!  @param    sFWPatches  0 no patch or pointer to FW patches
-//!  @param    sDriverPatches  0 no patch or pointer to driver patches
-//!  @param    sBootLoaderPatches  0 no patch or pointer to bootloader patches
-//!  @param    sReadWlanInterruptPin    init callback. the callback read wlan
-//!            interrupt status.
-//!  @param    sWlanInterruptEnable   init callback. the callback enable wlan
-//!            interrupt.
-//!  @param    sWlanInterruptDisable   init callback. the callback disable wlan
-//!            interrupt.
-//!  @param    sWriteWlanPin      init callback. the callback write value
-//!            to device pin.
-//!
 //!  @return   none
 //!
 //!  @sa       wlan_set_event_mask , wlan_start , wlan_stop
@@ -104,12 +71,8 @@ extern "C" {
 //!  @warning This function must be called before ANY other wlan driver function
 //
 //*****************************************************************************
-extern void wlan_init(tWlanCB sWlanCB,
-                      tFWPatches sFWPatches,
-                      tDriverPatches sDriverPatches,
-                      tBootLoaderPatches sBootLoaderPatches,
-                      tWlanReadInteruptPin  sReadWlanInterruptPin,
-                      tWriteWlanPin         sWriteWlanPin);
+void
+wlan_init(void);
 
 
 
@@ -139,7 +102,7 @@ extern void wlan_init(tWlanCB sWlanCB,
 //!
 //
 //*****************************************************************************
-extern void wlan_start(unsigned short usPatchesAvailableAtHost);
+extern void wlan_start(patch_load_command_t patch_load_cmd);
 
 //*****************************************************************************
 //
@@ -186,13 +149,8 @@ extern void wlan_stop(void);
 //!  @sa         wlan_disconnect
 //
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
-extern long wlan_connect(unsigned long ulSecType, const char *ssid, long ssid_len,
-                        const unsigned char *bssid, const unsigned char *key, long key_len);
-#else
-extern long wlan_connect(char *ssid, long ssid_len);
-
-#endif
+extern long wlan_connect(uint32_t ulSecType, const char *ssid, long ssid_len,
+                        const uint8_t *bssid, const uint8_t *key, long key_len);
 
 //*****************************************************************************
 //
@@ -236,15 +194,15 @@ extern long wlan_disconnect(void);
 //
 //*****************************************************************************
 
-extern long wlan_add_profile(unsigned long ulSecType, unsigned char* ucSsid,
-                             unsigned long ulSsidLen,
-                             unsigned char *ucBssid,
-                             unsigned long ulPriority,
-                             unsigned long ulPairwiseCipher_Or_Key,
-                             unsigned long ulGroupCipher_TxKeyLen,
-                             unsigned long ulKeyMgmt,
-                             unsigned char* ucPf_OrKey,
-                             unsigned long ulPassPhraseLen);
+extern long wlan_add_profile(uint32_t ulSecType, uint8_t* ucSsid,
+    uint32_t ulSsidLen,
+    uint8_t *ucBssid,
+    uint32_t ulPriority,
+    uint32_t ulPairwiseCipher_Or_Key,
+    uint32_t ulGroupCipher_TxKeyLen,
+    uint32_t ulKeyMgmt,
+    uint8_t* ucPf_OrKey,
+    uint32_t ulPassPhraseLen);
 
 
 
@@ -263,7 +221,7 @@ extern long wlan_add_profile(unsigned long ulSecType, unsigned char* ucSsid,
 //!  @sa        wlan_add_profile
 //
 //*****************************************************************************
-extern long wlan_ioctl_del_profile(unsigned long ulIndex);
+extern long wlan_ioctl_del_profile(uint32_t ulIndex);
 
 //*****************************************************************************
 //
@@ -286,7 +244,7 @@ extern long wlan_ioctl_del_profile(unsigned long ulIndex);
 //!            masked (1), the device will not send the masked event to host.
 //
 //*****************************************************************************
-extern long wlan_set_event_mask(unsigned long ulMask);
+extern long wlan_set_event_mask(uint32_t ulMask);
 
 //*****************************************************************************
 //
@@ -335,9 +293,9 @@ extern long wlan_ioctl_statusget(void);
 //
 //*****************************************************************************
 extern long wlan_ioctl_set_connection_policy(
-                                        unsigned long should_connect_to_open_ap,
-                                        unsigned long should_use_fast_connect,
-                                        unsigned long ulUseProfiles);
+    uint32_t should_connect_to_open_ap,
+    uint32_t should_use_fast_connect,
+    uint32_t ulUseProfiles);
 
 //*****************************************************************************
 //
@@ -373,9 +331,10 @@ extern long wlan_ioctl_set_connection_policy(
 //
 //*****************************************************************************
 
-
-extern long wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
-                                       unsigned char *ucResults);
+void
+wlan_ioctl_get_scan_results(
+    uint32_t ulScanTimeout,
+    wlan_scan_results_t* results);
 
 //*****************************************************************************
 //
@@ -401,7 +360,7 @@ extern long wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
 //!  @param   uiSNRThreshold    NSR threshold. Saved: yes (Default: 0)
 //!  @param   uiDefaultTxPower  probe Tx power. Saved: yes (Default: 205)
 //!  @param   aiIntervalList    pointer to array with 16 entries (16 channels)
-//!           each entry (unsigned long) holds timeout between periodic scan
+//!           each entry (uint32_t) holds timeout between periodic scan
 //!           (connection scan) - in milliseconds. Saved: yes. Default 2000ms.
 //!
 //!  @return    On success, zero is returned. On error, -1 is returned
@@ -413,11 +372,11 @@ extern long wlan_ioctl_get_scan_results(unsigned long ulScanTimeout,
 //!  @sa        wlan_ioctl_get_scan_results
 //
 //*****************************************************************************
-extern long wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwellTime,
-                                       unsigned long uiMaxDwellTime, unsigned long uiNumOfProbeRequests,
-                                       unsigned long uiChannelMask, long iRSSIThreshold,
-                                       unsigned long uiSNRThreshold, unsigned long uiDefaultTxPower,
-                                       const unsigned long *aiIntervalList);
+extern long wlan_ioctl_set_scan_params(uint32_t uiEnable, uint32_t uiMinDwellTime,
+    uint32_t uiMaxDwellTime, uint32_t uiNumOfProbeRequests,
+    uint32_t uiChannelMask, long iRSSIThreshold,
+    uint32_t uiSNRThreshold, uint32_t uiDefaultTxPower,
+    const uint32_t *aiIntervalList);
 
 
 //*****************************************************************************

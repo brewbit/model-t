@@ -44,7 +44,6 @@
 #include "nvmem.h"
 #include "hci.h"
 #include "socket.h"
-#include "evnt_handler.h"
 
 //*****************************************************************************
 //
@@ -80,34 +79,32 @@
 //!               be used, is invalid, or if the read is out of bounds.
 //!
 //*****************************************************************************
-signed long c_nvmem_read(unsigned long ulFileId, unsigned long ulLength,
-                                unsigned long ulOffset, unsigned char *buff)
+signed long c_nvmem_read(uint32_t ulFileId, uint32_t ulLength,
+    uint32_t ulOffset, uint8_t *buff)
 {
-    unsigned char ucStatus = 0xFF;
-    unsigned char *ptr;
-    unsigned char *args;
+  uint8_t ucStatus = 0xFF;
+  uint8_t *args;
 
-    ptr = tSLInformation.pucTxCommandBuffer;
-    args = (ptr + HEADERS_SIZE_CMD);
+  args = hci_get_cmd_buffer();
 
-    // Fill in HCI packet structure
-    args = UINT32_TO_STREAM(args, ulFileId);
-    args = UINT32_TO_STREAM(args, ulLength);
-    args = UINT32_TO_STREAM(args, ulOffset);
+  // Fill in HCI packet structure
+  args = UINT32_TO_STREAM(args, ulFileId);
+  args = UINT32_TO_STREAM(args, ulLength);
+  args = UINT32_TO_STREAM(args, ulOffset);
 
-    // Initiate a HCI command
-    hci_command_send(HCI_CMND_NVMEM_READ, ptr, NVMEM_READ_PARAMS_LEN);
-    SimpleLinkWaitEvent(HCI_CMND_NVMEM_READ, &ucStatus);
+  // Initiate a HCI command
+  hci_command_send(HCI_CMND_NVMEM_READ, NVMEM_READ_PARAMS_LEN);
+  hci_wait_for_event(HCI_CMND_NVMEM_READ, &ucStatus);
 
-    // In case there is data - read it - even if an error code is returned
-   // Note: It is the user responsibility to ignore the data in case of an error code
+  // In case there is data - read it - even if an error code is returned
+  // Note: It is the user responsibility to ignore the data in case of an error code
 
-    // Wait for the data in a synchronous way. Here we assume that the buffer is
-    // big enough to store also parameters of nvmem
+  // Wait for the data in a synchronous way. Here we assume that the buffer is
+  // big enough to store also parameters of nvmem
 
-    SimpleLinkWaitData(buff, 0, 0);
+  hci_wait_for_data(buff, 0, 0);
 
-    return(ucStatus);
+  return(ucStatus);
 }
 
 //*****************************************************************************
@@ -131,33 +128,30 @@ signed long c_nvmem_read(unsigned long ulFileId, unsigned long ulLength,
 //!               need to be valid - only allocated.
 //!
 //*****************************************************************************
-signed long c_nvmem_write(unsigned long ulFileId, unsigned long ulLength, unsigned long ulEntryOffset, unsigned char *buff)
+signed long c_nvmem_write(uint32_t ulFileId, uint32_t ulLength, uint32_t ulEntryOffset, uint8_t *buff)
 {
-    long iRes;
-    unsigned char *ptr;
-    unsigned char *args;
+  long iRes;
+  uint8_t *args;
 
-    iRes = EFAIL;
+  iRes = EFAIL;
 
-    ptr = tSLInformation.pucTxCommandBuffer;
-    args = (ptr + SPI_HEADER_SIZE + HCI_DATA_CMD_HEADER_SIZE);
+  args = hci_get_data_cmd_buffer();
 
-    // Fill in HCI packet structure
-    args = UINT32_TO_STREAM(args, ulFileId);
-    args = UINT32_TO_STREAM(args, 12);
-    args = UINT32_TO_STREAM(args, ulLength);
-    args = UINT32_TO_STREAM(args, ulEntryOffset);
+  // Fill in HCI packet structure
+  args = UINT32_TO_STREAM(args, ulFileId);
+  args = UINT32_TO_STREAM(args, 12);
+  args = UINT32_TO_STREAM(args, ulLength);
+  args = UINT32_TO_STREAM(args, ulEntryOffset);
 
-    memcpy((ptr + SPI_HEADER_SIZE + HCI_DATA_CMD_HEADER_SIZE +
-                    NVMEM_WRITE_PARAMS_LEN),buff,ulLength);
+  memcpy((args + NVMEM_WRITE_PARAMS_LEN), buff, ulLength);
 
-    // Initiate a HCI command but it will come on data channel
-    hci_data_command_send(HCI_CMND_NVMEM_WRITE, ptr, NVMEM_WRITE_PARAMS_LEN,
-                                                ulLength);
+  // Initiate a HCI command but it will come on data channel
+  hci_data_command_send(HCI_CMND_NVMEM_WRITE, NVMEM_WRITE_PARAMS_LEN,
+      ulLength);
 
-    SimpleLinkWaitEvent(HCI_EVNT_NVMEM_WRITE, &iRes);
+  hci_wait_for_event(HCI_EVNT_NVMEM_WRITE, &iRes);
 
-    return(iRes);
+  return(iRes);
 }
 
 
@@ -173,9 +167,9 @@ signed long c_nvmem_write(unsigned long ulFileId, unsigned long ulLength, unsign
 //!               mac address as appears over the air (OUI first)
 //!
 //*****************************************************************************
-unsigned char c_nvmem_set_mac_address(unsigned char *mac)
+uint8_t c_nvmem_set_mac_address(uint8_t *mac)
 {
-    return  c_nvmem_write(NVMEM_MAC_FILEID, MAC_ADDR_LEN, 0, mac);
+  return  c_nvmem_write(NVMEM_MAC_FILEID, MAC_ADDR_LEN, 0, mac);
 }
 
 //*****************************************************************************
@@ -190,9 +184,9 @@ unsigned char c_nvmem_set_mac_address(unsigned char *mac)
 //!               mac address as appears over the air (OUI first)
 //!
 //*****************************************************************************
-unsigned char c_nvmem_get_mac_address(unsigned char *mac)
+uint8_t c_nvmem_get_mac_address(uint8_t *mac)
 {
-    return  c_nvmem_read(NVMEM_MAC_FILEID, MAC_ADDR_LEN, 0, mac);
+  return  c_nvmem_read(NVMEM_MAC_FILEID, MAC_ADDR_LEN, 0, mac);
 }
 
 //*****************************************************************************
@@ -212,34 +206,31 @@ unsigned char c_nvmem_get_mac_address(unsigned char *mac)
 //!              applied in SP_PORTION_SIZE bytes portions.
 //!
 //*****************************************************************************
-unsigned char c_nvmem_write_patch(unsigned long ulFileId, unsigned long spLength,
-                                          const unsigned char *spData)
+uint8_t c_nvmem_write_patch(uint32_t ulFileId, uint32_t spLength,
+                                          const uint8_t *spData)
 {
-    unsigned char   status = 0;
-    unsigned short  offset = 0;
-    unsigned char*      spDataPtr = (unsigned char*)spData;
+  uint8_t status = 0;
+  uint16_t offset = 0;
+  uint8_t* spDataPtr = (uint8_t*)spData;
 
-    while ((status == 0) && (spLength >= SP_PORTION_SIZE))
-    {
-        status = c_nvmem_write(ulFileId, SP_PORTION_SIZE, offset, spDataPtr);
-        offset += SP_PORTION_SIZE;
-        spLength -= SP_PORTION_SIZE;
-        spDataPtr += SP_PORTION_SIZE;
-    }
+  while ((status == 0) && (spLength >= SP_PORTION_SIZE)) {
+    status = c_nvmem_write(ulFileId, SP_PORTION_SIZE, offset, spDataPtr);
+    offset += SP_PORTION_SIZE;
+    spLength -= SP_PORTION_SIZE;
+    spDataPtr += SP_PORTION_SIZE;
+  }
 
-    if (status !=0)
-    {
-        // NVMEM error occured
-        return status;
-    }
-
-    if (spLength != 0)
-    {
-        // if reached here, a reminder is left
-        status = c_nvmem_write(ulFileId, spLength, offset, spDataPtr);
-    }
-
+  if (status != 0) {
+    // NVMEM error occurred
     return status;
+  }
+
+  if (spLength != 0) {
+    // if reached here, a reminder is left
+    status = c_nvmem_write(ulFileId, spLength, offset, spDataPtr);
+  }
+
+  return status;
 }
 
 //*****************************************************************************
@@ -255,28 +246,19 @@ unsigned char c_nvmem_write_patch(unsigned long ulFileId, unsigned long spLength
 //!              driver-supplicant-NS patch, bootloader patch)
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
-unsigned char c_nvmem_read_sp_version(unsigned char* patchVer)
+uint8_t c_nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 {
-    unsigned char *ptr;
-    // 1st byte is the status and the rest is the SP version
-    unsigned char   retBuf[5];
+  uint8_t retBuf[5];
 
-    ptr = tSLInformation.pucTxCommandBuffer;
+  // Initiate a HCI command, no args are required
+  hci_command_send(HCI_CMND_READ_SP_VERSION, 0);
+  hci_wait_for_event(HCI_CMND_READ_SP_VERSION, retBuf);
 
-   // Initiate a HCI command, no args are required
-    hci_command_send(HCI_CMND_READ_SP_VERSION, ptr, 0);
-    SimpleLinkWaitEvent(HCI_CMND_READ_SP_VERSION, retBuf);
+  sp_version->package_id = retBuf[3];
+  sp_version->package_build = retBuf[4];
 
-    // package ID
-    *patchVer = retBuf[3];
-    // package build number
-    *(patchVer+1) = retBuf[4];
-
-    return(retBuf[0]);
+  return retBuf[0];
 }
-#endif
 
 //*****************************************************************************
 //
@@ -300,25 +282,23 @@ unsigned char c_nvmem_read_sp_version(unsigned char* patchVer)
 //!              set ulNewLen=0.
 //!
 //*****************************************************************************
-signed long c_nvmem_create_entry(unsigned long ulFileId, unsigned long ulNewLen)
+signed long c_nvmem_create_entry(uint32_t ulFileId, uint32_t ulNewLen)
 {
-    unsigned char *ptr;
-    unsigned char *args;
-    unsigned short retval;
+  uint8_t *args;
+  uint16_t retval;
 
-    ptr = tSLInformation.pucTxCommandBuffer;
-    args = (ptr + HEADERS_SIZE_CMD);
+  args = hci_get_cmd_buffer();
 
-    // Fill in HCI packet structure
-    args = UINT32_TO_STREAM(args, ulFileId);
-    args = UINT32_TO_STREAM(args, ulNewLen);
+  // Fill in HCI packet structure
+  args = UINT32_TO_STREAM(args, ulFileId);
+  args = UINT32_TO_STREAM(args, ulNewLen);
 
-    // Initiate a HCI command
-    hci_command_send(HCI_CMND_NVMEM_CREATE_ENTRY,ptr, NVMEM_CREATE_PARAMS_LEN);
+  // Initiate a HCI command
+  hci_command_send(HCI_CMND_NVMEM_CREATE_ENTRY, NVMEM_CREATE_PARAMS_LEN);
 
-    SimpleLinkWaitEvent(HCI_CMND_NVMEM_CREATE_ENTRY, &retval);
+  hci_wait_for_event(HCI_CMND_NVMEM_CREATE_ENTRY, &retval);
 
-    return(retval);
+  return(retval);
 }
 
 

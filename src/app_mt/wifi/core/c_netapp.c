@@ -36,7 +36,6 @@
 #include "netapp.h"
 #include "hci.h"
 #include "socket.h"
-#include "evnt_handler.h"
 #include "nvmem.h"
 
 #define MIN_TIMER_VAL_SECONDS      20
@@ -66,7 +65,7 @@
 //!                over resets.
 //
 //*****************************************************************************
-long  c_netapp_config_mac_adrress( unsigned char *mac )
+long  c_netapp_config_mac_adrress( uint8_t *mac )
 {
    return  c_nvmem_set_mac_address(mac);
 }
@@ -97,29 +96,30 @@ long  c_netapp_config_mac_adrress( unsigned char *mac )
 //!               AP was established.
 //!
 //*****************************************************************************
-long c_netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,
-                           unsigned long *aucDefaultGateway, unsigned long *aucDNSServer)
+long c_netapp_dhcp(
+    uint32_t *aucIP,
+    uint32_t *aucSubnetMask,
+    uint32_t *aucDefaultGateway,
+    uint32_t *aucDNSServer)
 {
     signed char scRet;
-    unsigned char *ptr;
-    unsigned char *args;
+    uint8_t *args;
 
     scRet = EFAIL;
-    ptr = tSLInformation.pucTxCommandBuffer;
-    args = (ptr + HEADERS_SIZE_CMD);
+    args = hci_get_cmd_buffer();
 
     // Fill in temporary command buffer
-    ARRAY_TO_STREAM(args,aucIP,4);
-    ARRAY_TO_STREAM(args,aucSubnetMask,4);
-    ARRAY_TO_STREAM(args,aucDefaultGateway,4);
+    ARRAY_TO_STREAM(args, aucIP, 4);
+    ARRAY_TO_STREAM(args, aucSubnetMask, 4);
+    ARRAY_TO_STREAM(args, aucDefaultGateway, 4);
     args = UINT32_TO_STREAM(args, 0);
-    ARRAY_TO_STREAM(args,aucDNSServer,4);
+    ARRAY_TO_STREAM(args, aucDNSServer, 4);
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_DHCP, ptr, NETAPP_DHCP_PARAMS_LEN);
+    hci_command_send(HCI_NETAPP_DHCP, NETAPP_DHCP_PARAMS_LEN);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_DHCP, &scRet);
+    hci_wait_for_event(HCI_NETAPP_DHCP, &scRet);
 
     return(scRet);
 }
@@ -174,18 +174,17 @@ long c_netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,
 //!               it will be set automatically to 20s.
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
-long c_netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
-                        unsigned long *aucKeepalive, unsigned long *aucInactivity)
+long c_netapp_timeout_values(
+    uint32_t *aucDHCP,
+    uint32_t *aucARP,
+    uint32_t *aucKeepalive,
+    uint32_t *aucInactivity)
 {
     signed char scRet;
-    unsigned char *ptr;
-    unsigned char *args;
+    uint8_t *args;
 
     scRet = EFAIL;
-    ptr = tSLInformation.pucTxCommandBuffer;
-    args = (ptr + HEADERS_SIZE_CMD);
+    args = hci_get_cmd_buffer();
 
     // Set minimal values of timers
     MIN_TIMER_SET(*aucDHCP)
@@ -200,15 +199,13 @@ long c_netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
     args = UINT32_TO_STREAM(args, *aucInactivity);
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_SET_TIMERS, ptr, NETAPP_SET_TIMER_PARAMS_LEN);
+    hci_command_send(HCI_NETAPP_SET_TIMERS, NETAPP_SET_TIMER_PARAMS_LEN);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_SET_TIMERS, &scRet);
+    hci_wait_for_event(HCI_NETAPP_SET_TIMERS, &scRet);
 
     return(scRet);
 }
-#endif
-
 
 //*****************************************************************************
 //
@@ -230,17 +227,17 @@ long c_netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
 //! @warning      Calling this function while a previous Ping Requests are in
 //!               progress will stop the previous ping request.
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
-long c_netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
-                   unsigned long ulPingSize, unsigned long ulPingTimeout)
+long c_netapp_ping_send(
+    uint32_t *ip,
+    uint32_t ulPingAttempts,
+    uint32_t ulPingSize,
+    uint32_t ulPingTimeout)
 {
     signed char scRet;
-    unsigned char *ptr, *args;
+    uint8_t *args;
 
     scRet = EFAIL;
-    ptr = tSLInformation.pucTxCommandBuffer;
-    args = (ptr + HEADERS_SIZE_CMD);
+    args = hci_get_cmd_buffer();
 
     // Fill in temporary command buffer
     args = UINT32_TO_STREAM(args, *ip);
@@ -249,14 +246,13 @@ long c_netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
     args = UINT32_TO_STREAM(args, ulPingTimeout);
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_PING_SEND, ptr, NETAPP_PING_SEND_PARAMS_LEN);
+    hci_command_send(HCI_NETAPP_PING_SEND, NETAPP_PING_SEND_PARAMS_LEN);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_PING_SEND, &scRet);
+    hci_wait_for_event(HCI_NETAPP_PING_SEND, &scRet);
 
     return(scRet);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -280,22 +276,18 @@ long c_netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
 //!           fields are 0.
 //!
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 void c_netapp_ping_report()
 {
-    unsigned char *ptr;
-    ptr = tSLInformation.pucTxCommandBuffer;
     signed char scRet;
 
     scRet = EFAIL;
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_PING_REPORT, ptr, 0);
+    hci_command_send(HCI_NETAPP_PING_REPORT, 0);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_PING_REPORT, &scRet);
+    hci_wait_for_event(HCI_NETAPP_PING_REPORT, &scRet);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -309,24 +301,20 @@ void c_netapp_ping_report()
 //!
 //!
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
 long c_netapp_ping_stop()
 {
     signed char scRet;
-    unsigned char *ptr;
 
     scRet = EFAIL;
-    ptr = tSLInformation.pucTxCommandBuffer;
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_PING_STOP, ptr, 0);
+    hci_command_send(HCI_NETAPP_PING_STOP, 0);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_PING_STOP, &scRet);
+    hci_wait_for_event(HCI_NETAPP_PING_STOP, &scRet);
 
     return(scRet);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -353,27 +341,14 @@ long c_netapp_ping_stop()
 //!             the Wireless network the device is associated with.
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
-void c_netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
+void c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig)
 {
-    unsigned char *ptr;
+  // Initiate a HCI command
+  hci_command_send(HCI_NETAPP_IPCONFIG, 0);
 
-    ptr = tSLInformation.pucTxCommandBuffer;
-
-    // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_IPCONFIG, ptr, 0);
-
-    // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_IPCONFIG, ipconfig );
-
+  // Wait for command complete event
+  hci_wait_for_event(HCI_NETAPP_IPCONFIG, ipconfig );
 }
-#else
-void c_netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
-{
-
-}
-#endif
 
 //*****************************************************************************
 //
@@ -386,25 +361,20 @@ void c_netapp_ipconfig( tNetappIpconfigRetArgs * ipconfig )
 //!  @brief  Flushes ARP table
 //!
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 long c_netapp_arp_flush(void)
 {
     signed char scRet;
-    unsigned char *ptr;
 
     scRet = EFAIL;
-    ptr = tSLInformation.pucTxCommandBuffer;
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_ARP_FLUSH, ptr, 0);
+    hci_command_send(HCI_NETAPP_ARP_FLUSH, 0);
 
     // Wait for command complete event
-    SimpleLinkWaitEvent(HCI_NETAPP_ARP_FLUSH, &scRet);
+    hci_wait_for_event(HCI_NETAPP_ARP_FLUSH, &scRet);
 
     return(scRet);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -423,35 +393,18 @@ long c_netapp_arp_flush(void)
 //!              enable/disable the debug level
 //!
 //*****************************************************************************
-
-
-#ifndef CC3000_TINY_DRIVER
-long c_netapp_set_debug_level(unsigned long ulLevel)
+long c_netapp_set_debug_level(uint32_t ulLevel)
 {
-    signed char scRet;
-    unsigned char *ptr, *args;
+  signed char scRet;
+  uint8_t *args;
 
-    scRet = EFAIL;
-    ptr = tSLInformation.pucTxCommandBuffer;
-    args = (ptr + HEADERS_SIZE_CMD);
+  scRet = EFAIL;
+  args = hci_get_cmd_buffer();
 
-    //
-    // Fill in temporary command buffer
-    //
-    args = UINT32_TO_STREAM(args, ulLevel);
+  args = UINT32_TO_STREAM(args, ulLevel);
 
+  hci_command_send(HCI_NETAPP_SET_DEBUG_LEVEL, NETAPP_SET_DEBUG_LEVEL_PARAMS_LEN);
+  hci_wait_for_event(HCI_NETAPP_SET_DEBUG_LEVEL, &scRet);
 
-    //
-    // Initiate a HCI command
-    //
-    hci_command_send(HCI_NETAPP_SET_DEBUG_LEVEL, ptr, NETAPP_SET_DEBUG_LEVEL_PARAMS_LEN);
-
-    //
-    // Wait for command complete event
-    //
-    SimpleLinkWaitEvent(HCI_NETAPP_SET_DEBUG_LEVEL, &scRet);
-
-    return(scRet);
-
+  return(scRet);
 }
-#endif

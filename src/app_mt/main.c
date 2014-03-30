@@ -38,6 +38,11 @@ idle_thread(void* arg)
   return 0;
 }
 
+extern Semaphore sem_io_ready;
+extern Semaphore sem_write_complete;
+extern int irq_count, irq_timeout_count, io_thread_loc;
+
+
 int
 main(void)
 {

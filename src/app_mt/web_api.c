@@ -139,7 +139,7 @@ web_api_init()
         &ws_settings);
 
   msg_listener_t* l = msg_listener_create("web_api", 2048, web_api_dispatch, api);
-  msg_listener_set_idle_timeout(l, 250);
+  msg_listener_set_idle_timeout(l, 500);
   msg_listener_enable_watchdog(l, 3 * 60 * 1000);
 
   msg_subscribe(l, MSG_NET_STATUS, NULL);

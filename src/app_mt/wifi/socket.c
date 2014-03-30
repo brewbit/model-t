@@ -40,55 +40,160 @@
 //
 //*****************************************************************************
 #include "socket.h"
+#include "core/c_socket.h"
 #include "wlan.h"
-
-#include "core/socket.h"
 
 #include <string.h>
 #include <stdbool.h>
 
 
+#define MAX_NUM_OF_SOCKETS 4
+
+
+typedef struct {
+  int sd;
+  wlan_socket_status_t status;
+  int last_error;
+  BinarySemaphore sd_semaphore;
+  systime_t recv_timeout;
+  long nonblock;
+} wlan_socket_t;
+
+
+static msg_t
+socket_io_thread(void* arg);
+
 static int
 common_recv(long sd, void *buf, long len, long flags, sockaddr *from, socklen_t *fromlen);
 
+static void
+find_add_next_free_socket(int sd);
 
-extern wlan_socket_t           g_sockets[MAX_NUM_OF_SOCKETS];
+static void
+find_clear_socket(int sd);
 
-/* Handles for making the APIs asychronous and thread-safe */
-extern Semaphore         g_accept_semaphore;
-extern Semaphore         g_select_sleep_semaphore;
-extern Mutex             g_main_mutex;
+static wlan_socket_t*
+find_socket_by_sd(long sd);
 
-extern sockaddr                g_accept_sock_addr;
 
-extern int                     g_wlan_stopped;
-extern int                     g_accept_new_sd;
-extern int                     g_accept_socket;
-extern int                     g_accept_addrlen;
-extern int                     g_should_poll_accept;
+extern Mutex g_main_mutex;
+extern int g_wlan_stopped;
 
-//Enable this flag if and only if you must comply with BSD socket close() function
-#ifdef _API_USE_BSD_CLOSE
-    #define close(sd) closesocket(sd)
-#endif
+static wlan_socket_t sockets[MAX_NUM_OF_SOCKETS];
+static Semaphore accept_semaphore;
+static Semaphore select_sleep_semaphore;
+static Thread* select_thread;
 
-//Enable this flag if and only if you must comply with BSD socket read() and write() functions
-#ifdef _API_USE_BSD_READ_WRITE
-    #define read(sd, buf, len, flags) recv(sd, buf, len, flags)
-    #define write(sd, buf, len, flags) send(sd, buf, len, flags)
-#endif
+static int accept_new_sd;
+static int accept_socket;
+static int accept_addrlen;
+static int should_poll_accept;
+static sockaddr accept_sock_addr;
 
+
+void
+socket_start()
+{
+  int i;
+
+  for(i = 0; i < MAX_NUM_OF_SOCKETS; i++){
+    sockets[i].sd = -1;
+    sockets[i].status = SOCKET_STATUS_INACTIVE;
+    sockets[i].recv_timeout = TIME_INFINITE;
+    sockets[i].nonblock = SOCK_OFF;
+    chBSemInit(&sockets[i].sd_semaphore, FALSE);
+  }
+
+  chSemInit(&accept_semaphore, 0);
+  chSemInit(&select_sleep_semaphore, 0);
+  should_poll_accept = 0;
+  accept_socket = -1;
+
+  select_thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, socket_io_thread, NULL);
+}
+
+void
+socket_stop()
+{
+  int i;
+
+  chThdTerminate(select_thread);
+  chSemSignal(&select_sleep_semaphore);
+  chThdWait(select_thread);
+  select_thread = NULL;
+
+  for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
+    sockets[i].sd = -1;
+    sockets[i].status = SOCKET_STATUS_INACTIVE;
+  }
+}
+
+//*****************************************************************************
+//
+//!  get_socket_active_status
+//!
+//!  @param  Sd  Socket IS
+//!  @return     Current status of the socket.
+//!
+//!  @brief  Retrieve socket status
+//
+//*****************************************************************************
+wlan_socket_status_t
+get_socket_active_status(int32_t sd)
+{
+  wlan_socket_t* sock = find_socket_by_sd(sd);
+  if (sock == NULL)
+    return SOCKET_STATUS_INACTIVE;
+
+  return sock->status;
+}
+
+//*****************************************************************************
+//
+//!  set_socket_active_status
+//!
+//!  @param Sd
+//!   @param Status
+//!  @return         none
+//!
+//!  @brief          Check if the socket ID and status are valid and set
+//!                  accordingly  the global socket status
+//
+//*****************************************************************************
+void
+set_socket_active_status(int32_t sd, wlan_socket_status_t status, int error)
+{
+  wlan_socket_t* sock = find_socket_by_sd(sd);
+  if (sock == NULL)
+    return;
+
+  sock->status = status;
+  sock->last_error = error;
+}
+
+int
+socket_get_last_error(int32_t sd)
+{
+  wlan_socket_t* sock = find_socket_by_sd(sd);
+  if (sock == NULL)
+    return EBADF;
+
+  int ret = sock->last_error;
+  sock->last_error = 0;
+
+  return ret;
+}
 
 static void
 find_add_next_free_socket(int sd)
 {
   int i;
   for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
-    if (g_sockets[i].status == SOC_NOT_INITED){
-      g_sockets[i].status = SOCK_ON;
-      g_sockets[i].sd = sd;
-      g_sockets[i].recv_timeout = TIME_INFINITE;
-      g_sockets[i].nonblock = SOCK_OFF;
+    if (sockets[i].status == SOCKET_STATUS_INACTIVE) {
+      sockets[i].status = SOCKET_STATUS_ACTIVE;
+      sockets[i].sd = sd;
+      sockets[i].recv_timeout = TIME_INFINITE;
+      sockets[i].nonblock = SOCK_OFF;
       return;
     }
   }
@@ -99,9 +204,9 @@ find_clear_socket(int sd)
 {
   int i;
   for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
-    if (g_sockets[i].sd == sd){
-      g_sockets[i].status = SOC_NOT_INITED;
-      g_sockets[i].sd = -1;
+    if (sockets[i].sd == sd){
+      sockets[i].status = SOCKET_STATUS_INACTIVE;
+      sockets[i].sd = -1;
     }
   }
 }
@@ -112,8 +217,8 @@ find_socket_by_sd(long sd)
   int i;
 
   for (i = 0; i < MAX_NUM_OF_SOCKETS; i++) {
-    if (g_sockets[i].sd == sd)
-      return &g_sockets[i];
+    if (sockets[i].sd == sd)
+      return &sockets[i];
   }
 
   return NULL;
@@ -148,7 +253,8 @@ socket(long domain, long type, long protocol)
 
     chMtxLock(&g_main_mutex);
     ret = c_socket(domain, type, protocol);
-    /*if the value is not error then add to our array for later reference */
+
+    /* if the value is not error then add to our array for later reference */
     if (-1 != ret)
         find_add_next_free_socket(ret);
     chMtxUnlock();
@@ -171,21 +277,20 @@ socket(long domain, long type, long protocol)
 long
 closesocket(long sd)
 {
-    int ret;
+  int ret;
 
-    chMtxLock(&g_main_mutex);
-    ret = c_closesocket(sd);
-    /* remove from our array if no error */
-    if (0 == ret){
-        find_clear_socket(sd);
-        /* if this is a listeningsocket then reset
-           the global variable pointing to it*/
-        if (sd == g_accept_socket)
-            g_accept_socket = -1;
-    }
-    chMtxUnlock();
+  chMtxLock(&g_main_mutex);
+  ret = c_closesocket(sd);
 
-    return(ret);
+  find_clear_socket(sd);
+  /* if this is a listeningsocket then reset
+     the global variable pointing to it*/
+  if (sd == accept_socket)
+    accept_socket = -1;
+
+  chMtxUnlock();
+
+  return(ret);
 }
 
 //*****************************************************************************
@@ -238,32 +343,32 @@ accept(long sd, sockaddr *addr, socklen_t *addrlen)
 {
     char val;
 
-    g_accept_socket = sd; /* save the accepting socket globally */
+    accept_socket = sd; /* save the accepting socket globally */
 
     /* set socket options to non blocking for accept polling purposes */
     val = SOCK_ON;
     setsockopt( sd, SOL_SOCKET, SOCKOPT_ACCEPT_NONBLOCK, &val, sizeof(val));
 
-    g_should_poll_accept = 1;
-    chSemSignal(&g_select_sleep_semaphore); /* wakeup select thread if needed */
-    chSemWait(&g_accept_semaphore); /* go to sleep until polling succeeds */
-    chSemWait(&g_select_sleep_semaphore); /* suspend select thread until waiting for more data */
+    should_poll_accept = 1;
+    chSemSignal(&select_sleep_semaphore); /* wakeup select thread if needed */
+    chSemWait(&accept_semaphore); /* go to sleep until polling succeeds */
+    chSemWait(&select_sleep_semaphore); /* suspend select thread until waiting for more data */
 
     if (g_wlan_stopped) { /* if wlan_stop then return */
-        g_should_poll_accept = 0;
+        should_poll_accept = 0;
         return -1;
     }
 
     /* New socket created and accept success or SOC_ERROR
        If sock error do not take an empty place in the sockets array */
-    if (g_accept_new_sd != SOC_ERROR)
-        find_add_next_free_socket(g_accept_new_sd);
+    if (accept_new_sd != SOC_ERROR)
+        find_add_next_free_socket(accept_new_sd);
 
-    memcpy(addr, &g_accept_sock_addr, g_accept_addrlen);
-    memcpy(addrlen, &g_accept_addrlen, sizeof(socklen_t));
-    g_should_poll_accept = 0;
+    memcpy(addr, &accept_sock_addr, accept_addrlen);
+    memcpy(addrlen, &accept_addrlen, sizeof(socklen_t));
+    should_poll_accept = 0;
 
-    return g_accept_new_sd;
+    return accept_new_sd;
 }
 
 //*****************************************************************************
@@ -354,10 +459,8 @@ listen(long sd, long backlog)
 //!          the function requires DNS server to be configured prior to its usage.
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 int
-gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr)
+gethostbyname(const char * hostname, uint16_t usNameLen, uint32_t* out_ip_addr)
 {
     int ret;
 
@@ -367,7 +470,6 @@ gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* ou
 
     return(ret);
 }
-#endif
 
 //*****************************************************************************
 //
@@ -397,7 +499,6 @@ gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* ou
 //!  @sa socket
 //
 //*****************************************************************************
-
 long
 connect(long sd, const sockaddr *addr, long addrlen)
 {
@@ -448,7 +549,6 @@ connect(long sd, const sockaddr *addr, long addrlen)
 //!  @sa socket
 //
 //*****************************************************************************
-
 int
 select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *exceptsds, struct timeval *timeout)
 {
@@ -499,7 +599,7 @@ select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *exceptsds, struc
 //!            1. SOCKOPT_RECV_TIMEOUT (optname)
 //!               SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout
 //!           in milliseconds.
-//!             In that case optval should be pointer to unsigned long.
+//!             In that case optval should be pointer to uint32_t.
 //!            2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on
 //!           or off.
 //!             In that case optval should be SOCK_ON or SOCK_OFF (optval).
@@ -507,8 +607,6 @@ select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *exceptsds, struc
 //!  @sa getsockopt
 //
 //*****************************************************************************
-
-#ifndef CC3000_TINY_DRIVER
 int
 setsockopt(long sd, long level, long optname, const void *optval, socklen_t optlen)
 {
@@ -523,23 +621,23 @@ setsockopt(long sd, long level, long optname, const void *optval, socklen_t optl
     if (level == SOL_SOCKET) {
       switch (optname) {
       case SOCKOPT_RECV_TIMEOUT:
-        if (optlen != sizeof(unsigned long)) {
+        if (optlen != sizeof(uint32_t)) {
           errno = EINVAL;
           ret = -1;
         }
         else {
-          s->recv_timeout = *((unsigned long*)optval);
+          s->recv_timeout = *((uint32_t*)optval);
           ret = 0;
         }
         break;
 
       case SOCKOPT_RECV_NONBLOCK:
-        if (optlen != sizeof(unsigned long)) {
+        if (optlen != sizeof(uint32_t)) {
           errno = EINVAL;
           ret = -1;
         }
         else {
-          unsigned long nonblock = *((unsigned long*)optval);
+          uint32_t nonblock = *((uint32_t*)optval);
           if (nonblock == SOCK_ON || nonblock == SOCK_OFF) {
             s->nonblock = nonblock;
             ret = 0;
@@ -562,7 +660,6 @@ setsockopt(long sd, long level, long optname, const void *optval, socklen_t optl
 
     return ret;
 }
-#endif
 
 //*****************************************************************************
 //
@@ -602,7 +699,7 @@ setsockopt(long sd, long level, long optname, const void *optval, socklen_t optl
 //!            1. SOCKOPT_RECV_TIMEOUT (optname)
 //!               SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout
 //!           in milliseconds.
-//!             In that case optval should be pointer to unsigned long.
+//!             In that case optval should be pointer to uint32_t.
 //!            2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on
 //!           or off.
 //!             In that case optval should be SOCK_ON or SOCK_OFF (optval).
@@ -610,7 +707,6 @@ setsockopt(long sd, long level, long optname, const void *optval, socklen_t optl
 //!  @sa setsockopt
 //
 //*****************************************************************************
-
 int
 getsockopt(long sd, long level, long optname, void *optval, socklen_t *optlen)
 {
@@ -644,7 +740,6 @@ getsockopt(long sd, long level, long optname, void *optval, socklen_t *optlen)
 //!  @Note On this version, only blocking mode is supported.
 //
 //*****************************************************************************
-
 int
 recv(long sd, void *buf, long len, long flags)
 {
@@ -704,8 +799,14 @@ common_recv(long sd, void *buf, long len, long flags,
     return -1;
   }
 
-  if (s->status == SOC_NOT_CONN) {
+  if (s->status == SOCKET_STATUS_INACTIVE) {
     errno = ENOTCONN;
+    return -1;
+  }
+
+  if (s->last_error != 0) {
+    errno = s->last_error;
+    s->last_error = 0;
     return -1;
   }
 
@@ -715,11 +816,11 @@ common_recv(long sd, void *buf, long len, long flags,
     timeout = s->recv_timeout;
 
   /* wakeup select thread if needed */
-  chSemSignal(&g_select_sleep_semaphore);
+  chSemSignal(&select_sleep_semaphore);
   /* wait for data to become available */
   msg_t rdy = chBSemWaitTimeout(&s->sd_semaphore, timeout);
   /* suspend select thread until waiting for more data */
-  chSemWait(&g_select_sleep_semaphore);
+  chSemWait(&select_sleep_semaphore);
 
   if (rdy == RDY_TIMEOUT) {
     errno = EWOULDBLOCK;
@@ -765,7 +866,6 @@ common_recv(long sd, void *buf, long len, long flags,
 //!  @sa             sendto
 //
 //*****************************************************************************
-
 int
 send(long sd, const void *buf, long len, long flags)
 {
@@ -803,7 +903,6 @@ send(long sd, const void *buf, long len, long flags)
 //!  @sa             send
 //
 //*****************************************************************************
-
 int
 sendto(long sd, const void *buf, long len, long flags,
        const sockaddr *to, socklen_t tolen)
@@ -817,31 +916,78 @@ sendto(long sd, const void *buf, long len, long flags,
     return(ret);
 }
 
-//*****************************************************************************
-//
-//!  mdnsAdvertiser
-//!
-//!  @param[in] mdnsEnabled         flag to enable/disable the mDNS feature
-//!  @param[in] deviceServiceName   Service name as part of the published
-//!                                 canonical domain name
-//!  @param[in] deviceServiceNameLength   Length of the service name
-//!
-//!
-//!  @return   On success, zero is returned, return SOC_ERROR if socket was not
-//!            opened successfully, or if an error occurred.
-//!
-//!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
-//
-//*****************************************************************************
-
-int
-mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsigned short deviceServiceNameLength)
+static msg_t
+socket_io_thread(void *arg)
 {
-    int ret;
+  (void)arg;
 
-    chMtxLock(&g_main_mutex);
-    ret = c_mdnsAdvertiser(mdnsEnabled, deviceServiceName, deviceServiceNameLength);
-    chMtxUnlock();
+  struct timeval timeout;
+  wfd_set readsds;
 
-    return(ret);
+  int ret = 0;
+  int maxFD = 0;
+  int i = 0;
+
+  chRegSetThreadName("socket_io_thread");
+
+  memset(&timeout, 0, sizeof(struct timeval));
+  timeout.tv_sec = 0;
+  timeout.tv_usec = (200 * 1000);          /* 200 msecs */
+
+  while (1) {
+    /* first check if recv/recvfrom/accept was called */
+    chSemWait(&select_sleep_semaphore);
+    /* increase the count back by one to be decreased by the original caller */
+    chSemSignal(&select_sleep_semaphore);
+
+    if (chThdShouldTerminate()) {
+      /* Wlan_stop will terminate the thread and by that all
+         sync objects owned by it will be released */
+      return 0;
+    }
+
+    WFD_ZERO(&readsds);
+
+    /* ping correct socket descriptor param for select */
+    for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
+      if (sockets[i].status == SOCKET_STATUS_ACTIVE){
+        WFD_SET(sockets[i].sd, &readsds);
+        if (maxFD <= sockets[i].sd)
+          maxFD = sockets[i].sd + 1;
+      }
+    }
+
+    ret = select(maxFD, &readsds, NULL, NULL, &timeout); /* Polling instead of blocking here\
+                                                              to process "accept" below */
+
+    if (ret>0) {
+      for (i = 0; i < MAX_NUM_OF_SOCKETS; i++) {
+        if (sockets[i].status == SOCKET_STATUS_ACTIVE && //check that the socket is valid
+            sockets[i].sd != accept_socket &&    //verify this is not an accept socket
+            WFD_ISSET(sockets[i].sd, &readsds)) {    //and has pending data
+          chBSemSignal(&sockets[i].sd_semaphore); //release the semaphore
+        }
+      }
+    }
+
+    if (should_poll_accept) {
+      chMtxLock(&g_main_mutex);
+      accept_new_sd = c_accept(accept_socket, &accept_sock_addr, (socklen_t*)&accept_addrlen);
+      chMtxUnlock();
+
+      // TODO handle accept status
+      // if succeeded, iStatus = new socket descriptor. otherwise - error number
+//      if(M_IS_VALID_SD(accept_new_sd)) {
+//        set_socket_active_status(accept_new_sd, SOCKET_STATUS_ACTIVE, 0);
+//      }
+//      else {
+//        set_socket_active_status(accept_socket, SOCKET_STATUS_INACTIVE, errno);
+//      }
+
+      if (accept_new_sd != SOC_IN_PROGRESS)
+        chSemSignal(&accept_semaphore);
+    }
+  }
+
+  return 0;
 }

@@ -36,6 +36,7 @@
 #define __NVRAM_H__
 
 #include "core/cc3000_common.h"
+#include "core/hci_msg.h"
 
 
 //*****************************************************************************
@@ -107,8 +108,8 @@ extern "C" {
 //!
 //*****************************************************************************
 
-extern signed long nvmem_read(unsigned long file_id, unsigned long length,
-                              unsigned long offset, unsigned char *buff);
+extern signed long nvmem_read(uint32_t file_id, uint32_t length,
+    uint32_t offset, uint8_t *buff);
 
 //*****************************************************************************
 //
@@ -132,7 +133,7 @@ extern signed long nvmem_read(unsigned long file_id, unsigned long length,
 //!
 //*****************************************************************************
 
-extern signed long nvmem_write(unsigned long ulFileId, unsigned long ulLength, unsigned long ulEntryOffset, unsigned char *buff);
+extern signed long nvmem_write(uint32_t ulFileId, uint32_t ulLength, uint32_t ulEntryOffset, uint8_t *buff);
 
 
 //*****************************************************************************
@@ -147,7 +148,7 @@ extern signed long nvmem_write(unsigned long ulFileId, unsigned long ulLength, u
 //!               mac address as appears over the air (OUI first)
 //!
 //*****************************************************************************
-extern  unsigned char nvmem_set_mac_address(unsigned char *mac);
+extern  uint8_t nvmem_set_mac_address(uint8_t *mac);
 
 
 //*****************************************************************************
@@ -162,7 +163,7 @@ extern  unsigned char nvmem_set_mac_address(unsigned char *mac);
 //!               mac address as appears over the air (OUI first)
 //!
 //*****************************************************************************
-extern  unsigned char nvmem_get_mac_address(unsigned char *mac);
+extern  uint8_t nvmem_get_mac_address(uint8_t *mac);
 
 
 //*****************************************************************************
@@ -182,7 +183,7 @@ extern  unsigned char nvmem_get_mac_address(unsigned char *mac);
 //!              applied in SP_PORTION_SIZE bytes portions.
 //!
 //*****************************************************************************
-extern  unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long spLength, const unsigned char *spData);
+extern  uint8_t nvmem_write_patch(uint32_t ulFileId, uint32_t spLength, const uint8_t *spData);
 
 
 //*****************************************************************************
@@ -198,9 +199,7 @@ extern  unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long sp
 //!              driver-supplicant-NS patch, bootloader patch)
 //!
 //*****************************************************************************
-#ifndef CC3000_TINY_DRIVER
-extern  unsigned char nvmem_read_sp_version(unsigned char* patchVer);
-#endif
+extern  uint8_t nvmem_read_sp_version(nvmem_sp_version_t* sp_version);
 
 //*****************************************************************************
 //
@@ -224,7 +223,7 @@ extern  unsigned char nvmem_read_sp_version(unsigned char* patchVer);
 //!              set ulNewLen=0.
 //!
 //*****************************************************************************
-extern signed long nvmem_create_entry(unsigned long file_id, unsigned long newlen);
+extern signed long nvmem_create_entry(uint32_t file_id, uint32_t newlen);
 
 
 //*****************************************************************************
