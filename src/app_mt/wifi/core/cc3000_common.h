@@ -180,8 +180,6 @@ typedef struct {
 
   uint32_t NumberOfSentPackets;
   uint32_t NumberOfReleasedPackets;
-
-  uint8_t InformHostOnTxComplete;
 } sSimplLinkInformation;
 
 //*************************************************************************************

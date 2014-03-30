@@ -137,9 +137,6 @@ void c_wlan_init(tWlanCB sWlanCB,
 
     //init asynchronous events callback
     tSLInformation.sWlanCB= sWlanCB;
-
-    // By default TX Complete events are routed to host too
-    tSLInformation.InformHostOnTxComplete = 1;
 }
 
 
@@ -724,22 +721,6 @@ long c_wlan_set_event_mask(uint32_t ulMask)
 {
   long ret;
   uint8_t *args;
-
-  if ((ulMask & HCI_EVNT_WLAN_TX_COMPLETE) == HCI_EVNT_WLAN_TX_COMPLETE) {
-    tSLInformation.InformHostOnTxComplete = 0;
-
-    // Since an event is a virtual event - i.e. it is not coming from CC3000
-    // there is no need to send anything to the device if it was an only event
-    if (ulMask == HCI_EVNT_WLAN_TX_COMPLETE) {
-      return 0;
-    }
-
-    ulMask &= ~HCI_EVNT_WLAN_TX_COMPLETE;
-    ulMask |= HCI_EVNT_WLAN_UNSOL_BASE;
-  }
-  else {
-    tSLInformation.InformHostOnTxComplete = 1;
-  }
 
   ret = EFAIL;
   args = hci_get_cmd_buffer();

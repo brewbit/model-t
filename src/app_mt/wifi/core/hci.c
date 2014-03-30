@@ -471,9 +471,7 @@ hci_dispatch_event(
       hci_event_unsol_flowcontrol_handler(event_hdr);
 
       if (tSLInformation.NumberOfReleasedPackets == tSLInformation.NumberOfSentPackets) {
-        if (tSLInformation.InformHostOnTxComplete) {
-          tSLInformation.sWlanCB(HCI_EVENT_CC3000_CAN_SHUT_DOWN, NULL, 0);
-        }
+        tSLInformation.sWlanCB(HCI_EVENT_CC3000_CAN_SHUT_DOWN, NULL, 0);
       }
       break;
 
