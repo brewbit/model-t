@@ -799,6 +799,17 @@ common_recv(long sd, void *buf, long len, long flags,
     return -1;
   }
 
+  if (s->status == SOCKET_STATUS_INACTIVE) {
+    errno = ENOTCONN;
+    return -1;
+  }
+
+  if (s->last_error != 0) {
+    errno = s->last_error;
+    s->last_error = 0;
+    return -1;
+  }
+
   if (s->nonblock == SOCK_ON)
     timeout = TIME_IMMEDIATE;
   else

@@ -102,9 +102,8 @@ consume_buf(int sd)
   //If there are no available buffers, return -2. It is recommended to use
   // select or receive to see if there is any buffer occupied with received data
   // If so, call receive() to release the buffer.
-  if (!hci_claim_buffer()) {
+  if (!hci_claim_buffer())
     return -2;
-  }
 
   return 0;
 }
