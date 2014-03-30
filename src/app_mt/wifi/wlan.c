@@ -54,7 +54,7 @@
 
 
 static void
-wlan_evt_cb(long event_type, void* data, unsigned char length);
+wlan_evt_cb(long event_type, void* data, uint8_t length);
 
 static msg_t
 SelectThread(void* arg);
@@ -270,8 +270,8 @@ void wlan_stop(void)
 //!  @sa         wlan_disconnect
 //
 //*****************************************************************************
-long wlan_connect(unsigned long ulSecType, const char *ssid, long ssid_len,
-             const unsigned char *bssid, const unsigned char *key, long key_len)
+long wlan_connect(uint32_t ulSecType, const char *ssid, long ssid_len,
+             const uint8_t *bssid, const uint8_t *key, long key_len)
 {
     long ret;
 
@@ -336,9 +336,9 @@ long wlan_disconnect()
 //
 //*****************************************************************************
 long
-wlan_ioctl_set_connection_policy(unsigned long should_connect_to_open_ap,
-                                 unsigned long ulShouldUseFastConnect,
-                                 unsigned long ulUseProfiles)
+wlan_ioctl_set_connection_policy(uint32_t should_connect_to_open_ap,
+    uint32_t ulShouldUseFastConnect,
+    uint32_t ulUseProfiles)
 {
     long ret;
 
@@ -378,16 +378,17 @@ wlan_ioctl_set_connection_policy(unsigned long should_connect_to_open_ap,
 //!  @sa        wlan_ioctl_del_profile
 //
 //*****************************************************************************
-long wlan_add_profile(unsigned long ulSecType,
-                      unsigned char* ucSsid,
-                      unsigned long ulSsidLen,
-                      unsigned char *ucBssid,
-                      unsigned long ulPriority,
-                      unsigned long ulPairwiseCipher_Or_TxKeyLen,
-                      unsigned long ulGroupCipher_TxKeyIndex,
-                      unsigned long ulKeyMgmt,
-                      unsigned char* ucPf_OrKey,
-                      unsigned long ulPassPhraseLen)
+long wlan_add_profile(
+    uint32_t ulSecType,
+    uint8_t* ucSsid,
+    uint32_t ulSsidLen,
+    uint8_t *ucBssid,
+    uint32_t ulPriority,
+    uint32_t ulPairwiseCipher_Or_TxKeyLen,
+    uint32_t ulGroupCipher_TxKeyIndex,
+    uint32_t ulKeyMgmt,
+    uint8_t* ucPf_OrKey,
+    uint32_t ulPassPhraseLen)
 {
     long ret;
 
@@ -415,7 +416,7 @@ long wlan_add_profile(unsigned long ulSecType,
 //!  @sa        wlan_add_profile
 //
 //*****************************************************************************
-long wlan_ioctl_del_profile(unsigned long ulIndex)
+long wlan_ioctl_del_profile(uint32_t ulIndex)
 {
     long ret;
 
@@ -461,7 +462,7 @@ long wlan_ioctl_del_profile(unsigned long ulIndex)
 //*****************************************************************************
 void
 wlan_ioctl_get_scan_results(
-    unsigned long ulScanTimeout,
+    uint32_t ulScanTimeout,
     wlan_scan_results_t* results)
 {
   chMtxLock(&g_main_mutex);
@@ -493,7 +494,7 @@ wlan_ioctl_get_scan_results(
 //!  @param   uiSNRThreshold    NSR threshold. Saved: yes (Default: 0)
 //!  @param   uiDefaultTxPower  probe Tx power. Saved: yes (Default: 205)
 //!  @param   aiIntervalList    pointer to array with 16 entries (16 channels)
-//!           each entry (unsigned long) holds timeout between periodic scan
+//!           each entry (uint32_t) holds timeout between periodic scan
 //!           (connection scan) - in millisecond. Saved: yes. Default 2000ms.
 //!
 //!  @return    On success, zero is returned. On error, -1 is returned
@@ -505,13 +506,13 @@ wlan_ioctl_get_scan_results(
 //!  @sa        wlan_ioctl_get_scan_results
 //
 //*****************************************************************************
-long wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwellTime,
-                                unsigned long uiMaxDwellTime, unsigned long uiNumOfProbeRequests,
-                                unsigned long uiChannelMask, long iRSSIThreshold,
-                                unsigned long uiSNRThreshold, unsigned long uiDefaultTxPower,
-                                const unsigned long *aiIntervalList)
+long wlan_ioctl_set_scan_params(uint32_t uiEnable, uint32_t uiMinDwellTime,
+    uint32_t uiMaxDwellTime, uint32_t uiNumOfProbeRequests,
+    uint32_t uiChannelMask, long iRSSIThreshold,
+    uint32_t uiSNRThreshold, uint32_t uiDefaultTxPower,
+    const uint32_t *aiIntervalList)
 {
-    unsigned long  uiRes;
+  uint32_t  uiRes;
 
     chMtxLock(&g_main_mutex);
     uiRes = c_wlan_ioctl_set_scan_params(uiEnable, uiMinDwellTime, uiMaxDwellTime,\
@@ -543,7 +544,7 @@ long wlan_ioctl_set_scan_params(unsigned long uiEnable, unsigned long uiMinDwell
 //!            masked (1), the device will not send the masked event to host.
 //
 //*****************************************************************************
-long wlan_set_event_mask(unsigned long ulMask)
+long wlan_set_event_mask(uint32_t ulMask)
 {
     long ret;
 
@@ -597,7 +598,7 @@ long wlan_ioctl_statusget(void)
 //!  @sa      wlan_smart_config_set_prefix , wlan_smart_config_stop
 //
 //*****************************************************************************
-long wlan_smart_config_start(unsigned long algoEncryptedFlag)
+long wlan_smart_config_start(uint32_t algoEncryptedFlag)
 {
     long ret;
 
@@ -685,7 +686,7 @@ long wlan_smart_config_process()
 }
 
 static void
-wlan_evt_cb(long event_type, void* data, unsigned char length)
+wlan_evt_cb(long event_type, void* data, uint8_t length)
 {
 
   switch (event_type) {

@@ -222,7 +222,7 @@ extern long c_listen(long sd, long backlog);
 //!          the function requires DNS server to be configured prior to its usage.
 //
 //*****************************************************************************
-extern int c_gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr);
+extern int c_gethostbyname(const char * hostname, uint16_t usNameLen, uint32_t* out_ip_addr);
 
 
 //*****************************************************************************
@@ -333,7 +333,7 @@ extern int c_select(long nfds, wfd_set *readsds, wfd_set *writesds,
 //!            1. SOCKOPT_RECV_TIMEOUT (optname)
 //!               SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout
 //!           in milliseconds.
-//!             In that case optval should be pointer to unsigned long.
+//!             In that case optval should be pointer to uint32_t.
 //!            2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on
 //!           or off.
 //!             In that case optval should be SOCK_ON or SOCK_OFF (optval).
@@ -382,7 +382,7 @@ extern int c_setsockopt(long sd, long level, long optname, const void *optval,
 //!            1. SOCKOPT_RECV_TIMEOUT (optname)
 //!               SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout
 //!           in milliseconds.
-//!             In that case optval should be pointer to unsigned long.
+//!             In that case optval should be pointer to uint32_t.
 //!            2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on
 //!           or off.
 //!             In that case optval should be SOCK_ON or SOCK_OFF (optval).
@@ -514,7 +514,7 @@ extern int c_sendto(long sd, const void *buf, long len, long flags,
 //!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
 //
 //*****************************************************************************
-extern int c_mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsigned short deviceServiceNameLength);
+extern int c_mdnsAdvertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength);
 
 //*****************************************************************************
 //

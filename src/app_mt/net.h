@@ -33,16 +33,16 @@ typedef struct {
 
 typedef struct {
   long rssi;
-  unsigned long security_mode;
-  char          ssid[33];
-  unsigned char bssid[6];
+  uint32_t security_mode;
+  char ssid[33];
+  uint8_t bssid[6];
   systime_t last_seen;
 } network_t;
 
 typedef struct {
   char ssid[33];
   char passphrase[128];
-  unsigned long security_mode;
+  uint32_t security_mode;
 } net_settings_t;
 
 

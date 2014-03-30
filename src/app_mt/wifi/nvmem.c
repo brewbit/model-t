@@ -75,8 +75,8 @@ extern Mutex g_main_mutex;
 //*****************************************************************************
 
 signed long
-nvmem_read(unsigned long ulFileId, unsigned long ulLength,
-           unsigned long ulOffset, unsigned char *buff)
+nvmem_read(uint32_t ulFileId, uint32_t ulLength,
+    uint32_t ulOffset, uint8_t *buff)
 {
   signed long ret;
 
@@ -110,8 +110,8 @@ nvmem_read(unsigned long ulFileId, unsigned long ulLength,
 //*****************************************************************************
 
 signed long
-nvmem_write(unsigned long ulFileId, unsigned long ulLength,
-            unsigned long ulEntryOffset, unsigned char *buff)
+nvmem_write(uint32_t ulFileId, uint32_t ulLength,
+    uint32_t ulEntryOffset, uint8_t *buff)
 {
   signed long ret;
 
@@ -136,9 +136,9 @@ nvmem_write(unsigned long ulFileId, unsigned long ulLength,
 //!
 //*****************************************************************************
 
-unsigned char nvmem_set_mac_address(unsigned char *mac)
+uint8_t nvmem_set_mac_address(uint8_t *mac)
 {
-  unsigned char ret;
+  uint8_t ret;
 
   chMtxLock(&g_main_mutex);
   ret = c_nvmem_set_mac_address(mac);
@@ -160,9 +160,9 @@ unsigned char nvmem_set_mac_address(unsigned char *mac)
 //!
 //*****************************************************************************
 
-unsigned char nvmem_get_mac_address(unsigned char *mac)
+uint8_t nvmem_get_mac_address(uint8_t *mac)
 {
-  unsigned char ret;
+  uint8_t ret;
 
   chMtxLock(&g_main_mutex);
   ret = c_nvmem_get_mac_address(mac);
@@ -189,10 +189,10 @@ unsigned char nvmem_get_mac_address(unsigned char *mac)
 //!
 //*****************************************************************************
 
-unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long spLength,
-                                const unsigned char *spData)
+uint8_t nvmem_write_patch(uint32_t ulFileId, uint32_t spLength,
+                                const uint8_t *spData)
 {
-  unsigned char ret;
+  uint8_t ret;
 
   chMtxLock(&g_main_mutex);
   ret = c_nvmem_write_patch(ulFileId, spLength, spData);
@@ -216,9 +216,9 @@ unsigned char nvmem_write_patch(unsigned long ulFileId, unsigned long spLength,
 //!              driver-supplicant-NS patch, bootloader patch)
 //!
 //*****************************************************************************
-unsigned char nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
+uint8_t nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 {
-  unsigned char ret;
+  uint8_t ret;
 
   chMtxLock(&g_main_mutex);
   ret = c_nvmem_read_sp_version(sp_version);
@@ -250,9 +250,9 @@ unsigned char nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 //!
 //*****************************************************************************
 signed long
-nvmem_create_entry(unsigned long ulFileId, unsigned long ulNewLen)
+nvmem_create_entry(uint32_t ulFileId, uint32_t ulNewLen)
 {
-  unsigned char ret;
+  uint8_t ret;
 
   chMtxLock(&g_main_mutex);
   ret = c_nvmem_create_entry(ulFileId, ulNewLen);

@@ -65,7 +65,7 @@
 //!                over resets.
 //
 //*****************************************************************************
-long  c_netapp_config_mac_adrress( unsigned char *mac )
+long  c_netapp_config_mac_adrress( uint8_t *mac )
 {
    return  c_nvmem_set_mac_address(mac);
 }
@@ -96,12 +96,15 @@ long  c_netapp_config_mac_adrress( unsigned char *mac )
 //!               AP was established.
 //!
 //*****************************************************************************
-long c_netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,
-                           unsigned long *aucDefaultGateway, unsigned long *aucDNSServer)
+long c_netapp_dhcp(
+    uint32_t *aucIP,
+    uint32_t *aucSubnetMask,
+    uint32_t *aucDefaultGateway,
+    uint32_t *aucDNSServer)
 {
     signed char scRet;
-    unsigned char *ptr;
-    unsigned char *args;
+    uint8_t *ptr;
+    uint8_t *args;
 
     scRet = EFAIL;
     ptr = tSLInformation.pucTxCommandBuffer;
@@ -173,12 +176,15 @@ long c_netapp_dhcp(unsigned long *aucIP, unsigned long *aucSubnetMask,
 //!               it will be set automatically to 20s.
 //!
 //*****************************************************************************
-long c_netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
-                        unsigned long *aucKeepalive, unsigned long *aucInactivity)
+long c_netapp_timeout_values(
+    uint32_t *aucDHCP,
+    uint32_t *aucARP,
+    uint32_t *aucKeepalive,
+    uint32_t *aucInactivity)
 {
     signed char scRet;
-    unsigned char *ptr;
-    unsigned char *args;
+    uint8_t *ptr;
+    uint8_t *args;
 
     scRet = EFAIL;
     ptr = tSLInformation.pucTxCommandBuffer;
@@ -225,11 +231,14 @@ long c_netapp_timeout_values(unsigned long *aucDHCP, unsigned long *aucARP,
 //! @warning      Calling this function while a previous Ping Requests are in
 //!               progress will stop the previous ping request.
 //*****************************************************************************
-long c_netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
-                   unsigned long ulPingSize, unsigned long ulPingTimeout)
+long c_netapp_ping_send(
+    uint32_t *ip,
+    uint32_t ulPingAttempts,
+    uint32_t ulPingSize,
+    uint32_t ulPingTimeout)
 {
     signed char scRet;
-    unsigned char *ptr, *args;
+    uint8_t *ptr, *args;
 
     scRet = EFAIL;
     ptr = tSLInformation.pucTxCommandBuffer;
@@ -274,7 +283,7 @@ long c_netapp_ping_send(unsigned long *ip, unsigned long ulPingAttempts,
 //*****************************************************************************
 void c_netapp_ping_report()
 {
-    unsigned char *ptr;
+  uint8_t *ptr;
     ptr = tSLInformation.pucTxCommandBuffer;
     signed char scRet;
 
@@ -302,7 +311,7 @@ void c_netapp_ping_report()
 long c_netapp_ping_stop()
 {
     signed char scRet;
-    unsigned char *ptr;
+    uint8_t *ptr;
 
     scRet = EFAIL;
     ptr = tSLInformation.pucTxCommandBuffer;
@@ -343,7 +352,7 @@ long c_netapp_ping_stop()
 //*****************************************************************************
 void c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig)
 {
-    unsigned char *ptr;
+  uint8_t *ptr;
 
     ptr = tSLInformation.pucTxCommandBuffer;
 
@@ -369,7 +378,7 @@ void c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig)
 long c_netapp_arp_flush(void)
 {
     signed char scRet;
-    unsigned char *ptr;
+    uint8_t *ptr;
 
     scRet = EFAIL;
     ptr = tSLInformation.pucTxCommandBuffer;
@@ -400,10 +409,10 @@ long c_netapp_arp_flush(void)
 //!              enable/disable the debug level
 //!
 //*****************************************************************************
-long c_netapp_set_debug_level(unsigned long ulLevel)
+long c_netapp_set_debug_level(uint32_t ulLevel)
 {
     signed char scRet;
-    unsigned char *ptr, *args;
+    uint8_t *ptr, *args;
 
     scRet = EFAIL;
     ptr = tSLInformation.pucTxCommandBuffer;

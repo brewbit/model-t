@@ -79,12 +79,12 @@
 //!               be used, is invalid, or if the read is out of bounds.
 //!
 //*****************************************************************************
-signed long c_nvmem_read(unsigned long ulFileId, unsigned long ulLength,
-                                unsigned long ulOffset, unsigned char *buff)
+signed long c_nvmem_read(uint32_t ulFileId, uint32_t ulLength,
+    uint32_t ulOffset, uint8_t *buff)
 {
-  unsigned char ucStatus = 0xFF;
-  unsigned char *ptr;
-  unsigned char *args;
+  uint8_t ucStatus = 0xFF;
+  uint8_t *ptr;
+  uint8_t *args;
 
   ptr = tSLInformation.pucTxCommandBuffer;
   args = (ptr + HEADERS_SIZE_CMD);
@@ -130,11 +130,11 @@ signed long c_nvmem_read(unsigned long ulFileId, unsigned long ulLength,
 //!               need to be valid - only allocated.
 //!
 //*****************************************************************************
-signed long c_nvmem_write(unsigned long ulFileId, unsigned long ulLength, unsigned long ulEntryOffset, unsigned char *buff)
+signed long c_nvmem_write(uint32_t ulFileId, uint32_t ulLength, uint32_t ulEntryOffset, uint8_t *buff)
 {
   long iRes;
-  unsigned char *ptr;
-  unsigned char *args;
+  uint8_t *ptr;
+  uint8_t *args;
 
   iRes = EFAIL;
 
@@ -172,7 +172,7 @@ signed long c_nvmem_write(unsigned long ulFileId, unsigned long ulLength, unsign
 //!               mac address as appears over the air (OUI first)
 //!
 //*****************************************************************************
-unsigned char c_nvmem_set_mac_address(unsigned char *mac)
+uint8_t c_nvmem_set_mac_address(uint8_t *mac)
 {
   return  c_nvmem_write(NVMEM_MAC_FILEID, MAC_ADDR_LEN, 0, mac);
 }
@@ -189,7 +189,7 @@ unsigned char c_nvmem_set_mac_address(unsigned char *mac)
 //!               mac address as appears over the air (OUI first)
 //!
 //*****************************************************************************
-unsigned char c_nvmem_get_mac_address(unsigned char *mac)
+uint8_t c_nvmem_get_mac_address(uint8_t *mac)
 {
   return  c_nvmem_read(NVMEM_MAC_FILEID, MAC_ADDR_LEN, 0, mac);
 }
@@ -211,12 +211,12 @@ unsigned char c_nvmem_get_mac_address(unsigned char *mac)
 //!              applied in SP_PORTION_SIZE bytes portions.
 //!
 //*****************************************************************************
-unsigned char c_nvmem_write_patch(unsigned long ulFileId, unsigned long spLength,
-                                          const unsigned char *spData)
+uint8_t c_nvmem_write_patch(uint32_t ulFileId, uint32_t spLength,
+                                          const uint8_t *spData)
 {
-  unsigned char status = 0;
-  unsigned short offset = 0;
-  unsigned char* spDataPtr = (unsigned char*)spData;
+  uint8_t status = 0;
+  uint16_t offset = 0;
+  uint8_t* spDataPtr = (uint8_t*)spData;
 
   while ((status == 0) && (spLength >= SP_PORTION_SIZE)) {
     status = c_nvmem_write(ulFileId, SP_PORTION_SIZE, offset, spDataPtr);
@@ -251,10 +251,10 @@ unsigned char c_nvmem_write_patch(unsigned long ulFileId, unsigned long spLength
 //!              driver-supplicant-NS patch, bootloader patch)
 //!
 //*****************************************************************************
-unsigned char c_nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
+uint8_t c_nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 {
-  unsigned char *ptr;
-  unsigned char retBuf[5];
+  uint8_t *ptr;
+  uint8_t retBuf[5];
 
   ptr = tSLInformation.pucTxCommandBuffer;
 
@@ -290,11 +290,11 @@ unsigned char c_nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
 //!              set ulNewLen=0.
 //!
 //*****************************************************************************
-signed long c_nvmem_create_entry(unsigned long ulFileId, unsigned long ulNewLen)
+signed long c_nvmem_create_entry(uint32_t ulFileId, uint32_t ulNewLen)
 {
-  unsigned char *ptr;
-  unsigned char *args;
-  unsigned short retval;
+  uint8_t *ptr;
+  uint8_t *args;
+  uint16_t retval;
 
   ptr = tSLInformation.pucTxCommandBuffer;
   args = (ptr + HEADERS_SIZE_CMD);

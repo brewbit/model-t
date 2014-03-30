@@ -42,7 +42,7 @@ static void
 scan_thread(void);
 
 static void
-wlan_event(long event_type, void* data, unsigned char length);
+wlan_event(long event_type, void* data, uint8_t length);
 
 static void
 save_or_update_network(network_t* network);
@@ -116,7 +116,7 @@ net_connect(network_t* net, const char* passphrase)
 }
 
 static void
-wlan_event(long event_type, void* data, unsigned char length)
+wlan_event(long event_type, void* data, uint8_t length)
 {
   (void)length;
 
@@ -354,7 +354,7 @@ perform_connect()
     wlan_connect(ns->security_mode,
         ns->ssid, strlen(ns->ssid),
         NULL,
-        (const unsigned char*)ns->passphrase, strlen(ns->passphrase));
+        (const uint8_t*)ns->passphrase, strlen(ns->passphrase));
   }
 }
 
@@ -381,7 +381,7 @@ wlan_thread(void* arg)
   }
 
   {
-    unsigned char mac[6];
+    uint8_t mac[6];
     nvmem_get_mac_address(mac);
     sprintf(net_status.mac_addr, "%02X:%02X:%02X:%02X:%02X:%02X",
         mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);

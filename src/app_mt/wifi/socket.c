@@ -355,7 +355,7 @@ listen(long sd, long backlog)
 //
 //*****************************************************************************
 int
-gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr)
+gethostbyname(const char * hostname, uint16_t usNameLen, uint32_t* out_ip_addr)
 {
     int ret;
 
@@ -494,7 +494,7 @@ select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *exceptsds, struc
 //!            1. SOCKOPT_RECV_TIMEOUT (optname)
 //!               SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout
 //!           in milliseconds.
-//!             In that case optval should be pointer to unsigned long.
+//!             In that case optval should be pointer to uint32_t.
 //!            2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on
 //!           or off.
 //!             In that case optval should be SOCK_ON or SOCK_OFF (optval).
@@ -516,23 +516,23 @@ setsockopt(long sd, long level, long optname, const void *optval, socklen_t optl
     if (level == SOL_SOCKET) {
       switch (optname) {
       case SOCKOPT_RECV_TIMEOUT:
-        if (optlen != sizeof(unsigned long)) {
+        if (optlen != sizeof(uint32_t)) {
           errno = EINVAL;
           ret = -1;
         }
         else {
-          s->recv_timeout = *((unsigned long*)optval);
+          s->recv_timeout = *((uint32_t*)optval);
           ret = 0;
         }
         break;
 
       case SOCKOPT_RECV_NONBLOCK:
-        if (optlen != sizeof(unsigned long)) {
+        if (optlen != sizeof(uint32_t)) {
           errno = EINVAL;
           ret = -1;
         }
         else {
-          unsigned long nonblock = *((unsigned long*)optval);
+          uint32_t nonblock = *((uint32_t*)optval);
           if (nonblock == SOCK_ON || nonblock == SOCK_OFF) {
             s->nonblock = nonblock;
             ret = 0;
@@ -594,7 +594,7 @@ setsockopt(long sd, long level, long optname, const void *optval, socklen_t optl
 //!            1. SOCKOPT_RECV_TIMEOUT (optname)
 //!               SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout
 //!           in milliseconds.
-//!             In that case optval should be pointer to unsigned long.
+//!             In that case optval should be pointer to uint32_t.
 //!            2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on
 //!           or off.
 //!             In that case optval should be SOCK_ON or SOCK_OFF (optval).
@@ -822,7 +822,7 @@ sendto(long sd, const void *buf, long len, long flags,
 //
 //*****************************************************************************
 int
-mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsigned short deviceServiceNameLength)
+mdnsAdvertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength)
 {
     int ret;
 

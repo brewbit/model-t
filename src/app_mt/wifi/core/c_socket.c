@@ -426,7 +426,7 @@ long c_listen(long sd, long backlog)
 //
 //*****************************************************************************
 int
-c_gethostbyname(const char * hostname, unsigned short usNameLen, unsigned long* out_ip_addr)
+c_gethostbyname(const char * hostname, uint16_t usNameLen, uint32_t* out_ip_addr)
 {
   tBsdGethostbynameParams ret;
   uint8_t *ptr, *args;
@@ -558,7 +558,7 @@ int c_select(long nfds, wfd_set *readsds, wfd_set *writesds,
 {
   uint8_t *ptr, *args;
   tBsdSelectRecvParams tParams;
-  unsigned long is_blocking;
+  uint32_t is_blocking;
 
   if( timeout == NULL) {
     is_blocking = 1; /* blocking , infinity timeout */
@@ -578,9 +578,9 @@ int c_select(long nfds, wfd_set *readsds, wfd_set *writesds,
   args = UINT32_TO_STREAM(args, 0x00000014);
   args = UINT32_TO_STREAM(args, 0x00000014);
   args = UINT32_TO_STREAM(args, is_blocking);
-  args = UINT32_TO_STREAM(args, ((readsds) ? *(unsigned long*)readsds : 0));
-  args = UINT32_TO_STREAM(args, ((writesds) ? *(unsigned long*)writesds : 0));
-  args = UINT32_TO_STREAM(args, ((exceptsds) ? *(unsigned long*)exceptsds : 0));
+  args = UINT32_TO_STREAM(args, ((readsds) ? *(uint32_t*)readsds : 0));
+  args = UINT32_TO_STREAM(args, ((writesds) ? *(uint32_t*)writesds : 0));
+  args = UINT32_TO_STREAM(args, ((exceptsds) ? *(uint32_t*)exceptsds : 0));
 
   if (timeout) {
     if ( 0 == timeout->tv_sec && timeout->tv_usec < SELECT_TIMEOUT_MIN_MICRO_SECONDS) {
@@ -653,7 +653,7 @@ int c_select(long nfds, wfd_set *readsds, wfd_set *writesds,
 //!            1. SOCKOPT_RECV_TIMEOUT (optname)
 //!               SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout
 //!           in milliseconds.
-//!             In that case optval should be pointer to unsigned long.
+//!             In that case optval should be pointer to uint32_t.
 //!            2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on
 //!           or off.
 //!             In that case optval should be SOCK_ON or SOCK_OFF (optval).
@@ -732,7 +732,7 @@ c_setsockopt(long sd, long level, long optname, const void *optval, socklen_t op
 //!            1. SOCKOPT_RECV_TIMEOUT (optname)
 //!               SOCKOPT_RECV_TIMEOUT configures recv and recvfrom timeout
 //!           in milliseconds.
-//!             In that case optval should be pointer to unsigned long.
+//!             In that case optval should be pointer to uint32_t.
 //!            2. SOCKOPT_NONBLOCK (optname). sets the socket non-blocking mode on
 //!           or off.
 //!             In that case optval should be SOCK_ON or SOCK_OFF (optval).
@@ -920,7 +920,7 @@ simple_link_send(long sd, const void *buf, long len, long flags,
 {
   uint8_t uArgSize,  addrlen;
   uint8_t *ptr, *pDataPtr, *args;
-  unsigned long addr_offset = 0;
+  uint32_t addr_offset = 0;
   int res;
   tBsdReadReturnParams tSocketSendEvent;
 
@@ -1060,7 +1060,7 @@ int c_sendto(long sd, const void *buf, long len, long flags,
 //!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
 //
 //*****************************************************************************
-int c_mdnsAdvertiser(unsigned short mdnsEnabled, char * deviceServiceName, unsigned short deviceServiceNameLength)
+int c_mdnsAdvertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength)
 {
   int ret;
   uint8_t *pTxBuffer, *pArgs;

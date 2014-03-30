@@ -142,7 +142,7 @@ extern "C" {
 //                  Compound Types
 //*****************************************************************************
 typedef long time_t;
-typedef unsigned long clock_t;
+typedef uint32_t clock_t;
 typedef long suseconds_t;
 
 typedef struct timeval timeval;
@@ -153,17 +153,17 @@ struct timeval
     suseconds_t    tv_usec;                 /* microseconds */
 };
 
-typedef char *(*tFWPatches)(unsigned long *usLength);
+typedef char *(*tFWPatches)(uint32_t *usLength);
 
-typedef char *(*tDriverPatches)(unsigned long *usLength);
+typedef char *(*tDriverPatches)(uint32_t *usLength);
 
-typedef char *(*tBootLoaderPatches)(unsigned long *usLength);
+typedef char *(*tBootLoaderPatches)(uint32_t *usLength);
 
 typedef void (*tWlanCB)(long event_type, void* data, uint8_t length );
 
 typedef struct {
   Semaphore        sem_recv;
-  unsigned short   usRxEventOpcode;
+  uint16_t   usRxEventOpcode;
   uint8_t   *pucTxCommandBuffer;
 
   tFWPatches       sFWPatches;
@@ -172,17 +172,17 @@ typedef struct {
   tWlanCB         sWlanCB;
 
   signed long     slTransmitDataError;
-  unsigned short   usNumberOfFreeBuffers;
-  unsigned short   usSlBufferLength;
-  unsigned short   usBufferSize;
-  unsigned short   usRxDataPending;
+  uint16_t   usNumberOfFreeBuffers;
+  uint16_t   usSlBufferLength;
+  uint16_t   usBufferSize;
+  uint16_t   usRxDataPending;
 
   uint8_t *from;
   uint8_t *fromlen;
   void* pRetParams;
 
-  unsigned long    NumberOfSentPackets;
-  unsigned long    NumberOfReleasedPackets;
+  uint32_t NumberOfSentPackets;
+  uint32_t NumberOfReleasedPackets;
 
   uint8_t   InformHostOnTxComplete;
 } sSimplLinkInformation;
@@ -254,22 +254,22 @@ typedef struct {
 
 
 typedef struct {
-  unsigned long s_addr;                   // load with inet_aton()
+  uint32_t s_addr; // load with inet_aton()
 } in_addr;
 
 typedef struct {
-  unsigned short int    sa_family;
-  uint8_t         sa_data[14];
+  uint16_t sa_family;
+  uint8_t sa_data[14];
 } sockaddr;
 
 typedef struct {
-  short            sin_family;            // e.g. AF_INET
-  unsigned short   sin_port;              // e.g. htons(3490)
-  in_addr          sin_addr;              // see struct in_addr, below
-  char             sin_zero[8];           // zero this if you want to
+  short sin_family;  // e.g. AF_INET
+  uint16_t sin_port; // e.g. htons(3490)
+  in_addr sin_addr;  // see struct in_addr, below
+  char sin_zero[8];  // zero this if you want to
 } sockaddr_in;
 
-typedef unsigned long socklen_t;
+typedef uint32_t socklen_t;
 
 // The wfd_set member is required to be an array of longs.
 typedef long int __wfd_mask;
@@ -287,9 +287,9 @@ typedef struct {
 
 // We don't use `memset' because this would require a prototype and
 //   the array isn't too big.
-#define __WFD_ZERO(set)                               \
-  do {                                                \
-    unsigned int __i;                                 \
+#define __WFD_ZERO(set)                                \
+  do {                                                 \
+    unsigned int __i;                                  \
     wfd_set *__arr = (set);                            \
     for (__i = 0; __i < sizeof (wfd_set) / sizeof (__wfd_mask); ++__i) \
       __WFDS_BITS (__arr)[__i] = 0;                    \
@@ -306,16 +306,16 @@ typedef struct {
 
 //Use in case of Big Endian only
 
-#define htonl(A)    ((((unsigned long)(A) & 0xff000000) >> 24) | \
-                     (((unsigned long)(A) & 0x00ff0000) >> 8) | \
-                     (((unsigned long)(A) & 0x0000ff00) << 8) | \
-                     (((unsigned long)(A) & 0x000000ff) << 24))
+#define htonl(A)    ((((uint32_t)(A) & 0xff000000) >> 24) | \
+                     (((uint32_t)(A) & 0x00ff0000) >> 8) | \
+                     (((uint32_t)(A) & 0x0000ff00) << 8) | \
+                     (((uint32_t)(A) & 0x000000ff) << 24))
 
 #define ntohl                   htonl
 
 //Use in case of Big Endian only
-#define htons(A)     ((((unsigned long)(A) & 0xff00) >> 8) | \
-                      (((unsigned long)(A) & 0x00ff) << 8))
+#define htons(A)     ((((uint32_t)(A) & 0xff00) >> 8) | \
+                      (((uint32_t)(A) & 0x00ff) << 8))
 
 
 #define ntohs                   htons
@@ -541,7 +541,7 @@ extern sSimplLinkInformation tSLInformation;
 //
 //*****************************************************************************
 
-extern uint8_t* UINT32_TO_STREAM_f (uint8_t *p, unsigned long u32);
+extern uint8_t* UINT32_TO_STREAM_f (uint8_t *p, uint32_t u32);
 
 //*****************************************************************************
 //
@@ -557,7 +557,7 @@ extern uint8_t* UINT32_TO_STREAM_f (uint8_t *p, unsigned long u32);
 //
 //*****************************************************************************
 
-extern uint8_t* UINT16_TO_STREAM_f (uint8_t *p, unsigned short u16);
+extern uint8_t* UINT16_TO_STREAM_f (uint8_t *p, uint16_t u16);
 
 //*****************************************************************************
 //
@@ -573,7 +573,7 @@ extern uint8_t* UINT16_TO_STREAM_f (uint8_t *p, unsigned short u16);
 //
 //*****************************************************************************
 
-extern unsigned short STREAM_TO_UINT16_f(char* p, unsigned short offset);
+extern uint16_t STREAM_TO_UINT16_f(char* p, uint16_t offset);
 
 //*****************************************************************************
 //
@@ -589,7 +589,7 @@ extern unsigned short STREAM_TO_UINT16_f(char* p, unsigned short offset);
 //
 //*****************************************************************************
 
-extern unsigned long STREAM_TO_UINT32_f(char* p, unsigned short offset);
+extern uint32_t STREAM_TO_UINT32_f(char* p, uint16_t offset);
 
 
 //*****************************************************************************
