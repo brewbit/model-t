@@ -107,14 +107,6 @@ uint8_t profileArray[SMART_CONFIG_PROFILE_SIZE];
 //!                     4 bytes Packets received, 4 bytes Min round time,
 //!                     4 bytes Max round time and 4 bytes for Avg round time.
 //!
-//!  @param    sFWPatches  0 no patch or pointer to FW patches
-//!  @param    sDriverPatches  0 no patch or pointer to driver patches
-//!  @param    sBootLoaderPatches  0 no patch or pointer to bootloader patches
-//!  @param    sReadWlanInterruptPin    init callback. the callback read wlan
-//!            interrupt status.
-//!  @param    sWriteWlanPin      init callback. the callback write value
-//!            to device pin.
-//!
 //!  @return   none
 //!
 //!  @sa       wlan_set_event_mask , wlan_start , wlan_stop
@@ -125,18 +117,10 @@ uint8_t profileArray[SMART_CONFIG_PROFILE_SIZE];
 //
 //*****************************************************************************
 
-void c_wlan_init(tWlanCB sWlanCB,
-                 tFWPatches sFWPatches,
-                 tDriverPatches sDriverPatches,
-                 tBootLoaderPatches sBootLoaderPatches)
+void c_wlan_init(tWlanCB sWlanCB)
 {
-
-    tSLInformation.sFWPatches = sFWPatches;
-    tSLInformation.sDriverPatches = sDriverPatches;
-    tSLInformation.sBootLoaderPatches = sBootLoaderPatches;
-
-    //init asynchronous events callback
-    tSLInformation.sWlanCB= sWlanCB;
+  //init asynchronous events callback
+  tSLInformation.sWlanCB = sWlanCB;
 }
 
 
@@ -191,13 +175,13 @@ c_wlan_start(patch_load_command_t patch_load_cmd)
     // wait for the device to request patches
     uint8_t patch_req_type;
     hci_wait_for_event(HCI_EVNT_PATCHES_REQ, &patch_req_type);
-    hci_send_patch(patch_req_type);
+    hci_patch_send(patch_req_type, 0, 0);
 
     hci_wait_for_event(HCI_EVNT_PATCHES_REQ, &patch_req_type);
-    hci_send_patch(patch_req_type);
+    hci_patch_send(patch_req_type, 0, 0);
 
     hci_wait_for_event(HCI_EVNT_PATCHES_REQ, &patch_req_type);
-    hci_send_patch(patch_req_type);
+    hci_patch_send(patch_req_type, 0, 0);
   }
 
   hci_wait_for_event(HCI_CMND_SIMPLE_LINK_START, 0);

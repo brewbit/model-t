@@ -74,7 +74,7 @@ static network_t networks[16];
 void
 net_init()
 {
-  wlan_init(wlan_event, NULL, NULL, NULL);
+  wlan_init(wlan_event);
 
   /* Thread* thd_wlan = */ chThdCreateFromHeap(NULL, 1024, NORMALPRIO, wlan_thread, NULL);
 

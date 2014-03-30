@@ -92,14 +92,6 @@ typedef enum {
 //!                     4 bytes Packets received, 4 bytes Min round time,
 //!                     4 bytes Max round time and 4 bytes for Avg round time.
 //!
-//!  @param    sFWPatches  0 no patch or pointer to FW patches
-//!  @param    sDriverPatches  0 no patch or pointer to driver patches
-//!  @param    sBootLoaderPatches  0 no patch or pointer to bootloader patches
-//!  @param    sReadWlanInterruptPin    init callback. the callback read wlan
-//!            interrupt status.
-//!  @param    sWriteWlanPin      init callback. the callback write value
-//!            to device pin.
-//!
 //!  @return   none
 //!
 //!  @sa       wlan_set_event_mask , wlan_start , wlan_stop
@@ -110,10 +102,7 @@ typedef enum {
 //
 //*****************************************************************************
 void
-c_wlan_init(tWlanCB sWlanCB,
-    tFWPatches sFWPatches,
-    tDriverPatches sDriverPatches,
-    tBootLoaderPatches sBootLoaderPatches);
+c_wlan_init(tWlanCB sWlanCB);
 
 //*****************************************************************************
 //

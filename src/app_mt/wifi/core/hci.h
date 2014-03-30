@@ -210,20 +210,6 @@ hci_dispatch_packet(
 
 //*****************************************************************************
 //
-//!  hci_send_patch
-//!
-//!  @param  event_hdr  event header
-//!
-//!  @return none
-//!
-//!  @brief   Handle unsolicited event from type patch request
-//
-//*****************************************************************************
-void
-hci_send_patch(uint8_t patch_type);
-
-//*****************************************************************************
-//
 // Mark the end of the C bindings section for C++ compilers.
 //
 //*****************************************************************************

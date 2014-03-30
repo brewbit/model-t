@@ -104,18 +104,6 @@ tWlanCB app_evt_cb;
 //!                     4 bytes Packets received, 4 bytes Min round time,
 //!                     4 bytes Max round time and 4 bytes for Avg round time.
 //!
-//!  @param    sFWPatches  0 no patch or pointer to FW patches
-//!  @param    sDriverPatches  0 no patch or pointer to driver patches
-//!  @param    sBootLoaderPatches  0 no patch or pointer to bootloader patches
-//!  @param    sReadWlanInterruptPin    init callback. the callback read wlan
-//!            interrupt status.
-//!  @param    sWlanInterruptEnable   init callback. the callback enable wlan
-//!            interrupt.
-//!  @param    sWlanInterruptDisable   init callback. the callback disable wlan
-//!            interrupt.
-//!  @param    sWriteWlanPin      init callback. the callback write value
-//!            to device pin.
-//!
 //!  @return   none
 //!
 //!  @sa       wlan_set_event_mask , wlan_start , wlan_stop
@@ -126,10 +114,7 @@ tWlanCB app_evt_cb;
 //
 //*****************************************************************************
 
-void wlan_init(tWlanCB               sWlanCB,
-               tFWPatches            sFWPatches,
-               tDriverPatches        sDriverPatches,
-               tBootLoaderPatches    sBootLoaderPatches)
+void wlan_init(tWlanCB               sWlanCB)
 {
   chMtxInit(&g_main_mutex);
   chSemInit(&g_spi_semaphore, 0);
@@ -137,11 +122,7 @@ void wlan_init(tWlanCB               sWlanCB,
   chMtxLock(&g_main_mutex);
   app_evt_cb = sWlanCB;
   g_select_thread = NULL;
-  c_wlan_init(
-      wlan_evt_cb,
-      sFWPatches,
-      sDriverPatches,
-      sBootLoaderPatches);
+  c_wlan_init(wlan_evt_cb);
   chMtxUnlock();
 }
 

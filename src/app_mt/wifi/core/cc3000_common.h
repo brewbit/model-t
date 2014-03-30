@@ -151,21 +151,12 @@ struct timeval {
   suseconds_t tv_usec; /* microseconds */
 };
 
-typedef char *(*tFWPatches)(uint32_t *usLength);
-
-typedef char *(*tDriverPatches)(uint32_t *usLength);
-
-typedef char *(*tBootLoaderPatches)(uint32_t *usLength);
-
 typedef void (*tWlanCB)(long event_type, void* data, uint8_t length );
 
 typedef struct {
   Semaphore sem_recv;
   uint16_t usRxEventOpcode;
 
-  tFWPatches sFWPatches;
-  tDriverPatches sDriverPatches;
-  tBootLoaderPatches sBootLoaderPatches;
   tWlanCB sWlanCB;
 
   int32_t slTransmitDataError;
