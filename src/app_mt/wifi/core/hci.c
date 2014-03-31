@@ -180,6 +180,7 @@ hci_command_send(
   // Update the opcode of the event we will be waiting for
   pending_cmd.params = params;
   pending_cmd.opcode = rx_opcode;
+  pending_cmd.data_expected = false;
 
   spi_write(ucArgsLength + HCI_CMND_HEADER_SIZE);
 
@@ -225,6 +226,7 @@ hci_data_send(
   // Update the opcode of the event we will be waiting for
   pending_cmd.params = params;
   pending_cmd.opcode = rx_opcode;
+  pending_cmd.data_expected = false;
 
   // Send the packet over the SPI
   spi_write(HCI_DATA_HEADER_SIZE + usArgsLength + usDataLength + usTailLength);
@@ -264,6 +266,7 @@ void hci_data_command_send(
   // Update the opcode of the event we will be waiting for
   pending_cmd.params = params;
   pending_cmd.opcode = rx_opcode;
+  pending_cmd.data_expected = false;
 
   // Send the command over SPI on data channel
   spi_write(ucArgsLength + ucDataLength + HCI_DATA_CMD_HEADER_SIZE);
