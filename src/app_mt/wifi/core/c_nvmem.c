@@ -93,8 +93,8 @@ signed long c_nvmem_read(uint32_t ulFileId, uint32_t ulLength,
   args = UINT32_TO_STREAM(args, ulOffset);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_NVMEM_READ, NVMEM_READ_PARAMS_LEN);
-  hci_wait_for_event(HCI_CMND_NVMEM_READ, &ucStatus);
+  hci_command_send(HCI_CMND_NVMEM_READ, NVMEM_READ_PARAMS_LEN,
+      HCI_CMND_NVMEM_READ, &ucStatus);
 
   // In case there is data - read it - even if an error code is returned
   // Note: It is the user responsibility to ignore the data in case of an error code
@@ -146,10 +146,9 @@ signed long c_nvmem_write(uint32_t ulFileId, uint32_t ulLength, uint32_t ulEntry
   memcpy((args + NVMEM_WRITE_PARAMS_LEN), buff, ulLength);
 
   // Initiate a HCI command but it will come on data channel
-  hci_data_command_send(HCI_CMND_NVMEM_WRITE, NVMEM_WRITE_PARAMS_LEN,
-      ulLength);
-
-  hci_wait_for_event(HCI_EVNT_NVMEM_WRITE, &iRes);
+  hci_data_command_send(
+      HCI_CMND_NVMEM_WRITE, NVMEM_WRITE_PARAMS_LEN, ulLength,
+      HCI_EVNT_NVMEM_WRITE, &iRes);
 
   return(iRes);
 }
@@ -251,8 +250,8 @@ uint8_t c_nvmem_read_sp_version(nvmem_sp_version_t* sp_version)
   uint8_t retBuf[5];
 
   // Initiate a HCI command, no args are required
-  hci_command_send(HCI_CMND_READ_SP_VERSION, 0);
-  hci_wait_for_event(HCI_CMND_READ_SP_VERSION, retBuf);
+  hci_command_send(HCI_CMND_READ_SP_VERSION, 0,
+      HCI_CMND_READ_SP_VERSION, retBuf);
 
   sp_version->package_id = retBuf[3];
   sp_version->package_build = retBuf[4];
@@ -294,9 +293,8 @@ signed long c_nvmem_create_entry(uint32_t ulFileId, uint32_t ulNewLen)
   args = UINT32_TO_STREAM(args, ulNewLen);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_NVMEM_CREATE_ENTRY, NVMEM_CREATE_PARAMS_LEN);
-
-  hci_wait_for_event(HCI_CMND_NVMEM_CREATE_ENTRY, &retval);
+  hci_command_send(HCI_CMND_NVMEM_CREATE_ENTRY, NVMEM_CREATE_PARAMS_LEN,
+      HCI_CMND_NVMEM_CREATE_ENTRY, &retval);
 
   return(retval);
 }

@@ -80,10 +80,12 @@ hci_init(void);
 //!  @brief               Initiate an HCI command.
 //
 //*****************************************************************************
-uint16_t
+void
 hci_command_send(
     uint16_t usOpcode,
-    uint8_t ucArgsLength);
+    uint8_t ucArgsLength,
+    uint16_t rx_opcode,
+    void* params);
 
 
 //*****************************************************************************
@@ -101,13 +103,15 @@ hci_command_send(
 //!  @brief              Initiate an HCI data write operation
 //
 //*****************************************************************************
-long
+void
 hci_data_send(
     uint8_t ucOpcode,
     uint16_t usArgsLength,
     uint16_t usDataLength,
     const uint8_t *ucTail,
-    uint16_t usTailLength);
+    uint16_t usTailLength,
+    uint16_t rx_opcode,
+    void* params);
 
 
 //*****************************************************************************
@@ -128,7 +132,9 @@ void
 hci_data_command_send(
     uint16_t usOpcode,
     uint8_t ucArgsLength,
-    uint16_t ucDataLength);
+    uint16_t ucDataLength,
+    uint16_t rx_opcode,
+    void* params);
 
 //*****************************************************************************
 //
@@ -149,25 +155,6 @@ hci_patch_send(
     uint8_t ucOpcode,
     char *patch,
     uint16_t usDataLength);
-
-
-//*****************************************************************************
-//
-//!  hci_wait_for_event
-//!
-//!  @param  usOpcode      command operation code
-//!  @param  pRetParams    command return parameters
-//!
-//!  @return               none
-//!
-//!  @brief                Wait for event, pass it to the hci_event_handler and
-//!                        update the event opcode in a global variable.
-//
-//*****************************************************************************
-void
-hci_wait_for_event(
-    uint16_t usOpcode,
-    void *pRetParams);
 
 //*****************************************************************************
 //

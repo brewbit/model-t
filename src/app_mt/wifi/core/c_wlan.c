@@ -114,30 +114,19 @@ c_wlan_start(patch_load_command_t patch_load_cmd)
 
   args = hci_get_cmd_buffer();
 
+  // Host loaded patches not supported
+  if (patch_load_cmd == PATCH_LOAD_FROM_HOST)
+    patch_load_cmd = PATCH_LOAD_DEFAULT;
+
   UINT8_TO_STREAM(args, patch_load_cmd);
 
   // IRQ Line asserted - send HCI_CMND_SIMPLE_LINK_START to CC3000
-  hci_command_send(HCI_CMND_SIMPLE_LINK_START, WLAN_SL_INIT_START_PARAMS_LEN);
-
-  // Host loaded patches not supported, just send zero-length responses
-  if (patch_load_cmd == PATCH_LOAD_FROM_HOST) {
-    uint8_t patch_req_type;
-
-    hci_wait_for_event(HCI_EVNT_PATCHES_REQ, &patch_req_type);
-    hci_patch_send(patch_req_type, 0, 0);
-
-    hci_wait_for_event(HCI_EVNT_PATCHES_REQ, &patch_req_type);
-    hci_patch_send(patch_req_type, 0, 0);
-
-    hci_wait_for_event(HCI_EVNT_PATCHES_REQ, &patch_req_type);
-    hci_patch_send(patch_req_type, 0, 0);
-  }
-
-  hci_wait_for_event(HCI_CMND_SIMPLE_LINK_START, 0);
+  hci_command_send(HCI_CMND_SIMPLE_LINK_START, WLAN_SL_INIT_START_PARAMS_LEN,
+      HCI_CMND_SIMPLE_LINK_START, 0);
 
   // Read Buffer's size and finish
-  hci_command_send(HCI_CMND_READ_BUFFER_SIZE, 0);
-  hci_wait_for_event(HCI_CMND_READ_BUFFER_SIZE, 0);
+  hci_command_send(HCI_CMND_READ_BUFFER_SIZE, 0,
+      HCI_CMND_READ_BUFFER_SIZE, 0);
 }
 
 
@@ -226,11 +215,8 @@ long c_wlan_connect(uint32_t ulSecType, const char *ssid, long ssid_len,
     }
 
     // Initiate a HCI command
-    hci_command_send(HCI_CMND_WLAN_CONNECT, WLAN_CONNECT_PARAM_LEN +
-                                     ssid_len + key_len - 1);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_CMND_WLAN_CONNECT, &ret);
+    hci_command_send(HCI_CMND_WLAN_CONNECT, WLAN_CONNECT_PARAM_LEN + ssid_len + key_len - 1,
+        HCI_CMND_WLAN_CONNECT, &ret);
     errno = ret;
 
     return(ret);
@@ -253,10 +239,8 @@ long c_wlan_disconnect(void)
 
     ret = EFAIL;
 
-    hci_command_send(HCI_CMND_WLAN_DISCONNECT, 0);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_CMND_WLAN_DISCONNECT, &ret);
+    hci_command_send(HCI_CMND_WLAN_DISCONNECT, 0,
+        HCI_CMND_WLAN_DISCONNECT, &ret);
     errno = ret;
 
     return(ret);
@@ -309,10 +293,8 @@ long c_wlan_ioctl_set_connection_policy(uint32_t should_connect_to_open_ap,
     args = UINT32_TO_STREAM(args, ulUseProfiles);
 
     // Initiate a HCI command
-    hci_command_send(HCI_CMND_WLAN_IOCTL_SET_CONNECTION_POLICY, WLAN_SET_CONNECTION_POLICY_PARAMS_LEN);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_SET_CONNECTION_POLICY, &ret);
+    hci_command_send(HCI_CMND_WLAN_IOCTL_SET_CONNECTION_POLICY, WLAN_SET_CONNECTION_POLICY_PARAMS_LEN,
+        HCI_CMND_WLAN_IOCTL_SET_CONNECTION_POLICY, &ret);
 
     return(ret);
 }
@@ -457,10 +439,8 @@ long c_wlan_add_profile(uint32_t ulSecType,
     }
 
     // Initiate a HCI command
-    hci_command_send(HCI_CMND_WLAN_IOCTL_ADD_PROFILE, arg_len);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_ADD_PROFILE, &ret);
+    hci_command_send(HCI_CMND_WLAN_IOCTL_ADD_PROFILE, arg_len,
+        HCI_CMND_WLAN_IOCTL_ADD_PROFILE, &ret);
 
     return(ret);
 }
@@ -492,11 +472,9 @@ long c_wlan_ioctl_del_profile(uint32_t ulIndex)
     ret = EFAIL;
 
     // Initiate a HCI command
-    hci_command_send(HCI_CMND_WLAN_IOCTL_DEL_PROFILE,
-        WLAN_DEL_PROFILE_PARAMS_LEN);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_DEL_PROFILE, &ret);
+    hci_command_send(
+        HCI_CMND_WLAN_IOCTL_DEL_PROFILE, WLAN_DEL_PROFILE_PARAMS_LEN,
+        HCI_CMND_WLAN_IOCTL_DEL_PROFILE, &ret);
 
     return(ret);
 }
@@ -547,11 +525,9 @@ c_wlan_ioctl_get_scan_results(
   args = UINT32_TO_STREAM(args, ulScanTimeout);
 
   // Initiate a HCI command
-  hci_command_send(HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS,
-      WLAN_GET_SCAN_RESULTS_PARAMS_LEN);
-
-  // Wait for command complete event
-  hci_wait_for_event(HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS, results);
+  hci_command_send(
+      HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS, WLAN_GET_SCAN_RESULTS_PARAMS_LEN,
+      HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS, results);
 }
 
 //*****************************************************************************
@@ -621,10 +597,8 @@ long c_wlan_ioctl_set_scan_params(
 
   // Initiate a HCI command
   hci_command_send(HCI_CMND_WLAN_IOCTL_SET_SCANPARAM,
-      WLAN_SET_SCAN_PARAMS_LEN);
-
-  // Wait for command complete event
-  hci_wait_for_event(HCI_CMND_WLAN_IOCTL_SET_SCANPARAM, &uiRes);
+      WLAN_SET_SCAN_PARAMS_LEN,
+      HCI_CMND_WLAN_IOCTL_SET_SCANPARAM, &uiRes);
 
   return(uiRes);
 }
@@ -663,10 +637,8 @@ long c_wlan_set_event_mask(uint32_t ulMask)
 
   // Initiate a HCI command
   hci_command_send(HCI_CMND_EVENT_MASK,
-      WLAN_SET_MASK_PARAMS_LEN);
-
-  // Wait for command complete event
-  hci_wait_for_event(HCI_CMND_EVENT_MASK, &ret);
+      WLAN_SET_MASK_PARAMS_LEN,
+      HCI_CMND_EVENT_MASK, &ret);
 
   return(ret);
 }
@@ -689,10 +661,8 @@ long c_wlan_ioctl_statusget(void)
 
     ret = EFAIL;
 
-    hci_command_send(HCI_CMND_WLAN_IOCTL_STATUSGET, 0);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_CMND_WLAN_IOCTL_STATUSGET, &ret);
+    hci_command_send(HCI_CMND_WLAN_IOCTL_STATUSGET, 0,
+        HCI_CMND_WLAN_IOCTL_STATUSGET, &ret);
 
     return(ret);
 }
@@ -730,10 +700,8 @@ long c_wlan_smart_config_start(uint32_t algoEncryptedFlag)
   ret = EFAIL;
 
   hci_command_send(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_START,
-      WLAN_SMART_CONFIG_START_PARAMS_LEN);
-
-  // Wait for command complete event
-  hci_wait_for_event(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_START, &ret);
+      WLAN_SMART_CONFIG_START_PARAMS_LEN,
+      HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_START, &ret);
 
   return(ret);
 }
@@ -757,10 +725,8 @@ long c_wlan_smart_config_stop(void)
 
   ret = EFAIL;
 
-  hci_command_send(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_STOP, 0);
-
-  // Wait for command complete event
-  hci_wait_for_event(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_STOP, &ret);
+  hci_command_send(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_STOP, 0,
+      HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_STOP, &ret);
 
   return(ret);
 }
@@ -799,10 +765,8 @@ long c_wlan_smart_config_set_prefix(char* cNewPrefix)
 
   ARRAY_TO_STREAM(args, cNewPrefix, SL_SIMPLE_CONFIG_PREFIX_LENGTH);
 
-  hci_command_send(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_SET_PREFIX, SL_SIMPLE_CONFIG_PREFIX_LENGTH);
-
-  // Wait for command complete event
-  hci_wait_for_event(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_SET_PREFIX, &ret);
+  hci_command_send(HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_SET_PREFIX, SL_SIMPLE_CONFIG_PREFIX_LENGTH,
+      HCI_CMND_WLAN_IOCTL_SIMPLE_CONFIG_SET_PREFIX, &ret);
 
   return(ret);
 }

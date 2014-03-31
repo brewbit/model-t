@@ -164,10 +164,12 @@ hci_init()
 //!  @brief               Initiate an HCI command.
 //
 //*****************************************************************************
-uint16_t
+void
 hci_command_send(
     uint16_t usOpcode,
-    uint8_t ucArgsLength)
+    uint8_t ucArgsLength,
+    uint16_t rx_opcode,
+    void* params)
 { 
   uint8_t *stream;
 
@@ -177,10 +179,15 @@ hci_command_send(
   stream = UINT16_TO_STREAM(stream, usOpcode);
   UINT8_TO_STREAM(stream, ucArgsLength);
 
-  //Update the opcode of the event we will be waiting for
+  // Update the opcode of the event we will be waiting for
+  pending_cmd.from = NULL;
+  pending_cmd.fromlen = NULL;
+  pending_cmd.return_val = params;
+  pending_cmd.opcode = rx_opcode;
+
   spi_write(ucArgsLength + HCI_CMND_HEADER_SIZE);
 
-  return(0);
+  chSemWait(&hci.sem_recv);
 }
 
 //*****************************************************************************
@@ -198,13 +205,15 @@ hci_command_send(
 //!  @brief              Initiate an HCI data write operation
 //
 //*****************************************************************************
-long
+void
 hci_data_send(
     uint8_t ucOpcode,
     uint16_t usArgsLength,
     uint16_t usDataLength,
     const uint8_t *ucTail,
-    uint16_t usTailLength)
+    uint16_t usTailLength,
+    uint16_t rx_opcode,
+    void* params)
 {
   uint8_t *stream;
 
@@ -217,10 +226,16 @@ hci_data_send(
   UINT8_TO_STREAM(stream, usArgsLength);
   stream = UINT16_TO_STREAM(stream, usArgsLength + usDataLength + usTailLength);
 
+  // Update the opcode of the event we will be waiting for
+  pending_cmd.from = NULL;
+  pending_cmd.fromlen = NULL;
+  pending_cmd.return_val = params;
+  pending_cmd.opcode = rx_opcode;
+
   // Send the packet over the SPI
   spi_write(HCI_DATA_HEADER_SIZE + usArgsLength + usDataLength + usTailLength);
 
-  return(ESUCCESS);
+  chSemWait(&hci.sem_recv);
 }
 
 
@@ -241,7 +256,9 @@ hci_data_send(
 void hci_data_command_send(
     uint16_t usOpcode,
     uint8_t ucArgsLength,
-    uint16_t ucDataLength)
+    uint16_t ucDataLength,
+    uint16_t rx_opcode,
+    void* params)
 { 
   uint8_t *stream = spi_get_buffer();
 
@@ -250,8 +267,16 @@ void hci_data_command_send(
   UINT8_TO_STREAM(stream, ucArgsLength);
   stream = UINT16_TO_STREAM(stream, ucArgsLength + ucDataLength);
 
+  // Update the opcode of the event we will be waiting for
+  pending_cmd.from = NULL;
+  pending_cmd.fromlen = NULL;
+  pending_cmd.return_val = params;
+  pending_cmd.opcode = rx_opcode;
+
   // Send the command over SPI on data channel
   spi_write(ucArgsLength + ucDataLength + HCI_DATA_CMD_HEADER_SIZE);
+
+  chSemWait(&hci.sem_recv);
 }
 
 //*****************************************************************************
@@ -727,31 +752,6 @@ hci_event_unsol_flowcontrol_handler(
   hci.num_released_packets += temp;
 
   return(ESUCCESS);
-}
-
-//*****************************************************************************
-//
-//!  hci_wait_for_event
-//!
-//!  @param  usOpcode      command operation code
-//!  @param  pRetParams    command return parameters
-//!
-//!  @return               none
-//!
-//
-//*****************************************************************************
-void
-hci_wait_for_event(
-    uint16_t usOpcode,
-    void *pRetParams)
-{
-  // In the blocking implementation the control to caller will be returned only
-  // after the end of current transaction
-  pending_cmd.from = NULL;
-  pending_cmd.fromlen = NULL;
-  pending_cmd.return_val = pRetParams;
-  pending_cmd.opcode = usOpcode;
-  chSemWait(&hci.sem_recv);
 }
 
 //*****************************************************************************

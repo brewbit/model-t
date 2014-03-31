@@ -116,10 +116,8 @@ long c_netapp_dhcp(
     ARRAY_TO_STREAM(args, aucDNSServer, 4);
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_DHCP, NETAPP_DHCP_PARAMS_LEN);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_NETAPP_DHCP, &scRet);
+    hci_command_send(HCI_NETAPP_DHCP, NETAPP_DHCP_PARAMS_LEN,
+        HCI_NETAPP_DHCP, &scRet);
 
     return(scRet);
 }
@@ -199,10 +197,8 @@ long c_netapp_timeout_values(
     args = UINT32_TO_STREAM(args, *aucInactivity);
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_SET_TIMERS, NETAPP_SET_TIMER_PARAMS_LEN);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_NETAPP_SET_TIMERS, &scRet);
+    hci_command_send(HCI_NETAPP_SET_TIMERS, NETAPP_SET_TIMER_PARAMS_LEN,
+        HCI_NETAPP_SET_TIMERS, &scRet);
 
     return(scRet);
 }
@@ -246,10 +242,8 @@ long c_netapp_ping_send(
     args = UINT32_TO_STREAM(args, ulPingTimeout);
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_PING_SEND, NETAPP_PING_SEND_PARAMS_LEN);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_NETAPP_PING_SEND, &scRet);
+    hci_command_send(HCI_NETAPP_PING_SEND, NETAPP_PING_SEND_PARAMS_LEN,
+        HCI_NETAPP_PING_SEND, &scRet);
 
     return(scRet);
 }
@@ -283,10 +277,8 @@ void c_netapp_ping_report()
     scRet = EFAIL;
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_PING_REPORT, 0);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_NETAPP_PING_REPORT, &scRet);
+    hci_command_send(HCI_NETAPP_PING_REPORT, 0,
+        HCI_NETAPP_PING_REPORT, &scRet);
 }
 
 //*****************************************************************************
@@ -308,10 +300,8 @@ long c_netapp_ping_stop()
     scRet = EFAIL;
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_PING_STOP, 0);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_NETAPP_PING_STOP, &scRet);
+    hci_command_send(HCI_NETAPP_PING_STOP, 0,
+        HCI_NETAPP_PING_STOP, &scRet);
 
     return(scRet);
 }
@@ -344,10 +334,8 @@ long c_netapp_ping_stop()
 void c_netapp_ipconfig(netapp_ipconfig_args_t* ipconfig)
 {
   // Initiate a HCI command
-  hci_command_send(HCI_NETAPP_IPCONFIG, 0);
-
-  // Wait for command complete event
-  hci_wait_for_event(HCI_NETAPP_IPCONFIG, ipconfig );
+  hci_command_send(HCI_NETAPP_IPCONFIG, 0,
+      HCI_NETAPP_IPCONFIG, ipconfig );
 }
 
 //*****************************************************************************
@@ -368,10 +356,8 @@ long c_netapp_arp_flush(void)
     scRet = EFAIL;
 
     // Initiate a HCI command
-    hci_command_send(HCI_NETAPP_ARP_FLUSH, 0);
-
-    // Wait for command complete event
-    hci_wait_for_event(HCI_NETAPP_ARP_FLUSH, &scRet);
+    hci_command_send(HCI_NETAPP_ARP_FLUSH, 0,
+        HCI_NETAPP_ARP_FLUSH, &scRet);
 
     return(scRet);
 }
@@ -403,8 +389,8 @@ long c_netapp_set_debug_level(uint32_t ulLevel)
 
   args = UINT32_TO_STREAM(args, ulLevel);
 
-  hci_command_send(HCI_NETAPP_SET_DEBUG_LEVEL, NETAPP_SET_DEBUG_LEVEL_PARAMS_LEN);
-  hci_wait_for_event(HCI_NETAPP_SET_DEBUG_LEVEL, &scRet);
+  hci_command_send(HCI_NETAPP_SET_DEBUG_LEVEL, NETAPP_SET_DEBUG_LEVEL_PARAMS_LEN,
+      HCI_NETAPP_SET_DEBUG_LEVEL, &scRet);
 
   return(scRet);
 }
