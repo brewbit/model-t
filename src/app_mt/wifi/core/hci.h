@@ -56,6 +56,14 @@ extern "C" {
 #define hci_get_patch_buffer()    (spi_get_buffer() + HCI_PATCH_HEADER_SIZE)
 
 
+typedef struct {
+  sockaddr* from;
+  socklen_t* fromlen;
+  uint8_t* buf;
+  int32_t data_len;
+} hci_data_read_params_t;
+
+
 //*****************************************************************************
 //
 //*****************************************************************************
@@ -173,9 +181,7 @@ hci_patch_send(
 //*****************************************************************************
 void
 hci_wait_for_data(
-    uint8_t *pBuf,
-    uint8_t *from,
-    uint8_t *fromlen);
+    hci_data_read_params_t* params);
 
 //*****************************************************************************
 //

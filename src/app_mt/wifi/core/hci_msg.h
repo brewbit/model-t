@@ -59,6 +59,8 @@ typedef struct {
   int32_t iSocketDescriptor;
   int32_t iNumberOfBytes;
   uint32_t uiFlags;
+  uint32_t* fromlen;
+  uint32_t* from;
 } tBsdReadReturnParams;
 
 

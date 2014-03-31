@@ -108,9 +108,7 @@
 typedef struct {
   bool data_expected;
   uint16_t opcode;
-  uint8_t *from;
-  uint8_t *fromlen;
-  void* return_val;
+  void* params;
 } pending_cmd_t;
 
 typedef struct {
@@ -180,9 +178,7 @@ hci_command_send(
   UINT8_TO_STREAM(stream, ucArgsLength);
 
   // Update the opcode of the event we will be waiting for
-  pending_cmd.from = NULL;
-  pending_cmd.fromlen = NULL;
-  pending_cmd.return_val = params;
+  pending_cmd.params = params;
   pending_cmd.opcode = rx_opcode;
 
   spi_write(ucArgsLength + HCI_CMND_HEADER_SIZE);
@@ -227,9 +223,7 @@ hci_data_send(
   stream = UINT16_TO_STREAM(stream, usArgsLength + usDataLength + usTailLength);
 
   // Update the opcode of the event we will be waiting for
-  pending_cmd.from = NULL;
-  pending_cmd.fromlen = NULL;
-  pending_cmd.return_val = params;
+  pending_cmd.params = params;
   pending_cmd.opcode = rx_opcode;
 
   // Send the packet over the SPI
@@ -268,9 +262,7 @@ void hci_data_command_send(
   stream = UINT16_TO_STREAM(stream, ucArgsLength + ucDataLength);
 
   // Update the opcode of the event we will be waiting for
-  pending_cmd.from = NULL;
-  pending_cmd.fromlen = NULL;
-  pending_cmd.return_val = params;
+  pending_cmd.params = params;
   pending_cmd.opcode = rx_opcode;
 
   // Send the command over SPI on data channel
@@ -390,6 +382,8 @@ hci_dispatch_data(
     uint8_t* buffer,
     uint16_t buffer_size)
 {
+  hci_data_read_params_t* params = pending_cmd.params;
+
   uint8_t arg_size = STREAM_TO_UINT8(buffer, HCI_PACKET_ARGSIZE_OFFSET);
   uint16_t pkt_length = STREAM_TO_UINT16(buffer, HCI_PACKET_LENGTH_OFFSET);
 
@@ -401,9 +395,9 @@ hci_dispatch_data(
 
   // Data received: note that the only case where from and from length
   // are not null is in recv from, so fill the args accordingly
-  if (pending_cmd.from) {
-    *(uint32_t *)pending_cmd.fromlen = STREAM_TO_UINT32((buffer + HCI_DATA_HEADER_SIZE), BSD_RECV_FROM_FROMLEN_OFFSET);
-    memcpy(pending_cmd.from, (buffer + HCI_DATA_HEADER_SIZE + BSD_RECV_FROM_FROM_OFFSET), *pending_cmd.fromlen);
+  if ((params->from != NULL) && (params->fromlen != NULL)) {
+    *params->fromlen = STREAM_TO_UINT32((buffer + HCI_DATA_HEADER_SIZE), BSD_RECV_FROM_FROMLEN_OFFSET);
+    memcpy(params->from, (buffer + HCI_DATA_HEADER_SIZE + BSD_RECV_FROM_FROM_OFFSET), *params->fromlen);
   }
 
   // Let's vet length
@@ -414,14 +408,13 @@ hci_dispatch_data(
     data_length = -1;
   }
   else {
-    memcpy(pending_cmd.return_val,
+    memcpy(params->buf,
         buffer + HCI_DATA_HEADER_SIZE + arg_size,
         data_length);
   }
 
   // fixes the Nvram read not returning length
-  if (pending_cmd.fromlen)
-    *pending_cmd.fromlen = data_length;
+  params->data_len = data_length;
 
   pending_cmd.data_expected = false;
   chSemSignal(&hci.sem_recv);
@@ -512,7 +505,7 @@ hci_dispatch_event(
     case HCI_EVNT_SEND:
     case HCI_EVNT_SENDTO:
       {
-        tBsdReadReturnParams* params = pending_cmd.return_val;
+        tBsdReadReturnParams* params = pending_cmd.params;
         params->iSocketDescriptor = STREAM_TO_UINT32(pucReceivedParams, SL_RECEIVE_SD_OFFSET);
         params->iNumberOfBytes = STREAM_TO_UINT32(pucReceivedParams, SL_RECEIVE_NUM_BYTES_OFFSET);
       }
@@ -553,7 +546,7 @@ hci_dispatch_event(
     case HCI_NETAPP_PING_REPORT:
     case HCI_EVNT_MDNS_ADVERTISE:
       {
-        uint8_t* status = pending_cmd.return_val;
+        uint8_t* status = pending_cmd.params;
         *status = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
       }
       break;
@@ -577,14 +570,14 @@ hci_dispatch_event(
     case HCI_EVNT_CONNECT:
     case HCI_EVNT_NVMEM_WRITE:
       {
-        uint32_t* param = pending_cmd.return_val;
+        uint32_t* param = pending_cmd.params;
         *param = STREAM_TO_UINT32(pucReceivedParams, 0);
       }
       break;
 
     case HCI_EVNT_READ_SP_VERSION:
       {
-        uint8_t* params = pending_cmd.return_val;
+        uint8_t* params = pending_cmd.params;
 
         params[0] = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
         memcpy(&params[1], pucReceivedParams, 4);
@@ -593,7 +586,7 @@ hci_dispatch_event(
 
     case HCI_EVNT_BSD_GETHOSTBYNAME:
       {
-        tBsdGethostbynameParams* params = pending_cmd.return_val;
+        tBsdGethostbynameParams* params = pending_cmd.params;
         params->retVal = STREAM_TO_UINT32(pucReceivedParams, GET_HOST_BY_NAME_RETVAL_OFFSET);
         params->outputAddress = STREAM_TO_UINT32(pucReceivedParams, GET_HOST_BY_NAME_ADDR_OFFSET);
       }
@@ -601,7 +594,7 @@ hci_dispatch_event(
 
     case HCI_EVNT_ACCEPT:
       {
-        tBsdReturnParams* params = pending_cmd.return_val;
+        tBsdReturnParams* params = pending_cmd.params;
         params->iSocketDescriptor = STREAM_TO_UINT32(pucReceivedParams, ACCEPT_SD_OFFSET);
         params->iStatus = STREAM_TO_UINT32(pucReceivedParams, ACCEPT_RETURN_STATUS_OFFSET);
 
@@ -615,7 +608,7 @@ hci_dispatch_event(
     case HCI_EVNT_RECV:
     case HCI_EVNT_RECVFROM:
       {
-        tBsdReadReturnParams* params = pending_cmd.return_val;
+        tBsdReadReturnParams* params = pending_cmd.params;
         params->iSocketDescriptor = STREAM_TO_UINT32(pucReceivedParams,SL_RECEIVE_SD_OFFSET);
         params->iNumberOfBytes = STREAM_TO_UINT32(pucReceivedParams,SL_RECEIVE_NUM_BYTES_OFFSET);
         params->uiFlags = STREAM_TO_UINT32(pucReceivedParams,SL_RECEIVE__FLAGS__OFFSET);
@@ -627,7 +620,7 @@ hci_dispatch_event(
 
     case HCI_EVNT_SELECT:
       {
-        tBsdSelectRecvParams* params = pending_cmd.return_val;
+        tBsdSelectRecvParams* params = pending_cmd.params;
         params->iStatus = STREAM_TO_UINT32(pucReceivedParams, SELECT_STATUS_OFFSET);
         params->uiRdfd = STREAM_TO_UINT32(pucReceivedParams, SELECT_READFD_OFFSET);
         params->uiWrfd = STREAM_TO_UINT32(pucReceivedParams, SELECT_WRITEFD_OFFSET);
@@ -637,7 +630,7 @@ hci_dispatch_event(
 
     case HCI_CMND_GETSOCKOPT:
       {
-        tBsdGetSockOptReturnParams* params = pending_cmd.return_val;
+        tBsdGetSockOptReturnParams* params = pending_cmd.params;
         params->iStatus = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);
         //This argument returns in network order
         memcpy(&params->ucOptValue, pucReceivedParams, 4);
@@ -646,7 +639,7 @@ hci_dispatch_event(
 
     case HCI_CMND_WLAN_IOCTL_GET_SCAN_RESULTS:
       {
-        wlan_scan_results_t* params = pending_cmd.return_val;
+        wlan_scan_results_t* params = pending_cmd.params;
 
 
 
@@ -666,7 +659,7 @@ hci_dispatch_event(
 
     case HCI_NETAPP_IPCONFIG:
       {
-        netapp_ipconfig_args_t* params = pending_cmd.return_val;
+        netapp_ipconfig_args_t* params = pending_cmd.params;
         //Read IP address
         memcpy(params->ip_addr, pucReceivedParams, NETAPP_IPCONFIG_IP_LENGTH);
         pucReceivedParams += NETAPP_IPCONFIG_IP_LENGTH;
@@ -698,7 +691,7 @@ hci_dispatch_event(
 
     case HCI_EVNT_PATCHES_REQ:
       {
-        uint8_t* patch_req_type = pending_cmd.return_val;
+        uint8_t* patch_req_type = pending_cmd.params;
         *patch_req_type = pucReceivedParams[0];
       }
       break;
@@ -768,15 +761,11 @@ hci_event_unsol_flowcontrol_handler(
 //*****************************************************************************
 void
 hci_wait_for_data(
-    uint8_t *pBuf,
-    uint8_t *from,
-    uint8_t *fromlen)
+    hci_data_read_params_t* params)
 {
   // In the blocking implementation the control to caller will be returned only
   // after the end of current transaction, i.e. only after data will be received
-  pending_cmd.from = from;
-  pending_cmd.fromlen = fromlen;
-  pending_cmd.return_val = pBuf;
+  pending_cmd.params = params;
   pending_cmd.data_expected = true;
   chSemWait(&hci.sem_recv);
 }

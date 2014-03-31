@@ -732,7 +732,11 @@ simple_link_recv(long sd, void *buf, long len, long flags, sockaddr *from,
   if (tSocketReadEvent.iNumberOfBytes > 0) {
     // Wait for the data in a synchronous way. Here we assume that the bug is
     // big enough to store also parameters of receive from too....
-    hci_wait_for_data(buf, (uint8_t *)from, (uint8_t *)fromlen);
+    hci_data_read_params_t params;
+    params.from = from;
+    params.fromlen = fromlen;
+    params.buf = buf;
+    hci_wait_for_data(&params);
     errno = 0;
     ret = tSocketReadEvent.iNumberOfBytes;
   }

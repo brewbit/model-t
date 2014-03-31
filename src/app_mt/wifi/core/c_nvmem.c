@@ -84,6 +84,7 @@ signed long c_nvmem_read(uint32_t ulFileId, uint32_t ulLength,
 {
   uint8_t ucStatus = 0xFF;
   uint8_t *args;
+  hci_data_read_params_t params;
 
   args = hci_get_cmd_buffer();
 
@@ -102,9 +103,12 @@ signed long c_nvmem_read(uint32_t ulFileId, uint32_t ulLength,
   // Wait for the data in a synchronous way. Here we assume that the buffer is
   // big enough to store also parameters of nvmem
 
-  hci_wait_for_data(buff, 0, 0);
+  params.fromlen = NULL;
+  params.from = NULL;
+  params.buf = buff;
+  hci_wait_for_data(&params);
 
-  return(ucStatus);
+  return params.data_len;
 }
 
 //*****************************************************************************
