@@ -126,10 +126,8 @@ __assert_func(const char* file, int line, const char* func, const char* cond)
   chDbgPanic("assertion failed");
 }
 
-struct _reent* __getreent(void)
+int* __errno(void)
 {
   Thread* t = chThdSelf();
-  if (t->r == NULL)
-    t->r = malloc(sizeof(struct _reent));
-  return t->r;
+  return &t->local_errno;
 }

@@ -465,7 +465,7 @@
   Mailbox mb;                                                               \
   msg_t mb_buf[MAX_THREAD_MAILBOX_MSGS];                                    \
   Semaphore mb_sem;                                                         \
-  struct __reent* r;
+  int local_errno;
 #endif
 
 /**
@@ -480,7 +480,6 @@
   /* Add threads initialization code here.*/                                \
   chMBInit(&tp->mb, tp->mb_buf, MAX_THREAD_MAILBOX_MSGS);                   \
   chSemInit(&tp->mb_sem, 0);                                                \
-  tp->r = NULL;                                                             \
 }
 #endif
 
@@ -495,8 +494,6 @@
 #if !defined(THREAD_EXT_EXIT_HOOK) || defined(__DOXYGEN__)
 #define THREAD_EXT_EXIT_HOOK(tp) {                                          \
   /* Add threads finalization code here.*/                                  \
-  if (tp->r != NULL)                                                        \
-    free(tp->r);                                                            \
 }
 #endif
 
@@ -507,7 +504,6 @@
 #if !defined(THREAD_CONTEXT_SWITCH_HOOK) || defined(__DOXYGEN__)
 #define THREAD_CONTEXT_SWITCH_HOOK(ntp, otp) {                              \
   /* System halt code here.*/                                               \
-  _impure_ptr = ntp->r;                                                     \
 }
 #endif
 
