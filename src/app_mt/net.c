@@ -25,9 +25,9 @@
 
 typedef struct {
     bool valid;
-    unsigned long networks_found;
-    unsigned long scan_status;
-    unsigned long frame_time;
+    uint32_t networks_found;
+    uint32_t scan_status;
+    uint32_t frame_time;
     network_t network;
 } net_scan_result_t;
 
@@ -188,12 +188,12 @@ dispatch_dhcp(netapp_dhcp_params_t* dhcp)
 static int
 enable_scan(bool enable)
 {
-  static const unsigned long channel_interval_list[16] = {
+  static const uint32_t channel_interval_list[16] = {
       2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000,
       2000, 2000, 2000, 2000, 2000, 2000, 2000, 2000
   };
 
-  unsigned long interval = enable ? SCAN_INTERVAL : 0;
+  uint32_t interval = enable ? SCAN_INTERVAL : 0;
   return wlan_ioctl_set_scan_params(interval, 100, 100, 5, 0x1FFF, -80, 0, 205, channel_interval_list);
 }
 
@@ -317,6 +317,14 @@ static void
 dispatch_init()
 {
   wlan_start(PATCH_LOAD_DEFAULT);
+
+  {
+    uint32_t dhcp_timeout = 14400;
+    uint32_t arp_timeout = 3600;
+    uint32_t keepalive = 10;
+    uint32_t inactivity_timeout = 0;
+    netapp_timeout_values(&dhcp_timeout, &arp_timeout, &keepalive, &inactivity_timeout);
+  }
 
   {
     nvmem_sp_version_t sp_version;
