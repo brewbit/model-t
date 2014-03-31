@@ -113,12 +113,8 @@ typedef struct {
 
 typedef struct {
   Semaphore sem_recv;
-
-  uint16_t num_free_buffers;
-  uint16_t usSlBufferLength;
-
-  uint32_t num_sent_packets;
-  uint32_t num_released_packets;
+  systime_t cmd_timeout;
+  hci_stats_t stats;
 } hci_t;
 
 
@@ -131,6 +127,9 @@ hci_dispatch_data(uint8_t* buffer, uint16_t buffer_size);
 static int32_t
 hci_event_unsol_flowcontrol_handler(uint8_t* pEvent);
 
+static void
+wait_for_response(void);
+
 
 static pending_cmd_t pending_cmd;
 static hci_t hci;
@@ -140,13 +139,35 @@ static hci_t hci;
 void
 hci_init()
 {
-  hci.num_sent_packets = 0;
-  hci.num_released_packets = 0;
+  hci.stats.num_sent_packets = 0;
+  hci.stats.num_released_packets = 0;
+  hci.stats.num_free_buffers = 0;
+  hci.stats.buffer_len = 0;
+  hci.stats.num_timeouts = 0;
 
-  hci.num_free_buffers = 0;
-  hci.usSlBufferLength = 0;
+  hci.cmd_timeout = S2ST(20);
 
   chSemInit(&hci.sem_recv, 0);
+}
+
+void
+hci_set_cmd_timeout(systime_t timeout)
+{
+  hci.cmd_timeout = timeout;
+}
+
+const hci_stats_t*
+hci_get_stats()
+{
+  return &hci.stats;
+}
+
+static void
+wait_for_response()
+{
+  msg_t rdy = chSemWaitTimeout(&hci.sem_recv, hci.cmd_timeout);
+  if (rdy != RDY_OK)
+    hci.stats.num_timeouts++;
 }
 
 //*****************************************************************************
@@ -184,7 +205,7 @@ hci_command_send(
 
   spi_write(ucArgsLength + HCI_CMND_HEADER_SIZE);
 
-  chSemWait(&hci.sem_recv);
+  wait_for_response();
 }
 
 //*****************************************************************************
@@ -231,7 +252,7 @@ hci_data_send(
   // Send the packet over the SPI
   spi_write(HCI_DATA_HEADER_SIZE + usArgsLength + usDataLength + usTailLength);
 
-  chSemWait(&hci.sem_recv);
+  wait_for_response();
 }
 
 
@@ -271,7 +292,7 @@ void hci_data_command_send(
   // Send the command over SPI on data channel
   spi_write(ucArgsLength + ucDataLength + HCI_DATA_CMD_HEADER_SIZE);
 
-  chSemWait(&hci.sem_recv);
+  wait_for_response();
 }
 
 //*****************************************************************************
@@ -453,7 +474,7 @@ hci_dispatch_event(
     case HCI_EVNT_DATA_UNSOL_FREE_BUFF:
       hci_event_unsol_flowcontrol_handler(event_hdr);
 
-      if (hci.num_released_packets == hci.num_sent_packets)
+      if (hci.stats.num_released_packets == hci.stats.num_sent_packets)
         msg_post(MSG_WLAN_FLUSHED, NULL);
       break;
 
@@ -531,8 +552,8 @@ hci_dispatch_event(
 
     case HCI_CMND_READ_BUFFER_SIZE:
       {
-        hci.num_free_buffers = STREAM_TO_UINT8(pucReceivedParams, 0);
-        hci.usSlBufferLength = STREAM_TO_UINT16(pucReceivedParams, 1);
+        hci.stats.num_free_buffers = STREAM_TO_UINT8(pucReceivedParams, 0);
+        hci.stats.buffer_len = STREAM_TO_UINT16(pucReceivedParams, 1);
       }
       break;
 
@@ -744,8 +765,8 @@ hci_event_unsol_flowcontrol_handler(
     pReadPayload += FLOW_CONTROL_EVENT_SIZE;
   }
 
-  hci.num_free_buffers += temp;
-  hci.num_released_packets += temp;
+  hci.stats.num_free_buffers += temp;
+  hci.stats.num_released_packets += temp;
 
   return(ESUCCESS);
 }
@@ -768,17 +789,19 @@ hci_wait_for_data(
 {
   // In the blocking implementation the control to caller will be returned only
   // after the end of current transaction, i.e. only after data will be received
+  pending_cmd.opcode = 0;
   pending_cmd.params = params;
   pending_cmd.data_expected = true;
-  chSemWait(&hci.sem_recv);
+
+  wait_for_response();
 }
 
 bool
 hci_claim_buffer()
 {
-  if (hci.num_free_buffers > 0) {
-    hci.num_free_buffers--;
-    hci.num_sent_packets++;
+  if (hci.stats.num_free_buffers > 0) {
+    hci.stats.num_free_buffers--;
+    hci.stats.num_sent_packets++;
 
     return true;
   }

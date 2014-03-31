@@ -84,8 +84,19 @@ main(void)
 
   while (TRUE) {
     palSetPad(PORT_LED1, PAD_LED1);
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(1000);
     palClearPad(PORT_LED1, PAD_LED1);
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(1000);
+
+    printf("SYS: %d\r\n",
+        resets);
+
+    const hci_stats_t* hs = hci_get_stats();
+    printf("HCI: %d %d %d %d %d\r\n",
+        hs->num_free_buffers,
+        hs->buffer_len,
+        hs->num_sent_packets,
+        hs->num_released_packets,
+        hs->num_timeouts);
   }
 }

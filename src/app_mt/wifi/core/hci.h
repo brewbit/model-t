@@ -63,6 +63,14 @@ typedef struct {
   int32_t data_len;
 } hci_data_read_params_t;
 
+typedef struct {
+  uint16_t num_free_buffers;
+  uint16_t buffer_len;
+  uint32_t num_sent_packets;
+  uint32_t num_released_packets;
+  uint32_t num_timeouts;
+} hci_stats_t;
+
 
 //*****************************************************************************
 //
@@ -74,6 +82,12 @@ typedef struct {
 
 void
 hci_init(void);
+
+void
+hci_set_cmd_timeout(systime_t timeout);
+
+const hci_stats_t*
+hci_get_stats(void);
 
 //*****************************************************************************
 //
