@@ -459,7 +459,7 @@
  */
 #if !defined(THREAD_EXT_FIELDS) || defined(__DOXYGEN__)
 #define THREAD_EXT_FIELDS                                                   \
-  /* Add threads custom fields here.*/
+  int local_errno;
 #endif
 
 /**
