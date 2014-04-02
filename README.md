@@ -4,11 +4,10 @@
 
 ### Eclipse
 
-1. Download & install Java http://java.com/en/download/manual.jsp
-  * Select Windows Offline
+1. Download & install Java JDK http://www.oracle.com/technetwork/java/javase/downloads/index-jsp-138363.html
 2. Download Eclipse from http://www.eclipse.org
 3. Extract and copy it to Program Files/Eclipse
-4. Create a shortcut on your desktop to Ecliplse
+4. Create a shortcut on your desktop to Eclipse
 5. Install CDT http://www.eclipse.org/cdt/
 
 ### Software Tools
@@ -21,13 +20,12 @@ Download and install the following while also adding them to your [PATH](http://
 2. Python Items
   * [Python 2.7](http://www.python.org/download/releases/2.7/)
   * [pygame 1.9.2](https://bitbucket.org/pygame/pygame/downloads/pygame-1.9.2a0.win32-py2.7.msi)
-  * [pystache](https://pypi.python.org/pypi/pystache)
+  * [pystache](https://s3.amazonaws.com/uploads.hipchat.com/49452%2F333814%2Fcj6PlPIo8F7mGhL%2Fpystache-0.5.3.win32.exe)
   * [Python-protobufs](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/EnIwDJuDwzL8I7u/protobuf-2.5.0.win32.exe)
 3. [Cygwin](http://www.cygwin.com/) Include the following packages:
   * Make (gcc)
   * Google protobufs (libprotobuf-devel)
-4. [OpenOCD](https://s3.amazonaws.com/uploads.hipchat.com/49452/333815/b9phnhj8sx2wrs8/openocd-0.7.0.7z)
-  * After installing OpenOCD rename the executable in the /bin directory to "openocd"
+4. [OpenOCD](https://s3.amazonaws.com/uploads.hipchat.com/49452/333814/DhJFwW8L6t0xG3d/openocd-0.8.0.zip)
 5. [Zadig](http://zadig.akeo.ie/)
 
 #### OS X
