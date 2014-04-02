@@ -119,9 +119,7 @@ gui_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
 
   if ((chTimeNow() - last_paint_time) >= MS2ST(100)) {
     if (screen_stack != NULL) {
-      chThdSetPriority(HIGHPRIO);
       widget_paint(screen_stack->widget);
-      chThdSetPriority(NORMALPRIO);
     }
     last_paint_time = chTimeNow();
   }

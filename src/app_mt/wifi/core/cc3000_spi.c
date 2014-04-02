@@ -140,7 +140,7 @@ spi_open()
   // Enable interrupt on WLAN IRQ pin
   extChannelEnable(&EXTD1, 12);
 
-  io_thread = chThdCreateFromHeap(NULL, 1024, HIGHPRIO, spi_io_thread, NULL);
+  io_thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, spi_io_thread, NULL);
 
   // Set the device enable pin
   palSetPad(PORT_WIFI_EN, PAD_WIFI_EN);

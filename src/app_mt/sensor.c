@@ -50,7 +50,7 @@ sensor_init(sensor_id_t sensor, onewire_bus_t* port)
   tp->bus = port;
   onewire_init(tp->bus);
 
-  tp->thread = chThdCreateFromHeap(NULL, 1024, HIGHPRIO, sensor_thread, tp);
+  tp->thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, sensor_thread, tp);
 
   return tp;
 }
