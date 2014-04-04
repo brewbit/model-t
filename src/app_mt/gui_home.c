@@ -57,12 +57,12 @@ static void click_stage_button(button_event_t* event);
 
 static void dispatch_output_settings(home_screen_t* s, output_settings_msg_t* msg);
 static void dispatch_output_status(home_screen_t* s, output_status_t* msg);
+static void dispatch_temp_unit(home_screen_t* s, unit_t unit);
 static void dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg);
 static void dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg);
 
 static void set_output_settings(home_screen_t* s, output_id_t output, output_function_t function);
 static void place_quantity_widgets(home_screen_t* s);
-static void update_setpoint(quantity_t setpoint, void* user_data);
 
 
 static const widget_class_t home_widget_class = {
@@ -114,9 +114,9 @@ home_screen_create()
 
   rect.x = 0;
   rect.width = TILE_SPAN(3);
-  s->sensors[SENSOR_1].quantity_widget = quantity_widget_create(s->stage_button, rect);
+  s->sensors[SENSOR_1].quantity_widget = quantity_widget_create(s->stage_button, rect, app_cfg_get_temp_unit());
 
-  s->sensors[SENSOR_2].quantity_widget = quantity_widget_create(s->stage_button, rect);
+  s->sensors[SENSOR_2].quantity_widget = quantity_widget_create(s->stage_button, rect, app_cfg_get_temp_unit());
 
   place_quantity_widgets(s);
 
@@ -129,6 +129,7 @@ home_screen_create()
   gui_msg_subscribe(MSG_SENSOR_TIMEOUT, s->screen);
   gui_msg_subscribe(MSG_OUTPUT_SETTINGS, s->screen);
   gui_msg_subscribe(MSG_OUTPUT_STATUS, s->screen);
+  gui_msg_subscribe(MSG_TEMP_UNIT, s->screen);
 
   return s->screen;
 }
@@ -142,6 +143,7 @@ home_screen_destroy(widget_t* w)
   gui_msg_unsubscribe(MSG_SENSOR_TIMEOUT, s->screen);
   gui_msg_unsubscribe(MSG_OUTPUT_SETTINGS, s->screen);
   gui_msg_unsubscribe(MSG_OUTPUT_STATUS, s->screen);
+  gui_msg_unsubscribe(MSG_TEMP_UNIT, s->screen);
 
   chHeapFree(s);
 }
@@ -166,6 +168,10 @@ home_screen_msg(msg_event_t* event)
 
   case MSG_OUTPUT_STATUS:
     dispatch_output_status(s, event->msg_data);
+    break;
+
+  case MSG_TEMP_UNIT:
+    dispatch_temp_unit(s, *((unit_t*)event->msg_data));
     break;
 
   default:
@@ -273,6 +279,15 @@ dispatch_output_status(home_screen_t* s, output_status_t* msg)
 }
 
 static void
+dispatch_temp_unit(home_screen_t* s, unit_t unit)
+{
+  int i;
+  for (i = 0; i < NUM_SENSORS; ++i) {
+    quantity_widget_set_unit(s->sensors[i].quantity_widget, unit);
+  }
+}
+
+static void
 set_output_settings(home_screen_t* s, output_id_t output, output_function_t function)
 {
   widget_t* btn;
@@ -314,26 +329,8 @@ click_sensor_button(button_event_t* event)
   else
     sensor = SENSOR_2;
 
-//  const sensor_settings_t* settings = app_cfg_get_sensor_settings(sensor);
-//
-//  float velocity_steps[] = {
-//      0.1f, 0.5f, 1.0f
-//  };
-//
-//  widget_t* settings_screen = quantity_select_screen_create(
-//      title, settings->static_setpoint, velocity_steps, 3, update_setpoint, (void*)sensor);
-//
   widget_t* settings_screen = sensor_settings_screen_create(sensor);
   gui_push_screen(settings_screen);
-}
-
-static void
-update_setpoint(quantity_t setpoint, void* user_data)
-{
-  sensor_id_t sensor = (sensor_id_t)user_data;
-  sensor_settings_t settings = *app_cfg_get_sensor_settings(sensor);
-  settings.static_setpoint = setpoint;
-  app_cfg_set_sensor_settings(sensor, &settings);
 }
 
 static void

@@ -159,11 +159,8 @@ read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample)
     return false;
 
   uint16_t t = (t2 << 8) + t1;
-  sample->unit = app_cfg_get_temp_unit();
-  sample->value = (t / 16.0f);
-  if (sample->unit == UNIT_TEMP_DEG_F) {
-    sample->value = (sample->value * 1.8f) + 32;
-  }
+  sample->unit = UNIT_TEMP_DEG_F;
+  sample->value = ((t / 16.0f) * 1.8f) + 32;
 
   return true;
 }

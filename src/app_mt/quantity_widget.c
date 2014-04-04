@@ -30,7 +30,7 @@ static const widget_class_t quantity_widget_class = {
 };
 
 widget_t*
-quantity_widget_create(widget_t* parent, rect_t rect)
+quantity_widget_create(widget_t* parent, rect_t rect, unit_t display_unit)
 {
   quantity_widget_t* s = chHeapAlloc(NULL, sizeof(quantity_widget_t));
   memset(s, 0, sizeof(quantity_widget_t));
@@ -38,7 +38,7 @@ quantity_widget_create(widget_t* parent, rect_t rect)
   rect.height = font_opensans_regular_62->line_height;
   s->widget = widget_create(parent, &quantity_widget_class, s, rect);
 
-  s->sample.unit = UNIT_NONE;
+  s->sample.unit = display_unit;
   s->sample.value = NAN;
 
   return s->widget;
@@ -66,10 +66,6 @@ quantity_widget_paint(paint_event_t* event)
 
   case UNIT_TEMP_DEG_F:
     unit_str = "F";
-    break;
-
-  case UNIT_HUMIDITY_PCT:
-    unit_str = "%";
     break;
 
   case UNIT_TIME_SEC:
@@ -123,9 +119,22 @@ quantity_widget_set_value(widget_t* w, quantity_t sample)
 {
   quantity_widget_t* s = widget_get_instance_data(w);
 
-  if (s->sample.unit != sample.unit ||
-      s->sample.value != sample.value) {
-    s->sample = sample;
+  // ensure that the given quantity is in the correct display unit
+  sample = quantity_convert(sample, s->sample.unit);
+
+  if (s->sample.value != sample.value) {
+    s->sample.value = sample.value;
+    widget_invalidate(s->widget);
+  }
+}
+
+void
+quantity_widget_set_unit(widget_t* w, unit_t unit)
+{
+  quantity_widget_t* s = widget_get_instance_data(w);
+
+  if (s->sample.unit != unit) {
+    s->sample.unit = unit;
     widget_invalidate(s->widget);
   }
 }

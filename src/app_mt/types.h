@@ -11,7 +11,6 @@ typedef enum {
   UNIT_NONE,
   UNIT_TEMP_DEG_F,
   UNIT_TEMP_DEG_C,
-  UNIT_HUMIDITY_PCT,
   UNIT_TIME_SEC,
   UNIT_TIME_MIN,
   UNIT_TIME_HOUR,
@@ -22,6 +21,34 @@ typedef struct {
   float value;
   unit_t unit;
 } quantity_t;
+
+
+static inline quantity_t
+quantity_convert(quantity_t q, unit_t unit)
+{
+  if (q.unit == unit)
+    return q;
+
+  switch (unit) {
+  case UNIT_TEMP_DEG_C:
+    if (q.unit == UNIT_TEMP_DEG_F)
+      q.value = (5.0f / 9.0f) * (q.value - 32);
+    break;
+
+  case UNIT_TEMP_DEG_F:
+    if (q.unit == UNIT_TEMP_DEG_C)
+      q.value = ((9.0f / 5.0f) * q.value) + 32;
+    break;
+
+    /* Can't convert any other quantities */
+  default:
+    break;
+  }
+
+  q.unit = unit;
+
+  return q;
+}
 
 
 typedef uint16_t color_t;

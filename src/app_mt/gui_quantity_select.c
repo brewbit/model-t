@@ -16,9 +16,6 @@
 #define MAX_TEMP_F (212)
 #define MIN_TEMP_F (-10)
 
-#define MAX_HUMIDITY (100)
-#define MIN_HUMIDITY (0)
-
 
 typedef struct {
   widget_t* widget;
@@ -97,7 +94,7 @@ quantity_select_screen_create(
   rect.x = 66;
   rect.y = 130;
   rect.width = 254;
-  s->quantity_widget = quantity_widget_create(s->widget, rect);
+  s->quantity_widget = quantity_widget_create(s->widget, rect, app_cfg_get_temp_unit());
 
   set_quantity(s, quantity);
 
@@ -177,10 +174,6 @@ set_quantity(quantity_select_screen_t* s, quantity_t quantity)
 
   case UNIT_TEMP_DEG_C:
     quantity.value = LIMIT(quantity.value, MIN_TEMP_C, MAX_TEMP_C);
-    break;
-
-  case UNIT_HUMIDITY_PCT:
-    quantity.value = LIMIT(quantity.value, MIN_HUMIDITY, MAX_HUMIDITY);
     break;
 
   case UNIT_TIME_MIN:
