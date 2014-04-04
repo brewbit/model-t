@@ -1,6 +1,6 @@
 
 #include "quantity_widget.h"
-#include "gui/label.h"
+#include "label.h"
 #include "gfx.h"
 #include "message.h"
 #include "sensor.h"

@@ -12,6 +12,8 @@ BOARD = II-MT-CONTROLLER
 DEPS = SNACKA NANOPB
 
 PROJECT_INCDIR = \
+       gui \
+       gui/controls \
        util \
        wifi
 
@@ -26,25 +28,6 @@ PROJECT_CSRC = \
        fault.c \
        font.c \
        gfx.c \
-       gui.c \
-       gui_activation.c \
-       gui_button_list.c \
-       gui_calib.c \
-       gui_history.c \
-       gui_info.c \
-       gui_home.c \
-       gui_output.c \
-       gui_output_function.c \
-       gui_output_mode.c \
-       gui_output_trigger.c \
-       gui_quantity_select.c \
-       gui_recovery.c \
-       gui_sensor_settings.c \
-       gui_settings.c \
-       gui_textentry.c \
-       gui_update.c \
-       gui_wifi.c \
-       gui_wifi_scan.c \
        image.c \
        lcd.c \
        main.c \
@@ -62,6 +45,25 @@ PROJECT_CSRC = \
        touch.c \
        touch_calib.c \
        web_api.c \
+       gui/gui.c \
+       gui/activation.c \
+       gui/button_list.c \
+       gui/calib.c \
+       gui/history.c \
+       gui/info.c \
+       gui/home.c \
+       gui/output.c \
+       gui/output_function.c \
+       gui/output_mode.c \
+       gui/output_trigger.c \
+       gui/quantity_select.c \
+       gui/recovery.c \
+       gui/sensor_settings.c \
+       gui/settings.c \
+       gui/textentry.c \
+       gui/update.c \
+       gui/wifi.c \
+       gui/wifi_scan.c \
        snacka_backend/cryptocallbacks_chibios.c \
        snacka_backend/iocallbacks_socket.c \
        snacka_backend/socket_bsd.c \
@@ -79,13 +81,13 @@ PROJECT_CSRC = \
        wifi/security.c \
        wifi/socket.c \
        wifi/wlan.c \
-       gui/button.c \
-       gui/icon.c \
-       gui/label.c \
-       gui/listbox.c \
-       gui/progressbar.c \
-       gui/scatter_plot.c \
-       gui/widget.c \
+       gui/controls/button.c \
+       gui/controls/icon.c \
+       gui/controls/label.c \
+       gui/controls/listbox.c \
+       gui/controls/progressbar.c \
+       gui/controls/scatter_plot.c \
+       gui/controls/widget.c \
        util/linked_list.c \
        ../common/crc/crc8.c \
        ../common/crc/crc16.c \
