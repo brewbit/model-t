@@ -195,7 +195,7 @@ xflash_read(uint32_t addr, uint8_t* buf, uint32_t buf_len)
 uint32_t
 xflash_crc(uint32_t addr, uint32_t size)
 {
-  uint8_t* buf = chHeapAlloc(NULL, 256);
+  uint8_t* buf = calloc(1, 256);
   uint32_t crc = 0xFFFFFFFF;
 
   while (size > 0) {
@@ -210,7 +210,7 @@ xflash_crc(uint32_t addr, uint32_t size)
   }
   crc ^= 0xFFFFFFFF;
 
-  chHeapFree(buf);
+  free(buf);
 
   return crc;
 }

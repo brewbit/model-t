@@ -58,8 +58,7 @@ quantity_select_screen_create(
     quantity_select_cb_t cb,
     void* cb_data)
 {
-  quantity_select_screen_t* s = chHeapAlloc(NULL, sizeof(quantity_select_screen_t));
-  memset(s, 0, sizeof(quantity_select_screen_t));
+  quantity_select_screen_t* s = calloc(1, sizeof(quantity_select_screen_t));
 
   s->widget = widget_create(NULL, &quantity_select_widget_class, s, display_rect);
 
@@ -108,7 +107,7 @@ static void
 quantity_select_screen_destroy(widget_t* w)
 {
   quantity_select_screen_t* s = widget_get_instance_data(w);
-  chHeapFree(s);
+  free(s);
 }
 
 static void

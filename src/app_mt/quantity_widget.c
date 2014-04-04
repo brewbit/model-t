@@ -32,8 +32,7 @@ static const widget_class_t quantity_widget_class = {
 widget_t*
 quantity_widget_create(widget_t* parent, rect_t rect, unit_t display_unit)
 {
-  quantity_widget_t* s = chHeapAlloc(NULL, sizeof(quantity_widget_t));
-  memset(s, 0, sizeof(quantity_widget_t));
+  quantity_widget_t* s = calloc(1, sizeof(quantity_widget_t));
 
   rect.height = font_opensans_regular_62->line_height;
   s->widget = widget_create(parent, &quantity_widget_class, s, rect);
@@ -49,7 +48,7 @@ quantity_widget_destroy(widget_t* w)
 {
   quantity_widget_t* s = widget_get_instance_data(w);
 
-  chHeapFree(s);
+  free(s);
 }
 
 static void

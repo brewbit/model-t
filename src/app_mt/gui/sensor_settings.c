@@ -41,8 +41,7 @@ widget_class_t sensor_settings_widget_class = {
 widget_t*
 sensor_settings_screen_create(sensor_id_t sensor)
 {
-  sensor_settings_screen_t* s = chHeapAlloc(NULL, sizeof(sensor_settings_screen_t));
-  memset(s, 0, sizeof(sensor_settings_screen_t));
+  sensor_settings_screen_t* s = calloc(1, sizeof(sensor_settings_screen_t));
 
   s->screen = widget_create(NULL, &sensor_settings_widget_class, s, display_rect);
   widget_set_background(s->screen, BLACK, FALSE);
@@ -64,7 +63,7 @@ sensor_settings_screen_destroy(widget_t* w)
 {
   sensor_settings_screen_t* s = widget_get_instance_data(w);
   gui_msg_unsubscribe(MSG_SENSOR_SETTINGS, w);
-  chHeapFree(s);
+  free(s);
 }
 
 static void

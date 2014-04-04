@@ -26,8 +26,7 @@ static widget_class_t scatter_plot_widget_class = {
 widget_t*
 scatter_plot_create(widget_t* parent, rect_t rect)
 {
-  scatter_plot_t* s = chHeapAlloc(NULL, sizeof(scatter_plot_t));
-  memset(s, 0, sizeof(scatter_plot_t));
+  scatter_plot_t* s = calloc(1, sizeof(scatter_plot_t));
 
   s->widget = widget_create(parent, &scatter_plot_widget_class, s, rect);
 
@@ -38,7 +37,7 @@ static void
 scatter_plot_destroy(widget_t* w)
 {
   scatter_plot_t* s = widget_get_instance_data(w);
-  chHeapFree(s);
+  free(s);
 }
 
 static void

@@ -44,8 +44,7 @@ output_mode_screen_create(output_id_t output)
 {
   char* header;
   char* desc;
-  output_screen_t* s = chHeapAlloc(NULL, sizeof(output_screen_t));
-  memset(s, 0, sizeof(output_screen_t));
+  output_screen_t* s = calloc(1, sizeof(output_screen_t));
 
   s->widget = widget_create(NULL, &output_mode_widget_class, s, display_rect);
   widget_set_background(s->widget, BLACK, FALSE);
@@ -118,7 +117,7 @@ static void
 output_mode_screen_destroy(widget_t* w)
 {
   output_screen_t* s = widget_get_instance_data(w);
-  chHeapFree(s);
+  free(s);
 }
 
 static void

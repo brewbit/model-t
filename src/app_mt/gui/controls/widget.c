@@ -91,7 +91,7 @@ widget_destroy_predicate(widget_t* w, widget_traversal_event_t event, void* data
 
   if (event == WIDGET_TRAVERSAL_AFTER_CHILDREN) {
     CALL_WC(w, on_destroy)(w);
-    chHeapFree(w);
+    free(w);
   }
 }
 

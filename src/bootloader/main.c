@@ -45,7 +45,7 @@ jump_to_app(uint32_t address)
 void
 copy_app_image(uint32_t addr, sxfs_file_t* file)
 {
-  uint8_t* buf = chHeapAlloc(NULL, 1024);
+  uint8_t* buf = calloc(1, 1024);
 
   while (1) {
     uint32_t nread = sxfs_file_read(file, buf, 1024);
@@ -57,7 +57,7 @@ copy_app_image(uint32_t addr, sxfs_file_t* file)
     addr += nread;
   }
 
-  chHeapFree(buf);
+  free(buf);
 }
 
 void

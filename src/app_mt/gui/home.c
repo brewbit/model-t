@@ -73,8 +73,7 @@ static const widget_class_t home_widget_class = {
 widget_t*
 home_screen_create()
 {
-  home_screen_t* s = chHeapAlloc(NULL, sizeof(home_screen_t));
-  memset(s, 0, sizeof(home_screen_t));
+  home_screen_t* s = calloc(1, sizeof(home_screen_t));
 
   s->sample_timestamp = chTimeNow();
 
@@ -145,7 +144,7 @@ home_screen_destroy(widget_t* w)
   gui_msg_unsubscribe(MSG_OUTPUT_STATUS, s->screen);
   gui_msg_unsubscribe(MSG_TEMP_UNIT, s->screen);
 
-  chHeapFree(s);
+  free(s);
 }
 
 static void

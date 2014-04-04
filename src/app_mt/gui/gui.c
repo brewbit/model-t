@@ -155,7 +155,7 @@ dispatch_touch(touch_msg_t* touch)
 static void
 dispatch_push_screen(widget_t* screen)
 {
-  widget_stack_elem_t* stack_elem = chHeapAlloc(NULL, sizeof(widget_stack_elem_t));
+  widget_stack_elem_t* stack_elem = calloc(1, sizeof(widget_stack_elem_t));
   stack_elem->widget = screen;
   stack_elem->next = screen_stack;
   screen_stack = stack_elem;

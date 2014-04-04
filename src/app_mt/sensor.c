@@ -37,8 +37,7 @@ bool sensor_is_connected(sensor_id_t sensor)
 sensor_port_t*
 sensor_init(sensor_id_t sensor, onewire_bus_t* port)
 {
-  sensor_port_t* tp = chHeapAlloc(NULL, sizeof(sensor_port_t));
-  memset(tp, 0, sizeof(sensor_port_t));
+  sensor_port_t* tp = calloc(1, sizeof(sensor_port_t));
 
   tp->sensor = sensor;
   tp->bus = port;

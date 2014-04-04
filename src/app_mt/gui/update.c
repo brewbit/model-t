@@ -37,8 +37,7 @@ widget_class_t update_screen_widget_class = {
 widget_t*
 update_screen_create()
 {
-  update_screen_t* s = chHeapAlloc(NULL, sizeof(update_screen_t));
-  memset(s, 0, sizeof(update_screen_t));
+  update_screen_t* s = calloc(1, sizeof(update_screen_t));
 
   s->widget = widget_create(NULL, &update_screen_widget_class, s, display_rect);
 
@@ -97,7 +96,7 @@ update_screen_destroy(widget_t* w)
 
   gui_msg_unsubscribe(MSG_OTAU_STATUS, s->widget);
 
-  chHeapFree(s);
+  free(s);
 }
 
 static void

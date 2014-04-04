@@ -39,8 +39,7 @@ widget_class_t settings_widget_class = {
 widget_t*
 settings_screen_create()
 {
-  settings_screen_t* s = chHeapAlloc(NULL, sizeof(settings_screen_t));
-  memset(s, 0, sizeof(settings_screen_t));
+  settings_screen_t* s = calloc(1, sizeof(settings_screen_t));
 
   s->widget = widget_create(NULL, &settings_widget_class, s, display_rect);
 
@@ -83,7 +82,7 @@ static void
 settings_screen_destroy(widget_t* w)
 {
   settings_screen_t* s = widget_get_instance_data(w);
-  chHeapFree(s);
+  free(s);
 }
 
 static void

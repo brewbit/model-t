@@ -23,8 +23,7 @@ widget_class_t history_widget_class = {
 widget_t*
 history_screen_create()
 {
-  history_screen_t* s = chHeapAlloc(NULL, sizeof(history_screen_t));
-  memset(s, 0, sizeof(history_screen_t));
+  history_screen_t* s = calloc(1, sizeof(history_screen_t));
 
   s->widget = widget_create(NULL, &history_widget_class, s, display_rect);
 
@@ -54,7 +53,7 @@ static void
 history_screen_destroy(widget_t* w)
 {
   history_screen_t* s = widget_get_instance_data(w);
-  chHeapFree(s);
+  free(s);
 }
 
 static void

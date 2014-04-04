@@ -25,8 +25,7 @@ static const widget_class_t icon_widget_class = {
 widget_t*
 icon_create(widget_t* parent, rect_t rect, const Image_t* image, uint16_t icon_color, uint16_t bg_color)
 {
-  icon_t* i = chHeapAlloc(NULL, sizeof(icon_t));
-  memset(i, 0, sizeof(icon_t));
+  icon_t* i = calloc(1, sizeof(icon_t));
 
   i->image = image;
   i->icon_color = icon_color;
@@ -41,7 +40,7 @@ static void
 icon_destroy(widget_t* w)
 {
   icon_t* i = widget_get_instance_data(w);
-  chHeapFree(i);
+  free(i);
 }
 
 void

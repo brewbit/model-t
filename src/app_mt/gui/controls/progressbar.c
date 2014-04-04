@@ -26,8 +26,7 @@ static const widget_class_t progressbar_widget_class = {
 widget_t*
 progressbar_create(widget_t* parent, rect_t rect, color_t bg_color, color_t bar_color)
 {
-  progressbar_t* l = chHeapAlloc(NULL, sizeof(progressbar_t));
-  memset(l, 0, sizeof(progressbar_t));
+  progressbar_t* l = calloc(1, sizeof(progressbar_t));
 
   l->progress = 0;
   l->bar_color = bar_color;
@@ -64,7 +63,7 @@ static void
 progressbar_destroy(widget_t* w)
 {
   progressbar_t* l = widget_get_instance_data(w);
-  chHeapFree(l);
+  free(l);
 }
 
 static void
