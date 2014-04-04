@@ -27,7 +27,6 @@ static void send_sensor_msg(sensor_port_t* tp, quantity_t* sample);
 static void send_timeout_msg(sensor_port_t* tp);
 
 static bool read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample);
-static bool read_bb(sensor_port_t* tp, quantity_t* sample);
 
 
 bool sensor_is_connected(sensor_id_t sensor)
@@ -114,9 +113,6 @@ sensor_get_sample(sensor_port_t* tp, quantity_t* sample)
   case 0x28: // DS18B20
     return read_maxim_temp_sensor(tp, sample);
 
-  case 0xBB:
-    return read_bb(tp, sample);
-
   default:
     return false;
   }
@@ -168,51 +164,6 @@ read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample)
   if (sample->unit == UNIT_TEMP_DEG_F) {
     sample->value = (sample->value * 1.8f) + 32;
   }
-
-  return true;
-}
-
-static bool
-read_bb(sensor_port_t* tp, quantity_t* sample)
-{
-  // issue a T convert command
-  if (!onewire_reset(tp->bus))
-    return false;
-  if (!onewire_send_byte(tp->bus, SKIP_ROM))
-    return false;
-  if (!onewire_send_byte(tp->bus, 0x44))
-    return false;
-
-  // wait for device to signal conversion complete
-  chThdSleepMilliseconds(100);
-  while (1) {
-    uint8_t bit;
-    if (!onewire_recv_bit(tp->bus, &bit))
-      return false;
-
-    if (bit)
-      break;
-    else
-      chThdSleepMilliseconds(10);
-  }
-
-  // read the scratchpad register
-  if (!onewire_reset(tp->bus)) {
-    return false;
-  }
-  if (!onewire_send_byte(tp->bus, SKIP_ROM))
-    return false;
-  if (!onewire_send_byte(tp->bus, 0xBE))
-    return false;
-  uint8_t t1, t2;
-  if (!onewire_recv_byte(tp->bus, &t1))
-    return false;
-  if (!onewire_recv_byte(tp->bus, &t2))
-    return false;
-
-  uint16_t t = (t2 << 8) + t1;
-  sample->unit = UNIT_HUMIDITY_PCT;
-  sample->value = t;
 
   return true;
 }
