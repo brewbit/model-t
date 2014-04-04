@@ -72,10 +72,10 @@ thread_watchdog_thread(void* arg)
       systime_t time_since_last_kick = (chTimeNow() - twd->last_kick);
 
       if (time_since_last_kick >= twd->period) {
-        printf("Thread '%s' timed out: %d / %d\r\n",
+        printf("Thread '%s' timed out: %u / %u\r\n",
             chRegGetThreadName(twd->tp),
-            time_since_last_kick,
-            twd->period);
+            (unsigned int)time_since_last_kick,
+            (unsigned int)twd->period);
 
         all_threads_responsive = false;
         break;

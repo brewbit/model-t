@@ -145,7 +145,7 @@ set_sensor_settings(sensor_settings_screen_t* s, setpoint_type_t setpoint_type, 
       if (tp != NULL)
         snprintf(subtext, 128, "Selected profile: '%s'", tp->name);
       else
-        snprintf(subtext, 128, "Selected profile: id=%d", s->settings.temp_profile_id);
+        snprintf(subtext, 128, "Selected profile: id=%u", (unsigned int)s->settings.temp_profile_id);
 
       add_button_spec(buttons, &num_buttons, temp_profile_button_clicked, img_snowflake, CYAN,
           "Temp Profile", subtext, s);
@@ -187,6 +187,7 @@ setpooint_type_button_clicked(button_event_t* event)
 static void
 temp_profile_button_clicked(button_event_t* event)
 {
+  (void)event;
 //  if (event->id == EVT_BUTTON_CLICK) {
 //  sensor_settings_screen_t* s = widget_get_user_data(event->widget);
 //

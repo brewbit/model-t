@@ -109,7 +109,7 @@ dispatch_update_check_response(FirmwareUpdateCheckResponse* response)
     status.update_size = response->binary_size;
     strncpy(status.update_ver, response->version, sizeof(status.update_ver));
     set_state(OU_UPDATE_AVAILABLE);
-    printf("update available %s %d\r\n", status.update_ver, response->binary_size);
+    printf("update available %s %u\r\n", status.update_ver, (unsigned int)response->binary_size);
   }
   else {
     set_state(OU_UPDATE_NOT_AVAILABLE);
@@ -122,10 +122,10 @@ dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
 {
   status.update_downloaded += update_chunk->data.size;
 
-  printf("downloaded %d / %d (%d%%)\r\n",
-      status.update_downloaded,
-      status.update_size,
-      (100 * status.update_downloaded) / status.update_size);
+  printf("downloaded %u / %u (%lu%%)\r\n",
+      (unsigned int)status.update_downloaded,
+      (unsigned int)status.update_size,
+      (unsigned int)(100 * status.update_downloaded) / status.update_size);
 
   set_state(OU_DOWNLOADING);
 

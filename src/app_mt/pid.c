@@ -11,12 +11,6 @@
  * [2] http://www.ece.eng.wayne.edu/~flin/Conference/AI-PID.pdf
  */
 
-#define LIMIT(v, min, max) \
-  do { \
-    if ((v) > (max)) (v) = (max); \
-    else if ((v) < (min)) (v) = (min); \
-  } while (0)
-
 void
 pid_init(pid_t* pid)
 {
@@ -43,7 +37,7 @@ pid_exec(pid_t* pid, float setpoint, float sample)
     float err_d = (err_p - pid->last_err);
 
     /* Limit integrator windup */
-    LIMIT(pid->err_i, pid->out_min, pid->out_max);
+    pid->err_i = LIMIT(pid->err_i, pid->out_min, pid->out_max);
 
     /* Recalculate gains using Lin et al algorithm */
     pid->kp += -GAMMA * err_p * err_p;
@@ -51,7 +45,7 @@ pid_exec(pid_t* pid, float setpoint, float sample)
     pid->kd += -GAMMA * err_p * err_d;
 
     pid->out = (pid->kp * err_p) + (pid->ki * pid->err_i) + (pid->kd * err_d);
-    LIMIT(pid->out, pid->out_min, pid->out_max);
+    pid->out = LIMIT(pid->out, pid->out_min, pid->out_max);
 
     pid->last_err = err_p;
     pid->last_time   = now;
@@ -88,9 +82,11 @@ pid_enable(pid_t* pid, float sample, bool enabled)
 void
 pid_reinit(pid_t* pid, float sample)
 {
+  // TODO
+  (void)sample;
 //  pid->last_err = sample.value;
   pid->err_i = pid->out;
-  LIMIT(pid->err_i, pid->out_min, pid->out_max);
+  pid->err_i = LIMIT(pid->err_i, pid->out_min, pid->out_max);
 }
 
 void
@@ -115,7 +111,7 @@ pid_set_output_limits(pid_t* pid, float min, float max)
   pid->out_max = max;
 
   if (pid->enabled) {
-    LIMIT(pid->out, pid->out_min, pid->out_max);
-    LIMIT(pid->err_i, pid->out_min, pid->out_max);
+    pid->out = LIMIT(pid->out, pid->out_min, pid->out_max);
+    pid->err_i = LIMIT(pid->err_i, pid->out_min, pid->out_max);
   }
 }

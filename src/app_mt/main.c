@@ -51,9 +51,9 @@ main(void)
 
   uint32_t* devid = board_get_device_id();
   sprintf(device_id, "%08X%08X%08X",
-      devid[0],
-      devid[1],
-      devid[2]);
+      (unsigned int)devid[0],
+      (unsigned int)devid[1],
+      (unsigned int)devid[2]);
 
   /* start stdout port */
   sdStart(SD_STDIO, NULL);
@@ -92,11 +92,11 @@ main(void)
         resets);
 
     const hci_stats_t* hs = hci_get_stats();
-    printf("HCI: %d %d %d %d %d\r\n",
+    printf("HCI: %u %u %u %u %u\r\n",
         hs->num_free_buffers,
         hs->buffer_len,
-        hs->num_sent_packets,
-        hs->num_released_packets,
-        hs->num_timeouts);
+        (unsigned int)hs->num_sent_packets,
+        (unsigned int)hs->num_released_packets,
+        (unsigned int)hs->num_timeouts);
   }
 }

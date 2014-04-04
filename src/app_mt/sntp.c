@@ -82,7 +82,7 @@
 #define SNTP_MODE_MASK              0x07
 
 /* number of seconds between 1900 and 1970 */
-#define DIFF_SEC_1900_1970         (2208988800)
+#define DIFF_SEC_1900_1970         (2208988800u)
 
 
 static void

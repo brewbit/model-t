@@ -53,7 +53,7 @@ button_list_set_buttons(widget_t* button_list, button_spec_t* buttons, uint32_t 
 
   listbox_clear(button_list);
 
-  for (i = 0; i < num_buttons; ++i) {
+  for (i = 0; i < (int)num_buttons; ++i) {
     rect_t rect;
     rect.x = 10;
     rect.y = 85;

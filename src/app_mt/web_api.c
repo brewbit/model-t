@@ -534,7 +534,7 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
 
 
   printf("  got %d temp profiles\r\n", settings->temp_profiles_count);
-  for (i = 0; i < settings->temp_profiles_count; ++i) {
+  for (i = 0; i < (int)settings->temp_profiles_count; ++i) {
     temp_profile_t tp;
     TempProfile* tpm = &settings->temp_profiles[i];
 
@@ -544,12 +544,12 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
     tp.start_value.value = tpm->start_value;
     tp.start_value.unit = UNIT_TEMP_DEG_F;
 
-    printf("    profile '%s' (%d)\r\n", tp.name, tp.id);
-    printf("      steps %d\r\n", tp.num_steps);
+    printf("    profile '%s' (%d)\r\n", tp.name, (int)tp.id);
+    printf("      steps %d\r\n", (int)tp.num_steps);
     printf("      start %f\r\n", tp.start_value.value);
 
     int j;
-    for (j = 0; j < tpm->steps_count; ++j) {
+    for (j = 0; j < (int)tpm->steps_count; ++j) {
       temp_profile_step_t* step = &tp.steps[j];
       TempProfileStep* stepm = &tpm->steps[j];
 
@@ -575,7 +575,7 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
   }
 
   printf("  got %d output settings\r\n", settings->output_count);
-  for (i = 0; i < settings->output_count; ++i) {
+  for (i = 0; i < (int)settings->output_count; ++i) {
     output_settings_t* os = &tcc->output_settings[i];
     OutputSettings* osm = &settings->output[i];
 
@@ -591,7 +591,7 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
   }
 
   printf("  got %d sensor settings\r\n", settings->sensor_count);
-  for (i = 0; i < settings->sensor_count; ++i) {
+  for (i = 0; i < (int)settings->sensor_count; ++i) {
     sensor_settings_t* ss = &tcc->sensor_settings[i];
     SensorSettings* ssm = &settings->sensor[i];
 
@@ -623,7 +623,7 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
     printf("    sensor %d\r\n", i);
     printf("      setpoint_type %d\r\n", ss->setpoint_type);
     printf("      static %f\r\n", ss->static_setpoint.value);
-    printf("      temp profile %d\r\n", ss->temp_profile_id);
+    printf("      temp profile %d\r\n", (int)ss->temp_profile_id);
   }
 
   temp_control_start(tcc);

@@ -81,7 +81,7 @@ temp_profile_get_current_setpoint(temp_profile_run_t* run, float* sp)
       uint32_t step_begin = 0;
       float last_temp = profile->start_value.value;
 
-      for (i = 0; i < profile->num_steps; ++i) {
+      for (i = 0; i < (int)profile->num_steps; ++i) {
         const temp_profile_step_t* step = &profile->steps[i];
         uint32_t step_end = step_begin + step[i].duration;
 
