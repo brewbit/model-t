@@ -144,7 +144,6 @@ read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample)
 
   // wait for device to signal conversion complete
   chThdSleepMilliseconds(700);
-  int waits = 0;
   while (1) {
     uint8_t bit;
     if (!onewire_recv_bit(tp->bus, &bit))
@@ -152,13 +151,9 @@ read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample)
 
     if (bit)
       break;
-    else {
-      waits++;
-      chThdSleepMilliseconds(10);
-    }
+    else
+      chThdSleepMilliseconds(100);
   }
-
-  printf("took %d waits for reading\r\n", waits);
 
   // read the scratchpad register
   if (!onewire_reset(tp->bus)) {
