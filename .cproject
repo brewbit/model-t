@@ -105,7 +105,7 @@
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="Download App (local server) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="Download App (192.168.1.146) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
 				<buildArguments/>
 				<buildTarget>JTAG=jlink WEB_API_HOST=192.168.1.146 WEB_API_PORT=3000 download_app_mt</buildTarget>
@@ -132,6 +132,14 @@
 				<buildCommand>make</buildCommand>
 				<buildArguments/>
 				<buildTarget>clear_app_cfg</buildTarget>
+				<stopOnError>true</stopOnError>
+				<useDefaultCommand>true</useDefaultCommand>
+				<runAllBuilders>true</runAllBuilders>
+			</target>
+			<target name="Download App (192.168.1.104) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+				<buildCommand>make</buildCommand>
+				<buildArguments/>
+				<buildTarget>JTAG=jlink WEB_API_HOST=192.168.1.104 WEB_API_PORT=3000 download_app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
