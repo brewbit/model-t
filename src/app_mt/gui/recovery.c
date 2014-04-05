@@ -129,6 +129,10 @@ recovery_screen_msg(msg_event_t* event)
 {
   recovery_screen_t* s = widget_get_instance_data(event->widget);
 
+  /*TODO: Instead of just returning think about using widget_destroy to remove from memory */
+  if (chTimeNow() > S2ST(60))
+    return;
+
   switch (event->msg_id) {
     case MSG_TOUCH_INPUT:
       dispatch_touch_input(s, event->msg_data);
