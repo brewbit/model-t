@@ -27,7 +27,7 @@ static systime_t last_paint_time;
 void
 gui_init()
 {
-  gui_msg_listener = msg_listener_create("gui", 1024, gui_dispatch, NULL);
+  gui_msg_listener = msg_listener_create("gui", 2048, gui_dispatch, NULL);
   msg_listener_set_idle_timeout(gui_msg_listener, 100);
 
   msg_subscribe(gui_msg_listener, MSG_TOUCH_INPUT, NULL);

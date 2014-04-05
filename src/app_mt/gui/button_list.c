@@ -16,11 +16,12 @@
 #include <string.h>
 
 
-static void back_button_clicked(button_event_t* event);
-
-
 widget_t*
-button_list_screen_create(widget_t* screen, char* title, button_spec_t* buttons, uint32_t num_buttons)
+button_list_screen_create(
+    widget_t* screen,
+    char* title,
+    button_event_handler_t back_handler,
+    void* user_data)
 {
   rect_t rect = {
       .x = 15,
@@ -28,7 +29,8 @@ button_list_screen_create(widget_t* screen, char* title, button_spec_t* buttons,
       .width = 56,
       .height = 56,
   };
-  button_create(screen, rect, img_left, WHITE, BLACK, back_button_clicked);
+  widget_t* b = button_create(screen, rect, img_left, WHITE, BLACK, back_handler);
+  widget_set_user_data(b, user_data);
 
   rect.x = 85;
   rect.y = 26;
@@ -40,8 +42,6 @@ button_list_screen_create(widget_t* screen, char* title, button_spec_t* buttons,
   rect.width = 300;
   rect.height = 160;
   widget_t* lb = listbox_create(screen, rect, 76);
-
-  button_list_set_buttons(lb, buttons, num_buttons);
 
   return lb;
 }
@@ -78,11 +78,4 @@ button_list_set_buttons(widget_t* button_list, button_spec_t* buttons, uint32_t 
 
     listbox_add_item(button_list, button);
   }
-}
-
-static void
-back_button_clicked(button_event_t* event)
-{
-  if (event->id == EVT_BUTTON_CLICK)
-    gui_pop_screen();
 }

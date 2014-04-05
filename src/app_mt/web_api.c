@@ -173,14 +173,6 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
       dispatch_sensor_sample(api, msg_data);
       break;
 
-    case MSG_SENSOR_SETTINGS:
-      dispatch_device_settings_from_device(api, msg_data, NULL);
-      break;
-
-    case MSG_OUTPUT_SETTINGS:
-      dispatch_device_settings_from_device(api, NULL, msg_data);
-      break;
-
     case MSG_IDLE:
       web_api_idle(api);
       break;
@@ -198,6 +190,14 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
 
       case MSG_API_FW_DNLD_START:
         start_update(api, msg_data);
+        break;
+
+      case MSG_SENSOR_SETTINGS:
+        dispatch_device_settings_from_device(api, msg_data, NULL);
+        break;
+
+      case MSG_OUTPUT_SETTINGS:
+        dispatch_device_settings_from_device(api, NULL, msg_data);
         break;
 
       default:

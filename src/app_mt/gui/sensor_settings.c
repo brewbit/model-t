@@ -23,18 +23,16 @@ typedef struct {
 
 
 static void sensor_settings_screen_destroy(widget_t* w);
-static void sensor_settings_screen_msg(msg_event_t* event);
-static void dispatch_sensor_settings(sensor_settings_screen_t* s, sensor_settings_msg_t* msg);
 static void set_sensor_settings(sensor_settings_screen_t* s, setpoint_type_t setpoint_type, quantity_t static_setpoint, uint32_t temp_profile_id);
 static void temp_profile_button_clicked(button_event_t* event);
 static void setpooint_type_button_clicked(button_event_t* event);
 static void static_setpoint_button_clicked(button_event_t* event);
 static void update_static_setpoint(quantity_t delay, void* user_data);
+static void back_button_clicked(button_event_t* event);
 
 
 widget_class_t sensor_settings_widget_class = {
     .on_destroy = sensor_settings_screen_destroy,
-    .on_msg     = sensor_settings_screen_msg
 };
 
 
@@ -47,12 +45,11 @@ sensor_settings_screen_create(sensor_id_t sensor)
   widget_set_background(s->screen, BLACK, FALSE);
 
   char* title = (sensor == SENSOR_1) ? "Sensor 1 Setup" : "Sensor 2 Setup";
-  s->button_list = button_list_screen_create(s->screen, title, NULL, 0);
+  s->button_list = button_list_screen_create(s->screen, title, back_button_clicked, s);
 
   s->sensor = sensor;
   s->settings = *app_cfg_get_sensor_settings(sensor);
 
-  gui_msg_subscribe(MSG_SENSOR_SETTINGS, s->screen);
   set_sensor_settings(s, s->settings.setpoint_type, s->settings.static_setpoint, s->settings.temp_profile_id);
 
   return s->screen;
@@ -62,24 +59,7 @@ static void
 sensor_settings_screen_destroy(widget_t* w)
 {
   sensor_settings_screen_t* s = widget_get_instance_data(w);
-  gui_msg_unsubscribe(MSG_SENSOR_SETTINGS, w);
   free(s);
-}
-
-static void
-sensor_settings_screen_msg(msg_event_t* event)
-{
-  sensor_settings_screen_t* s = widget_get_instance_data(event->widget);
-
-  if (event->msg_id == MSG_SENSOR_SETTINGS)
-    dispatch_sensor_settings(s, event->msg_data);
-}
-
-static void
-dispatch_sensor_settings(sensor_settings_screen_t* s, sensor_settings_msg_t* msg)
-{
-  if (msg->sensor == s->sensor)
-    set_sensor_settings(s, msg->settings.setpoint_type, msg->settings.static_setpoint, msg->settings.temp_profile_id);
 }
 
 static void
@@ -225,3 +205,14 @@ update_static_setpoint(quantity_t setpoint, void* user_data)
   set_sensor_settings(s, s->settings.setpoint_type, setpoint, s->settings.temp_profile_id);
 }
 
+static void
+back_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
+    sensor_settings_screen_t* s = widget_get_user_data(event->widget);
+
+    app_cfg_set_sensor_settings(s->sensor, &s->settings);
+
+    gui_pop_screen();
+  }
+}

@@ -173,6 +173,7 @@ msg_broadcast(msg_id_t id, void* msg_data, bool wait)
         chDbgPanic("message broadcast to self, but no dispatch method provided");
     }
     else {
+
       thread_msg_t* msg = malloc(sizeof(thread_msg_t));
       msg->id = id;
       msg->msg_data = msg_data;

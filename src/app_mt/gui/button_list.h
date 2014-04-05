@@ -15,7 +15,11 @@ typedef struct {
 } button_spec_t;
 
 widget_t*
-button_list_screen_create(widget_t* screen, char* title, button_spec_t* buttons, uint32_t num_buttons);
+button_list_screen_create(
+    widget_t* screen,
+    char* title,
+    button_event_handler_t back_handler,
+    void* user_data);
 
 void
 button_list_set_buttons(widget_t* button_list, button_spec_t* buttons, uint32_t num_buttons);
