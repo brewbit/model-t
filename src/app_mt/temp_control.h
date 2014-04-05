@@ -42,6 +42,7 @@ typedef struct {
   sensor_id_t trigger;
   quantity_t cycle_delay;
   output_ctrl_t output_mode;
+  quantity_t hysteresis;
 } output_settings_t;
 
 typedef struct {

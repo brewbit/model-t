@@ -174,30 +174,39 @@ static void
 relay_control(relay_output_t* output)
 {
   const output_settings_t* output_settings = app_cfg_get_output_settings(output->id);
+  bool last_output_status = output->status.enabled;
 
   output->status.output = output->id;
 
   switch(output_settings->output_mode) {
   case ON_OFF:
+  {
+    float hysteresis = output_settings->hysteresis.value;
+    float sample = controller[output->id].last_sample.value;
+    float setpoint = temp_control_get_current_setpoint(output_settings->trigger);
+
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
-      if (controller[output->id].last_sample.value < temp_control_get_current_setpoint(output_settings->trigger))
+      if (sample < setpoint - hysteresis)
         enable_relay(output, true);
       else {
         enable_relay(output, false);
-        cycle_delay(output->id);
+        if (last_output_status == true)
+          cycle_delay(output->id);
       }
     }
     else {
-      if (controller[output->id].last_sample.value > temp_control_get_current_setpoint(output_settings->trigger))
+      if (sample > setpoint + hysteresis)
         enable_relay(output, true);
       else {
         enable_relay(output, false);
-        cycle_delay(output->id);
+        if (last_output_status == true)
+          cycle_delay(output->id);
       }
     }
 
 
     break;
+  }
 
   case PID:
     if ((chTimeNow() - output->window_start_time) >= output->pid_control.out) {
