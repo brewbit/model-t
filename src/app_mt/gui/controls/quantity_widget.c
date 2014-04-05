@@ -95,7 +95,7 @@ quantity_widget_paint(paint_event_t* event)
   else
     snprintf(value_str, sizeof(value_str), "%d.%d",
         (int)(s->sample.value),
-        ((int)(s->sample.value * 10.0f)) % 10);
+        ((int)(fabs(s->sample.value) * 10.0f)) % 10);
 
   Extents_t value_ext = font_text_extents(font_opensans_regular_62, value_str);
   Extents_t unit_ext = font_text_extents(font_opensans_regular_22, unit_str);
