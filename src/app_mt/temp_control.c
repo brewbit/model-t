@@ -188,7 +188,7 @@ relay_control(relay_output_t* output)
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
       if (sample < setpoint - hysteresis)
         enable_relay(output, true);
-      else {
+      else if (sample > setpoint) {
         enable_relay(output, false);
         if (last_output_status == true)
           cycle_delay(output->id);
@@ -197,7 +197,7 @@ relay_control(relay_output_t* output)
     else {
       if (sample > setpoint + hysteresis)
         enable_relay(output, true);
-      else {
+      else if (sample < setpoint) {
         enable_relay(output, false);
         if (last_output_status == true)
           cycle_delay(output->id);
