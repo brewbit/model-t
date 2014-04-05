@@ -1,5 +1,5 @@
 
-#include "gui/output.h"
+#include "gui/output_settings.h"
 #include "gfx.h"
 #include "button.h"
 #include "label.h"

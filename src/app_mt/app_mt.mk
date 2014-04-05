@@ -52,7 +52,7 @@ PROJECT_CSRC = \
        gui/history.c \
        gui/info.c \
        gui/home.c \
-       gui/output.c \
+       gui/output_settings.c \
        gui/output_function.c \
        gui/output_mode.c \
        gui/output_trigger.c \

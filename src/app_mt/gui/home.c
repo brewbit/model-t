@@ -5,7 +5,7 @@
 #include "button.h"
 #include "label.h"
 #include "gui/history.h"
-#include "gui/output.h"
+#include "gui/output_settings.h"
 #include "gui/settings.h"
 #include "gui/controller_settings.h"
 #include "gui/wifi.h"

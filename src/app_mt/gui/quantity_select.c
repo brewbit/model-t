@@ -93,7 +93,7 @@ quantity_select_screen_create(
   rect.x = 66;
   rect.y = 130;
   rect.width = 254;
-  s->quantity_widget = quantity_widget_create(s->widget, rect, app_cfg_get_temp_unit());
+  s->quantity_widget = quantity_widget_create(s->widget, rect, quantity.unit);
 
   set_quantity(s, quantity);
 

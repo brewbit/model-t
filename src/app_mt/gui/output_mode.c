@@ -1,4 +1,4 @@
-#include "gui/output.h"
+#include "gui/output_mode.h"
 #include "gfx.h"
 #include "button.h"
 #include "label.h"
