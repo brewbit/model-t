@@ -182,17 +182,21 @@ relay_control(relay_output_t* output)
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
       if (controller[output->id].last_sample.value < temp_control_get_current_setpoint(output_settings->trigger))
         enable_relay(output, true);
-      else
+      else {
         enable_relay(output, false);
+        cycle_delay(output->id);
+      }
     }
     else {
       if (controller[output->id].last_sample.value > temp_control_get_current_setpoint(output_settings->trigger))
         enable_relay(output, true);
-      else
+      else {
         enable_relay(output, false);
+        cycle_delay(output->id);
+      }
     }
 
-    cycle_delay(output->id);
+
     break;
 
   case PID:
