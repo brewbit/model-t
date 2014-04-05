@@ -4,8 +4,8 @@ MAJOR_VERSION = 1
 MINOR_VERSION = 0
 PATCH_VERSION = 0
 
-WEB_API_HOST = 192.168.1.146
-WEB_API_PORT = 3000
+WEB_API_HOST = staging.brewbit.com
+WEB_API_PORT = 80
 
 BOARD = II-MT-CONTROLLER
 
@@ -58,7 +58,7 @@ PROJECT_CSRC = \
        gui/output_trigger.c \
        gui/quantity_select.c \
        gui/recovery.c \
-       gui/sensor_settings.c \
+       gui/controller_settings.c \
        gui/settings.c \
        gui/textentry.c \
        gui/update.c \

@@ -37,7 +37,7 @@ typedef struct {
 
 static void dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_data);
 static void dispatch_output_settings(output_settings_msg_t* msg);
-static void dispatch_sensor_settings(sensor_settings_msg_t* msg);
+static void dispatch_controller_settings(controller_settings_msg_t* msg);
 static void dispatch_sensor_sample(sensor_msg_t* msg);
 static void dispatch_sensor_timeout(sensor_timeout_msg_t* msg);
 static void controller_init(sensor_id_t sensor, SerialDriver* sd);
@@ -65,7 +65,7 @@ temp_control_init()
 
   msg_subscribe(l, MSG_SENSOR_SAMPLE,   NULL);
   msg_subscribe(l, MSG_SENSOR_TIMEOUT,  NULL);
-  msg_subscribe(l, MSG_SENSOR_SETTINGS, NULL);
+  msg_subscribe(l, MSG_CONTROLLER_SETTINGS, NULL);
   msg_subscribe(l, MSG_OUTPUT_SETTINGS, NULL);
 }
 
@@ -80,12 +80,12 @@ temp_control_start(temp_control_cmd_t* cmd)
   }
 
   for (i = 0; i < NUM_SENSORS; ++i) {
-    app_cfg_set_sensor_settings(i, &cmd->sensor_settings[i]);
+    app_cfg_set_controller_settings(i, &cmd->controller_settings[i]);
 
-    if (cmd->sensor_settings[i].setpoint_type == SP_TEMP_PROFILE)
+    if (cmd->controller_settings[i].setpoint_type == SP_TEMP_PROFILE)
       temp_profile_start(
           &controller[i].temp_profile_run,
-          cmd->sensor_settings[i].temp_profile_id);
+          cmd->controller_settings[i].temp_profile_id);
 
     controller[i].state = TC_ACTIVE;
   }
@@ -104,7 +104,7 @@ float
 temp_control_get_current_setpoint(sensor_id_t sensor)
 {
   float sp;
-  const sensor_settings_t* settings = app_cfg_get_sensor_settings(sensor);
+  const controller_settings_t* settings = app_cfg_get_controller_settings(sensor);
 
   if (settings->setpoint_type == SP_STATIC)
     return settings->static_setpoint.value;
@@ -250,8 +250,8 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* listener_data, void* 
     dispatch_sensor_timeout(msg_data);
     break;
 
-  case MSG_SENSOR_SETTINGS:
-    dispatch_sensor_settings(msg_data);
+  case MSG_CONTROLLER_SETTINGS:
+    dispatch_controller_settings(msg_data);
     break;
 
   case MSG_OUTPUT_SETTINGS:
@@ -324,7 +324,7 @@ dispatch_output_settings(output_settings_msg_t* msg)
 }
 
 static void
-dispatch_sensor_settings(sensor_settings_msg_t* msg)
+dispatch_controller_settings(controller_settings_msg_t* msg)
 {
   if (msg->sensor >= NUM_SENSORS)
     return;

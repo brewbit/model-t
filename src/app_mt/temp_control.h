@@ -35,7 +35,7 @@ typedef struct {
   setpoint_type_t setpoint_type;
   quantity_t static_setpoint;
   uint32_t temp_profile_id;
-} sensor_settings_t;
+} controller_settings_t;
 
 typedef struct {
   output_function_t function;
@@ -46,8 +46,8 @@ typedef struct {
 
 typedef struct {
   sensor_id_t sensor;
-  sensor_settings_t settings;
-} sensor_settings_msg_t;
+  controller_settings_t settings;
+} controller_settings_msg_t;
 
 typedef struct {
   output_id_t output;
@@ -60,7 +60,7 @@ typedef struct {
 } output_status_t;
 
 typedef struct {
-  sensor_settings_t sensor_settings[NUM_SENSORS];
+  controller_settings_t controller_settings[NUM_SENSORS];
   output_settings_t output_settings[NUM_OUTPUTS];
 } temp_control_cmd_t;
 

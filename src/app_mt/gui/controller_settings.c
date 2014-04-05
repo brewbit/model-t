@@ -1,5 +1,5 @@
 
-#include "gui/sensor_settings.h"
+#include "gui/controller_settings.h"
 #include "gfx.h"
 #include "button.h"
 #include "label.h"
@@ -18,12 +18,12 @@ typedef struct {
   widget_t* button_list;
 
   sensor_id_t sensor;
-  sensor_settings_t settings;
-} sensor_settings_screen_t;
+  controller_settings_t settings;
+} controller_settings_screen_t;
 
 
-static void sensor_settings_screen_destroy(widget_t* w);
-static void set_sensor_settings(sensor_settings_screen_t* s, setpoint_type_t setpoint_type, quantity_t static_setpoint, uint32_t temp_profile_id);
+static void controller_settings_screen_destroy(widget_t* w);
+static void set_controller_settings(controller_settings_screen_t* s, setpoint_type_t setpoint_type, quantity_t static_setpoint, uint32_t temp_profile_id);
 static void temp_profile_button_clicked(button_event_t* event);
 static void setpooint_type_button_clicked(button_event_t* event);
 static void static_setpoint_button_clicked(button_event_t* event);
@@ -31,34 +31,34 @@ static void update_static_setpoint(quantity_t delay, void* user_data);
 static void back_button_clicked(button_event_t* event);
 
 
-widget_class_t sensor_settings_widget_class = {
-    .on_destroy = sensor_settings_screen_destroy,
+widget_class_t controller_settings_widget_class = {
+    .on_destroy = controller_settings_screen_destroy,
 };
 
 
 widget_t*
-sensor_settings_screen_create(sensor_id_t sensor)
+controller_settings_screen_create(sensor_id_t sensor)
 {
-  sensor_settings_screen_t* s = calloc(1, sizeof(sensor_settings_screen_t));
+  controller_settings_screen_t* s = calloc(1, sizeof(controller_settings_screen_t));
 
-  s->screen = widget_create(NULL, &sensor_settings_widget_class, s, display_rect);
+  s->screen = widget_create(NULL, &controller_settings_widget_class, s, display_rect);
   widget_set_background(s->screen, BLACK, FALSE);
 
-  char* title = (sensor == SENSOR_1) ? "Sensor 1 Setup" : "Sensor 2 Setup";
+  char* title = (sensor == SENSOR_1) ? "Controller 1 Setup" : "Controller 2 Setup";
   s->button_list = button_list_screen_create(s->screen, title, back_button_clicked, s);
 
   s->sensor = sensor;
-  s->settings = *app_cfg_get_sensor_settings(sensor);
+  s->settings = *app_cfg_get_controller_settings(sensor);
 
-  set_sensor_settings(s, s->settings.setpoint_type, s->settings.static_setpoint, s->settings.temp_profile_id);
+  set_controller_settings(s, s->settings.setpoint_type, s->settings.static_setpoint, s->settings.temp_profile_id);
 
   return s->screen;
 }
 
 static void
-sensor_settings_screen_destroy(widget_t* w)
+controller_settings_screen_destroy(widget_t* w)
 {
-  sensor_settings_screen_t* s = widget_get_instance_data(w);
+  controller_settings_screen_t* s = widget_get_instance_data(w);
   free(s);
 }
 
@@ -83,7 +83,7 @@ add_button_spec(
 }
 
 static void
-set_sensor_settings(sensor_settings_screen_t* s, setpoint_type_t setpoint_type, quantity_t static_setpoint, uint32_t temp_profile_id)
+set_controller_settings(controller_settings_screen_t* s, setpoint_type_t setpoint_type, quantity_t static_setpoint, uint32_t temp_profile_id)
 {
   uint32_t num_buttons = 0;
   button_spec_t buttons[4];
@@ -114,7 +114,7 @@ set_sensor_settings(sensor_settings_screen_t* s, setpoint_type_t setpoint_type, 
     case SP_STATIC:
       snprintf(subtext, 128, "Setpoint value: %d.%d %c",
           (int)(s->settings.static_setpoint.value),
-          ((int)(s->settings.static_setpoint.value * 10.0f)) % 10, 'F');
+          ((int)(fabs(s->settings.static_setpoint.value) * 10.0f)) % 10, 'F');
       add_button_spec(buttons, &num_buttons, static_setpoint_button_clicked, img_snowflake, CYAN,
           "Static Setpoint", subtext, s);
       break;
@@ -144,7 +144,7 @@ static void
 setpooint_type_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    sensor_settings_screen_t* s = widget_get_user_data(event->widget);
+    controller_settings_screen_t* s = widget_get_user_data(event->widget);
 
     setpoint_type_t new_sp_type = SP_STATIC;
     switch (s->settings.setpoint_type) {
@@ -160,7 +160,7 @@ setpooint_type_button_clicked(button_event_t* event)
         break;
     }
 
-    set_sensor_settings(s, new_sp_type, s->settings.static_setpoint, s->settings.temp_profile_id);
+    set_controller_settings(s, new_sp_type, s->settings.static_setpoint, s->settings.temp_profile_id);
   }
 }
 
@@ -169,7 +169,7 @@ temp_profile_button_clicked(button_event_t* event)
 {
   (void)event;
 //  if (event->id == EVT_BUTTON_CLICK) {
-//  sensor_settings_screen_t* s = widget_get_user_data(event->widget);
+//  controller_settings_screen_t* s = widget_get_user_data(event->widget);
 //
 //    widget_t* temp_profile_screen = temp_profile_screen_create(s->sensor);
 //    gui_push_screen(temp_profile_screen);
@@ -182,13 +182,13 @@ static_setpoint_button_clicked(button_event_t* event)
   if (event->id != EVT_BUTTON_CLICK)
     return;
 
-  sensor_settings_screen_t* s = widget_get_user_data(event->widget);
+  controller_settings_screen_t* s = widget_get_user_data(event->widget);
 
   char* title;
   if (s->sensor == SENSOR_1)
-    title = "Sensor 1 Setpoint";
+    title = "Controller 1 Setpoint";
   else
-    title = "Sensor 2 Setpoint";
+    title = "Controller 2 Setpoint";
 
   float velocity_steps[] = {
       0.1f, 0.5f, 1.0f
@@ -201,17 +201,17 @@ static_setpoint_button_clicked(button_event_t* event)
 static void
 update_static_setpoint(quantity_t setpoint, void* user_data)
 {
-  sensor_settings_screen_t* s = user_data;
-  set_sensor_settings(s, s->settings.setpoint_type, setpoint, s->settings.temp_profile_id);
+  controller_settings_screen_t* s = user_data;
+  set_controller_settings(s, s->settings.setpoint_type, setpoint, s->settings.temp_profile_id);
 }
 
 static void
 back_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    sensor_settings_screen_t* s = widget_get_user_data(event->widget);
+    controller_settings_screen_t* s = widget_get_user_data(event->widget);
 
-    app_cfg_set_sensor_settings(s->sensor, &s->settings);
+    app_cfg_set_controller_settings(s->sensor, &s->settings);
 
     gui_pop_screen();
   }

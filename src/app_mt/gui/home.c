@@ -7,7 +7,7 @@
 #include "gui/history.h"
 #include "gui/output.h"
 #include "gui/settings.h"
-#include "gui/sensor_settings.h"
+#include "gui/controller_settings.h"
 #include "gui/wifi.h"
 #include "gui/textentry.h"
 #include "gui/quantity_select.h"
@@ -328,7 +328,7 @@ click_sensor_button(button_event_t* event)
   else
     sensor = SENSOR_2;
 
-  widget_t* settings_screen = sensor_settings_screen_create(sensor);
+  widget_t* settings_screen = controller_settings_screen_create(sensor);
   gui_push_screen(settings_screen);
 }
 

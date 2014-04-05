@@ -83,7 +83,7 @@ dispatch_sensor_sample(web_api_t* api, sensor_msg_t* sample);
 
 static void
 dispatch_device_settings_from_device(web_api_t* api,
-    sensor_settings_msg_t* sensor_settings_msg,
+    controller_settings_msg_t* controller_settings_msg,
     output_settings_msg_t* output_settings_msg);
 
 static void
@@ -158,7 +158,7 @@ web_api_init()
   msg_subscribe(l, MSG_API_FW_UPDATE_CHECK, NULL);
   msg_subscribe(l, MSG_API_FW_DNLD_START, NULL);
   msg_subscribe(l, MSG_SENSOR_SAMPLE, NULL);
-  msg_subscribe(l, MSG_SENSOR_SETTINGS, NULL);
+  msg_subscribe(l, MSG_CONTROLLER_SETTINGS, NULL);
   msg_subscribe(l, MSG_OUTPUT_SETTINGS, NULL);
 }
 
@@ -204,7 +204,7 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
         start_update(api, msg_data);
         break;
 
-      case MSG_SENSOR_SETTINGS:
+      case MSG_CONTROLLER_SETTINGS:
         dispatch_device_settings_from_device(api, msg_data, NULL);
         break;
 
@@ -372,7 +372,7 @@ dispatch_sensor_sample(web_api_t* api, sensor_msg_t* sample)
 static void
 dispatch_device_settings_from_device(
     web_api_t* api,
-    sensor_settings_msg_t* ssm,
+    controller_settings_msg_t* ssm,
     output_settings_msg_t* osm)
 {
   printf("settings updated\r\n");
@@ -397,7 +397,7 @@ send_device_settings(
 
   for (i = 0; i < NUM_SENSORS; ++i) {
     if (api->sensor_status[i].new_settings) {
-      const sensor_settings_t* ssl = app_cfg_get_sensor_settings(i);
+      const controller_settings_t* ssl = app_cfg_get_controller_settings(i);
       SensorSettings* ss = &msg->deviceSettingsNotification.sensor[i];
       msg->deviceSettingsNotification.sensor_count++;
 
@@ -641,7 +641,7 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
 
   printf("  got %d sensor settings\r\n", settings->sensor_count);
   for (i = 0; i < (int)settings->sensor_count; ++i) {
-    sensor_settings_t* ss = &tcc->sensor_settings[i];
+    controller_settings_t* ss = &tcc->controller_settings[i];
     SensorSettings* ssm = &settings->sensor[i];
 
     switch (ssm->setpoint_type) {
