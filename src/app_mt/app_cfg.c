@@ -157,15 +157,17 @@ app_cfg_set_sensor_settings(sensor_id_t sensor, sensor_settings_t* settings)
   if (sensor >= NUM_SENSORS)
     return;
 
-  chMtxLock(&app_cfg_mtx);
-  app_cfg_local.data.sensor_settings[sensor] = *settings;
-  chMtxUnlock();
+  if (memcmp(settings, &app_cfg_local.data.sensor_settings[sensor], sizeof(sensor_settings_t)) != 0) {
+    chMtxLock(&app_cfg_mtx);
+    app_cfg_local.data.sensor_settings[sensor] = *settings;
+    chMtxUnlock();
 
-  sensor_settings_msg_t msg = {
-      .sensor = sensor,
-      .settings = *settings
-  };
-  msg_send(MSG_SENSOR_SETTINGS, &msg);
+    sensor_settings_msg_t msg = {
+        .sensor = sensor,
+        .settings = *settings
+    };
+    msg_send(MSG_SENSOR_SETTINGS, &msg);
+  }
 }
 
 const output_settings_t*
@@ -183,15 +185,17 @@ app_cfg_set_output_settings(output_id_t output, output_settings_t* settings)
   if (output >= NUM_OUTPUTS)
     return;
 
-  chMtxLock(&app_cfg_mtx);
-  app_cfg_local.data.output_settings[output] = *settings;
-  chMtxUnlock();
+  if (memcmp(settings, &app_cfg_local.data.output_settings[output], sizeof(output_settings_t)) != 0) {
+    chMtxLock(&app_cfg_mtx);
+    app_cfg_local.data.output_settings[output] = *settings;
+    chMtxUnlock();
 
-  output_settings_msg_t msg = {
-      .output = output,
-      .settings = *settings
-  };
-  msg_send(MSG_OUTPUT_SETTINGS, &msg);
+    output_settings_msg_t msg = {
+        .output = output,
+        .settings = *settings
+    };
+    msg_send(MSG_OUTPUT_SETTINGS, &msg);
+  }
 }
 
 const char*
