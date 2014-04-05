@@ -57,11 +57,11 @@ app_cfg_init()
     touch_calib_reset();
 
     app_cfg_local.data.controller_settings[SENSOR_1].setpoint_type = SP_STATIC;
-    app_cfg_local.data.controller_settings[SENSOR_1].static_setpoint.value = 78;
+    app_cfg_local.data.controller_settings[SENSOR_1].static_setpoint.value = 68;
     app_cfg_local.data.controller_settings[SENSOR_1].static_setpoint.unit = UNIT_TEMP_DEG_F;
 
     app_cfg_local.data.controller_settings[SENSOR_2].setpoint_type = SP_STATIC;
-    app_cfg_local.data.controller_settings[SENSOR_2].static_setpoint.value = 78;
+    app_cfg_local.data.controller_settings[SENSOR_2].static_setpoint.value = 68;
     app_cfg_local.data.controller_settings[SENSOR_2].static_setpoint.unit = UNIT_TEMP_DEG_F;
 
     app_cfg_local.data.output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
