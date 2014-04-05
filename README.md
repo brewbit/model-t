@@ -37,6 +37,32 @@ Download and install the following while also adding them to your [PATH](http://
   * `pip install pyprotobuf`
 3. Protobuf stuff
   * `brew install protobuf`
+  
+#### Linux (Ubuntu)
+1. GNU Tools for ARM Embedded Processors
+	* sudo apt-add-repository ppa:terry.guo/gcc-arm-embedded
+	* sudo apt-get update
+	* sudo apt-get install gcc-arm-none-eabi
+2. Python Items
+	* sudo apt-get install python-pip
+	Pystache
+	* sudo pip install pystache
+	Pygame
+	* [Compile and install](http://www.pygame.org/wiki/CompileUbuntu)
+	Protobufs
+	* sudo apt-get install python-protobuf	
+	* sudo apt-get install libprotobuf-dev
+3. OpenOCD 0.8.0 
+	* [Compile and install][https://sourceforge.net/projects/openocd/files/openocd/]
+	* In order to use with jlink:
+	** sudo apt-get install libusb-1.0.0-dev
+	** ./configure --enable-jlink
+4. Install drivers for J-Link and buspirate (from model-t directory):
+	* sudo groupadd usbusers
+	* sudo usermod -a -G usbusers <your username>
+	* sudo cp scripts/40-persistent-usb.rules /etc/udev/rules.d
+	* sudo udevadm control --reload-rules
+	
 
 ## Dependencies
 
