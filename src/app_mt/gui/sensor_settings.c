@@ -194,7 +194,7 @@ static_setpoint_button_clicked(button_event_t* event)
       0.1f, 0.5f, 1.0f
   };
   widget_t* static_setpoint_screen = quantity_select_screen_create(
-      title, s->settings.static_setpoint, velocity_steps, 1, update_static_setpoint, s);
+      title, s->settings.static_setpoint, velocity_steps, 3, update_static_setpoint, s);
   gui_push_screen(static_setpoint_screen);
 }
 
