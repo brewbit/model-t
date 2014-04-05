@@ -34,18 +34,26 @@
 #endif
 
 #define SENSOR_REPORT_INTERVAL S2ST(5)
+#define SETTINGS_UPDATE_DELAY  S2ST(1 * 60)
 
 
 typedef struct {
   bool new_sample;
+  bool new_settings;
   quantity_t last_sample;
-} sensor_status_t;
+} api_sensor_status_t;
+
+typedef struct {
+  bool new_settings;
+} api_output_status_t;
 
 typedef struct {
   snWebsocket* ws;
   api_status_t status;
-  sensor_status_t sensor_status[NUM_SENSORS];
+  api_sensor_status_t sensor_status[NUM_SENSORS];
+  api_output_status_t output_status[NUM_OUTPUTS];
   systime_t last_sensor_report_time;
+  systime_t last_settings_update_time;
 } web_api_t;
 
 
@@ -77,6 +85,10 @@ static void
 dispatch_device_settings_from_device(web_api_t* api,
     sensor_settings_msg_t* sensor_settings_msg,
     output_settings_msg_t* output_settings_msg);
+
+static void
+send_device_settings(
+    web_api_t* api);
 
 static void
 request_activation_token(web_api_t* api);
@@ -262,6 +274,16 @@ web_api_idle(web_api_t* api)
         send_sensor_report(api);
         api->last_sensor_report_time = chTimeNow();
       }
+
+      if ((api->last_settings_update_time != 0) &&
+          (chTimeNow() - api->last_settings_update_time) > SETTINGS_UPDATE_DELAY) {
+        send_device_settings(api);
+        api->last_settings_update_time = 0;
+      }
+
+      if (api->last_settings_update_time != 0) {
+        printf("Settings update pending, but not yet sent\r\n");
+      }
       break;
   }
 
@@ -342,7 +364,7 @@ dispatch_sensor_sample(web_api_t* api, sensor_msg_t* sample)
   if (sample->sensor >= NUM_SENSORS)
     return;
 
-  sensor_status_t* s = &api->sensor_status[sample->sensor];
+  api_sensor_status_t* s = &api->sensor_status[sample->sensor];
   s->new_sample = true;
   s->last_sample = sample->sample;
 }
@@ -353,59 +375,86 @@ dispatch_device_settings_from_device(
     sensor_settings_msg_t* ssm,
     output_settings_msg_t* osm)
 {
-  printf("sending sensor settings to server\r\n");
+  printf("settings updated\r\n");
+
+  if (ssm != NULL)
+    api->sensor_status[ssm->sensor].new_settings = true;
+
+  if (osm != NULL)
+    api->output_status[osm->output].new_settings = true;
+
+  api->last_settings_update_time = chTimeNow();
+}
+
+static void
+send_device_settings(
+    web_api_t* api)
+{
+  int i;
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_DEVICE_SETTINGS_NOTIFICATION;
   msg->has_deviceSettingsNotification = true;
 
-  if (ssm != NULL) {
-    SensorSettings* ss = &msg->deviceSettingsNotification.sensor[0];
-    msg->deviceSettingsNotification.sensor_count = 1;
+  for (i = 0; i < NUM_SENSORS; ++i) {
+    if (api->sensor_status[i].new_settings) {
+      const sensor_settings_t* ssl = app_cfg_get_sensor_settings(i);
+      SensorSettings* ss = &msg->deviceSettingsNotification.sensor[i];
+      msg->deviceSettingsNotification.sensor_count++;
 
-    ss->id = ssm->sensor;
-    switch (ssm->settings.setpoint_type) {
-      case SP_STATIC:
-        ss->setpoint_type = SensorSettings_SetpointType_STATIC;
-        ss->has_static_setpoint = true;
-        ss->static_setpoint = ssm->settings.static_setpoint.value;
-        break;
+      ss->id = i;
+      switch (ssl->setpoint_type) {
+        case SP_STATIC:
+          ss->setpoint_type = SensorSettings_SetpointType_STATIC;
+          ss->has_static_setpoint = true;
+          ss->static_setpoint = ssl->static_setpoint.value;
+          break;
 
-      case SP_TEMP_PROFILE:
-        ss->setpoint_type = SensorSettings_SetpointType_TEMP_PROFILE;
-        ss->has_temp_profile_id = true;
-        ss->temp_profile_id = ssm->settings.temp_profile_id;
-        break;
+        case SP_TEMP_PROFILE:
+          ss->setpoint_type = SensorSettings_SetpointType_TEMP_PROFILE;
+          ss->has_temp_profile_id = true;
+          ss->temp_profile_id = ssl->temp_profile_id;
+          break;
 
-      default:
-        printf("Invalid setpoint type: %d\r\n", ssm->settings.setpoint_type);
-        break;
+        default:
+          printf("Invalid setpoint type: %d\r\n", ssl->setpoint_type);
+          break;
+      }
     }
   }
 
-  if (osm != NULL) {
-    OutputSettings* os = &msg->deviceSettingsNotification.output[0];
-    msg->deviceSettingsNotification.output_count = 1;
+  for (i = 0; i < NUM_OUTPUTS; ++i) {
+    if (api->output_status[i].new_settings) {
+      const output_settings_t* osl = app_cfg_get_output_settings(i);
+      OutputSettings* os = &msg->deviceSettingsNotification.output[i];
+      msg->deviceSettingsNotification.output_count++;
 
-    os->id = osm->output;
-    os->function = osm->settings.function;
-    switch (osm->settings.output_mode) {
-      case PID:
-        os->output_mode = OutputSettings_OutputControlMode_PID;
-        break;
+      os->id = i;
+      os->function = osl->function;
+      switch (osl->output_mode) {
+        case PID:
+          os->output_mode = OutputSettings_OutputControlMode_PID;
+          break;
 
-      case ON_OFF:
-        os->output_mode = OutputSettings_OutputControlMode_ON_OFF;
-        break;
+        case ON_OFF:
+          os->output_mode = OutputSettings_OutputControlMode_ON_OFF;
+          break;
 
-      default:
-        printf("Invalid output control mode: %d\r\n", osm->settings.output_mode);
-        break;
+        default:
+          printf("Invalid output control mode: %d\r\n", osl->output_mode);
+          break;
+      }
+      os->cycle_delay = osl->cycle_delay.value;
+      os->trigger_sensor_id = osl->trigger;
     }
-    os->cycle_delay = osm->settings.cycle_delay.value;
-    os->trigger_sensor_id = osm->settings.trigger;
   }
 
-  send_api_msg(api->ws, msg);
+  if (msg->deviceSettingsNotification.sensor_count > 0 ||
+      msg->deviceSettingsNotification.output_count > 0) {
+    printf("Sending device settings %d %d\r\n",
+        msg->deviceSettingsNotification.sensor_count,
+        msg->deviceSettingsNotification.output_count);
+    send_api_msg(api->ws, msg);
+  }
 
   free(msg);
 }
