@@ -140,12 +140,12 @@ set_output_settings(output_screen_t* s, output_function_t function, sensor_id_t 
       break;
   }
 
-  widget_set_background(btn1, color, FALSE);
+  button_set_color(btn1, color);
   button_set_icon(btn1, img);
 
-  widget_set_background(btn2, (trigger == SENSOR_1) ? AMBER : PURPLE, FALSE);
+  button_set_color(btn2, (trigger == SENSOR_1) ? AMBER : PURPLE);
 
-  widget_set_background(btn3, (mode == ON_OFF) ? RED : STEEL, FALSE);
+  button_set_color(btn3, (mode == ON_OFF) ? RED : STEEL);
 }
 
 static void
