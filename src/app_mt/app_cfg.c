@@ -20,6 +20,7 @@ typedef struct {
   output_settings_t output_settings[NUM_OUTPUTS];
   char auth_token[64];
   net_settings_t net_settings;
+  fault_data_t fault;
 } app_cfg_data_t;
 
 typedef struct {
@@ -57,11 +58,11 @@ app_cfg_init()
     touch_calib_reset();
 
     app_cfg_local.data.controller_settings[SENSOR_1].setpoint_type = SP_STATIC;
-    app_cfg_local.data.controller_settings[SENSOR_1].static_setpoint.value = 78;
+    app_cfg_local.data.controller_settings[SENSOR_1].static_setpoint.value = 68;
     app_cfg_local.data.controller_settings[SENSOR_1].static_setpoint.unit = UNIT_TEMP_DEG_F;
 
     app_cfg_local.data.controller_settings[SENSOR_2].setpoint_type = SP_STATIC;
-    app_cfg_local.data.controller_settings[SENSOR_2].static_setpoint.value = 78;
+    app_cfg_local.data.controller_settings[SENSOR_2].static_setpoint.value = 68;
     app_cfg_local.data.controller_settings[SENSOR_2].static_setpoint.unit = UNIT_TEMP_DEG_F;
 
     app_cfg_local.data.output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
@@ -88,15 +89,7 @@ void
 app_cfg_idle()
 {
   if ((chTimeNow() - last_idle) > S2ST(2)) {
-    chMtxLock(&app_cfg_mtx);
-
-    app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
-
-    if (memcmp(&app_cfg_local, &app_cfg_stored, sizeof(app_cfg_local)) != 0) {
-      flashSectorErase(1);
-      flashWrite((flashaddr_t)&app_cfg_stored, (char*)&app_cfg_local, sizeof(app_cfg_local));
-    }
-    chMtxUnlock();
+    app_cfg_flush();
     last_idle = chTimeNow();
   }
 }
@@ -260,4 +253,39 @@ uint32_t
 app_cfg_get_reset_count(void)
 {
   return app_cfg_local.data.reset_count;
+}
+
+void
+app_cfg_clear_fault_data()
+{
+  memset(app_cfg_local.data.fault.data, 0, sizeof(fault_data_t));
+}
+
+const fault_data_t*
+app_cfg_get_fault_data()
+{
+  return &app_cfg_local.data.fault;
+}
+
+void
+app_cfg_set_fault_data(fault_type_t fault_type, void* data, uint32_t data_size)
+{
+  if (data_size > MAX_FAULT_DATA)
+    data_size = MAX_FAULT_DATA;
+
+  app_cfg_local.data.fault.type = fault_type;
+  memcpy(app_cfg_local.data.fault.data, data, data_size);
+}
+
+void
+app_cfg_flush()
+{
+  chMtxLock(&app_cfg_mtx);
+  app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
+
+  if (memcmp(&app_cfg_local, &app_cfg_stored, sizeof(app_cfg_local)) != 0) {
+    flashSectorErase(1);
+    flashWrite((flashaddr_t)&app_cfg_stored, (char*)&app_cfg_local, sizeof(app_cfg_local));
+  }
+  chMtxUnlock();
 }

@@ -87,7 +87,7 @@ temp_control_start(temp_control_cmd_t* cmd)
           &controller[i].temp_profile_run,
           cmd->controller_settings[i].temp_profile_id);
 
-    controller[i].state = TC_ACTIVE;
+    controller[i].state = TC_SENSOR_TIMED_OUT;
   }
 }
 
@@ -117,8 +117,13 @@ temp_control_get_current_setpoint(sensor_id_t sensor)
 static void
 controller_init(sensor_id_t sensor, SerialDriver* sd)
 {
+  const controller_settings_t* cs = app_cfg_get_controller_settings(SENSOR_1);
+
   controller[sensor].port = sensor_init(sensor, sd);
-  controller[sensor].state = TC_HALTED;
+  controller[sensor].state = TC_SENSOR_TIMED_OUT;
+
+  if (cs->setpoint_type == SP_TEMP_PROFILE)
+    temp_profile_start(&controller[sensor].temp_profile_run, cs->temp_profile_id);
 }
 
 static void
@@ -188,7 +193,7 @@ relay_control(relay_output_t* output)
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
       if (sample < setpoint - hysteresis)
         enable_relay(output, true);
-      else {
+      else if (sample > setpoint) {
         enable_relay(output, false);
         if (last_output_status == true)
           cycle_delay(output->id);
@@ -197,7 +202,7 @@ relay_control(relay_output_t* output)
     else {
       if (sample > setpoint + hysteresis)
         enable_relay(output, true);
-      else {
+      else if (sample < setpoint) {
         enable_relay(output, false);
         if (last_output_status == true)
           cycle_delay(output->id);
@@ -282,8 +287,9 @@ dispatch_sensor_sample(sensor_msg_t* msg)
   int i;
 
   controller[msg->sensor].last_sample = msg->sample;
-  if (controller[msg->sensor].state == TC_SENSOR_TIMED_OUT)
+  if (controller[msg->sensor].state == TC_SENSOR_TIMED_OUT) {
     controller[msg->sensor].state = TC_ACTIVE;
+  }
 
   temp_profile_update(&controller[msg->sensor].temp_profile_run, msg->sample);
 

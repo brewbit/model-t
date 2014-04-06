@@ -1,35 +1,45 @@
 
 #include "ch.h"
 #include "hal.h"
+#include "fault.h"
+#include "app_cfg.h"
 
+#include <stdio.h>
 #include <stdint.h>
 
 
 void
 dump_stack(uint32_t *pulFaultStackAddress);
 
+typedef struct {
+  uint32_t r0;
+  uint32_t r1;
+  uint32_t r2;
+  uint32_t r3;
+  uint32_t r12;
+  uint32_t lr; /* Link register. */
+  uint32_t pc; /* Program counter. */
+  uint32_t psr;/* Program status register. */
+  uint32_t _CFSR ;
+  uint32_t _HFSR ;
+  uint32_t _DFSR ;
+  uint32_t _AFSR ;
+  uint32_t _BFAR ;
+  uint32_t _MMAR ;
+  uint32_t _SCB_SHCSR;
+} hard_fault_data_t;
 
-volatile uint32_t r0;
-volatile uint32_t r1;
-volatile uint32_t r2;
-volatile uint32_t r3;
-volatile uint32_t r12;
-volatile uint32_t lr; /* Link register. */
-volatile uint32_t pc; /* Program counter. */
-volatile uint32_t psr;/* Program status register. */
-volatile unsigned long _CFSR ;
-volatile unsigned long _HFSR ;
-volatile unsigned long _DFSR ;
-volatile unsigned long _AFSR ;
-volatile unsigned long _BFAR ;
-volatile unsigned long _MMAR ;
-volatile unsigned long _SCB_SHCSR;
-volatile size_t core;
-volatile uint32_t fake;
-
+hard_fault_data_t hfd;
 
 void port_halt(void)
 {
+  printf("!!! System Halted !!!\r\n");
+  if (dbg_panic_msg)
+    printf("  Panic msg: %s\r\n", dbg_panic_msg);
+  else
+    printf("  Panic msg not set\r\n");
+  chThdSleepSeconds(1);
+
   __asm("BKPT #0\n") ; // Break into the debugger
 
   port_disable();
@@ -61,74 +71,62 @@ void HardFaultVector(void)
 
 void MemManageVector(void)
 {
+  app_cfg_set_fault_data(MEM_MANAGE_FAULT, NULL, 0);
+  app_cfg_flush();
   chDbgPanic("Mem Manage Vector\r\n");
 }
 
 void BusFaultVector(void)
 {
+  app_cfg_set_fault_data(BUS_FAULT, NULL, 0);
+  app_cfg_flush();
   chDbgPanic("Bus Fault Vector\r\n");
 }
 
 void UsageFaultVector(void)
 {
+  app_cfg_set_fault_data(USAGE_FAULT, NULL, 0);
+  app_cfg_flush();
   chDbgPanic("Usage Fault Vector\r\n");
 }
 
 void
 dump_stack(uint32_t *pulFaultStackAddress)
 {
-  r0 = pulFaultStackAddress[0];
-  r1 = pulFaultStackAddress[1];
-  r2 = pulFaultStackAddress[2];
-  r3 = pulFaultStackAddress[3];
+  hfd.r0 = pulFaultStackAddress[0];
+  hfd.r1 = pulFaultStackAddress[1];
+  hfd.r2 = pulFaultStackAddress[2];
+  hfd.r3 = pulFaultStackAddress[3];
 
-  r12 = pulFaultStackAddress[4];
-  lr = pulFaultStackAddress[5];
-  pc = pulFaultStackAddress[6];
-  psr = pulFaultStackAddress[7];
+  hfd.r12 = pulFaultStackAddress[4];
+  hfd.lr = pulFaultStackAddress[5];
+  hfd.pc = pulFaultStackAddress[6];
+  hfd.psr = pulFaultStackAddress[7];
 
   // Configurable Fault Status Register
   // Consists of MMSR, BFSR and UFSR
-  _CFSR = (*((volatile unsigned long *)(0xE000ED28))) ;
+  hfd._CFSR = (*((volatile uint32_t *)(0xE000ED28))) ;
 
   // Hard Fault Status Register
-  _HFSR = (*((volatile unsigned long *)(0xE000ED2C))) ;
+  hfd._HFSR = (*((volatile uint32_t *)(0xE000ED2C))) ;
 
   // Debug Fault Status Register
-  _DFSR = (*((volatile unsigned long *)(0xE000ED30))) ;
+  hfd._DFSR = (*((volatile uint32_t *)(0xE000ED30))) ;
 
   // Auxiliary Fault Status Register
-  _AFSR = (*((volatile unsigned long *)(0xE000ED3C))) ;
+  hfd._AFSR = (*((volatile uint32_t *)(0xE000ED3C))) ;
 
   // Read the Fault Address Registers. These may not contain valid values.
   // Check BFARVALID/MMARVALID to see if they are valid values
   // MemManage Fault Address Register
-  _MMAR = (*((volatile unsigned long *)(0xE000ED34))) ;
+  hfd._MMAR = (*((volatile uint32_t *)(0xE000ED34))) ;
   // Bus Fault Address Register
-  _BFAR = (*((volatile unsigned long *)(0xE000ED38))) ;
+  hfd._BFAR = (*((volatile uint32_t *)(0xE000ED38))) ;
   /* When the following line is hit, the variables contain the register values. */
-  _SCB_SHCSR = SCB->SHCSR;
+  hfd._SCB_SHCSR = SCB->SHCSR;
 
-  core = chCoreStatus();
+  app_cfg_set_fault_data(HARD_FAULT, &hfd, sizeof(hfd));
+  app_cfg_flush();
 
   __asm("BKPT #0\n") ; // Break into the debugger
-
-  while(1){
-    fake += r0;
-    fake += r1;
-    fake += r2;
-    fake += r3;
-    fake += r12;
-    fake += lr;
-    fake += pc;
-    fake += psr;
-    fake += _CFSR ;
-    fake += _HFSR ;
-    fake += _DFSR ;
-    fake += _AFSR ;
-    fake += _BFAR ;
-    fake += _MMAR ;
-    fake += _SCB_SHCSR;
-    fake += core;
-  }
 }

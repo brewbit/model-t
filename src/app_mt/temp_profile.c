@@ -92,11 +92,12 @@ temp_profile_get_current_setpoint(temp_profile_run_t* run, float* sp)
           }
           else {
             uint32_t duration_into_step = duration_into_profile - step_begin;
-            *sp = last_temp + ((last_temp - step->value.value) * duration_into_step / step->duration);
+            *sp = last_temp + ((step->value.value - last_temp) * duration_into_step / step->duration);
           }
           break;
         }
         step_begin += step->duration;
+        last_temp = step->value.value;
       }
       break;
     }
