@@ -7,6 +7,7 @@
 #include "touch_calib.h"
 #include "web_api.h"
 #include "net.h"
+#include "fault.h"
 
 
 void
@@ -59,5 +60,17 @@ app_cfg_set_temp_profile(const temp_profile_t* profile, uint32_t index);
 
 uint32_t
 app_cfg_get_reset_count(void);
+
+const fault_data_t*
+app_cfg_get_fault_data(void);
+
+void
+app_cfg_clear_fault_data(void);
+
+void
+app_cfg_set_fault_data(fault_type_t fault_type, void* data, uint32_t data_size);
+
+void
+app_cfg_flush(void);
 
 #endif

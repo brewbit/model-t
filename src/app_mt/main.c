@@ -65,6 +65,23 @@ main(void)
   int resets = app_cfg_get_reset_count();
   printf("Reset Count: %d\r\n", resets);
 
+  fault_data_t* fault = app_cfg_get_fault_data();
+  if (fault->type != FAULT_NONE) {
+    int i;
+
+    printf("!!! FAULT DETECTED !!!\r\n");
+    printf("  type: %d\r\n  ", fault->type);
+    for (i = 0; i < MAX_FAULT_DATA / 8; ++i) {
+      int j;
+      for (j = 0; j < 8; ++j) {
+        printf("%d ", fault->data[i * 8 + j]);
+      }
+      printf("\r\n");
+    }
+
+    app_cfg_clear_fault_data();
+  }
+
   gfx_init();
   touch_init();
   temp_control_init();
@@ -88,15 +105,15 @@ main(void)
     palClearPad(PORT_LED1, PAD_LED1);
     chThdSleepMilliseconds(1000);
 
-    printf("SYS: %d\r\n",
-        resets);
-
-    const hci_stats_t* hs = hci_get_stats();
-    printf("HCI: %u %u %u %u %u\r\n",
-        hs->num_free_buffers,
-        hs->buffer_len,
-        (unsigned int)hs->num_sent_packets,
-        (unsigned int)hs->num_released_packets,
-        (unsigned int)hs->num_timeouts);
+//    printf("SYS: %d\r\n",
+//        resets);
+//
+//    const hci_stats_t* hs = hci_get_stats();
+//    printf("HCI: %u %u %u %u %u\r\n",
+//        hs->num_free_buffers,
+//        hs->buffer_len,
+//        (unsigned int)hs->num_sent_packets,
+//        (unsigned int)hs->num_released_packets,
+//        (unsigned int)hs->num_timeouts);
   }
 }
