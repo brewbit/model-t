@@ -159,7 +159,7 @@ output_thread(void* arg)
 
   while (1) {
     /* If the probe associated with this output is not active disable the output */
-    if (!output->controller->state != TC_ACTIVE)
+    if (output->controller->state != TC_ACTIVE)
       enable_relay(output, false);
     else
       relay_control(output);
