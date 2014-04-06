@@ -311,6 +311,7 @@ send_sensor_report(web_api_t* api)
 
       pr->id = i;
       pr->value = api->sensor_status[i].last_sample.value;
+      pr->setpoint = temp_control_get_current_setpoint(i);
     }
   }
 
