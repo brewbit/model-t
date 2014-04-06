@@ -580,7 +580,10 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
   temp_control_halt();
 
   temp_control_cmd_t* tcc = calloc(1, sizeof(temp_control_cmd_t));
-
+  tcc->output_settings[OUTPUT_1].hysteresis.value = 1;
+  tcc->output_settings[OUTPUT_1].hysteresis.unit = UNIT_TEMP_DEG_F;
+  tcc->output_settings[OUTPUT_2].hysteresis.value = 1;
+  tcc->output_settings[OUTPUT_2].hysteresis.unit = UNIT_TEMP_DEG_F;
 
   printf("  got %d temp profiles\r\n", settings->temp_profiles_count);
   for (i = 0; i < (int)settings->temp_profiles_count; ++i) {
