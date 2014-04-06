@@ -105,9 +105,9 @@ main(void)
     palClearPad(PORT_LED1, PAD_LED1);
     chThdSleepMilliseconds(1000);
 
-//    printf("SYS: %d\r\n",
-//        resets);
-//
+    printf("SYS: %d\r\n",
+        resets);
+
 //    const hci_stats_t* hs = hci_get_stats();
 //    printf("HCI: %u %u %u %u %u\r\n",
 //        hs->num_free_buffers,

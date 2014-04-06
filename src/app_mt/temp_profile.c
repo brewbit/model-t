@@ -53,10 +53,6 @@ temp_profile_get_current_setpoint(temp_profile_run_t* run, float* sp)
   bool ret = true;
   const temp_profile_t* profile = app_cfg_get_temp_profile(run->temp_profile_id);
 
-  printf("calculating setpoint from temp profile %s\r\n", profile->name);
-  printf("  state: %d\r\n", run->state);
-  printf("  started: %d\r\n", run->start_time);
-
   if (run->state == TPS_RUNNING) {
     if (sntp_get_time() > run->current_step_complete_time) {
       if (++run->current_step < profile->num_steps) {
@@ -76,7 +72,6 @@ temp_profile_get_current_setpoint(temp_profile_run_t* run, float* sp)
     case TPS_WAITING_FOR_TIME_SERVER:
     case TPS_SEEKING_START_VALUE:
       *sp = profile->start_value.value;
-      printf("seeking start val: %f\r\n", *sp);
       break;
 
     case TPS_RUNNING:
@@ -94,17 +89,10 @@ temp_profile_get_current_setpoint(temp_profile_run_t* run, float* sp)
             duration_into_profile < step_end) {
           if (step->type == STEP_HOLD) {
             *sp = step->value.value;
-            printf("holding: %f\r\n", *sp);
           }
           else {
             uint32_t duration_into_step = duration_into_profile - step_begin;
             *sp = last_temp + ((step->value.value - last_temp) * duration_into_step / step->duration);
-            printf("ramping from %f to %f (%d of %d sec elapsed) interpolated: %f\r\n",
-                last_temp,
-                step->value.value,
-                duration_into_step,
-                step->duration,
-                *sp);
           }
           break;
         }
