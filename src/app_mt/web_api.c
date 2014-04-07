@@ -64,7 +64,7 @@ static void
 web_api_idle(web_api_t* api);
 
 static void
-websocket_message_rx(void* userData, const char* data, int numBytes);
+socket_message_rx(web_api_t* api, const char* data, int numBytes);
 
 static void
 send_api_msg(web_api_t* api, ApiMessage* msg);
@@ -110,6 +110,9 @@ socket_connect(web_api_t* api, const char* hostname, uint16_t port);
 
 static void
 socket_poll(web_api_t* api);
+
+static bool
+send_all(web_api_t* api, void* buf, uint32_t buf_len);
 
 
 static web_api_t* api;
@@ -249,7 +252,8 @@ web_api_idle(web_api_t* api)
       break;
   }
 
-  socket_poll(api);
+  if (api->status.state > AS_CONNECTING)
+    socket_poll(api);
 }
 
 static bool
@@ -265,6 +269,15 @@ socket_connect(web_api_t* api, const char* hostname, uint16_t port)
   api->socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (api->socket < 0) {
     printf("Connect failed %d\r\n", api->socket);
+    return false;
+  }
+
+  int optval = SOCK_ON;
+  ret = setsockopt(api->socket, SOL_SOCKET, SOCKOPT_RECV_NONBLOCK, (char *)&optval, sizeof(optval));
+  if (ret < 0) {
+    closesocket(api->socket);
+    api->socket = -1;
+    printf("setsockopt failed %d\r\n", ret);
     return false;
   }
 
@@ -298,6 +311,9 @@ socket_poll(web_api_t* api)
 
     printf("recv failed %d\r\n", ret);
     return;
+  }
+  else {
+    printf("received %d bytes\r\n", ret);
   }
 }
 
@@ -505,26 +521,40 @@ send_api_msg(web_api_t* api, ApiMessage* msg)
   bool encoded_ok = pb_encode(&stream, ApiMessage_fields, msg);
 
   if (encoded_ok) {
-    int bytes_left = stream.bytes_written;
-    while (bytes_left > 0) {
-      int ret = send(api->socket, buffer, bytes_left, 0);
-      if (ret < 0) {
-        printf("send failed %d\r\n", ret);
-        break;
+    uint32_t buf_len = htonl(stream.bytes_written);
+    if (send_all(api, &buf_len, sizeof(buf_len))) {
+      if (!send_all(api, buffer, stream.bytes_written)) {
+        printf("buffer send failed!\r\n");
       }
-      bytes_left -= ret;
-      buffer += ret;
+    }
+    else {
+      printf("message length send failed!\r\n");
     }
   }
 
   free(buffer);
 }
 
-static void
-websocket_message_rx(void* userData, const char* data, int numBytes)
+static bool
+send_all(web_api_t* api, void* buf, uint32_t buf_len)
 {
-  web_api_t* api = userData;
+  int bytes_left = buf_len;
+  while (bytes_left > 0) {
+    int ret = send(api->socket, buf, bytes_left, 0);
+    if (ret < 0) {
+      printf("send failed %d\r\n", ret);
+      return false;
+    }
+    bytes_left -= ret;
+    buf += ret;
+  }
 
+  return true;
+}
+
+static void
+socket_message_rx(web_api_t* api, const char* data, int numBytes)
+{
   ApiMessage* msg = malloc(sizeof(ApiMessage));
 
   pb_istream_t stream = pb_istream_from_buffer((const uint8_t*)data, numBytes);
