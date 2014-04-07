@@ -65,7 +65,7 @@ main(void)
   int resets = app_cfg_get_reset_count();
   printf("Reset Count: %d\r\n", resets);
 
-  fault_data_t* fault = app_cfg_get_fault_data();
+  const fault_data_t* fault = app_cfg_get_fault_data();
   if (fault->type != FAULT_NONE) {
     int i;
 

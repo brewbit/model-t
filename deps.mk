@@ -9,6 +9,7 @@ DEPENDENCIES = $(CHIBIOS) $(NANOPB) $(BBMT_MSGS)
 #              NANOPB                #
 ######################################
 NANOPB_INCDIR = $(NANOPB)
+NANOPB_DEFS = -DPB_FIELD_16BIT
 NANOPB_CSRC = \
 	$(NANOPB)/pb_encode.c \
 	$(NANOPB)/pb_decode.c
