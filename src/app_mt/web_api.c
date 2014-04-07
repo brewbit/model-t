@@ -33,6 +33,11 @@
 #define SETTINGS_UPDATE_DELAY  S2ST(1 * 60)
 
 
+typedef enum {
+  RECV_LEN,
+  RECV_DATA
+} parser_state_t;
+
 typedef struct {
   bool new_sample;
   bool new_settings;
@@ -44,13 +49,24 @@ typedef struct {
 } api_output_status_t;
 
 typedef struct {
+  parser_state_t state;
+
+  void* recv_buf;
+  uint32_t bytes_remaining;
+
+  uint32_t data_len;
+  uint8_t data_buf[ApiMessage_size];
+} msg_parser_t;
+
+typedef struct {
   int socket;
   api_status_t status;
   api_sensor_status_t sensor_status[NUM_SENSORS];
   api_output_status_t output_status[NUM_OUTPUTS];
   systime_t last_sensor_report_time;
   systime_t last_settings_update_time;
-  uint8_t* recv_buf;
+
+  msg_parser_t parser;
 } web_api_t;
 
 
@@ -64,7 +80,7 @@ static void
 web_api_idle(web_api_t* api);
 
 static void
-socket_message_rx(web_api_t* api, const char* data, int numBytes);
+socket_message_rx(web_api_t* api, const uint8_t* data, uint32_t data_len);
 
 static void
 send_api_msg(web_api_t* api, ApiMessage* msg);
@@ -123,7 +139,6 @@ web_api_init()
 {
   api = calloc(1, sizeof(web_api_t));
   api->status.state = AS_AWAITING_NET_CONNECTION;
-  api->recv_buf = malloc(2048);
 
   msg_listener_t* l = msg_listener_create("web_api", 2048, web_api_dispatch, api);
   msg_listener_set_idle_timeout(l, 500);
@@ -217,6 +232,10 @@ web_api_idle(web_api_t* api)
     case AS_CONNECTING:
       printf("Connecting to: %s:%d\r\n", WEB_API_HOST_STR, WEB_API_PORT);
       if (socket_connect(api, WEB_API_HOST_STR, WEB_API_PORT)) {
+        api->parser.state = RECV_LEN;
+        api->parser.bytes_remaining = 4;
+        api->parser.recv_buf = &api->parser.data_len;
+
         const char* auth_token = app_cfg_get_auth_token();
         if (strlen(auth_token) > 0) {
           request_auth(api);
@@ -300,7 +319,15 @@ socket_connect(web_api_t* api, const char* hostname, uint16_t port)
 static void
 socket_poll(web_api_t* api)
 {
-  int ret = recv(api->socket, api->recv_buf, 2048, 0);
+  switch (api->parser.state) {
+    case RECV_LEN:
+      break;
+
+    case RECV_DATA:
+      break;
+  }
+
+  int ret = recv(api->socket, api->parser.recv_buf, api->parser.bytes_remaining, 0);
   if (ret < 0) {
     if (ret == ENOTCONN) {
       printf("socket disconnected\r\n");
@@ -313,6 +340,27 @@ socket_poll(web_api_t* api)
     return;
   }
   else {
+    api->parser.bytes_remaining -= ret;
+    api->parser.recv_buf += ret;
+
+    if (api->parser.bytes_remaining == 0) {
+      switch (api->parser.state) {
+        case RECV_LEN:
+          api->parser.state = RECV_DATA;
+          api->parser.data_len = ntohl(api->parser.data_len);
+          api->parser.bytes_remaining = api->parser.data_len;
+          api->parser.recv_buf = api->parser.data_buf;
+          break;
+
+        case RECV_DATA:
+          api->parser.state = RECV_LEN;
+          api->parser.bytes_remaining = 4;
+          api->parser.recv_buf = &api->parser.data_len;
+
+          socket_message_rx(api, api->parser.data_buf, api->parser.data_len);
+          break;
+      }
+    }
     printf("received %d bytes\r\n", ret);
   }
 }
@@ -553,11 +601,11 @@ send_all(web_api_t* api, void* buf, uint32_t buf_len)
 }
 
 static void
-socket_message_rx(web_api_t* api, const char* data, int numBytes)
+socket_message_rx(web_api_t* api, const uint8_t* data, uint32_t data_len)
 {
   ApiMessage* msg = malloc(sizeof(ApiMessage));
 
-  pb_istream_t stream = pb_istream_from_buffer((const uint8_t*)data, numBytes);
+  pb_istream_t stream = pb_istream_from_buffer((const uint8_t*)data, data_len);
   bool status = pb_decode(&stream, ApiMessage_fields, msg);
 
   if (status)
