@@ -6,8 +6,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <snacka/websocket.h>
-
 #include <pb_encode.h>
 #include <pb_decode.h>
 
@@ -18,8 +16,6 @@
 #include "sensor.h"
 #include "app_cfg.h"
 #include "temp_control.h"
-#include "snacka_backend/iocallbacks_socket.h"
-#include "snacka_backend/cryptocallbacks_chibios.h"
 
 #ifndef WEB_API_HOST
 #define WEB_API_HOST_STR "brewbit.herokuapp.com"

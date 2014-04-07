@@ -9,7 +9,7 @@ WEB_API_PORT = 80
 
 BOARD = II-MT-CONTROLLER
 
-DEPS = SNACKA NANOPB
+DEPS = NANOPB
 
 PROJECT_INCDIR = \
        gui \
@@ -64,9 +64,6 @@ PROJECT_CSRC = \
        gui/update.c \
        gui/wifi.c \
        gui/wifi_scan.c \
-       snacka_backend/cryptocallbacks_chibios.c \
-       snacka_backend/iocallbacks_socket.c \
-       snacka_backend/socket_bsd.c \
        wifi/core/cc3000_common.c \
        wifi/core/cc3000_spi.c \
        wifi/core/hci.c \
