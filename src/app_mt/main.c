@@ -108,12 +108,12 @@ main(void)
     printf("SYS: %d\r\n",
         resets);
 
-//    const hci_stats_t* hs = hci_get_stats();
-//    printf("HCI: %u %u %u %u %u\r\n",
-//        hs->num_free_buffers,
-//        hs->buffer_len,
-//        (unsigned int)hs->num_sent_packets,
-//        (unsigned int)hs->num_released_packets,
-//        (unsigned int)hs->num_timeouts);
+    const hci_stats_t* hs = hci_get_stats();
+    printf("HCI: %u %u %u %u %u\r\n",
+        hs->num_free_buffers,
+        hs->buffer_len,
+        (unsigned int)hs->num_sent_packets,
+        (unsigned int)hs->num_released_packets,
+        (unsigned int)hs->num_timeouts);
   }
 }
