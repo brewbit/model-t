@@ -51,7 +51,7 @@ typedef struct {
 typedef struct {
   parser_state_t state;
 
-  void* recv_buf;
+  uint8_t* recv_buf;
   uint32_t bytes_remaining;
 
   uint32_t data_len;
@@ -234,7 +234,7 @@ web_api_idle(web_api_t* api)
       if (socket_connect(api, WEB_API_HOST_STR, WEB_API_PORT)) {
         api->parser.state = RECV_LEN;
         api->parser.bytes_remaining = 4;
-        api->parser.recv_buf = &api->parser.data_len;
+        api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
 
         const char* auth_token = app_cfg_get_auth_token();
         if (strlen(auth_token) > 0) {
@@ -329,15 +329,13 @@ socket_poll(web_api_t* api)
 
   int ret = recv(api->socket, api->parser.recv_buf, api->parser.bytes_remaining, 0);
   if (ret < 0) {
-    if (ret == ENOTCONN) {
+    if (errno != EAGAIN && errno != EWOULDBLOCK) {
+      printf("recv failed %d %d\r\n", ret, errno);
       printf("socket disconnected\r\n");
       closesocket(api->socket);
       api->socket = -1;
       set_state(api, AS_CONNECTING);
     }
-
-    printf("recv failed %d\r\n", ret);
-    return;
   }
   else {
     api->parser.bytes_remaining -= ret;
@@ -355,13 +353,12 @@ socket_poll(web_api_t* api)
         case RECV_DATA:
           api->parser.state = RECV_LEN;
           api->parser.bytes_remaining = 4;
-          api->parser.recv_buf = &api->parser.data_len;
+          api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
 
           socket_message_rx(api, api->parser.data_buf, api->parser.data_len);
           break;
       }
     }
-    printf("received %d bytes\r\n", ret);
   }
 }
 
