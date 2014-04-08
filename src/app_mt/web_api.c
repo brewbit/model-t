@@ -16,6 +16,7 @@
 #include "sensor.h"
 #include "app_cfg.h"
 #include "temp_control.h"
+#include "app_cfg.h"
 
 #ifndef WEB_API_HOST
 #define WEB_API_HOST_STR "brewbit.herokuapp.com"
@@ -369,22 +370,22 @@ send_sensor_report(web_api_t* api)
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_DEVICE_REPORT;
   msg->has_deviceReport = true;
-  msg->deviceReport.sensor_report_count = 0;
+  msg->deviceReport.controller_reports_count = 0;
 
   for (i = 0; i < NUM_SENSORS; ++i) {
     if (api->sensor_status[i].new_sample) {
       api->sensor_status[i].new_sample = false;
-      SensorReport* pr = &msg->deviceReport.sensor_report[msg->deviceReport.sensor_report_count];
-      msg->deviceReport.sensor_report_count++;
+      ControllerReport* pr = &msg->deviceReport.controller_reports[msg->deviceReport.controller_reports_count];
+      msg->deviceReport.controller_reports_count++;
 
-      pr->id = i;
-      pr->value = api->sensor_status[i].last_sample.value;
+      pr->controller_index = i;
+      pr->sensor_reading = api->sensor_status[i].last_sample.value;
       pr->setpoint = temp_control_get_current_setpoint(i);
     }
   }
 
-  if (msg->deviceReport.sensor_report_count > 0) {
-    printf("sending sensor report %d\r\n", msg->deviceReport.sensor_report_count);
+  if (msg->deviceReport.controller_reports_count > 0) {
+    printf("sending sensor report %d\r\n", msg->deviceReport.controller_reports_count);
     send_api_msg(api, msg);
   }
 
@@ -587,7 +588,7 @@ send_all(web_api_t* api, void* buf, uint32_t buf_len)
   while (bytes_left > 0) {
     int ret = send(api->socket, buf, bytes_left, 0);
     if (ret < 0) {
-      printf("send failed %d\r\n", ret);
+      printf("send failed %d %d\r\n", ret, errno);
       return false;
     }
     bytes_left -= ret;
@@ -670,10 +671,10 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
   temp_control_halt();
 
   temp_control_cmd_t* tcc = calloc(1, sizeof(temp_control_cmd_t));
-  tcc->output_settings[OUTPUT_1].hysteresis.value = 1;
-  tcc->output_settings[OUTPUT_1].hysteresis.unit = UNIT_TEMP_DEG_F;
-  tcc->output_settings[OUTPUT_2].hysteresis.value = 1;
-  tcc->output_settings[OUTPUT_2].hysteresis.unit = UNIT_TEMP_DEG_F;
+  memcpy(&tcc->controller_settings[0], app_cfg_get_controller_settings(0), sizeof(controller_settings_t));
+  memcpy(&tcc->controller_settings[1], app_cfg_get_controller_settings(1), sizeof(controller_settings_t));
+  memcpy(&tcc->output_settings[0], app_cfg_get_output_settings(0), sizeof(output_settings_t));
+  memcpy(&tcc->output_settings[1], app_cfg_get_output_settings(1), sizeof(output_settings_t));
 
   printf("  got %d temp profiles\r\n", settings->temp_profiles_count);
   for (i = 0; i < (int)settings->temp_profiles_count; ++i) {
