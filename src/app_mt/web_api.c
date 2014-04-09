@@ -589,6 +589,12 @@ send_all(web_api_t* api, void* buf, uint32_t buf_len)
     int ret = send(api->socket, buf, bytes_left, 0);
     if (ret < 0) {
       printf("send failed %d %d\r\n", ret, errno);
+      if (errno != EAGAIN && errno != EWOULDBLOCK) {
+        printf("socket disconnected\r\n");
+        closesocket(api->socket);
+        api->socket = -1;
+        set_state(api, AS_CONNECTING);
+      }
       return false;
     }
     bytes_left -= ret;
