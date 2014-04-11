@@ -14,14 +14,13 @@
 void
 pid_init(pid_t* pid)
 {
-  pid->sample_time = MS2ST(5000);
+  pid->sample_time = MS2ST(1000);
   pid->last_time   = (chTimeNow() - pid->sample_time);
-  pid->enabled     = true;
+  pid->enabled     = false;
 
-  pid_set_gains(pid, 288, 720, 144);
+  pid_set_gains(pid, 10, 0, 0);
 }
 
-#define GAMMA 0.03
 void
 pid_exec(pid_t* pid, float setpoint, float sample)
 {
@@ -36,13 +35,10 @@ pid_exec(pid_t* pid, float setpoint, float sample)
     pid->err_i += err_p;
     float err_d = (err_p - pid->last_err);
 
-    /* Limit integrator windup */
+    /* Limit integral windup */
     pid->err_i = LIMIT(pid->err_i, pid->out_min, pid->out_max);
 
-    /* Recalculate gains using Lin et al algorithm */
-    pid->kp += -GAMMA * err_p * err_p;
-    pid->ki += -GAMMA * err_p * pid->err_i;
-    pid->kd += -GAMMA * err_p * err_d;
+    tune_gains(pid, err_p, err_d);
 
     pid->out = (pid->kp * err_p) + (pid->ki * pid->err_i) + (pid->kd * err_d);
     pid->out = LIMIT(pid->out, pid->out_min, pid->out_max);
@@ -50,6 +46,21 @@ pid_exec(pid_t* pid, float setpoint, float sample)
     pid->last_err = err_p;
     pid->last_time   = now;
   }
+}
+
+#define GAMMA 0.01
+void
+tune_gains(pid_t* pid, float err_p, float err_d)
+{
+  /* Recalculate gains using Lin et al algorithm */
+  pid->kp += -GAMMA * err_p;
+  pid->kp = LIMIT(pid->kp, 0, 20);
+
+  pid->ki += -GAMMA * err_p * pid->err_i;
+  pid->ki = LIMIT(pid->ki, 0, 20);
+
+  pid->kd += -GAMMA * err_p * err_d;
+  pid->kd = LIMIT(pid->kd, 0, 20);
 }
 
 void

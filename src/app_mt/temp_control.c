@@ -56,10 +56,10 @@ void
 temp_control_init()
 {
   controller_init(SENSOR_1, SD_OW1);
-  controller_init(SENSOR_2, SD_OW2);
+  //controller_init(SENSOR_2, SD_OW2);
 
   output_init(OUTPUT_1, PAD_RELAY1);
-  output_init(OUTPUT_2, PAD_RELAY2);
+  //output_init(OUTPUT_2, PAD_RELAY2);
 
   msg_listener_t* l = msg_listener_create("temp_ctrl", 1024, dispatch_temp_input_msg, NULL);
 
@@ -138,7 +138,7 @@ output_init(output_id_t output, uint32_t gpio)
   out->controller = &controller[settings->trigger];
 
   pid_init(&out->pid_control);
-  pid_set_output_limits(&out->pid_control, 0, out->window_time);
+  pid_set_output_limits(&out->pid_control, -20, 20);
 
   if (settings->function == OUTPUT_FUNC_COOLING)
     pid_set_output_sign(&out->pid_control, NEGATIVE);
@@ -154,7 +154,7 @@ output_thread(void* arg)
   relay_output_t* output = arg;
   chRegSetThreadName("output");
 
-  /* Wait 1 cycle delay before starting window */
+  /* Wait 1 cycle delay before starting window and PID */
   cycle_delay(output->id);
 
   output->status.output = output->id;
@@ -169,6 +169,13 @@ output_thread(void* arg)
     else
       relay_control(output);
 
+    /* Restart PID after cycle delay */
+    if (output->pid_control.enabled == false) {
+      output->pid_control.enabled = true;
+      output->pid_control.err_i = 0;
+      output->pid_control.last_err = 0;
+    }
+
     chThdSleepSeconds(1);
   }
 
@@ -179,6 +186,8 @@ static void
 relay_control(relay_output_t* output)
 {
   const output_settings_t* output_settings = app_cfg_get_output_settings(output->id);
+  float sample = controller[output->id].last_sample.value;
+  float setpoint = temp_control_get_current_setpoint(output_settings->trigger);
   bool last_output_status = output->status.enabled;
 
   output->status.output = output->id;
@@ -187,8 +196,6 @@ relay_control(relay_output_t* output)
   case ON_OFF:
   {
     float hysteresis = output_settings->hysteresis.value;
-    float sample = controller[output->id].last_sample.value;
-    float setpoint = temp_control_get_current_setpoint(output_settings->trigger);
 
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
       if (sample < setpoint - hysteresis)
@@ -209,28 +216,35 @@ relay_control(relay_output_t* output)
       }
     }
 
-
     break;
   }
 
   case PID:
-    if ((chTimeNow() - output->window_start_time) >= output->pid_control.out) {
-      systime_t sleepTime;
-      int32_t   windowDelay;
-
-      enable_relay(output, false);
-
-      /* Make sure thread sleep time is > 0  or else chThdSleep will crap itself */
-      windowDelay = output->window_time - output->pid_control.out;
-      sleepTime =  windowDelay > 0 ? windowDelay : 0;
-      if (sleepTime > 0)
-        chThdSleep(sleepTime);
-
-      /* Setup next on window */
-      output->window_start_time = chTimeNow();
-      enable_relay(output, true);
+  {
+    if (output_settings->function == OUTPUT_FUNC_HEATING) {
+      if (sample < (setpoint + output->pid_control.out))
+        enable_relay(output, true);
+      else {
+        enable_relay(output, false);
+        if (last_output_status == true) {
+          output->pid_control.enabled = false;
+          cycle_delay(output->id);
+        }
+      }
+    }
+    else {
+      if (sample > (setpoint + output->pid_control.out))
+        enable_relay(output, true);
+      else {
+        enable_relay(output, false);
+        if (last_output_status == true) {
+          output->pid_control.enabled = false;
+          cycle_delay(output->id);
+        }
+      }
     }
     break;
+  }
 
   default:
     break;
