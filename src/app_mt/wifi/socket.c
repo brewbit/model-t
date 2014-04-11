@@ -66,6 +66,9 @@ socket_io_thread(void* arg);
 static int
 common_recv(long sd, void *buf, long len, long flags, sockaddr *from, socklen_t *fromlen);
 
+static int
+common_send(long sd, const void *buf, long len, long flags, const sockaddr *to, socklen_t tolen);
+
 static void
 find_add_next_free_socket(int sd);
 
@@ -869,13 +872,7 @@ common_recv(long sd, void *buf, long len, long flags,
 int
 send(long sd, const void *buf, long len, long flags)
 {
-    int ret;
-
-    chMtxLock(&g_main_mutex);
-    ret = c_send(sd, buf, len, flags);
-    chMtxUnlock();
-
-    return(ret);
+  return common_send(sd, buf, len, flags, NULL, 0);
 }
 
 //*****************************************************************************
@@ -907,13 +904,58 @@ int
 sendto(long sd, const void *buf, long len, long flags,
        const sockaddr *to, socklen_t tolen)
 {
-    int ret;
+  return common_send(sd, buf, len, flags, to, tolen);
+}
 
-    chMtxLock(&g_main_mutex);
+//*****************************************************************************
+//
+//!  common_send
+//!
+//!  @param sd       socket handle
+//!  @param buf      Points to a buffer containing the message to be sent
+//!  @param len      message size in bytes
+//!  @param flags    On this version, this parameter is not supported
+//!  @param to       pointer to an address structure indicating the destination
+//!                  address: sockaddr. On this version only AF_INET is
+//!                  supported.
+//!  @param tolen    destination address structure size
+//!
+//!  @return         Return the number of bytes transmitted, or -1 if an
+//!                  error occurred
+//!
+//!  @brief          Write data to TCP socket
+//!                  This function is used to transmit a message to another
+//!                  socket.
+//!
+//!  @Note           On this version, only blocking mode is supported.
+//!
+//!  @sa             send
+//
+//*****************************************************************************
+static int
+common_send(long sd, const void *buf, long len, long flags,
+    const sockaddr *to, socklen_t tolen)
+{
+  int ret;
+  wlan_socket_t* s = find_socket_by_sd(sd);
+  if (s == NULL) {
+    errno = EBADF;
+    return -1;
+  }
+
+  if (s->status == SOCKET_STATUS_INACTIVE) {
+    errno = ENOTCONN;
+    return -1;
+  }
+
+  chMtxLock(&g_main_mutex);
+  if (to != NULL)
     ret = c_sendto(sd, buf, len, flags, to, tolen);
-    chMtxUnlock();
+  else
+    ret = c_send(sd, buf, len, flags);
+  chMtxUnlock();
 
-    return(ret);
+  return ret;
 }
 
 static msg_t

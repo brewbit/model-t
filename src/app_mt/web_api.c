@@ -6,8 +6,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include <snacka/websocket.h>
-
 #include <pb_encode.h>
 #include <pb_decode.h>
 
@@ -18,8 +16,7 @@
 #include "sensor.h"
 #include "app_cfg.h"
 #include "temp_control.h"
-#include "snacka_backend/iocallbacks_socket.h"
-#include "snacka_backend/cryptocallbacks_chibios.h"
+#include "app_cfg.h"
 
 #ifndef WEB_API_HOST
 #define WEB_API_HOST_STR "brewbit.herokuapp.com"
@@ -35,7 +32,13 @@
 
 #define SENSOR_REPORT_INTERVAL S2ST(5)
 #define SETTINGS_UPDATE_DELAY  S2ST(1 * 60)
+#define MAX_CONN_INACTIVITY    S2ST(10)
 
+
+typedef enum {
+  RECV_LEN,
+  RECV_DATA
+} parser_state_t;
 
 typedef struct {
   bool new_sample;
@@ -48,12 +51,25 @@ typedef struct {
 } api_output_status_t;
 
 typedef struct {
-  snWebsocket* ws;
+  parser_state_t state;
+
+  uint8_t* recv_buf;
+  uint32_t bytes_remaining;
+
+  uint32_t data_len;
+  uint8_t data_buf[ApiMessage_size];
+} msg_parser_t;
+
+typedef struct {
+  int socket;
   api_status_t status;
   api_sensor_status_t sensor_status[NUM_SENSORS];
   api_output_status_t output_status[NUM_OUTPUTS];
   systime_t last_sensor_report_time;
   systime_t last_settings_update_time;
+  systime_t last_comm_time;
+
+  msg_parser_t parser;
 } web_api_t;
 
 
@@ -67,10 +83,10 @@ static void
 web_api_idle(web_api_t* api);
 
 static void
-websocket_message_rx(void* userData, snOpcode opcode, const char* data, int numBytes);
+socket_message_rx(web_api_t* api, const uint8_t* data, uint32_t data_len);
 
 static void
-send_api_msg(snWebsocket* ws, ApiMessage* msg);
+send_api_msg(web_api_t* api, ApiMessage* msg);
 
 static void
 dispatch_api_msg(web_api_t* api, ApiMessage* msg);
@@ -108,32 +124,17 @@ send_sensor_report(web_api_t* api);
 static void
 dispatch_device_settings_from_server(DeviceSettingsNotification* settings);
 
+static bool
+socket_connect(web_api_t* api, const char* hostname, uint16_t port);
+
+static void
+socket_poll(web_api_t* api);
+
+static bool
+send_all(web_api_t* api, void* buf, uint32_t buf_len);
+
 
 static web_api_t* api;
-
-static const snIOCallbacks iocb = {
-    .initCallback = snSocketInitCallback,
-    .deinitCallback = snSocketDeinitCallback,
-    .connectCallback = snSocketConnectCallback,
-    .disconnectCallback = snSocketDisconnectCallback,
-    .readCallback = snSocketReadCallback,
-    .writeCallback = snSocketWriteCallback,
-    .timeCallback = snSocketTimeCallback
-};
-
-static const snCryptoCallbacks cryptcb = {
-    .randCallback = snChRandCallback,
-    .shaCallback = snChShaCallback
-};
-
-static const snWebsocketSettings ws_settings = {
-    .maxFrameSize = 2048,
-    .logCallback = NULL,
-    .frameCallback = NULL,
-    .ioCallbacks = &iocb,
-    .cryptoCallbacks = &cryptcb,
-    .cancelCallback = NULL
-};
 
 
 void
@@ -141,14 +142,6 @@ web_api_init()
 {
   api = calloc(1, sizeof(web_api_t));
   api->status.state = AS_AWAITING_NET_CONNECTION;
-
-  api->ws = snWebsocket_create(
-        NULL, // open callback
-        websocket_message_rx,
-        NULL, // closed callback
-        NULL, // error callback
-        api,
-        &ws_settings);
 
   msg_listener_t* l = msg_listener_create("web_api", 2048, web_api_dispatch, api);
   msg_listener_set_idle_timeout(l, 500);
@@ -231,11 +224,6 @@ set_state(web_api_t* api, api_state_t state)
   }
 }
 
-snHTTPHeader device_id_header = {
-    .name = "Device-ID",
-    .value = device_id
-};
-
 static void
 web_api_idle(web_api_t* api)
 {
@@ -244,14 +232,13 @@ web_api_idle(web_api_t* api)
       /* do nothing, wait for net to come up */
       break;
 
-    case AS_CONNECT:
-      printf("Connecting to: %s:%d\r\n", WEB_API_HOST_STR, WEB_API_PORT);
-      snWebsocket_connect(api->ws, WEB_API_HOST_STR, "api/", NULL, WEB_API_PORT, &device_id_header, 1);
-      set_state(api, AS_CONNECTING);
-      break;
-
     case AS_CONNECTING:
-      if (snWebsocket_getState(api->ws) == SN_STATE_OPEN) {
+      printf("Connecting to: %s:%d\r\n", WEB_API_HOST_STR, WEB_API_PORT);
+      if (socket_connect(api, WEB_API_HOST_STR, WEB_API_PORT)) {
+        api->parser.state = RECV_LEN;
+        api->parser.bytes_remaining = 4;
+        api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
+
         const char* auth_token = app_cfg_get_auth_token();
         if (strlen(auth_token) > 0) {
           request_auth(api);
@@ -287,11 +274,100 @@ web_api_idle(web_api_t* api)
       break;
   }
 
-  snWebsocket_poll(api->ws);
+  if (api->status.state > AS_CONNECTING)
+    socket_poll(api);
+}
 
-  if ((api->status.state != AS_AWAITING_NET_CONNECTION) &&
-      (snWebsocket_getState(api->ws) == SN_STATE_CLOSED))
-    set_state(api, AS_CONNECT);
+static bool
+socket_connect(web_api_t* api, const char* hostname, uint16_t port)
+{
+  uint32_t hostaddr;
+  int ret = gethostbyname(hostname, strlen(hostname), &hostaddr);
+  if (ret < 0) {
+    printf("gethostbyname failed %d\r\n", ret);
+    return false;
+  }
+
+  api->socket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if (api->socket < 0) {
+    printf("Connect failed %d\r\n", api->socket);
+    return false;
+  }
+
+  int optval = SOCK_ON;
+  ret = setsockopt(api->socket, SOL_SOCKET, SOCKOPT_RECV_NONBLOCK, (char *)&optval, sizeof(optval));
+  if (ret < 0) {
+    closesocket(api->socket);
+    api->socket = -1;
+    printf("setsockopt failed %d\r\n", ret);
+    return false;
+  }
+
+  sockaddr_in addr = {
+    .sin_family = AF_INET,
+    .sin_port = htons(port),
+    .sin_addr.s_addr = htonl(hostaddr)
+  };
+  ret = connect(api->socket, (sockaddr*)&addr, sizeof(addr));
+  if (ret < 0) {
+    closesocket(api->socket);
+    api->socket = -1;
+    printf("connect failed %d\r\n", ret);
+    return false;
+  }
+
+  return true;
+}
+
+static void
+socket_poll(web_api_t* api)
+{
+  /* If we haven't sent anything to the server in a while, send a keepalive */
+  if ((chTimeNow() - api->last_comm_time) > MAX_CONN_INACTIVITY) {
+    uint32_t keepalive = 0;
+    send_all(api, &keepalive, 4);
+  }
+
+  int ret = recv(api->socket, api->parser.recv_buf, api->parser.bytes_remaining, 0);
+  if (ret < 0) {
+    if (errno != EAGAIN && errno != EWOULDBLOCK) {
+      printf("recv failed %d %d\r\n", ret, errno);
+      printf("socket disconnected\r\n");
+      closesocket(api->socket);
+      api->socket = -1;
+      set_state(api, AS_CONNECTING);
+    }
+  }
+  else {
+    api->parser.bytes_remaining -= ret;
+    api->parser.recv_buf += ret;
+
+    if (api->parser.bytes_remaining == 0) {
+      switch (api->parser.state) {
+        case RECV_LEN:
+          api->parser.data_len = ntohl(api->parser.data_len);
+          if (api->parser.data_len > 0) {
+            api->parser.state = RECV_DATA;
+            api->parser.bytes_remaining = api->parser.data_len;
+            api->parser.recv_buf = api->parser.data_buf;
+          }
+          else {
+            api->parser.state = RECV_LEN;
+            api->parser.bytes_remaining = 4;
+            api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
+          }
+          break;
+
+        case RECV_DATA:
+          api->parser.bytes_remaining = 4;
+          api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
+          api->parser.state = RECV_LEN;
+
+          socket_message_rx(api, api->parser.data_buf, api->parser.data_len);
+          break;
+      }
+    }
+  }
 }
 
 static void
@@ -301,23 +377,23 @@ send_sensor_report(web_api_t* api)
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_DEVICE_REPORT;
   msg->has_deviceReport = true;
-  msg->deviceReport.sensor_report_count = 0;
+  msg->deviceReport.controller_reports_count = 0;
 
   for (i = 0; i < NUM_SENSORS; ++i) {
     if (api->sensor_status[i].new_sample) {
       api->sensor_status[i].new_sample = false;
-      SensorReport* pr = &msg->deviceReport.sensor_report[msg->deviceReport.sensor_report_count];
-      msg->deviceReport.sensor_report_count++;
+      ControllerReport* pr = &msg->deviceReport.controller_reports[msg->deviceReport.controller_reports_count];
+      msg->deviceReport.controller_reports_count++;
 
-      pr->id = i;
-      pr->value = api->sensor_status[i].last_sample.value;
+      pr->controller_index = i;
+      pr->sensor_reading = api->sensor_status[i].last_sample.value;
       pr->setpoint = temp_control_get_current_setpoint(i);
     }
   }
 
-  if (msg->deviceReport.sensor_report_count > 0) {
-    printf("sending sensor report %d\r\n", msg->deviceReport.sensor_report_count);
-    send_api_msg(api->ws, msg);
+  if (msg->deviceReport.controller_reports_count > 0) {
+    printf("sending sensor report %d\r\n", msg->deviceReport.controller_reports_count);
+    send_api_msg(api, msg);
   }
 
   free(msg);
@@ -331,7 +407,7 @@ request_activation_token(web_api_t* api)
   msg->has_activationTokenRequest = true;
   strcpy(msg->activationTokenRequest.device_id, device_id);
 
-  send_api_msg(api->ws, msg);
+  send_api_msg(api, msg);
 
   free(msg);
 }
@@ -345,7 +421,7 @@ request_auth(web_api_t* api)
   strcpy(msg->authRequest.device_id, device_id);
   sprintf(msg->authRequest.auth_token, app_cfg_get_auth_token());
 
-  send_api_msg(api->ws, msg);
+  send_api_msg(api, msg);
 
   free(msg);
 }
@@ -354,7 +430,7 @@ static void
 dispatch_net_status(web_api_t* api, net_status_t* ns)
 {
   if (ns->net_state == NS_CONNECTED)
-    set_state(api, AS_CONNECT);
+    set_state(api, AS_CONNECTING);
   else
     set_state(api, AS_AWAITING_NET_CONNECTION);
 }
@@ -454,7 +530,7 @@ send_device_settings(
     printf("Sending device settings %d %d\r\n",
         msg->deviceSettingsNotification.sensor_count,
         msg->deviceSettingsNotification.output_count);
-    send_api_msg(api->ws, msg);
+    send_api_msg(api, msg);
   }
 
   free(msg);
@@ -469,7 +545,7 @@ check_for_update(web_api_t* api)
   msg->has_firmwareUpdateCheckRequest = true;
   sprintf(msg->firmwareUpdateCheckRequest.current_version, "%d.%d.%d", MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
 
-  send_api_msg(api->ws, msg);
+  send_api_msg(api, msg);
 
   free(msg);
 }
@@ -484,36 +560,64 @@ start_update(web_api_t* api, const char* ver)
   strncpy(msg->firmwareDownloadRequest.requested_version, ver,
       sizeof(msg->firmwareDownloadRequest.requested_version));
 
-  send_api_msg(api->ws, msg);
+  send_api_msg(api, msg);
 
   free(msg);
 }
 
 static void
-send_api_msg(snWebsocket* ws, ApiMessage* msg)
+send_api_msg(web_api_t* api, ApiMessage* msg)
 {
   uint8_t* buffer = malloc(ApiMessage_size);
 
   pb_ostream_t stream = pb_ostream_from_buffer(buffer, ApiMessage_size);
   bool encoded_ok = pb_encode(&stream, ApiMessage_fields, msg);
 
-  if (encoded_ok)
-    snWebsocket_sendBinaryData(ws, stream.bytes_written, (char*)buffer);
+  if (encoded_ok) {
+    uint32_t buf_len = htonl(stream.bytes_written);
+    if (send_all(api, &buf_len, sizeof(buf_len))) {
+      if (!send_all(api, buffer, stream.bytes_written)) {
+        printf("buffer send failed!\r\n");
+      }
+    }
+    else {
+      printf("message length send failed!\r\n");
+    }
+  }
 
   free(buffer);
 }
 
-static void
-websocket_message_rx(void* userData, snOpcode opcode, const char* data, int numBytes)
+static bool
+send_all(web_api_t* api, void* buf, uint32_t buf_len)
 {
-  web_api_t* api = userData;
+  int bytes_left = buf_len;
+  while (bytes_left > 0) {
+    int ret = send(api->socket, buf, bytes_left, 0);
+    if (ret < 0) {
+      printf("send failed %d %d\r\n", ret, errno);
+      if (errno != EAGAIN && errno != EWOULDBLOCK) {
+        printf("socket disconnected\r\n");
+        closesocket(api->socket);
+        api->socket = -1;
+        set_state(api, AS_CONNECTING);
+      }
+      return false;
+    }
+    bytes_left -= ret;
+    buf += ret;
+    api->last_comm_time = chTimeNow();
+  }
 
-  if (opcode != SN_OPCODE_BINARY)
-    return;
+  return true;
+}
 
+static void
+socket_message_rx(web_api_t* api, const uint8_t* data, uint32_t data_len)
+{
   ApiMessage* msg = malloc(sizeof(ApiMessage));
 
-  pb_istream_t stream = pb_istream_from_buffer((const uint8_t*)data, numBytes);
+  pb_istream_t stream = pb_istream_from_buffer((const uint8_t*)data, data_len);
   bool status = pb_decode(&stream, ApiMessage_fields, msg);
 
   if (status)
@@ -581,10 +685,10 @@ dispatch_device_settings_from_server(DeviceSettingsNotification* settings)
   temp_control_halt();
 
   temp_control_cmd_t* tcc = calloc(1, sizeof(temp_control_cmd_t));
-  tcc->output_settings[OUTPUT_1].hysteresis.value = 1;
-  tcc->output_settings[OUTPUT_1].hysteresis.unit = UNIT_TEMP_DEG_F;
-  tcc->output_settings[OUTPUT_2].hysteresis.value = 1;
-  tcc->output_settings[OUTPUT_2].hysteresis.unit = UNIT_TEMP_DEG_F;
+  memcpy(&tcc->controller_settings[0], app_cfg_get_controller_settings(0), sizeof(controller_settings_t));
+  memcpy(&tcc->controller_settings[1], app_cfg_get_controller_settings(1), sizeof(controller_settings_t));
+  memcpy(&tcc->output_settings[0], app_cfg_get_output_settings(0), sizeof(output_settings_t));
+  memcpy(&tcc->output_settings[1], app_cfg_get_output_settings(1), sizeof(output_settings_t));
 
   printf("  got %d temp profiles\r\n", settings->temp_profiles_count);
   for (i = 0; i < (int)settings->temp_profiles_count; ++i) {
