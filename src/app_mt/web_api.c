@@ -32,6 +32,7 @@
 
 #define SENSOR_REPORT_INTERVAL S2ST(5)
 #define SETTINGS_UPDATE_DELAY  S2ST(1 * 60)
+#define MAX_CONN_INACTIVITY    S2ST(10)
 
 
 typedef enum {
@@ -66,6 +67,7 @@ typedef struct {
   api_output_status_t output_status[NUM_OUTPUTS];
   systime_t last_sensor_report_time;
   systime_t last_settings_update_time;
+  systime_t last_comm_time;
 
   msg_parser_t parser;
 } web_api_t;
@@ -320,12 +322,10 @@ socket_connect(web_api_t* api, const char* hostname, uint16_t port)
 static void
 socket_poll(web_api_t* api)
 {
-  switch (api->parser.state) {
-    case RECV_LEN:
-      break;
-
-    case RECV_DATA:
-      break;
+  /* If we haven't sent anything to the server in a while, send a keepalive */
+  if ((chTimeNow() - api->last_comm_time) > MAX_CONN_INACTIVITY) {
+    uint32_t keepalive = 0;
+    send_all(api, &keepalive, 4);
   }
 
   int ret = recv(api->socket, api->parser.recv_buf, api->parser.bytes_remaining, 0);
@@ -345,16 +345,23 @@ socket_poll(web_api_t* api)
     if (api->parser.bytes_remaining == 0) {
       switch (api->parser.state) {
         case RECV_LEN:
-          api->parser.state = RECV_DATA;
           api->parser.data_len = ntohl(api->parser.data_len);
-          api->parser.bytes_remaining = api->parser.data_len;
-          api->parser.recv_buf = api->parser.data_buf;
+          if (api->parser.data_len > 0) {
+            api->parser.state = RECV_DATA;
+            api->parser.bytes_remaining = api->parser.data_len;
+            api->parser.recv_buf = api->parser.data_buf;
+          }
+          else {
+            api->parser.state = RECV_LEN;
+            api->parser.bytes_remaining = 4;
+            api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
+          }
           break;
 
         case RECV_DATA:
-          api->parser.state = RECV_LEN;
           api->parser.bytes_remaining = 4;
           api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
+          api->parser.state = RECV_LEN;
 
           socket_message_rx(api, api->parser.data_buf, api->parser.data_len);
           break;
@@ -599,6 +606,7 @@ send_all(web_api_t* api, void* buf, uint32_t buf_len)
     }
     bytes_left -= ret;
     buf += ret;
+    api->last_comm_time = chTimeNow();
   }
 
   return true;
