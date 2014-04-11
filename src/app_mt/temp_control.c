@@ -56,10 +56,10 @@ void
 temp_control_init()
 {
   controller_init(SENSOR_1, SD_OW1);
-  //controller_init(SENSOR_2, SD_OW2);
+  controller_init(SENSOR_2, SD_OW2);
 
   output_init(OUTPUT_1, PAD_RELAY1);
-  //output_init(OUTPUT_2, PAD_RELAY2);
+  output_init(OUTPUT_2, PAD_RELAY2);
 
   msg_listener_t* l = msg_listener_create("temp_ctrl", 1024, dispatch_temp_input_msg, NULL);
 
