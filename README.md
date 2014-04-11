@@ -67,7 +67,6 @@ Download and install the following while also adding them to your [PATH](http://
 ## Dependencies
 
 * [ChibiOS/RT](https://github.com/brewbit/ChibiOS-RT/branches/stable_2.4.x)
-* [snacka](https://github.com/brewbit/snacka)
 * [nanopb](http://koti.kapsi.fi/~jpa/nanopb/download/nanopb-0.2.4.tar.gz)
 * [protobufs](https://github.com/brewbit/brewbit-protobuf-messages)
 
@@ -77,7 +76,6 @@ Download and install the following while also adding them to your [PATH](http://
 <MODEL_T_BUILD_DIR>
 |-- model-t
 |-- ChibiOS-RT
-|-- snacka
 |-- nanopb
 |-- brewbit-protobuf-messages
 ```

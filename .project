@@ -5,7 +5,6 @@
 	<projects>
 		<project>ChibiOS-RT</project>
 		<project>nanopb</project>
-		<project>snacka</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
