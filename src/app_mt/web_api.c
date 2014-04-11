@@ -19,7 +19,7 @@
 #include "app_cfg.h"
 
 #ifndef WEB_API_HOST
-#define WEB_API_HOST_STR "brewbit.herokuapp.com"
+#define WEB_API_HOST_STR "dg.brewbit.com"
 #else
 #define xstr(s) str(s)
 #define str(s) #s
@@ -27,7 +27,7 @@
 #endif
 
 #ifndef WEB_API_PORT
-#define WEB_API_PORT 80
+#define WEB_API_PORT 31337
 #endif
 
 #define SENSOR_REPORT_INTERVAL S2ST(5)
