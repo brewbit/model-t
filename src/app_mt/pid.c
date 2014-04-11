@@ -54,13 +54,14 @@ tune_gains(pid_t* pid, float err_p, float err_d)
 {
   /* Recalculate gains using Lin et al algorithm */
   pid->kp += -GAMMA * err_p;
-  pid->kp = LIMIT(pid->kp, 0, 20);
+  pid->kp = LIMIT(pid->kp, 0, 100);
 
   pid->ki += -GAMMA * err_p * pid->err_i;
   pid->ki = LIMIT(pid->ki, 0, 20);
 
   pid->kd += -GAMMA * err_p * err_d;
   pid->kd = LIMIT(pid->kd, 0, 20);
+  printf("kp, %f\r\nki, %f\r\nkd, %F\r\n",pid->kp, pid->ki, pid->kd);
 }
 
 void
