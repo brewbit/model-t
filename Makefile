@@ -79,7 +79,7 @@ download_dfu_app_mt: build/app_mt/app_mt.dfu
 download_dfu_bootloader: build/bootloader/bootloader.dfu
 	dfu-util -a 0 -t 2048 -D build/bootloader/bootloader.dfu
 
-build/all.dfu: test_image upgrade_image bootloader
+build/all.dfu: upgrade_image bootloader
 	python scripts/dfu.py \
 		-b 0x08000000:build/bootloader/bootloader.bin \
 		-b 0x08008000:build/app_mt/app_mt_hdr.bin \
