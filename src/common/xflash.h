@@ -5,10 +5,8 @@
 #define XFLASH_SECTOR_SIZE 0x10000 // 64K
 #define XFLASH_PAGE_SIZE   0x100   // 256
 
-
-#define XFLASH_OTA_UPDATE_FIRST_SECTOR  0
-#define XFLASH_OTA_UPDATE_LAST_SECTOR   15
-
+void
+xflash_erase(uint32_t addr, uint32_t size);
 
 void
 xflash_erase_sectors(uint32_t start, uint32_t end);

@@ -143,6 +143,21 @@ write_enable()
   send_cmd(CMD_WREN, NO_ADDR, NULL, 0, NULL, 0);
 }
 
+void
+xflash_erase(uint32_t addr, uint32_t size)
+{
+  int bytes_remaining = size;
+  uint32_t erase_addr = addr;
+
+  while (bytes_remaining > 0) {
+    write_enable();
+    send_cmd(CMD_SE, erase_addr, NULL, 0, NULL, 0);
+
+    erase_addr += XFLASH_SECTOR_SIZE;
+    bytes_remaining -= XFLASH_SECTOR_SIZE;
+  }
+}
+
 // erases sectors start through end (inclusive)
 void
 xflash_erase_sectors(uint32_t start, uint32_t end)

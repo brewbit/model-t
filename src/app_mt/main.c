@@ -2,6 +2,7 @@
 #include "ch.h"
 #include "hal.h"
 
+#include "dfuse.h"
 #include "lcd.h"
 #include "image.h"
 #include "web_api.h"
@@ -81,6 +82,23 @@ main(void)
 
     app_cfg_clear_fault_data();
   }
+
+  extern uint8_t __app_hdr_base__;
+  extern uint8_t __app_hdr_end__;
+  extern uint8_t __app_base__;
+  extern uint8_t __app_end__;
+  printf("Copying app to xflash\r\n");
+  image_rec_t img_recs[2] = {
+      {
+          .data = &__app_hdr_base__,
+          .size = &__app_hdr_end__ - &__app_hdr_base__
+      },
+      {
+          .data = &__app_base__,
+          .size = &__app_end__ - &__app_base__
+      },
+  };
+  dfuse_write_self(0x00000000, img_recs, 2);
 
   gfx_init();
   touch_init();

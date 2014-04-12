@@ -9,6 +9,7 @@
 #include "iflash.h"
 
 #include <string.h>
+#include <stdlib.h>
 
 
 extern uint8_t __app_start__[];
@@ -53,7 +54,7 @@ copy_app_image(uint32_t addr, sxfs_file_t* file)
     if (nread == 0)
       break;
 
-    flashWrite(addr, buf, nread);
+    iflash_write(addr, buf, nread);
     addr += nread;
   }
 
@@ -68,7 +69,7 @@ apply_updates(void)
     chprintf(SD_STDIO, "FOUND\r\n");
     chprintf(SD_STDIO, "Applying update... ");
 
-    flashErase(0x08008000, 0xB0000);
+    iflash_erase(0x08008000, 0xB0000);
 
     sxfs_file_t app_hdr_file;
     if (!sxfs_file_open(&app_hdr_file, SP_OTA_UPDATE_IMG, 0xAA)) {

@@ -62,11 +62,14 @@ SECTIONS
 
     header : ALIGN(16) SUBALIGN(16)
     {
+        PROVIDE(__app_hdr_base__ = .);
         KEEP(*(app_hdr))
     } > app_hdr
+    PROVIDE(__app_hdr_end__ = .);
 
     startup : ALIGN(16) SUBALIGN(16)
     {
+        PROVIDE(__app_base__ = .);
         KEEP(*(vectors))
     } > app
     
@@ -124,6 +127,7 @@ SECTIONS
     {
         . = ALIGN(8);
     } > app
+    PROVIDE(__app_end__ = .);
 
     _etext = .;
     _textdata = _etext;

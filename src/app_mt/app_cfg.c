@@ -284,8 +284,8 @@ app_cfg_flush()
   app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
 
   if (memcmp(&app_cfg_local, &app_cfg_stored, sizeof(app_cfg_local)) != 0) {
-    flashSectorErase(1);
-    flashWrite((flashaddr_t)&app_cfg_stored, (char*)&app_cfg_local, sizeof(app_cfg_local));
+    iflash_sector_erase(1);
+    iflash_write((uint32_t)&app_cfg_stored, (uint8_t*)&app_cfg_local, sizeof(app_cfg_local));
   }
   chMtxUnlock();
 }
