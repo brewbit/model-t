@@ -15,6 +15,9 @@ app_mt:
 	$(call make_prog,app_mt) autogen
 	$(call make_prog,app_mt)
 
+app_test:
+	$(call make_prog,app_test)
+
 bootloader:
 	$(call make_prog,bootloader)
 
