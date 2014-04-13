@@ -45,56 +45,38 @@ jump_to_app(uint32_t address)
 }
 
 void
-copy_app_image(uint32_t addr, sxfs_file_t* file)
-{
-  uint8_t* buf = calloc(1, 1024);
-
-  while (1) {
-    uint32_t nread = sxfs_file_read(file, buf, 1024);
-
-    if (nread == 0)
-      break;
-
-    iflash_write(addr, buf, nread);
-    addr += nread;
-  }
-
-  free(buf);
-}
-
-void
 apply_updates(void)
 {
-  chprintf(SD_STDIO, "Checking for pending updates... ");
-  if (sxfs_part_verify(SP_OTA_UPDATE_IMG)) {
-    chprintf(SD_STDIO, "FOUND\r\n");
-    chprintf(SD_STDIO, "Applying update... ");
-
-    iflash_erase(0x08008000, 0xB0000);
-
-    sxfs_file_t app_hdr_file;
-    if (!sxfs_file_open(&app_hdr_file, SP_OTA_UPDATE_IMG, 0xAA)) {
-      chprintf(SD_STDIO, "ERROR - app header\r\n");
-      return;
-    }
-
-    sxfs_file_t app_img_file;
-    if (!sxfs_file_open(&app_img_file, SP_OTA_UPDATE_IMG, 0xBB)) {
-      chprintf(SD_STDIO, "ERROR - app image\r\n");
-      return;
-    }
-
-    copy_app_image(0x08008200, &app_img_file);
-    copy_app_image(0x08008000, &app_hdr_file);
-
-    /* Clear the update image from xflash */
-    sxfs_part_clear(SP_OTA_UPDATE_IMG);
-
-    chprintf(SD_STDIO, "OK\r\n");
-  }
-  else {
-    chprintf(SD_STDIO, "NOT FOUND\r\n");
-  }
+//  chprintf(SD_STDIO, "Checking for pending updates... ");
+//  if (sxfs_part_verify(SP_OTA_UPDATE_IMG)) {
+//    chprintf(SD_STDIO, "FOUND\r\n");
+//    chprintf(SD_STDIO, "Applying update... ");
+//
+//    iflash_erase(0x08008000, 0xB0000);
+//
+//    sxfs_file_t app_hdr_file;
+//    if (!sxfs_file_open(&app_hdr_file, SP_OTA_UPDATE_IMG, 0xAA)) {
+//      chprintf(SD_STDIO, "ERROR - app header\r\n");
+//      return;
+//    }
+//
+//    sxfs_file_t app_img_file;
+//    if (!sxfs_file_open(&app_img_file, SP_OTA_UPDATE_IMG, 0xBB)) {
+//      chprintf(SD_STDIO, "ERROR - app image\r\n");
+//      return;
+//    }
+//
+//    copy_app_image(0x08008200, &app_img_file);
+//    copy_app_image(0x08008000, &app_hdr_file);
+//
+//    /* Clear the update image from xflash */
+//    sxfs_part_clear(SP_OTA_UPDATE_IMG);
+//
+//    chprintf(SD_STDIO, "OK\r\n");
+//  }
+//  else {
+//    chprintf(SD_STDIO, "NOT FOUND\r\n");
+//  }
 }
 
 void
@@ -158,7 +140,7 @@ main(void)
   /* Uh oh, we should have jumped to the app... */
   chprintf(SD_STDIO, "  Applying recovery image... ");
 
-  if (dfuse_apply_update(0x00000000))
+  if (dfuse_apply_update(SP_FACTORY_DEFAULT_IMG))
     chprintf(SD_STDIO, "OK!\r\n");
   else
     chprintf(SD_STDIO, "FAILED!\r\n");

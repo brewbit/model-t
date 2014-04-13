@@ -29,7 +29,7 @@ char device_id[32];
 static void
 ensure_recovery_image_loaded(void)
 {
-  if (!dfuse_verify(0x00000000)) {
+  if (!dfuse_verify(SP_FACTORY_DEFAULT_IMG)) {
     extern uint8_t __app_base__;
     image_rec_t img_recs[2] = {
         {
@@ -47,7 +47,7 @@ ensure_recovery_image_loaded(void)
 
     widget_t* setup_screen = setup_screen_create();
     gui_push_screen(setup_screen);
-    dfuse_write_self(0x00000000, img_recs, 2);
+    dfuse_write_self(SP_FACTORY_DEFAULT_IMG, img_recs, 2);
     gui_pop_screen();
 
     printf("OK\r\n");

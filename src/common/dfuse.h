@@ -2,6 +2,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "sxfs.h"
+
 
 typedef struct {
   uint8_t* data;
@@ -22,10 +24,10 @@ typedef enum {
 
 
 bool
-dfuse_verify(uint32_t dfu_base_addr);
+dfuse_verify(sxfs_part_id_t part);
 
 bool
-dfuse_apply_update(uint32_t dfu_base_addr);
+dfuse_apply_update(sxfs_part_id_t part);
 
 void
-dfuse_write_self(uint32_t base_addr, image_rec_t* img_recs, uint32_t num_img_recs);
+dfuse_write_self(sxfs_part_id_t part, image_rec_t* img_recs, uint32_t num_img_recs);
