@@ -32,15 +32,14 @@ pid_exec(pid_t* pid, float setpoint, float sample)
 
   if (time_diff >= pid->sample_time) {
     float err_p = (setpoint - sample);
+    float err_d = (sample - pid->last_sample);
 
     pid->err_i += (pid->ki * err_p);
     pid->err_i = LIMIT(pid->err_i, pid->out_min, pid->out_max);
 
-    float err_d = (sample - pid->last_sample);
-
     tune_gains(pid, err_p, err_d);
 
-    pid->out = (pid->kp * err_p) + (pid->err_i - pid->kd) * err_d;
+    pid->out = (pid->kp * err_p) + pid->err_i - (pid->kd * err_d);
     pid->out = LIMIT(pid->out, pid->out_min, pid->out_max);
 
     pid->last_err  = err_p;
@@ -53,9 +52,7 @@ pid_exec(pid_t* pid, float setpoint, float sample)
 void
 tune_gains(pid_t* pid, float err_p, float err_d)
 {
-  /* Recalculate gains using Lin et al algorithm */
   pid->kp += -GAMMA * err_p;
-  //pid->kp = LIMIT(pid->kp, 0, 20);
 
   pid->ki += -GAMMA * err_p * pid->err_i;
   pid->ki = LIMIT(pid->ki, 0, 20);
