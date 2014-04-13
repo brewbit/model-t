@@ -24,5 +24,10 @@ setup_screen_create()
   rect.width = 220;
   label_create(widget, rect, "Configuring...", font_opensans_regular_22, WHITE, 1);
 
+  rect.y = 80;
+  rect.x = 40;
+  rect.width = 240;
+  label_create(widget, rect, "Please wait while your device is configured for the first time. This may take a few minutes.", font_opensans_regular_18, WHITE, 5);
+
   return widget;
 }
