@@ -112,8 +112,10 @@ process_boot_cmd()
       break;
   }
 
-  boot_cmd = BOOT_DEFAULT;
-  sxfs_write(SP_BOOT_PARAMS, 0, (uint8_t*)&boot_cmd, sizeof(boot_cmd));
+  if (boot_cmd != BOOT_DEFAULT) {
+    boot_cmd = BOOT_DEFAULT;
+    sxfs_write(SP_BOOT_PARAMS, 0, (uint8_t*)&boot_cmd, sizeof(boot_cmd));
+  }
 }
 
 static void
