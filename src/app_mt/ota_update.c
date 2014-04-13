@@ -8,6 +8,7 @@
 #include "web_api.h"
 #include "sxfs.h"
 #include "dfuse.h"
+#include "bootloader_api.h"
 
 #include <stdio.h>
 
@@ -93,7 +94,7 @@ dispatch_ota_update_start()
 
   printf("part clear\r\n");
 
-  if (!sxfs_erase(SP_OTA_UPDATE_IMG)) {
+  if (!sxfs_erase(SP_UPDATE_IMG)) {
     printf("part clear failed\r\n");
     set_state(OU_FAILED);
     return;
@@ -130,7 +131,7 @@ dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
 
   set_state(OU_DOWNLOADING);
 
-  if (!sxfs_write(SP_OTA_UPDATE_IMG,
+  if (!sxfs_write(SP_UPDATE_IMG,
       update_chunk->offset,
       update_chunk->data.bytes,
       update_chunk->data.size)) {
@@ -140,7 +141,7 @@ dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
 
   if (status.update_downloaded >= status.update_size) {
     // Verify the integrity of the image that we just downloaded
-    if (dfuse_verify(SP_OTA_UPDATE_IMG)) {
+    if (dfuse_verify(SP_UPDATE_IMG)) {
       printf("image verified resetting to apply update...\r\n");
 
       set_state(OU_COMPLETE);
@@ -148,7 +149,7 @@ dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
 
       chThdSleepSeconds(1);
 
-      NVIC_SystemReset();
+      bootloader_load_update_img();
     }
     else {
       printf("sxfs verify failed\r\n");

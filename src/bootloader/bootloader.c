@@ -17,12 +17,6 @@ typedef void (*app_entry_t)(void);
 
 extern uint8_t __app_start__[];
 
-typedef enum {
-  BOOT_DEFAULT,
-  BOOT_LOAD_RECOVERY_IMG,
-  BOOT_LOAD_UPDATE_IMG,
-} boot_cmd_t;
-
 
 static void
 jump_to_app(uint32_t address);
@@ -40,8 +34,6 @@ process_boot_cmd(void);
 __attribute__ ((section("bootloader_api")))
 const bootloader_api_t _bootloader_api = {
     .get_version = bootloader_get_version,
-    .load_recovery_img = bootloader_load_recovery_img,
-    .load_update_img = bootloader_load_update_img
 };
 
 
@@ -109,6 +101,7 @@ process_boot_cmd()
 
     case BOOT_DEFAULT:
     default:
+      chprintf(SD_STDIO, "Application has not requested and boot commands. Proceeding with normal boot.\r\n");
       break;
   }
 
@@ -165,24 +158,4 @@ const char*
 bootloader_get_version()
 {
   return VERSION_STR;
-}
-
-static void
-save_boot_cmd(boot_cmd_t boot_cmd)
-{
-  sxfs_write(SP_BOOT_PARAMS, 0, (uint8_t*)&boot_cmd, sizeof(boot_cmd));
-
-  NVIC_SystemReset();
-}
-
-void
-bootloader_load_recovery_img()
-{
-  save_boot_cmd(BOOT_LOAD_RECOVERY_IMG);
-}
-
-void
-bootloader_load_update_img()
-{
-  save_boot_cmd(BOOT_LOAD_UPDATE_IMG);
 }

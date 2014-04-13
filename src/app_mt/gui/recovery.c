@@ -9,6 +9,7 @@
 #include "bootloader_api.h"
 #include "touch.h"
 #include "touch_calib.h"
+#include "bootloader_api.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -189,6 +190,7 @@ trigger_op(recovery_screen_t* s)
       break;
 
     case RO_RESTORE_FIRMWARE:
+      bootloader_load_recovery_img();
       break;
 
     default:

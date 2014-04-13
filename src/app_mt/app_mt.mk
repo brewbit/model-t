@@ -87,6 +87,7 @@ PROJECT_CSRC = \
        gui/controls/scatter_plot.c \
        gui/controls/widget.c \
        util/linked_list.c \
+       ../common/bootloader_api.c \
        ../common/crc/crc8.c \
        ../common/crc/crc16.c \
        ../common/crc/crc32.c \
