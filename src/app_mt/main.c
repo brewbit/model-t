@@ -17,13 +17,44 @@
 #include "sntp.h"
 #include "ota_update.h"
 #include "thread_watchdog.h"
-#include <chprintf.h>
+#include "app_hdr.h"
 
 #include <stdio.h>
 #include <string.h>
 
 
 char device_id[32];
+
+static void
+ensure_recovery_image_loaded(void)
+{
+  if (!dfuse_verify(0x00000000)) {
+    extern uint8_t __app_base__;
+    image_rec_t img_recs[2] = {
+        {
+            .data = &_app_hdr,
+            .size = sizeof(_app_hdr)
+        },
+        {
+            .data = &__app_base__,
+            .size = _app_hdr.img_size
+        },
+    };
+
+    printf("No recovery image detected\r\n");
+    printf("  Copying this image to external flash... ");
+
+    widget_t* setup_screen = setup_screen_create();
+    gui_push_screen(setup_screen);
+    dfuse_write_self(0x00000000, img_recs, 2);
+    gui_pop_screen();
+
+    printf("OK\r\n");
+  }
+  else {
+    printf("Recovery image is present\r\n");
+  }
+}
 
 
 msg_t
@@ -38,11 +69,6 @@ idle_thread(void* arg)
 
   return 0;
 }
-
-extern Semaphore sem_io_ready;
-extern Semaphore sem_write_complete;
-extern int irq_count, irq_timeout_count, io_thread_loc;
-
 
 int
 main(void)
@@ -83,23 +109,6 @@ main(void)
     app_cfg_clear_fault_data();
   }
 
-  extern uint8_t __app_hdr_base__;
-  extern uint8_t __app_hdr_end__;
-  extern uint8_t __app_base__;
-  extern uint8_t __app_end__;
-  printf("Copying app to xflash\r\n");
-  image_rec_t img_recs[2] = {
-      {
-          .data = &__app_hdr_base__,
-          .size = &__app_hdr_end__ - &__app_hdr_base__
-      },
-      {
-          .data = &__app_base__,
-          .size = &__app_end__ - &__app_base__
-      },
-  };
-  dfuse_write_self(0x00000000, img_recs, 2);
-
   gfx_init();
   touch_init();
   temp_control_init();
@@ -114,6 +123,8 @@ main(void)
   gui_push_screen(home_screen);
 
   recovery_screen_create();
+
+  ensure_recovery_image_loaded();
 
   chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
 

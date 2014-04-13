@@ -64,6 +64,7 @@ PROJECT_CSRC = \
        gui/update.c \
        gui/wifi.c \
        gui/wifi_scan.c \
+       gui/setup.c \
        wifi/core/cc3000_common.c \
        wifi/core/cc3000_spi.c \
        wifi/core/hci.c \

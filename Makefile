@@ -42,6 +42,17 @@ clear_app_cfg:
 	-c shutdown download.log 2>&1 && \
 	echo App config section has been erased
 
+clear_app_hdr:
+	@openocd \
+	-f interface/$(JTAG).cfg \
+	-f target/stm32f2x.cfg \
+	-f stm32f2x-setup.cfg \
+	-c "flash erase_sector 0 2 2" \
+	-c "reset init" \
+	-c "reset run" \
+	-c shutdown download.log 2>&1 && \
+	echo App config section has been erased
+
 upgrade_image: app_mt
 	arm-none-eabi-objcopy -O binary --only-section header build/app_mt/app_mt.elf build/app_mt/app_mt_hdr.bin
 	arm-none-eabi-objcopy -O binary --remove-section cfg --remove-section header build/app_mt/app_mt.elf build/app_mt/app_mt_app.bin

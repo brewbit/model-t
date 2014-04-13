@@ -13,6 +13,6 @@ typedef struct {
   uint32_t crc;
 } app_hdr_t;
 
-extern const app_hdr_t _app_hdr;
+extern volatile const app_hdr_t _app_hdr;
 
 #endif

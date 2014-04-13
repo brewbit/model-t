@@ -153,6 +153,9 @@ xflash_erase(uint32_t addr, uint32_t size)
     write_enable();
     send_cmd(CMD_SE, erase_addr, NULL, 0, NULL, 0);
 
+    while (read_status_reg() & SR_WIP)
+      chThdSleepMilliseconds(100);
+
     erase_addr += XFLASH_SECTOR_SIZE;
     bytes_remaining -= XFLASH_SECTOR_SIZE;
   }

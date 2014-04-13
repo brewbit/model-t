@@ -7,6 +7,7 @@
 #include "crc/crc32.h"
 #include "sxfs.h"
 #include "iflash.h"
+#include "dfuse.h"
 
 #include <string.h>
 #include <stdlib.h>
@@ -96,26 +97,9 @@ apply_updates(void)
   }
 }
 
-int
-main(void)
+void
+boot_app()
 {
-  halInit();
-  chSysInit();
-
-  /* start stdout port */
-  sdStart(SD_STDIO, NULL);
-
-  chprintf(SD_STDIO, "BrewBit Model-T Bootloader v%d.%d.%d\r\n",
-      MAJOR_VERSION,
-      MINOR_VERSION,
-      PATCH_VERSION);
-
-  uint32_t* uid = board_get_device_id();
-  chprintf(SD_STDIO, "Device ID: %08x %08x %08x\r\n", uid[0], uid[1], uid[2]);
-
-  apply_updates();
-
-  chprintf(SD_STDIO, "Searching for app... ");
   if (memcmp(_app_hdr.magic, "BBMT-APP", 8) == 0) {
     chprintf(SD_STDIO, "OK\r\n");
     chprintf(SD_STDIO, "  Version: %d.%d.%d\r\n",
@@ -144,6 +128,43 @@ main(void)
     chprintf(SD_STDIO, "ERROR\r\n");
     chprintf(SD_STDIO, "  No valid app found.\r\n");
   }
+}
+
+int
+main(void)
+{
+  halInit();
+  chSysInit();
+
+  /* start stdout port */
+  sdStart(SD_STDIO, NULL);
+
+  chprintf(SD_STDIO, "BrewBit Model-T Bootloader v%d.%d.%d\r\n",
+      MAJOR_VERSION,
+      MINOR_VERSION,
+      PATCH_VERSION);
+
+  uint32_t* uid = board_get_device_id();
+  chprintf(SD_STDIO, "Device ID: %08x %08x %08x\r\n", uid[0], uid[1], uid[2]);
+
+  apply_updates();
+
+
+  chprintf(SD_STDIO, "byte after app header 0x%02X\r\n", ((uint8_t*)&_app_hdr)[50]);
+
+  chprintf(SD_STDIO, "Booting app... ");
+  boot_app();
+
+  /* Uh oh, we should have jumped to the app... */
+  chprintf(SD_STDIO, "  Applying recovery image... ");
+
+  if (dfuse_apply_update(0x00000000))
+    chprintf(SD_STDIO, "OK!\r\n");
+  else
+    chprintf(SD_STDIO, "FAILED!\r\n");
+
+  chprintf(SD_STDIO, "Booting recovery image... ");
+  boot_app();
 
   while (TRUE) {
     palSetPad(PORT_LED1, PAD_LED1);
