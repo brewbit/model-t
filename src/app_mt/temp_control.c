@@ -186,7 +186,7 @@ static void
 relay_control(relay_output_t* output)
 {
   const output_settings_t* output_settings = app_cfg_get_output_settings(output->id);
-  float sample = controller[output->id].last_sample.value;
+  float sample = controller[output_settings->trigger].last_sample.value;
   float setpoint = temp_control_get_current_setpoint(output_settings->trigger);
   bool last_output_status = output->status.enabled;
 
