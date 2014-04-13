@@ -101,12 +101,13 @@ process_boot_cmd()
 
     case BOOT_DEFAULT:
     default:
-      chprintf(SD_STDIO, "Application has not requested and boot commands. Proceeding with normal boot.\r\n");
+      chprintf(SD_STDIO, "Application has not requested any boot commands. Proceeding with normal boot.\r\n");
       break;
   }
 
   if (boot_cmd != BOOT_DEFAULT) {
     boot_cmd = BOOT_DEFAULT;
+    sxfs_erase(SP_BOOT_PARAMS);
     sxfs_write(SP_BOOT_PARAMS, 0, (uint8_t*)&boot_cmd, sizeof(boot_cmd));
   }
 }
