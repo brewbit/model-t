@@ -25,6 +25,7 @@ typedef struct {
 
   float err_i;
   float last_err;
+  float last_sample;
 
   float out;
   float out_min;
