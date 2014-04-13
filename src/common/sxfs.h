@@ -9,8 +9,9 @@
 
 
 typedef enum {
-  SP_FACTORY_DEFAULT_IMG,
-  SP_OTA_UPDATE_IMG,
+  SP_BOOT_PARAMS,
+  SP_RECOVERY_IMG,
+  SP_UPDATE_IMG,
   NUM_SXFS_PARTS
 } sxfs_part_id_t;
 

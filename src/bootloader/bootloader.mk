@@ -7,7 +7,7 @@ PATCH_VERSION = 0
 BOARD = II-MT-CONTROLLER
 
 PROJECT_CSRC = \
-       bootloader_api.c \
+       bootloader.c \
        main.c \
        ../common/crc/crc32.c \
        ../common/iflash.c \

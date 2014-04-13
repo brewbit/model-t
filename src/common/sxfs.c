@@ -14,14 +14,18 @@ typedef struct {
 
 
 static const part_info_t part_info[NUM_SXFS_PARTS] = {
-    [SP_FACTORY_DEFAULT_IMG] = {
+    [SP_BOOT_PARAMS] = {
         .offset = 0x00000000,
-        .size   = 0x00100000 // 1024 KB
+        .size   = 0x00010000 // 64 KB
     },
-    [SP_OTA_UPDATE_IMG] = {
-        .offset = 0x00100000,
-        .size   = 0x00100000 // 1024 KB
-    }
+    [SP_RECOVERY_IMG] = {
+        .offset = 0x00010000,
+        .size   = 0x00110000 // 1024 KB
+    },
+    [SP_UPDATE_IMG] = {
+        .offset = 0x00110000,
+        .size   = 0x00110000 // 1024 KB
+    },
 };
 
 
