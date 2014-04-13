@@ -258,7 +258,7 @@ app_cfg_get_reset_count(void)
 void
 app_cfg_clear_fault_data()
 {
-  memset(app_cfg_local.data.fault.data, 0, sizeof(fault_data_t));
+  memset(&app_cfg_local.data.fault, 0, sizeof(fault_data_t));
 }
 
 const fault_data_t*
