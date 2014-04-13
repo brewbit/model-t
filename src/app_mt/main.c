@@ -11,6 +11,7 @@
 #include "temp_control.h"
 #include "gui/home.h"
 #include "gui/recovery.h"
+#include "gui/setup.h"
 #include "gfx.h"
 #include "app_cfg.h"
 #include "net.h"
@@ -32,7 +33,7 @@ ensure_recovery_image_loaded(void)
     extern uint8_t __app_base__;
     image_rec_t img_recs[2] = {
         {
-            .data = &_app_hdr,
+            .data = (uint8_t*)&_app_hdr,
             .size = sizeof(_app_hdr)
         },
         {
