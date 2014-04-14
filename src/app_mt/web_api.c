@@ -284,6 +284,7 @@ web_api_idle(web_api_t* api)
   if (api->status.state > AS_CONNECTING) {
     /* If we haven't heard from the server in a while, disconnect and try again */
     if ((chTimeNow() - api->last_recv_time) > RECV_TIMEOUT) {
+      printf("Server timed out\r\n");
       closesocket(api->socket);
       api->socket = -1;
       set_state(api, AS_CONNECTING);
@@ -369,7 +370,7 @@ socket_poll(web_api_t* api)
           }
           else {
             /* Got an empty keepalive message */
-            api->last_send_time = chTimeNow();
+            api->last_recv_time = chTimeNow();
 
             api->parser.state = RECV_LEN;
             api->parser.bytes_remaining = 4;
@@ -378,7 +379,7 @@ socket_poll(web_api_t* api)
           break;
 
         case RECV_DATA:
-          api->last_send_time = chTimeNow();
+          api->last_recv_time = chTimeNow();
 
           api->parser.bytes_remaining = 4;
           api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
@@ -619,7 +620,7 @@ send_all(web_api_t* api, void* buf, uint32_t buf_len)
       printf("send failed %d %d\r\n", ret, errno);
       if ((errno != EAGAIN && errno != EWOULDBLOCK) ||
           (++api->send_errors > MAX_SEND_ERRS)) {
-        printf("socket disconnected\r\n");
+        printf("socket disconnected %d\r\n", (int)api->send_errors);
         closesocket(api->socket);
         api->socket = -1;
         set_state(api, AS_CONNECTING);
