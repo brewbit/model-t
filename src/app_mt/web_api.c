@@ -32,7 +32,9 @@
 
 #define SENSOR_REPORT_INTERVAL S2ST(5)
 #define SETTINGS_UPDATE_DELAY  S2ST(1 * 60)
-#define MAX_CONN_INACTIVITY    S2ST(10)
+#define MIN_SEND_INTERVAL      S2ST(10)
+#define RECV_TIMEOUT           S2ST(20)
+#define MAX_SEND_ERRS          25
 
 
 typedef enum {
@@ -67,7 +69,9 @@ typedef struct {
   api_output_status_t output_status[NUM_OUTPUTS];
   systime_t last_sensor_report_time;
   systime_t last_settings_update_time;
-  systime_t last_comm_time;
+  systime_t last_send_time;
+  systime_t last_recv_time;
+  uint32_t send_errors;
 
   msg_parser_t parser;
 } web_api_t;
@@ -235,6 +239,9 @@ web_api_idle(web_api_t* api)
     case AS_CONNECTING:
       printf("Connecting to: %s:%d\r\n", WEB_API_HOST_STR, WEB_API_PORT);
       if (socket_connect(api, WEB_API_HOST_STR, WEB_API_PORT)) {
+        api->last_recv_time = chTimeNow();
+        api->send_errors = 0;
+
         api->parser.state = RECV_LEN;
         api->parser.bytes_remaining = 4;
         api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
@@ -274,8 +281,23 @@ web_api_idle(web_api_t* api)
       break;
   }
 
-  if (api->status.state > AS_CONNECTING)
+  if (api->status.state > AS_CONNECTING) {
+    /* If we haven't heard from the server in a while, disconnect and try again */
+    if ((chTimeNow() - api->last_recv_time) > RECV_TIMEOUT) {
+      closesocket(api->socket);
+      api->socket = -1;
+      set_state(api, AS_CONNECTING);
+      return;
+    }
+
+    /* If we haven't sent anything to the server in a while, send a keepalive */
+    if ((chTimeNow() - api->last_send_time) > MIN_SEND_INTERVAL) {
+      uint32_t keepalive = 0;
+      send_all(api, &keepalive, 4);
+    }
+
     socket_poll(api);
+  }
 }
 
 static bool
@@ -322,12 +344,6 @@ socket_connect(web_api_t* api, const char* hostname, uint16_t port)
 static void
 socket_poll(web_api_t* api)
 {
-  /* If we haven't sent anything to the server in a while, send a keepalive */
-  if ((chTimeNow() - api->last_comm_time) > MAX_CONN_INACTIVITY) {
-    uint32_t keepalive = 0;
-    send_all(api, &keepalive, 4);
-  }
-
   int ret = recv(api->socket, api->parser.recv_buf, api->parser.bytes_remaining, 0);
   if (ret < 0) {
     if (errno != EAGAIN && errno != EWOULDBLOCK) {
@@ -352,6 +368,9 @@ socket_poll(web_api_t* api)
             api->parser.recv_buf = api->parser.data_buf;
           }
           else {
+            /* Got an empty keepalive message */
+            api->last_send_time = chTimeNow();
+
             api->parser.state = RECV_LEN;
             api->parser.bytes_remaining = 4;
             api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
@@ -359,6 +378,8 @@ socket_poll(web_api_t* api)
           break;
 
         case RECV_DATA:
+          api->last_send_time = chTimeNow();
+
           api->parser.bytes_remaining = 4;
           api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
           api->parser.state = RECV_LEN;
@@ -596,7 +617,8 @@ send_all(web_api_t* api, void* buf, uint32_t buf_len)
     int ret = send(api->socket, buf, bytes_left, 0);
     if (ret < 0) {
       printf("send failed %d %d\r\n", ret, errno);
-      if (errno != EAGAIN && errno != EWOULDBLOCK) {
+      if ((errno != EAGAIN && errno != EWOULDBLOCK) ||
+          (++api->send_errors > MAX_SEND_ERRS)) {
         printf("socket disconnected\r\n");
         closesocket(api->socket);
         api->socket = -1;
@@ -606,7 +628,7 @@ send_all(web_api_t* api, void* buf, uint32_t buf_len)
     }
     bytes_left -= ret;
     buf += ret;
-    api->last_comm_time = chTimeNow();
+    api->last_send_time = chTimeNow();
   }
 
   return true;
