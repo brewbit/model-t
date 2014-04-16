@@ -125,6 +125,7 @@ dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
 
   switch (id) {
     case MSG_INIT:
+    case MSG_NET_RESET:
       dispatch_init();
       break;
 
@@ -316,6 +317,8 @@ perform_connect()
 static void
 dispatch_init()
 {
+  wlan_stop();
+
   wlan_start(PATCH_LOAD_DEFAULT);
 
   {

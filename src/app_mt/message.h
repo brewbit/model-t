@@ -29,6 +29,7 @@ typedef enum {
   MSG_WLAN_DHCP,
   MSG_WLAN_PING_REPORT,
 
+  MSG_NET_RESET,
   MSG_NET_STATUS,
   MSG_NET_NEW_NETWORK,     // a new wireless network is now available
   MSG_NET_NETWORK_UPDATED, // new information for a previously seen network is available

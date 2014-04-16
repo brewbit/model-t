@@ -34,6 +34,7 @@
 #define SETTINGS_UPDATE_DELAY  S2ST(1 * 60)
 #define MIN_SEND_INTERVAL      S2ST(10)
 #define RECV_TIMEOUT           S2ST(20)
+#define CC3000_FUCKED_TIMEOUT  S2ST(2 * 60)
 #define MAX_SEND_ERRS          25
 
 
@@ -298,6 +299,16 @@ web_api_idle(web_api_t* api)
     }
 
     socket_poll(api);
+  }
+
+  /* If we haven't heard from the server in a REALLY long time, reset the WiFi module and try again */
+  if ((chTimeNow() - api->last_recv_time) > CC3000_FUCKED_TIMEOUT) {
+    printf("CC3000 is fucked, restarting\r\n");
+    closesocket(api->socket);
+    api->socket = -1;
+    set_state(api, AS_AWAITING_NET_CONNECTION);
+
+    msg_post(MSG_NET_RESET, NULL);
   }
 }
 
