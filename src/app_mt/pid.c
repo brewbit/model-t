@@ -53,6 +53,7 @@ void
 tune_gains(pid_t* pid, float err_p, float err_d)
 {
   pid->kp += -GAMMA * err_p;
+  pid->kp = LIMIT(pid->kp, 0, 1000);
 
   pid->ki += -GAMMA * err_p * pid->err_i;
   pid->ki = LIMIT(pid->ki, 0, 20);
@@ -93,10 +94,10 @@ void
 pid_reinit(pid_t* pid, float sample)
 {
   // TODO
-  (void)sample;
+//  (void)sample;
 //  pid->last_err = sample.value;
-  pid->err_i = pid->out;
-  pid->err_i = LIMIT(pid->err_i, pid->out_min, pid->out_max);
+//  pid->err_i = pid->out;
+//  pid->err_i = LIMIT(pid->err_i, pid->out_min, pid->out_max);
 }
 
 void

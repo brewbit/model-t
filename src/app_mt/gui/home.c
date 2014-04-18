@@ -30,6 +30,7 @@
 typedef struct {
   widget_t* quantity_widget;
   widget_t* button;
+  bool enabled;
 } sensor_info_t;
 
 typedef struct {
@@ -38,6 +39,8 @@ typedef struct {
   widget_t* screen;
   widget_t* stage_button;
   sensor_info_t sensors[NUM_SENSORS];
+  net_state_t net_state;
+  api_state_t api_state;
 
   widget_t* output1_button;
   widget_t* output2_button;
@@ -60,8 +63,11 @@ static void dispatch_output_status(home_screen_t* s, output_status_t* msg);
 static void dispatch_temp_unit(home_screen_t* s, unit_t unit);
 static void dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg);
 static void dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg);
+static void dispatch_net_status(home_screen_t* s, net_status_t* msg);
+static void dispatch_api_status(home_screen_t* s, api_status_t* msg);
 
 static void set_output_settings(home_screen_t* s, output_id_t output, output_function_t function);
+static void set_conn_status(home_screen_t* s);
 static void place_quantity_widgets(home_screen_t* s);
 
 
@@ -106,7 +112,7 @@ home_screen_create()
   s->output2_button = button_create(s->screen, rect, img_plug, WHITE, CYAN, click_output_button);
 
   rect.x = TILE_X(2);
-  s->conn_button = button_create(s->screen, rect, img_signal, WHITE, STEEL, click_conn_button);
+  s->conn_button = button_create(s->screen, rect, img_signal, RED, STEEL, click_conn_button);
 
   rect.x = TILE_X(3);
   s->settings_button = button_create(s->screen, rect, img_settings, WHITE, OLIVE, click_settings_button);
@@ -129,6 +135,8 @@ home_screen_create()
   gui_msg_subscribe(MSG_OUTPUT_SETTINGS, s->screen);
   gui_msg_subscribe(MSG_OUTPUT_STATUS, s->screen);
   gui_msg_subscribe(MSG_TEMP_UNIT, s->screen);
+  gui_msg_subscribe(MSG_NET_STATUS, s->screen);
+  gui_msg_subscribe(MSG_API_STATUS, s->screen);
 
   return s->screen;
 }
@@ -143,6 +151,8 @@ home_screen_destroy(widget_t* w)
   gui_msg_unsubscribe(MSG_OUTPUT_SETTINGS, s->screen);
   gui_msg_unsubscribe(MSG_OUTPUT_STATUS, s->screen);
   gui_msg_unsubscribe(MSG_TEMP_UNIT, s->screen);
+  gui_msg_unsubscribe(MSG_NET_STATUS, s->screen);
+  gui_msg_unsubscribe(MSG_API_STATUS, s->screen);
 
   free(s);
 }
@@ -173,6 +183,14 @@ home_screen_msg(msg_event_t* event)
     dispatch_temp_unit(s, *((unit_t*)event->msg_data));
     break;
 
+  case MSG_NET_STATUS:
+    dispatch_net_status(s, event->msg_data);
+    break;
+
+  case MSG_API_STATUS:
+    dispatch_api_status(s, event->msg_data);
+    break;
+
   default:
     break;
   }
@@ -200,8 +218,15 @@ dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg)
   quantity_widget_set_value(w, msg->sample);
 
   /* Enable the sensor button and adjust the placement of the quantity display widgets */
-  if (!widget_is_enabled(s->sensors[msg->sensor].button)) {
+  s->sensors[msg->sensor].enabled = true;
+  if (s->sensors[msg->sensor].enabled) {
     widget_enable(s->sensors[msg->sensor].button, TRUE);
+
+    if (msg->sensor == SENSOR_1)
+      button_set_color(s->sensors[msg->sensor].button, AMBER);
+    else
+      button_set_color(s->sensors[msg->sensor].button, PURPLE);
+
     place_quantity_widgets(s);
   }
 }
@@ -211,15 +236,50 @@ dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg)
 {
   widget_t* w = s->sensors[msg->sensor].quantity_widget;
 
+  s->sensors[msg->sensor].enabled = false;
+
   if (widget_is_enabled(s->sensors[msg->sensor].button)) {
-    widget_disable(s->sensors[msg->sensor].button);
-    button_set_icon(s->sensors[msg->sensor].button, img_temp_med);
+    button_set_icon(s->sensors[msg->sensor].button, img_temp_low);
+    button_set_color(s->sensors[msg->sensor].button, STEEL);
     quantity_t sample = {
         .unit = UNIT_NONE,
         .value = NAN
     };
     quantity_widget_set_value(w, sample);
     place_quantity_widgets(s);
+  }
+}
+
+static void
+dispatch_net_status(home_screen_t* s, net_status_t* msg)
+{
+  s->net_state = msg->net_state;
+  set_conn_status(s);
+}
+
+static void
+dispatch_api_status(home_screen_t* s, api_status_t* msg)
+{
+  s->api_state = msg->state;
+  set_conn_status(s);
+}
+
+static void
+set_conn_status(home_screen_t* s)
+{
+  if (s->net_state == NS_CONNECTED &&
+      s->api_state == AS_CONNECTED) {
+      button_set_color(s->conn_button, COBALT);
+      button_set_icon_color(s->conn_button, WHITE);
+  }
+  else if (s->net_state == NS_CONNECTED ||
+           s->api_state == AS_CONNECTED) {
+    button_set_color(s->conn_button, STEEL);
+    button_set_icon_color(s->conn_button, YELLOW);
+  }
+  else {
+    button_set_color(s->conn_button, STEEL);
+    button_set_icon_color(s->conn_button, RED);
   }
 }
 
@@ -232,7 +292,7 @@ place_quantity_widgets(home_screen_t* s)
   sensor_info_t* active_sensors[NUM_SENSORS];
   int num_active_sensors = 0;
   for (i = 0; i < NUM_SENSORS; ++i) {
-    if (widget_is_enabled(s->sensors[i].button)) {
+    if (s->sensors[i].enabled) {
       widget_show(s->sensors[i].quantity_widget);
       active_sensors[num_active_sensors++] = &s->sensors[i];
     }

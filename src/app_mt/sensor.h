@@ -7,6 +7,7 @@
 
 
 typedef enum {
+  SENSOR_NONE = -1,
   SENSOR_1,
   SENSOR_2,
 

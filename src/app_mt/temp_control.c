@@ -29,8 +29,6 @@ typedef struct {
   pid_t pid_control;
   temp_controller_t* controller;
 
-  systime_t window_start_time;
-  systime_t window_time;
   output_status_t status;
 } relay_output_t;
 
@@ -134,7 +132,6 @@ output_init(output_id_t output, uint32_t gpio)
 
   out->id = output;
   out->gpio = gpio;
-  out->window_time = settings->cycle_delay.value * S2ST(60) * 4;
   out->controller = &controller[settings->trigger];
 
   pid_init(&out->pid_control);
@@ -159,12 +156,16 @@ output_thread(void* arg)
 
   output->status.output = output->id;
 
-  output->window_start_time = chTimeNow();
   palSetPad(GPIOC, output->gpio);
 
   while (1) {
-    /* If the probe associated with this output is not active disable the output */
-    if (output->controller->state != TC_ACTIVE)
+    const output_settings_t* output_settings = app_cfg_get_output_settings(output->id);
+
+    /* If the probe associated with this output is not active or if the output is set
+     * to disabled turn OFF the output
+     */
+    if (output->controller->state != TC_ACTIVE ||
+        output_settings->enabled == false)
       enable_relay(output, false);
     else
       relay_control(output);
@@ -172,8 +173,8 @@ output_thread(void* arg)
     /* Restart PID after cycle delay */
     if (output->pid_control.enabled == false) {
       output->pid_control.enabled = true;
-      output->pid_control.err_i = 0;
-      output->pid_control.last_err = 0;
+      //output->pid_control.err_i = 0;
+      //output->pid_control.last_err = 0;
     }
 
     chThdSleepSeconds(1);
@@ -344,15 +345,11 @@ dispatch_output_settings(output_settings_msg_t* msg)
     else if (output_settings->function == OUTPUT_FUNC_HEATING)
       pid_set_output_sign(&output->pid_control, POSITIVE);
 
-      pid_set_output_limits(
-          &output->pid_control,
-          0,
-          output->window_time - (msg->settings.cycle_delay.value * S2ST(60)));
 
-      if (output_settings->trigger == SENSOR_1)
-        pid_reinit(&output->pid_control, controller[SENSOR_1].last_sample.value);
-      else if (output_settings->trigger == SENSOR_2)
-        pid_reinit(&output->pid_control, controller[SENSOR_2].last_sample.value);
+    if (output_settings->trigger == SENSOR_1)
+      pid_reinit(&output->pid_control, controller[SENSOR_1].last_sample.value);
+    else if (output_settings->trigger == SENSOR_2)
+      pid_reinit(&output->pid_control, controller[SENSOR_2].last_sample.value);
   }
 }
 

@@ -7,20 +7,15 @@
 #include "gui.h"
 #include "temp_control.h"
 #include "app_cfg.h"
-#include "gui/output_function.h"
-#include "gui/output_trigger.h"
-#include "gui/output_mode.h"
 #include "gui/quantity_select.h"
+#include "gui/button_list.h"
 
 #include <string.h>
+#include <stdio.h>
 
 typedef struct {
-  widget_t* widget;
-  widget_t* back_button;
-  widget_t* function_button;
-  widget_t* trigger_button;
-  widget_t* cycle_delay_button;
-  widget_t* output_mode_button;
+  widget_t* screen;
+  widget_t* button_list;
 
   output_id_t output;
   output_settings_t settings;
@@ -30,12 +25,11 @@ typedef struct {
 static void output_settings_screen_destroy(widget_t* w);
 static void output_settings_screen_msg(msg_event_t* event);
 static void dispatch_output_settings(output_screen_t* s, output_settings_msg_t* msg);
-static void set_output_settings(output_screen_t* s, output_function_t function, sensor_id_t trigger, output_ctrl_t mode);
+static void set_output_settings(output_screen_t* s);
 static void back_button_clicked(button_event_t* event);
 static void cycle_delay_button_clicked(button_event_t* event);
 static void output_mode_button_clicked(button_event_t* event);
 static void function_button_clicked(button_event_t* event);
-static void trigger_button_clicked(button_event_t* event);
 static void update_cycle_delay(quantity_t delay, void* user_data);
 
 
@@ -50,46 +44,18 @@ output_settings_screen_create(output_id_t output)
 {
   output_screen_t* s = calloc(1, sizeof(output_screen_t));
 
-  s->widget = widget_create(NULL, &output_settings_widget_class, s, display_rect);
-  widget_set_background(s->widget, BLACK, FALSE);
+  s->screen = widget_create(NULL, &output_settings_widget_class, s, display_rect);
+  widget_set_background(s->screen, BLACK, FALSE);
 
-  rect_t rect = {
-      .x = 15,
-      .y = 15,
-      .width = 56,
-      .height = 56,
-  };
-  s->back_button = button_create(s->widget, rect, img_left, WHITE, BLACK, back_button_clicked);
-
-  rect.x = 85;
-  rect.y = 26;
-  rect.width = 220;
   char* title = (output == OUTPUT_1) ? "Output 1 Setup" : "Output 2 Setup";
-  label_create(s->widget, rect, title, font_opensans_regular_22, WHITE, 1);
-
-  rect.x = 48;
-  rect.y = 86;
-  rect.width = 56;
-  rect.height = 56;
-  s->function_button = button_create(s->widget, rect, img_flame, WHITE, ORANGE, function_button_clicked);
-
-  rect.x += 84;
-  s->trigger_button = button_create(s->widget, rect, img_temp_38, WHITE, AMBER, trigger_button_clicked);
-
-  rect.x += 84;
-  s->cycle_delay_button = button_create(s->widget, rect, img_stopwatch, WHITE, GREEN, cycle_delay_button_clicked);
-
-  rect.x = 48;
-  rect.y += 70;
-  s->output_mode_button = button_create(s->widget, rect, img_circle, WHITE, RED, output_mode_button_clicked);
+  s->button_list = button_list_screen_create(s->screen, title, back_button_clicked, s);
 
   s->output = output;
   s->settings = *app_cfg_get_output_settings(output);
 
-  gui_msg_subscribe(MSG_OUTPUT_SETTINGS, s->widget);
-  set_output_settings(s, s->settings.function, s->settings.trigger, s->settings.output_mode);
+  set_output_settings(s);
 
-  return s->widget;
+  return s->screen;
 }
 
 static void
@@ -98,6 +64,83 @@ output_settings_screen_destroy(widget_t* w)
   output_screen_t* s = widget_get_instance_data(w);
   gui_msg_unsubscribe(MSG_OUTPUT_SETTINGS, w);
   free(s);
+}
+
+static void
+add_button_spec(
+    button_spec_t* buttons,
+    uint32_t* num_buttons,
+    button_event_handler_t btn_event_handler,
+    const Image_t* img,
+    color_t color,
+    const char* text,
+    const char* subtext,
+    void* user_data)
+{
+  buttons[*num_buttons].btn_event_handler = btn_event_handler;
+  buttons[*num_buttons].img = img;
+  buttons[*num_buttons].color = color;
+  buttons[*num_buttons].text = text;
+  buttons[*num_buttons].subtext = subtext;
+  buttons[*num_buttons].user_data = user_data;
+  (*num_buttons)++;
+}
+
+static void
+set_output_settings(output_screen_t* s)
+{
+  uint32_t num_buttons = 0;
+  button_spec_t buttons[4];
+
+  char* subtext;
+  char* output_delay_subtext;
+  char* text;
+  color_t color;
+  const Image_t* img;
+
+  switch (s->settings.function) {
+    default:
+    case OUTPUT_FUNC_HEATING:
+      text = "Heating Mode";
+      subtext = "Enable output when temp is less than the setpoint";
+      color = ORANGE;
+      img = img_flame;
+      break;
+
+    case OUTPUT_FUNC_COOLING:
+      text = "Cooling Mode";
+      subtext = "Enable output when temp is greater than the setpoint";
+      color = CYAN;
+      img = img_snowflake;
+      break;
+  }
+  add_button_spec(buttons, &num_buttons, function_button_clicked, img, color,
+      text, subtext, s);
+
+
+  switch (s->settings.output_mode) {
+    case ON_OFF:
+      color = RED;
+      text = "ON/OFF Mode";
+      subtext = "Enable/Disable output at setpoint";
+      break;
+    case PID:
+      color = STEEL;
+      text = "PID Mode";
+      subtext = "Minimize output error by adjusting control inputs";
+      break;
+  }
+  add_button_spec(buttons, &num_buttons, output_mode_button_clicked, img_graph_signal, color,
+      text, subtext, s);
+
+  output_delay_subtext = malloc(128);
+  snprintf(output_delay_subtext, 128, "Delay value: %d Min",
+    (int)(s->settings.cycle_delay.value));
+  add_button_spec(buttons, &num_buttons, cycle_delay_button_clicked, img_stopwatch, GREEN,
+      "Compressor Delay", output_delay_subtext, s);
+
+  button_list_set_buttons(s->button_list, buttons, num_buttons);
+  free(output_delay_subtext);
 }
 
 static void
@@ -113,69 +156,33 @@ static void
 dispatch_output_settings(output_screen_t* s, output_settings_msg_t* msg)
 {
   if (msg->output == s->output)
-    set_output_settings(s, msg->settings.function, msg->settings.trigger, msg->settings.output_mode);
-}
-
-static void
-set_output_settings(output_screen_t* s, output_function_t function, sensor_id_t trigger, output_ctrl_t mode)
-{
-  widget_t* btn1 = s->function_button;
-  widget_t* btn2 = s->trigger_button;
-  widget_t* btn3 = s->output_mode_button;
-
-  color_t color = 0;
-  const Image_t* img = img_snowflake;
-  switch (function) {
-    case OUTPUT_FUNC_COOLING:
-      color = CYAN;
-      img = img_snowflake;
-      break;
-
-    case OUTPUT_FUNC_HEATING:
-      color = ORANGE;
-      img = img_flame;
-      break;
-
-    default:
-      break;
-  }
-
-  button_set_color(btn1, color);
-  button_set_icon(btn1, img);
-
-  button_set_color(btn2, (trigger == SENSOR_1) ? AMBER : PURPLE);
-
-  button_set_color(btn3, (mode == ON_OFF) ? RED : STEEL);
+    set_output_settings(s);
 }
 
 static void
 back_button_clicked(button_event_t* event)
 {
-  if (event->id == EVT_BUTTON_CLICK)
+  if (event->id == EVT_BUTTON_CLICK) {
+    output_screen_t* s = widget_get_user_data(event->widget);
+
+    app_cfg_set_output_settings(s->output, &s->settings);
+
     gui_pop_screen();
+  }
 }
 
 static void
 function_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    widget_t* screen = widget_get_parent(event->widget);
-    output_screen_t* s = widget_get_instance_data(screen);
+    output_screen_t* s = widget_get_user_data(event->widget);
 
-    widget_t* output_function_screen = output_function_screen_create(s->output);
-    gui_push_screen(output_function_screen);
-  }
-}
+    if (s->settings.function == OUTPUT_FUNC_HEATING)
+      s->settings.function = OUTPUT_FUNC_COOLING;
+    else
+      s->settings.function = OUTPUT_FUNC_HEATING;
 
-static void
-trigger_button_clicked(button_event_t* event)
-{
-  if (event->id == EVT_BUTTON_CLICK) {
-    widget_t* screen = widget_get_parent(event->widget);
-    output_screen_t* s = widget_get_instance_data(screen);
-
-    widget_t* output_trigger_screen = output_trigger_screen_create(s->output);
-    gui_push_screen(output_trigger_screen);
+    set_output_settings(s);
   }
 }
 
@@ -185,8 +192,7 @@ cycle_delay_button_clicked(button_event_t* event)
   if (event->id != EVT_BUTTON_CLICK)
     return;
 
-  widget_t* screen = widget_get_parent(event->widget);
-  output_screen_t* s = widget_get_instance_data(screen);
+  output_screen_t* s = widget_get_user_data(event->widget);
 
   char* title;
   if (s->output == OUTPUT_1) {
@@ -208,11 +214,14 @@ static void
 output_mode_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    widget_t* screen = widget_get_parent(event->widget);
-    output_screen_t* s = widget_get_instance_data(screen);
+    output_screen_t* s = widget_get_user_data(event->widget);
 
-    widget_t* output_mode_screen = output_mode_screen_create(s->output);
-    gui_push_screen(output_mode_screen);
+    if (s->settings.output_mode == ON_OFF)
+      s->settings.output_mode = PID;
+    else
+      s->settings.output_mode = ON_OFF;
+
+    set_output_settings(s);
   }
 }
 
@@ -221,6 +230,7 @@ update_cycle_delay(quantity_t delay, void* user_data)
 {
   output_screen_t* s = user_data;
   s->settings.cycle_delay = delay;
-  app_cfg_set_output_settings(s->output, &s->settings);
+
+  set_output_settings(s);
 }
 

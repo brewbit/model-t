@@ -9,11 +9,21 @@
 
 
 typedef enum {
+  OUTPUT_NONE = -1,
   OUTPUT_1,
   OUTPUT_2,
 
   NUM_OUTPUTS
 } output_id_t;
+
+typedef enum {
+  SELECT_NONE,
+  SELECT_1,
+  SELECT_2,
+  SELECT_1_2,
+
+  NUM_OUTPUT_SELECTIONS
+} output_selection_t;
 
 typedef enum {
   OUTPUT_FUNC_HEATING,
@@ -32,18 +42,22 @@ typedef enum {
 } setpoint_type_t;
 
 typedef struct {
-  setpoint_type_t setpoint_type;
-  quantity_t static_setpoint;
-  uint32_t temp_profile_id;
-} controller_settings_t;
-
-typedef struct {
+  bool enabled;
   output_function_t function;
-  sensor_id_t trigger;
   quantity_t cycle_delay;
   output_ctrl_t output_mode;
   quantity_t hysteresis;
+  sensor_id_t trigger;
+
 } output_settings_t;
+
+typedef struct {
+  setpoint_type_t setpoint_type;
+  quantity_t static_setpoint;
+  uint32_t temp_profile_id;
+
+  uint8_t output_selection;
+} controller_settings_t;
 
 typedef struct {
   sensor_id_t sensor;

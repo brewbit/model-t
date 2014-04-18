@@ -7,4 +7,11 @@
 widget_t*
 wifi_screen_create(void);
 
+typedef enum{
+  NO_CONN,
+  NET_CONN,
+  API_CONN,
+  BOTH_CONN,
+}connection_status_t;
+
 #endif

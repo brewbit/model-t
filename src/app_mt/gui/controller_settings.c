@@ -13,6 +13,7 @@
 #include <string.h>
 #include <stdio.h>
 
+
 typedef struct {
   widget_t* screen;
   widget_t* button_list;
@@ -23,9 +24,10 @@ typedef struct {
 
 
 static void controller_settings_screen_destroy(widget_t* w);
-static void set_controller_settings(controller_settings_screen_t* s, setpoint_type_t setpoint_type, quantity_t static_setpoint, uint32_t temp_profile_id);
+static void set_controller_settings(controller_settings_screen_t* s);
+static void output_selection_button_clicked(button_event_t* event);
 static void temp_profile_button_clicked(button_event_t* event);
-static void setpooint_type_button_clicked(button_event_t* event);
+static void setpoint_type_button_clicked(button_event_t* event);
 static void static_setpoint_button_clicked(button_event_t* event);
 static void update_static_setpoint(quantity_t delay, void* user_data);
 static void back_button_clicked(button_event_t* event);
@@ -50,7 +52,7 @@ controller_settings_screen_create(sensor_id_t sensor)
   s->sensor = sensor;
   s->settings = *app_cfg_get_controller_settings(sensor);
 
-  set_controller_settings(s, s->settings.setpoint_type, s->settings.static_setpoint, s->settings.temp_profile_id);
+  set_controller_settings(s);
 
   return s->screen;
 }
@@ -83,17 +85,15 @@ add_button_spec(
 }
 
 static void
-set_controller_settings(controller_settings_screen_t* s, setpoint_type_t setpoint_type, quantity_t static_setpoint, uint32_t temp_profile_id)
+set_controller_settings(controller_settings_screen_t* s)
 {
   uint32_t num_buttons = 0;
   button_spec_t buttons[4];
 
-  s->settings.setpoint_type = setpoint_type;
-  s->settings.static_setpoint = static_setpoint;
-  s->settings.temp_profile_id = temp_profile_id;
-
   char* subtext;
-  switch (setpoint_type) {
+  char* setpoint_subtext;
+
+  switch (s->settings.setpoint_type) {
     case SP_STATIC:
       subtext = "Static Setpoint - Temp is held at fixed value";
       break;
@@ -106,29 +106,36 @@ set_controller_settings(controller_settings_screen_t* s, setpoint_type_t setpoin
       subtext = "Invalid setpoint type!";
       break;
   }
-  add_button_spec(buttons, &num_buttons, setpooint_type_button_clicked, img_snowflake, CYAN,
+  add_button_spec(buttons, &num_buttons, setpoint_type_button_clicked, img_snowflake, CYAN,
       "Setpoint Type", subtext, s);
 
-  subtext = malloc(128);
-  switch (setpoint_type) {
+  setpoint_subtext = malloc(128);
+  switch (s->settings.setpoint_type) {
     case SP_STATIC:
-      snprintf(subtext, 128, "Setpoint value: %d.%d %c",
-          (int)(s->settings.static_setpoint.value),
-          ((int)(fabs(s->settings.static_setpoint.value) * 10.0f)) % 10, 'F');
+      if (s->settings.static_setpoint.unit == UNIT_TEMP_DEG_F) {
+        snprintf(setpoint_subtext, 128, "Setpoint value: %d.%d %c",
+            (int)(s->settings.static_setpoint.value),
+            ((int)(fabs(s->settings.static_setpoint.value) * 10.0f)) % 10, 'F');
+      }
+      else {
+        snprintf(setpoint_subtext, 128, "Setpoint value: %d.%d %c",
+            (int)(s->settings.static_setpoint.value),
+            ((int)(fabs(s->settings.static_setpoint.value) * 10.0f)) % 10, 'C');
+      }
       add_button_spec(buttons, &num_buttons, static_setpoint_button_clicked, img_snowflake, CYAN,
-          "Static Setpoint", subtext, s);
+          "Static Setpoint", setpoint_subtext, s);
       break;
 
     case SP_TEMP_PROFILE:
     {
       const temp_profile_t* tp = app_cfg_get_temp_profile(s->settings.temp_profile_id);
       if (tp != NULL)
-        snprintf(subtext, 128, "Selected profile: '%s'", tp->name);
+        snprintf(setpoint_subtext, 128, "Selected profile: '%s'", tp->name);
       else
-        snprintf(subtext, 128, "Selected profile: id=%u", (unsigned int)s->settings.temp_profile_id);
+        snprintf(setpoint_subtext, 128, "Selected profile: id=%u", (unsigned int)s->settings.temp_profile_id);
 
       add_button_spec(buttons, &num_buttons, temp_profile_button_clicked, img_snowflake, CYAN,
-          "Temp Profile", subtext, s);
+          "Temp Profile", setpoint_subtext, s);
       break;
     }
 
@@ -136,12 +143,114 @@ set_controller_settings(controller_settings_screen_t* s, setpoint_type_t setpoin
       break;
   }
 
+  output_settings_t output1 = *app_cfg_get_output_settings(OUTPUT_1);
+  output_settings_t output2 = *app_cfg_get_output_settings(OUTPUT_2);
+
+  const controller_settings_t* other_sensor;
+
+  switch (s->sensor) {
+    case SENSOR_1:
+      other_sensor = app_cfg_get_controller_settings(SENSOR_2);
+      break;
+    case SENSOR_2:
+      other_sensor = app_cfg_get_controller_settings(SENSOR_1);
+      break;
+    default:
+      s->settings.output_selection = SELECT_NONE;
+      other_sensor = app_cfg_get_controller_settings(s->sensor);
+      break;
+  }
+
+  switch (s->settings.output_selection) {
+    case SELECT_1:
+    {
+      if (other_sensor->output_selection != SELECT_1 &&
+          other_sensor->output_selection != SELECT_1_2) {
+        subtext = "Use Output #1";
+        output1.enabled = true;
+        output2.enabled = false;
+
+        s->settings.output_selection = SELECT_1;
+        break;
+      }
+    }
+    case SELECT_2:
+    {
+      if (other_sensor->output_selection != SELECT_2 &&
+          other_sensor->output_selection != SELECT_1_2) {
+      subtext = "Use Output #2";
+      output1.enabled = false;
+      output2.enabled = true;
+
+      s->settings.output_selection = SELECT_2;
+      break;
+      }
+    }
+    case SELECT_1_2:
+    {
+      if (other_sensor->output_selection != SELECT_1 &&
+          other_sensor->output_selection != SELECT_2 &&
+          other_sensor->output_selection != SELECT_1_2) {
+      subtext = "Use Output #1 & #2";
+      output1.enabled = true;
+      output2.enabled = true;
+
+      s->settings.output_selection = SELECT_1_2;
+      break;
+      }
+    }
+    default:
+    case SELECT_NONE:
+    {
+      switch(other_sensor->output_selection)
+      {
+      case SELECT_1:
+        output1.enabled = true;
+        output2.enabled = false;
+        break;
+      case SELECT_2:
+        output1.enabled = false;
+        output2.enabled = true;
+        break;
+      case SELECT_1_2:
+        output1.enabled = true;
+        output2.enabled = true;
+        break;
+      case SELECT_NONE:
+        output1.enabled = false;
+        output2.enabled = false;
+      }
+        subtext = "No output";
+        s->settings.output_selection = SELECT_NONE;
+        break;
+    }
+  }
+  app_cfg_set_output_settings(OUTPUT_1, &output1);
+  app_cfg_set_output_settings(OUTPUT_2, &output2);
+
+  add_button_spec(buttons, &num_buttons, output_selection_button_clicked, img_plug, CYAN,
+      "Output Selection", subtext, s);
+
   button_list_set_buttons(s->button_list, buttons, num_buttons);
-  free(subtext);
+  free(setpoint_subtext);
 }
 
 static void
-setpooint_type_button_clicked(button_event_t* event)
+output_selection_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
+    controller_settings_screen_t* s = widget_get_user_data(event->widget);
+
+    s->settings.output_selection += 1;
+    if (s->settings.output_selection == NUM_OUTPUT_SELECTIONS)
+      s->settings.output_selection = 0;
+
+    set_controller_settings(s);
+  }
+}
+
+static void
+setpoint_type_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
     controller_settings_screen_t* s = widget_get_user_data(event->widget);
@@ -160,7 +269,8 @@ setpooint_type_button_clicked(button_event_t* event)
         break;
     }
 
-    set_controller_settings(s, new_sp_type, s->settings.static_setpoint, s->settings.temp_profile_id);
+    s->settings.setpoint_type = new_sp_type;
+    set_controller_settings(s);
   }
 }
 
@@ -202,7 +312,9 @@ static void
 update_static_setpoint(quantity_t setpoint, void* user_data)
 {
   controller_settings_screen_t* s = user_data;
-  set_controller_settings(s, s->settings.setpoint_type, setpoint, s->settings.temp_profile_id);
+
+  s->settings.static_setpoint = setpoint;
+  set_controller_settings(s);
 }
 
 static void

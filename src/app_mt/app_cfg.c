@@ -57,10 +57,12 @@ app_cfg_init()
 
     touch_calib_reset();
 
+    app_cfg_local.data.controller_settings[SENSOR_1].output_selection = SELECT_1;
     app_cfg_local.data.controller_settings[SENSOR_1].setpoint_type = SP_STATIC;
     app_cfg_local.data.controller_settings[SENSOR_1].static_setpoint.value = 68;
     app_cfg_local.data.controller_settings[SENSOR_1].static_setpoint.unit = UNIT_TEMP_DEG_F;
 
+    app_cfg_local.data.controller_settings[SENSOR_2].output_selection = SELECT_2;
     app_cfg_local.data.controller_settings[SENSOR_2].setpoint_type = SP_STATIC;
     app_cfg_local.data.controller_settings[SENSOR_2].static_setpoint.value = 68;
     app_cfg_local.data.controller_settings[SENSOR_2].static_setpoint.unit = UNIT_TEMP_DEG_F;
@@ -74,7 +76,7 @@ app_cfg_init()
     app_cfg_local.data.output_settings[OUTPUT_1].hysteresis.unit = UNIT_TEMP_DEG_F;
 
     app_cfg_local.data.output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
-    app_cfg_local.data.output_settings[OUTPUT_2].trigger = SENSOR_1;
+    app_cfg_local.data.output_settings[OUTPUT_2].trigger = SENSOR_2;
     app_cfg_local.data.output_settings[OUTPUT_2].cycle_delay.unit = UNIT_TIME_MIN;
     app_cfg_local.data.output_settings[OUTPUT_2].cycle_delay.value = 3;
     app_cfg_local.data.output_settings[OUTPUT_2].output_mode = ON_OFF;

@@ -9,14 +9,15 @@
 #include "gui/calib.h"
 #include "ota_update.h"
 #include "gui/info.h"
+#include "gui/button_list.h"
 
 #include <string.h>
+#include <stdio.h>
 
 
 typedef struct {
-  widget_t* widget;
-  widget_t* back_button;
-  widget_t* unit_button;
+  widget_t* screen;
+  widget_t* button_list;
 
   unit_t temp_unit;
 } settings_screen_t;
@@ -29,7 +30,7 @@ static void update_button_clicked(button_event_t* event);
 static void calibrate_button_clicked(button_event_t* event);
 static void info_button_clicked(button_event_t* event);
 
-static void set_unit(settings_screen_t* s, unit_t unit);
+static void set_unit_settings(settings_screen_t* s);
 
 
 widget_class_t settings_widget_class = {
@@ -41,41 +42,16 @@ settings_screen_create()
 {
   settings_screen_t* s = calloc(1, sizeof(settings_screen_t));
 
-  s->widget = widget_create(NULL, &settings_widget_class, s, display_rect);
+  s->screen = widget_create(NULL, &settings_widget_class, s, display_rect);
+  widget_set_background(s->screen, BLACK, FALSE);
 
-  rect_t rect = {
-      .x = 15,
-      .y = 15,
-      .width = 56,
-      .height = 56,
-  };
-  s->back_button = button_create(s->widget, rect, img_left, WHITE, BLACK, back_button_clicked);
-
-  rect.x = 85;
-  rect.y = 26;
-  rect.width = 220;
-  label_create(s->widget, rect, "Settings", font_opensans_regular_22, WHITE, 1);
-
-  rect.x = 48;
-  rect.y = 86;
-  rect.width = 56;
-  rect.height = 56;
-  s->unit_button = button_create(s->widget, rect, img_deg_f, WHITE, ORANGE, unit_button_clicked);
-
-  rect.x += 84;
-  button_create(s->widget, rect, img_hand, WHITE, STEEL, calibrate_button_clicked);
-
-  rect.x += 84;
-  button_create(s->widget, rect, img_update, WHITE, CYAN, update_button_clicked);
-
-  rect.x = 48;
-  rect.y += 70;
-  button_create(s->widget, rect, img_circle, WHITE, TAUPE, info_button_clicked);
+  char* title = "Model-T Settings";
+  s->button_list = button_list_screen_create(s->screen, title, back_button_clicked, s);
 
   s->temp_unit = app_cfg_get_temp_unit();
-  set_unit(s, s->temp_unit);
+  set_unit_settings(s);
 
-  return s->widget;
+  return s->screen;
 }
 
 static void
@@ -89,8 +65,7 @@ static void
 back_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    widget_t* w = widget_get_parent(event->widget);
-    settings_screen_t* s = widget_get_instance_data(w);
+    settings_screen_t* s = widget_get_user_data(event->widget);
 
     app_cfg_set_temp_unit(s->temp_unit);
 
@@ -102,13 +77,14 @@ static void
 unit_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    widget_t* w = widget_get_parent(event->widget);
-    settings_screen_t* s = widget_get_instance_data(w);
+    settings_screen_t* s = widget_get_user_data(event->widget);
 
     if (s->temp_unit == UNIT_TEMP_DEG_C)
-      set_unit(s, UNIT_TEMP_DEG_F);
+      s->temp_unit = UNIT_TEMP_DEG_F;
     else
-      set_unit(s, UNIT_TEMP_DEG_C);
+      s->temp_unit = UNIT_TEMP_DEG_C;
+
+    set_unit_settings(s);
   }
 }
 
@@ -116,8 +92,13 @@ static void
 update_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
+    settings_screen_t* s = widget_get_user_data(event->widget);
     widget_t* update_screen = update_screen_create();
+
     gui_push_screen(update_screen);
+
+    set_unit_settings(s);
+
   }
 }
 
@@ -125,8 +106,12 @@ static void
 info_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
+    settings_screen_t* s = widget_get_user_data(event->widget);
     widget_t* info_screen = info_screen_create();
+
     gui_push_screen(info_screen);
+
+    set_unit_settings(s);
   }
 }
 
@@ -134,19 +119,71 @@ static void
 calibrate_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
+    settings_screen_t* s = widget_get_user_data(event->widget);
     widget_t* calib_screen = calib_screen_create();
+
     gui_push_screen(calib_screen);
+
+    set_unit_settings(s);
   }
 }
 
 static void
-set_unit(settings_screen_t* s, unit_t unit)
+add_button_spec(
+    button_spec_t* buttons,
+    uint32_t* num_buttons,
+    button_event_handler_t btn_event_handler,
+    const Image_t* img,
+    color_t color,
+    const char* text,
+    const char* subtext,
+    void* user_data)
 {
-  s->temp_unit = unit;
-  if (unit == UNIT_TEMP_DEG_F) {
-    button_set_icon(s->unit_button, img_deg_f);
+  buttons[*num_buttons].btn_event_handler = btn_event_handler;
+  buttons[*num_buttons].img = img;
+  buttons[*num_buttons].color = color;
+  buttons[*num_buttons].text = text;
+  buttons[*num_buttons].subtext = subtext;
+  buttons[*num_buttons].user_data = user_data;
+  (*num_buttons)++;
+}
+
+static void
+set_unit_settings(settings_screen_t* s)
+{
+  uint32_t num_buttons = 0;
+  button_spec_t buttons[5];
+
+  char* subtext;
+  char* text;
+  const Image_t* img;
+
+  text = "Display Units";
+  if (s->temp_unit == UNIT_TEMP_DEG_F) {
+    img = img_deg_f;
+    subtext = "Display units in degrees Fahrenheit";
   }
   else {
-    button_set_icon(s->unit_button, img_deg_c);
+    img = img_deg_c;
+    subtext = "Display units in degrees Celsius";
   }
+  add_button_spec(buttons, &num_buttons, unit_button_clicked, img, ORANGE,
+      text, subtext, s);
+
+  text = "Model-T Updates";
+  subtext = "Check for Model-T software updates";
+  add_button_spec(buttons, &num_buttons, update_button_clicked, img_update, GREEN,
+      text, subtext, s);
+
+  text = "Screen Calibration";
+  subtext = "Perform 3 point screen calibration";
+  add_button_spec(buttons, &num_buttons, calibrate_button_clicked, img_hand, AMBER,
+      text, subtext, s);
+
+  text = "Model-T Info";
+  subtext = "Display detailed device information";
+  add_button_spec(buttons, &num_buttons, info_button_clicked, img_info, CYAN,
+      text, subtext, s);
+
+  button_list_set_buttons(s->button_list, buttons, num_buttons);
 }
