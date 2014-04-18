@@ -97,12 +97,10 @@ home_screen_create()
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
   rect.height = TILE_SPAN(1);
-  s->sensors[SENSOR_1].button = button_create(s->screen, rect, img_temp_med, WHITE, AMBER, click_sensor_button);
-  widget_disable(s->sensors[SENSOR_1].button);
+  s->sensors[SENSOR_1].button = button_create(s->screen, rect, img_temp_med, WHITE, STEEL, click_sensor_button);
 
   rect.y = TILE_Y(1);
-  s->sensors[SENSOR_2].button = button_create(s->screen, rect, img_temp_med, WHITE, PURPLE, click_sensor_button);
-  widget_disable(s->sensors[SENSOR_2].button);
+  s->sensors[SENSOR_2].button = button_create(s->screen, rect, img_temp_med, WHITE, STEEL, click_sensor_button);
 
   rect.x = TILE_X(0);
   rect.y = TILE_Y(2);

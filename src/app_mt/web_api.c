@@ -369,6 +369,8 @@ socket_poll(web_api_t* api)
   else {
     api->parser.bytes_remaining -= ret;
     api->parser.recv_buf += ret;
+    if (ret > 0)
+      api->last_recv_time = chTimeNow();
 
     if (api->parser.bytes_remaining == 0) {
       switch (api->parser.state) {
@@ -380,9 +382,6 @@ socket_poll(web_api_t* api)
             api->parser.recv_buf = api->parser.data_buf;
           }
           else {
-            /* Got an empty keepalive message */
-            api->last_recv_time = chTimeNow();
-
             api->parser.state = RECV_LEN;
             api->parser.bytes_remaining = 4;
             api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
@@ -390,8 +389,6 @@ socket_poll(web_api_t* api)
           break;
 
         case RECV_DATA:
-          api->last_recv_time = chTimeNow();
-
           api->parser.bytes_remaining = 4;
           api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
           api->parser.state = RECV_LEN;
