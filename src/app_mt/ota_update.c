@@ -9,7 +9,10 @@
 #include "sxfs.h"
 #include "dfuse.h"
 #include "bootloader_api.h"
+#include "common.h"
 
+#include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 
 
@@ -27,6 +30,9 @@ dispatch_update_check_response(FirmwareUpdateCheckResponse* response);
 
 static void
 dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk);
+
+static void
+firmware_download_request(void);
 
 
 static ota_update_status_t status;
@@ -101,13 +107,14 @@ dispatch_ota_update_start()
   }
 
   set_state(OU_STARTING_DOWNLOAD);
-  msg_post(MSG_API_FW_DNLD_START, strdup(status.update_ver));
+  firmware_download_request();
 }
 
 static void
 dispatch_update_check_response(FirmwareUpdateCheckResponse* response)
 {
   if (response->update_available) {
+    status.update_downloaded = 0;
     status.update_size = response->binary_size;
     strncpy(status.update_ver, response->version, sizeof(status.update_ver));
     set_state(OU_UPDATE_AVAILABLE);
@@ -156,4 +163,18 @@ dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
       set_state(OU_FAILED);
     }
   }
+  else
+    firmware_download_request();
+}
+
+static void
+firmware_download_request(void)
+{
+  firmware_update_t* firmware_data = malloc(sizeof(firmware_data));
+
+  firmware_data->version = status.update_ver;
+  firmware_data->offset = status.update_downloaded;
+  firmware_data->size = MIN(1024, (status.update_size - status.update_downloaded));
+
+  msg_post(MSG_API_FW_DNLD_RQST, firmware_data);
 }

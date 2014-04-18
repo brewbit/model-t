@@ -21,6 +21,12 @@ typedef struct {
   uint32_t update_downloaded;
 } ota_update_status_t;
 
+typedef struct {
+  char* version;
+  uint32_t offset;
+  size_t size;
+} firmware_update_t;
+
 void
 ota_update_init(void);
 

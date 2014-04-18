@@ -17,6 +17,7 @@
 #include "app_cfg.h"
 #include "temp_control.h"
 #include "app_cfg.h"
+#include "ota_update.h"
 
 #ifndef WEB_API_HOST
 #define WEB_API_HOST_STR "dg.brewbit.com"
@@ -121,7 +122,7 @@ static void
 check_for_update(web_api_t* api);
 
 static void
-start_update(web_api_t* api, const char* ver);
+dispatch_firmware_rqst(web_api_t* api, firmware_update_t* firmware_data);
 
 static void
 send_sensor_report(web_api_t* api);
@@ -154,7 +155,7 @@ web_api_init()
 
   msg_subscribe(l, MSG_NET_STATUS, NULL);
   msg_subscribe(l, MSG_API_FW_UPDATE_CHECK, NULL);
-  msg_subscribe(l, MSG_API_FW_DNLD_START, NULL);
+  msg_subscribe(l, MSG_API_FW_DNLD_RQST, NULL);
   msg_subscribe(l, MSG_SENSOR_SAMPLE, NULL);
   msg_subscribe(l, MSG_CONTROLLER_SETTINGS, NULL);
   msg_subscribe(l, MSG_OUTPUT_SETTINGS, NULL);
@@ -198,8 +199,8 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
         check_for_update(api);
         break;
 
-      case MSG_API_FW_DNLD_START:
-        start_update(api, msg_data);
+      case MSG_API_FW_DNLD_RQST:
+        dispatch_firmware_rqst(api, msg_data);
         break;
 
       case MSG_CONTROLLER_SETTINGS:
@@ -581,13 +582,15 @@ check_for_update(web_api_t* api)
 }
 
 static void
-start_update(web_api_t* api, const char* ver)
+dispatch_firmware_rqst(web_api_t* api, firmware_update_t* firmware_data)
 {
-  printf("sending update start\r\n");
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_FIRMWARE_DOWNLOAD_REQUEST;
   msg->has_firmwareDownloadRequest = true;
-  strncpy(msg->firmwareDownloadRequest.requested_version, ver,
+  msg->firmwareDownloadRequest.offset = firmware_data->offset;
+  msg->firmwareDownloadRequest.size = firmware_data->size;
+  strncpy(msg->firmwareDownloadRequest.requested_version,
+      firmware_data->version,
       sizeof(msg->firmwareDownloadRequest.requested_version));
 
   send_api_msg(api, msg);
