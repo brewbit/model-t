@@ -120,10 +120,12 @@ socket_stop()
 {
   int i;
 
-  chThdTerminate(select_thread);
-  chSemSignal(&select_sleep_semaphore);
-  chThdWait(select_thread);
-  select_thread = NULL;
+  if (select_thread != NULL) {
+    chThdTerminate(select_thread);
+    chSemSignal(&select_sleep_semaphore);
+    chThdWait(select_thread);
+    select_thread = NULL;
+  }
 
   for (i = 0; i < MAX_NUM_OF_SOCKETS; i++){
     sockets[i].sd = -1;

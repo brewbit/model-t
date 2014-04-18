@@ -93,11 +93,14 @@ static const uint8_t tSpiReadHeader[] = {SPI_READ_OP, 0, 0, 0, 0};
 void
 spi_close(void)
 {
-  // Shut down I/O thread
-  chThdTerminate(io_thread);
-  chSemSignal(&sem_io_ready);
-  chThdWait(io_thread);
-  io_thread = NULL;
+
+  if (io_thread != NULL) {
+    // Shut down I/O thread
+    chThdTerminate(io_thread);
+    chSemSignal(&sem_io_ready);
+    chThdWait(io_thread);
+    io_thread = NULL;
+  }
 
   // Disable Interrupt
   if (EXTD1.state == EXT_ACTIVE)
