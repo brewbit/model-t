@@ -14,6 +14,7 @@
 typedef struct {
   uint32_t reset_count;
   unit_t temp_unit;
+  output_ctrl_t control_mode;
   matrix_t touch_calib;
   controller_settings_t controller_settings[NUM_SENSORS];
   temp_profile_t temp_profiles[NUM_SENSORS];
@@ -53,6 +54,7 @@ app_cfg_init()
     app_cfg_local.data.reset_count = 0;
 
     app_cfg_local.data.temp_unit = UNIT_TEMP_DEG_F;
+    app_cfg_local.data.control_mode = ON_OFF;
 
     touch_calib_reset();
 
@@ -66,7 +68,6 @@ app_cfg_init()
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].cycle_delay.unit = UNIT_TIME_MIN;
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].cycle_delay.value = 3;
-    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].output_mode = ON_OFF;
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].hysteresis.value = 1;
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].hysteresis.unit = UNIT_TEMP_DEG_F;
 
@@ -74,7 +75,6 @@ app_cfg_init()
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].cycle_delay.unit = UNIT_TIME_MIN;
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].cycle_delay.value = 3;
-    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].output_mode = ON_OFF;
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].hysteresis.value = 1;
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].hysteresis.unit = UNIT_TEMP_DEG_F;
 
@@ -88,7 +88,6 @@ app_cfg_init()
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].cycle_delay.unit = UNIT_TIME_MIN;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].cycle_delay.value = 3;
-    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].output_mode = ON_OFF;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].hysteresis.value = 1;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].hysteresis.unit = UNIT_TEMP_DEG_F;
 
@@ -96,7 +95,6 @@ app_cfg_init()
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.unit = UNIT_TIME_MIN;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.value = 3;
-    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].output_mode = ON_OFF;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].hysteresis.value = 1;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].hysteresis.unit = UNIT_TEMP_DEG_F;
 
@@ -142,6 +140,31 @@ app_cfg_set_temp_unit(unit_t temp_unit)
   chMtxUnlock();
 
   msg_send(MSG_TEMP_UNIT, &app_cfg_local.data.temp_unit);
+}
+
+output_ctrl_t
+app_cfg_get_control_mode(void)
+{
+  return app_cfg_local.data.control_mode;
+}
+
+void
+app_cfg_set_control_mode(output_ctrl_t control_mode)
+{
+  int i;
+
+  if (control_mode != ON_OFF &&
+      control_mode != PID)
+    return;
+
+  if (control_mode == app_cfg_local.data.control_mode)
+    return;
+
+  chMtxLock(&app_cfg_mtx);
+  app_cfg_local.data.control_mode = control_mode;
+  chMtxUnlock();
+
+  msg_send(MSG_CONTROL_MODE, &app_cfg_local.data.control_mode);
 }
 
 const matrix_t*

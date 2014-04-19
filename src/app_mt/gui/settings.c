@@ -29,8 +29,8 @@ static void unit_button_clicked(button_event_t* event);
 static void update_button_clicked(button_event_t* event);
 static void calibrate_button_clicked(button_event_t* event);
 static void info_button_clicked(button_event_t* event);
-
-static void set_unit_settings(settings_screen_t* s);
+static void control_mode_button_clicked(button_event_t* event);
+static void rebuild_settings_screen(settings_screen_t* s);
 
 
 widget_class_t settings_widget_class = {
@@ -49,7 +49,7 @@ settings_screen_create()
   s->button_list = button_list_screen_create(s->screen, title, back_button_clicked, s);
 
   s->temp_unit = app_cfg_get_temp_unit();
-  set_unit_settings(s);
+  rebuild_settings_screen(s);
 
   return s->screen;
 }
@@ -84,7 +84,7 @@ unit_button_clicked(button_event_t* event)
     else
       s->temp_unit = UNIT_TEMP_DEG_C;
 
-    set_unit_settings(s);
+    rebuild_settings_screen(s);
   }
 }
 
@@ -97,7 +97,7 @@ update_button_clicked(button_event_t* event)
 
     gui_push_screen(update_screen);
 
-    set_unit_settings(s);
+    rebuild_settings_screen(s);
 
   }
 }
@@ -111,7 +111,7 @@ info_button_clicked(button_event_t* event)
 
     gui_push_screen(info_screen);
 
-    set_unit_settings(s);
+    rebuild_settings_screen(s);
   }
 }
 
@@ -124,7 +124,23 @@ calibrate_button_clicked(button_event_t* event)
 
     gui_push_screen(calib_screen);
 
-    set_unit_settings(s);
+    rebuild_settings_screen(s);
+  }
+}
+
+static void
+control_mode_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
+    settings_screen_t* s = widget_get_user_data(event->widget);
+
+    output_ctrl_t control_mode = app_cfg_get_control_mode();
+    if (control_mode == ON_OFF)
+      app_cfg_set_control_mode(PID);
+    else
+      app_cfg_set_control_mode(ON_OFF);
+
+    rebuild_settings_screen(s);
   }
 }
 
@@ -149,10 +165,11 @@ add_button_spec(
 }
 
 static void
-set_unit_settings(settings_screen_t* s)
+rebuild_settings_screen(settings_screen_t* s)
 {
   uint32_t num_buttons = 0;
-  button_spec_t buttons[5];
+  button_spec_t buttons[8];
+  color_t color;
 
   char* subtext;
   char* text;
@@ -168,6 +185,20 @@ set_unit_settings(settings_screen_t* s)
     subtext = "Display units in degrees Celsius";
   }
   add_button_spec(buttons, &num_buttons, unit_button_clicked, img, ORANGE,
+      text, subtext, s);
+
+  text = "Control Mode";
+  switch (app_cfg_get_control_mode()) {
+    case ON_OFF:
+      color = RED;
+      subtext = "ON/OFF - Enable/Disable output at setpoint";
+      break;
+    case PID:
+      color = STEEL;
+      subtext = "PID - Minimize output error by adjusting control inputs";
+      break;
+  }
+  add_button_spec(buttons, &num_buttons, control_mode_button_clicked, img_graph_signal, color,
       text, subtext, s);
 
   text = "Model-T Updates";

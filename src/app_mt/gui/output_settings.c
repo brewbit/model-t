@@ -25,7 +25,6 @@ static void output_settings_screen_destroy(widget_t* w);
 static void set_output_settings(output_screen_t* s);
 static void back_button_clicked(button_event_t* event);
 static void cycle_delay_button_clicked(button_event_t* event);
-static void output_mode_button_clicked(button_event_t* event);
 static void function_button_clicked(button_event_t* event);
 static void update_cycle_delay(quantity_t delay, void* user_data);
 
@@ -110,22 +109,6 @@ set_output_settings(output_screen_t* s)
   add_button_spec(buttons, &num_buttons, function_button_clicked, img, color,
       text, subtext, s);
 
-
-  switch (s->settings->output_mode) {
-    case ON_OFF:
-      color = RED;
-      text = "ON/OFF Mode";
-      subtext = "Enable/Disable output at setpoint";
-      break;
-    case PID:
-      color = STEEL;
-      text = "PID Mode";
-      subtext = "Minimize output error by adjusting control inputs";
-      break;
-  }
-  add_button_spec(buttons, &num_buttons, output_mode_button_clicked, img_graph_signal, color,
-      text, subtext, s);
-
   output_delay_subtext = malloc(128);
   snprintf(output_delay_subtext, 128, "Delay value: %d Min",
     (int)(s->settings->cycle_delay.value));
@@ -173,21 +156,6 @@ cycle_delay_button_clicked(button_event_t* event)
   widget_t* output_delay_screen = quantity_select_screen_create(
       "Cycle Delay", s->settings->cycle_delay, velocity_steps, 1, update_cycle_delay, s);
   gui_push_screen(output_delay_screen);
-}
-
-static void
-output_mode_button_clicked(button_event_t* event)
-{
-  if (event->id == EVT_BUTTON_CLICK) {
-    output_screen_t* s = widget_get_user_data(event->widget);
-
-    if (s->settings->output_mode == ON_OFF)
-      s->settings->output_mode = PID;
-    else
-      s->settings->output_mode = ON_OFF;
-
-    set_output_settings(s);
-  }
 }
 
 static void

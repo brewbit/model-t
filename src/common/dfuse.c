@@ -79,7 +79,7 @@ dfuse_read_prefix(sxfs_part_id_t part, dfu_prefix_t* prefix)
 
   sxfs_read(part, 0, (uint8_t*)prefix, sizeof(dfu_prefix_t));
 
-  prefix->dfu_image_size = U32_BE(prefix->dfu_image_size);
+  prefix->dfu_image_size = U32_LE(prefix->dfu_image_size);
 
   if (memcmp(prefix->signature, "DfuSe", 5) != 0)
     return DFU_INVALID_PREFIX_SIGNATURE;
@@ -98,9 +98,9 @@ dfuse_read_target_prefix(sxfs_part_id_t part, uint32_t offset, dfu_target_prefix
 
   sxfs_read(part, offset, (uint8_t*)prefix, sizeof(dfu_target_prefix_t));
 
-  prefix->target_named = U32_BE(prefix->target_named);
-  prefix->target_size = U32_BE(prefix->target_size);
-  prefix->num_elements = U32_BE(prefix->num_elements);
+  prefix->target_named = U32_LE(prefix->target_named);
+  prefix->target_size = U32_LE(prefix->target_size);
+  prefix->num_elements = U32_LE(prefix->num_elements);
 
   if (memcmp(prefix->signature, "Target", 6) != 0)
     return DFU_INVALID_TARGET_SIGNATURE;
@@ -116,8 +116,8 @@ dfuse_read_image_element(sxfs_part_id_t part, uint32_t offset, dfu_image_element
 
   sxfs_read(part, offset, (uint8_t*)img_element, sizeof(dfu_image_element_t));
 
-  img_element->element_addr = U32_BE(img_element->element_addr);
-  img_element->element_size = U32_BE(img_element->element_size);
+  img_element->element_addr = U32_LE(img_element->element_addr);
+  img_element->element_size = U32_LE(img_element->element_size);
 
   return DFU_PARSE_OK;
 }
@@ -278,7 +278,7 @@ dfuse_write_self(sxfs_part_id_t part, image_rec_t* img_recs, uint32_t num_img_re
   dfu_prefix_t prefix = {
       .signature = {'D', 'f', 'u', 'S', 'e'},
       .dfu_format_version = 1,
-      .dfu_image_size = U32_BE(dfu_image_size),
+      .dfu_image_size = U32_LE(dfu_image_size),
       .num_targets = 1
   };
   sxfs_write(part, offset, (uint8_t*)&prefix, sizeof(dfu_prefix_t));
@@ -288,10 +288,10 @@ dfuse_write_self(sxfs_part_id_t part, image_rec_t* img_recs, uint32_t num_img_re
   dfu_target_prefix_t target = {
       .signature = {'T', 'a', 'r', 'g', 'e', 't'},
       .alternate_setting = 0,
-      .target_named = U32_BE(0),
+      .target_named = U32_LE(0),
       .target_name = {0},
-      .target_size = U32_BE(target_size),
-      .num_elements = U32_BE(num_img_recs)
+      .target_size = U32_LE(target_size),
+      .num_elements = U32_LE(num_img_recs)
   };
   sxfs_write(part, offset, (uint8_t*)&target, sizeof(dfu_target_prefix_t));
   offset += sizeof(dfu_target_prefix_t);
@@ -300,8 +300,8 @@ dfuse_write_self(sxfs_part_id_t part, image_rec_t* img_recs, uint32_t num_img_re
   for (i = 0; i < (int)num_img_recs; ++i) {
     image_rec_t* img_rec = &img_recs[i];
     dfu_image_element_t img_element = {
-        .element_addr = U32_BE((uint32_t)img_rec->data),
-        .element_size = U32_BE(img_rec->size)
+        .element_addr = U32_LE((uint32_t)img_rec->data),
+        .element_size = U32_LE(img_rec->size)
     };
     sxfs_write(part, offset, (uint8_t*)&img_element, sizeof(dfu_image_element_t));
     offset += sizeof(dfu_image_element_t);

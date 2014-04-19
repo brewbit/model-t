@@ -51,7 +51,6 @@ typedef struct {
   bool enabled;
   output_function_t function;
   quantity_t cycle_delay;
-  output_ctrl_t output_mode;
   quantity_t hysteresis;
 } output_settings_t;
 

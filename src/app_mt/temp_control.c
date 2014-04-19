@@ -207,7 +207,7 @@ relay_control(relay_output_t* output)
 
   output->status.output = output->id;
 
-  switch(output_settings->output_mode) {
+  switch (app_cfg_get_control_mode()) {
   case ON_OFF:
   {
     float hysteresis = output_settings->hysteresis.value;
@@ -411,11 +411,8 @@ dispatch_sensor_sample(temp_controller_t* tc, sensor_msg_t* msg)
 
   temp_profile_update(&tc->temp_profile_run, msg->sample);
 
-  const controller_settings_t* settings = app_cfg_get_controller_settings(tc->controller);
   for (i = 0; i < NUM_OUTPUTS; ++i) {
-    const output_settings_t* output_settings = &settings->output_settings[i];
-
-      if (output_settings->output_mode == PID) {
+      if (app_cfg_get_control_mode() == PID) {
         pid_exec(&tc->outputs[i].pid_control,
             get_sp(tc),
             msg->sample.value);

@@ -63,6 +63,7 @@ typedef struct {
 typedef struct {
   int socket;
   api_status_t status;
+  bool new_device_settings;
   api_controller_status_t controller_status[NUM_SENSORS];
   systime_t last_sensor_report_time;
   systime_t last_settings_update_time;
@@ -99,11 +100,20 @@ static void
 dispatch_sensor_sample(web_api_t* api, sensor_msg_t* sample);
 
 static void
-dispatch_device_settings_from_device(web_api_t* api,
+dispatch_device_settings_from_device(
+    web_api_t* api,
+    output_ctrl_t* control_mode);
+
+static void
+dispatch_controller_settings_from_device(web_api_t* api,
     controller_settings_msg_t* controller_settings_msg);
 
 static void
 send_device_settings(
+    web_api_t* api);
+
+static void
+send_controller_settings(
     web_api_t* api);
 
 static void
@@ -122,7 +132,10 @@ static void
 send_sensor_report(web_api_t* api);
 
 static void
-dispatch_device_settings_from_server(ControllerSettings* settings);
+dispatch_device_settings_from_server(DeviceSettings* settings);
+
+static void
+dispatch_controller_settings_from_server(ControllerSettings* settings);
 
 static bool
 socket_connect(web_api_t* api, const char* hostname, uint16_t port);
@@ -196,8 +209,12 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
         dispatch_firmware_rqst(api, msg_data);
         break;
 
-      case MSG_CONTROLLER_SETTINGS:
+      case MSG_CONTROL_MODE:
         dispatch_device_settings_from_device(api, msg_data);
+        break;
+
+      case MSG_CONTROLLER_SETTINGS:
+        dispatch_controller_settings_from_device(api, msg_data);
         break;
 
       default:
@@ -260,9 +277,14 @@ web_api_idle(web_api_t* api)
         api->last_sensor_report_time = chTimeNow();
       }
 
+      if (api->new_device_settings) {
+        send_device_settings(api);
+        api->new_device_settings = false;
+      }
+
       if ((api->last_settings_update_time != 0) &&
           (chTimeNow() - api->last_settings_update_time) > SETTINGS_UPDATE_DELAY) {
-        send_device_settings(api);
+        send_controller_settings(api);
         api->last_settings_update_time = 0;
       }
 
@@ -471,18 +493,61 @@ dispatch_sensor_sample(web_api_t* api, sensor_msg_t* sample)
 static void
 dispatch_device_settings_from_device(
     web_api_t* api,
+    output_ctrl_t* control_mode)
+{
+  printf("device settings updated\r\n");
+
+  if (control_mode != NULL)
+    api->new_device_settings = true;
+}
+
+static void
+dispatch_controller_settings_from_device(
+    web_api_t* api,
     controller_settings_msg_t* ssm)
 {
-  printf("settings updated\r\n");
+  printf("controller settings updated\r\n");
 
-  if (ssm != NULL)
+  if (ssm != NULL) {
     api->controller_status[ssm->controller].new_settings = true;
 
-  api->last_settings_update_time = chTimeNow();
+    api->last_settings_update_time = chTimeNow();
+  }
 }
 
 static void
 send_device_settings(
+    web_api_t* api)
+{
+  ApiMessage* msg = calloc(1, sizeof(ApiMessage));
+  msg->type = ApiMessage_Type_DEVICE_SETTINGS;
+  msg->has_deviceSettings = true;
+
+  msg->deviceSettings.name[0] = 0;
+
+  output_ctrl_t control_mode = app_cfg_get_control_mode();
+  switch (control_mode) {
+    case PID:
+      msg->deviceSettings.control_mode = DeviceSettings_ControlMode_PID;
+      break;
+
+    case ON_OFF:
+      msg->deviceSettings.control_mode = DeviceSettings_ControlMode_ON_OFF;
+      break;
+
+    default:
+      printf("Invalid output control mode: %d\r\n", control_mode);
+      break;
+  }
+
+  printf("Sending device settings\r\n");
+  send_api_msg(api, msg);
+
+  free(msg);
+}
+
+static void
+send_controller_settings(
     web_api_t* api)
 {
   int i;
@@ -522,26 +587,13 @@ send_device_settings(
 
         os->index = i;
         os->function = osl->function;
-        switch (osl->output_mode) {
-          case PID:
-            os->output_mode = OutputSettings_OutputControlMode_PID;
-            break;
-
-          case ON_OFF:
-            os->output_mode = OutputSettings_OutputControlMode_ON_OFF;
-            break;
-
-          default:
-            printf("Invalid output control mode: %d\r\n", osl->output_mode);
-            break;
-        }
         os->cycle_delay = osl->cycle_delay.value;
       }
     }
   }
 
   if (msg->has_controllerSettings) {
-    printf("Sending device settings\r\n");
+    printf("Sending controller settings\r\n");
     send_api_msg(api, msg);
   }
 
@@ -680,8 +732,12 @@ dispatch_api_msg(web_api_t* api, ApiMessage* msg)
     msg_send(MSG_API_FW_CHUNK, &msg->firmwareDownloadResponse);
     break;
 
+  case ApiMessage_Type_DEVICE_SETTINGS:
+    dispatch_device_settings_from_server(&msg->deviceSettings);
+    break;
+
   case ApiMessage_Type_CONTROLLER_SETTINGS:
-    dispatch_device_settings_from_server(&msg->controllerSettings);
+    dispatch_controller_settings_from_server(&msg->controllerSettings);
     break;
 
   default:
@@ -691,7 +747,13 @@ dispatch_api_msg(web_api_t* api, ApiMessage* msg)
 }
 
 static void
-dispatch_device_settings_from_server(ControllerSettings* settings)
+dispatch_device_settings_from_server(DeviceSettings* settings)
+{
+  app_cfg_set_control_mode(settings->control_mode);
+}
+
+static void
+dispatch_controller_settings_from_server(ControllerSettings* settings)
 {
   int i;
 

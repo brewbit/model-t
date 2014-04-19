@@ -22,6 +22,12 @@ app_cfg_get_temp_unit(void);
 void
 app_cfg_set_temp_unit(unit_t temp_unit);
 
+output_ctrl_t
+app_cfg_get_control_mode(void);
+
+void
+app_cfg_set_control_mode(output_ctrl_t control_mode);
+
 const matrix_t*
 app_cfg_get_touch_calib(void);
 
