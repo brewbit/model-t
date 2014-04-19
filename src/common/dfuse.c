@@ -262,14 +262,13 @@ dfuse_write_self(sxfs_part_id_t part, image_rec_t* img_recs, uint32_t num_img_re
 {
   uint32_t offset = 0;
   int i;
-  // NOTE: assumes only one target
-  uint32_t dfu_image_size = sizeof(dfu_prefix_t) + sizeof(dfu_target_prefix_t);
-
   uint32_t target_size = 0;
   for (i = 0; i < (int)num_img_recs; ++i) {
     target_size += sizeof(dfu_image_element_t) + img_recs[i].size;
   }
-  dfu_image_size += target_size;
+
+  // NOTE: assumes only one target
+  uint32_t dfu_image_size = sizeof(dfu_prefix_t) + sizeof(dfu_target_prefix_t) + target_size;
 
   // Clear space for the image
   sxfs_erase(part);
@@ -325,7 +324,7 @@ dfuse_write_self(sxfs_part_id_t part, image_rec_t* img_recs, uint32_t num_img_re
   offset += sizeof(dfu_suffix_t) - sizeof(uint32_t);
 
   // Calculate CRC
-  sxfs_crc(part, 0, dfu_image_size - sizeof(uint32_t), &suffix.crc);
+  sxfs_crc(part, 0, dfu_image_size + sizeof(dfu_suffix_t) - sizeof(uint32_t), &suffix.crc);
   suffix.crc = U32_LE(suffix.crc);
 
   // Write CRC
