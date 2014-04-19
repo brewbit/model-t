@@ -263,7 +263,7 @@ dfuse_write_self(sxfs_part_id_t part, image_rec_t* img_recs, uint32_t num_img_re
   uint32_t offset = 0;
   int i;
   // NOTE: assumes only one target
-  uint32_t dfu_image_size = sizeof(dfu_prefix_t) + sizeof(dfu_target_prefix_t) + sizeof(dfu_suffix_t);
+  uint32_t dfu_image_size = sizeof(dfu_prefix_t) + sizeof(dfu_target_prefix_t);
 
   uint32_t target_size = 0;
   for (i = 0; i < (int)num_img_recs; ++i) {
@@ -290,7 +290,7 @@ dfuse_write_self(sxfs_part_id_t part, image_rec_t* img_recs, uint32_t num_img_re
       .alternate_setting = 0,
       .target_named = U32_LE(0),
       .target_name = {0},
-      .target_size = U32_LE(target_size - sizeof(dfu_suffix_t)),
+      .target_size = U32_LE(target_size),
       .num_elements = U32_LE(num_img_recs)
   };
   sxfs_write(part, offset, (uint8_t*)&target, sizeof(dfu_target_prefix_t));
