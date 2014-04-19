@@ -22,6 +22,7 @@ typedef struct {
   output_id_t id;
   pid_t pid_control;
   output_status_t status;
+  systime_t cycle_delay_start_time;
   struct temp_controller_s* controller;
   Thread* thread;
 } relay_output_t;
@@ -52,7 +53,8 @@ static void dispatch_sensor_sample(temp_controller_t* tc, sensor_msg_t* msg);
 static void dispatch_sensor_timeout(temp_controller_t* tc, sensor_timeout_msg_t* msg);
 static void output_init(temp_controller_t* tc, output_id_t id);
 static msg_t output_thread(void* arg);
-static void cycle_delay(relay_output_t* output);
+static void start_cycle_delay(relay_output_t* output);
+static void set_output_state(relay_output_t* output, output_state_t output_state);
 static void relay_control(relay_output_t* output);
 static void enable_relay(relay_output_t* output, bool enabled);
 static void dispatch_start(temp_controller_t* tc, controller_settings_t* settings);
@@ -130,8 +132,6 @@ temp_control_get_output_function(output_id_t output)
   };
   msg_send(MSG_TEMP_CONTROL_GET_OUTPUT_FUNC, &function_msg);
 
-  printf("return func %d\r\n", function_msg.function);
-
   return function_msg.function;
 }
 
@@ -169,7 +169,7 @@ output_thread(void* arg)
   chRegSetThreadName("output");
 
   /* Wait 1 cycle delay before starting window and PID */
-  cycle_delay(output);
+  start_cycle_delay(output);
 
   output->status.output = output->id;
 
@@ -177,19 +177,34 @@ output_thread(void* arg)
 
   while (!chThdShouldTerminate()) {
     const output_settings_t* output_settings = get_output_settings(output->controller, output->id);
+    systime_t cycle_delay = 60 * output_settings->cycle_delay.value;
 
     /* If the probe associated with this output is not active or if the output is set
      * to disabled turn OFF the output
      */
     if (output->controller->state != TC_ACTIVE ||
-        output_settings->enabled == false)
-      enable_relay(output, false);
-    else
-      relay_control(output);
+        !output_settings->enabled)
+      set_output_state(output, OUTPUT_CONTROL_ENABLED);
 
-    /* Restart PID after cycle delay */
-    if (output->pid_control.enabled == false)
-      output->pid_control.enabled = true;
+    switch (output->status.state) {
+      case OUTPUT_CONTROL_DISABLED:
+        enable_relay(output, false);
+        break;
+
+      case OUTPUT_CONTROL_ENABLED:
+        relay_control(output);
+        break;
+
+      case CYCLE_DELAY:
+        if ((chTimeNow() - output->cycle_delay_start_time) > cycle_delay) {
+          /* Restart PID after cycle delay */
+          if (output->pid_control.enabled == false)
+            output->pid_control.enabled = true;
+
+          set_output_state(output, OUTPUT_CONTROL_ENABLED);
+        }
+        break;
+    }
 
     chThdSleepSeconds(1);
   }
@@ -203,7 +218,6 @@ relay_control(relay_output_t* output)
   const output_settings_t* output_settings = get_output_settings(output->controller, output->id);
   float sample = output->controller->last_sample.value;
   float setpoint = get_sp(output->controller);
-  bool last_output_status = output->status.enabled;
 
   output->status.output = output->id;
 
@@ -217,8 +231,6 @@ relay_control(relay_output_t* output)
         enable_relay(output, true);
       else if (sample > setpoint) {
         enable_relay(output, false);
-        if (last_output_status == true)
-          cycle_delay(output);
       }
     }
     else {
@@ -226,8 +238,6 @@ relay_control(relay_output_t* output)
         enable_relay(output, true);
       else if (sample < setpoint) {
         enable_relay(output, false);
-        if (last_output_status == true)
-          cycle_delay(output);
       }
     }
 
@@ -235,16 +245,11 @@ relay_control(relay_output_t* output)
   }
 
   case PID:
-  {
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
       if (sample < (setpoint + output->pid_control.out))
         enable_relay(output, true);
       else {
         enable_relay(output, false);
-        if (last_output_status == true) {
-          output->pid_control.enabled = false;
-          cycle_delay(output);
-        }
       }
     }
     else {
@@ -252,14 +257,9 @@ relay_control(relay_output_t* output)
         enable_relay(output, true);
       else {
         enable_relay(output, false);
-        if (last_output_status == true) {
-          output->pid_control.enabled = false;
-          cycle_delay(output);
-        }
       }
     }
     break;
-  }
 
   default:
     break;
@@ -267,19 +267,36 @@ relay_control(relay_output_t* output)
 }
 
 static void
-enable_relay(relay_output_t* output, bool enabled)
+enable_relay(relay_output_t* output, bool enable)
 {
-  palWritePad(GPIOC, out_gpio[output->id], enabled);
-  output->status.enabled = enabled;
+  /* If the output was just disabled, start the cycle delay */
+  if (output->status.enabled && !enable)
+    start_cycle_delay(output);
+
+  palWritePad(GPIOC, out_gpio[output->id], enable);
+  output->status.enabled = enable;
   msg_send(MSG_OUTPUT_STATUS, &output->status);
 }
 
 static void
-cycle_delay(relay_output_t* output)
+start_cycle_delay(relay_output_t* output)
 {
   const output_settings_t* settings = get_output_settings(output->controller, output->id);
-  if (settings->cycle_delay.value > 0)
-    chThdSleepSeconds(60 * settings->cycle_delay.value);
+
+  if (settings->cycle_delay.value > 0) {
+    output->pid_control.enabled = false;
+    output->cycle_delay_start_time = chTimeNow();
+    set_output_state(output, CYCLE_DELAY);
+  }
+}
+
+static void
+set_output_state(relay_output_t* output, output_state_t output_state)
+{
+  if (output->status.state != output_state) {
+    output->status.state = output_state;
+    msg_send(MSG_OUTPUT_STATUS, &output->status);
+  }
 }
 
 static void

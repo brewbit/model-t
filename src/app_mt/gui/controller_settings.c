@@ -151,9 +151,11 @@ set_controller_settings(controller_settings_screen_t* s)
     case SENSOR_1:
       other_sensor = app_cfg_get_controller_settings(SENSOR_2);
       break;
+
     case SENSOR_2:
       other_sensor = app_cfg_get_controller_settings(SENSOR_1);
       break;
+
     default:
       s->settings.output_selection = SELECT_NONE;
       other_sensor = app_cfg_get_controller_settings(s->sensor);

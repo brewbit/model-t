@@ -749,6 +749,7 @@ dispatch_api_msg(web_api_t* api, ApiMessage* msg)
 static void
 dispatch_device_settings_from_server(DeviceSettings* settings)
 {
+  printf("got device settings from server\r\n");
   app_cfg_set_control_mode(settings->control_mode);
 }
 
@@ -757,7 +758,7 @@ dispatch_controller_settings_from_server(ControllerSettings* settings)
 {
   int i;
 
-  printf("got device settings from server\r\n");
+  printf("got controller settings from server\r\n");
 
   temp_control_halt(settings->sensor_index);
 
@@ -848,7 +849,7 @@ dispatch_controller_settings_from_server(ControllerSettings* settings)
       break;
   }
 
-  printf("    sensor %d\r\n", i);
+  printf("    sensor %d\r\n", csl->controller);
   printf("      setpoint_type %d\r\n", csl->setpoint_type);
   printf("      static %f\r\n", csl->static_setpoint.value);
   printf("      temp profile %d\r\n", (int)csl->temp_profile_id);
