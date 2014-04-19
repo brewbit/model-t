@@ -7,6 +7,6 @@
 
 
 widget_t*
-output_settings_screen_create(output_id_t output);
+output_settings_screen_create(output_settings_t* settings);
 
 #endif

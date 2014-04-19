@@ -17,14 +17,11 @@ typedef struct {
   widget_t* screen;
   widget_t* button_list;
 
-  output_id_t output;
-  output_settings_t settings;
+  output_settings_t* settings;
 } output_screen_t;
 
 
 static void output_settings_screen_destroy(widget_t* w);
-static void output_settings_screen_msg(msg_event_t* event);
-static void dispatch_output_settings(output_screen_t* s, output_settings_msg_t* msg);
 static void set_output_settings(output_screen_t* s);
 static void back_button_clicked(button_event_t* event);
 static void cycle_delay_button_clicked(button_event_t* event);
@@ -35,23 +32,20 @@ static void update_cycle_delay(quantity_t delay, void* user_data);
 
 widget_class_t output_settings_widget_class = {
     .on_destroy = output_settings_screen_destroy,
-    .on_msg     = output_settings_screen_msg
 };
 
 
 widget_t*
-output_settings_screen_create(output_id_t output)
+output_settings_screen_create(output_settings_t* settings)
 {
   output_screen_t* s = calloc(1, sizeof(output_screen_t));
 
   s->screen = widget_create(NULL, &output_settings_widget_class, s, display_rect);
   widget_set_background(s->screen, BLACK, FALSE);
 
-  char* title = (output == OUTPUT_1) ? "Output 1 Setup" : "Output 2 Setup";
-  s->button_list = button_list_screen_create(s->screen, title, back_button_clicked, s);
+  s->button_list = button_list_screen_create(s->screen, "Output Settings", back_button_clicked, s);
 
-  s->output = output;
-  s->settings = *app_cfg_get_output_settings(output);
+  s->settings = settings;
 
   set_output_settings(s);
 
@@ -62,7 +56,6 @@ static void
 output_settings_screen_destroy(widget_t* w)
 {
   output_screen_t* s = widget_get_instance_data(w);
-  gui_msg_unsubscribe(MSG_OUTPUT_SETTINGS, w);
   free(s);
 }
 
@@ -98,7 +91,7 @@ set_output_settings(output_screen_t* s)
   color_t color;
   const Image_t* img;
 
-  switch (s->settings.function) {
+  switch (s->settings->function) {
     default:
     case OUTPUT_FUNC_HEATING:
       text = "Heating Mode";
@@ -118,7 +111,7 @@ set_output_settings(output_screen_t* s)
       text, subtext, s);
 
 
-  switch (s->settings.output_mode) {
+  switch (s->settings->output_mode) {
     case ON_OFF:
       color = RED;
       text = "ON/OFF Mode";
@@ -135,7 +128,7 @@ set_output_settings(output_screen_t* s)
 
   output_delay_subtext = malloc(128);
   snprintf(output_delay_subtext, 128, "Delay value: %d Min",
-    (int)(s->settings.cycle_delay.value));
+    (int)(s->settings->cycle_delay.value));
   add_button_spec(buttons, &num_buttons, cycle_delay_button_clicked, img_stopwatch, GREEN,
       "Compressor Delay", output_delay_subtext, s);
 
@@ -144,29 +137,9 @@ set_output_settings(output_screen_t* s)
 }
 
 static void
-output_settings_screen_msg(msg_event_t* event)
-{
-  output_screen_t* s = widget_get_instance_data(event->widget);
-
-  if (event->msg_id == MSG_OUTPUT_SETTINGS)
-    dispatch_output_settings(s, event->msg_data);
-}
-
-static void
-dispatch_output_settings(output_screen_t* s, output_settings_msg_t* msg)
-{
-  if (msg->output == s->output)
-    set_output_settings(s);
-}
-
-static void
 back_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    output_screen_t* s = widget_get_user_data(event->widget);
-
-    app_cfg_set_output_settings(s->output, &s->settings);
-
     gui_pop_screen();
   }
 }
@@ -177,10 +150,10 @@ function_button_clicked(button_event_t* event)
   if (event->id == EVT_BUTTON_CLICK) {
     output_screen_t* s = widget_get_user_data(event->widget);
 
-    if (s->settings.function == OUTPUT_FUNC_HEATING)
-      s->settings.function = OUTPUT_FUNC_COOLING;
+    if (s->settings->function == OUTPUT_FUNC_HEATING)
+      s->settings->function = OUTPUT_FUNC_COOLING;
     else
-      s->settings.function = OUTPUT_FUNC_HEATING;
+      s->settings->function = OUTPUT_FUNC_HEATING;
 
     set_output_settings(s);
   }
@@ -194,19 +167,11 @@ cycle_delay_button_clicked(button_event_t* event)
 
   output_screen_t* s = widget_get_user_data(event->widget);
 
-  char* title;
-  if (s->output == OUTPUT_1) {
-    title = "Output 1 Delay";
-  }
-  else {
-    title = "Output 2 Delay";
-  }
-
   float velocity_steps[] = {
       1.0f
   };
   widget_t* output_delay_screen = quantity_select_screen_create(
-      title, s->settings.cycle_delay, velocity_steps, 1, update_cycle_delay, s);
+      "Cycle Delay", s->settings->cycle_delay, velocity_steps, 1, update_cycle_delay, s);
   gui_push_screen(output_delay_screen);
 }
 
@@ -216,10 +181,10 @@ output_mode_button_clicked(button_event_t* event)
   if (event->id == EVT_BUTTON_CLICK) {
     output_screen_t* s = widget_get_user_data(event->widget);
 
-    if (s->settings.output_mode == ON_OFF)
-      s->settings.output_mode = PID;
+    if (s->settings->output_mode == ON_OFF)
+      s->settings->output_mode = PID;
     else
-      s->settings.output_mode = ON_OFF;
+      s->settings->output_mode = ON_OFF;
 
     set_output_settings(s);
   }
@@ -229,7 +194,7 @@ static void
 update_cycle_delay(quantity_t delay, void* user_data)
 {
   output_screen_t* s = user_data;
-  s->settings.cycle_delay = delay;
+  s->settings->cycle_delay = delay;
 
   set_output_settings(s);
 }

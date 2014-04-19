@@ -53,18 +53,17 @@ static void home_screen_destroy(widget_t* w);
 static void home_screen_msg(msg_event_t* event);
 
 static void click_sensor_button(button_event_t* event);
-static void click_output_button(button_event_t* event);
 static void click_conn_button(button_event_t* event);
 static void click_settings_button(button_event_t* event);
 static void click_stage_button(button_event_t* event);
 
-static void dispatch_output_settings(home_screen_t* s, output_settings_msg_t* msg);
 static void dispatch_output_status(home_screen_t* s, output_status_t* msg);
 static void dispatch_temp_unit(home_screen_t* s, unit_t unit);
 static void dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg);
 static void dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg);
 static void dispatch_net_status(home_screen_t* s, net_status_t* msg);
 static void dispatch_api_status(home_screen_t* s, api_status_t* msg);
+static void dispatch_controller_settings(home_screen_t* s, controller_settings_t* msg);
 
 static void set_output_settings(home_screen_t* s, output_id_t output, output_function_t function);
 static void set_conn_status(home_screen_t* s);
@@ -104,10 +103,10 @@ home_screen_create()
 
   rect.x = TILE_X(0);
   rect.y = TILE_Y(2);
-  s->output1_button = button_create(s->screen, rect, img_plug, WHITE, ORANGE, click_output_button);
+  s->output1_button = button_create(s->screen, rect, img_plug, WHITE, ORANGE, NULL);
 
   rect.x = TILE_X(1);
-  s->output2_button = button_create(s->screen, rect, img_plug, WHITE, CYAN, click_output_button);
+  s->output2_button = button_create(s->screen, rect, img_plug, WHITE, CYAN, NULL);
 
   rect.x = TILE_X(2);
   s->conn_button = button_create(s->screen, rect, img_signal, RED, STEEL, click_conn_button);
@@ -124,17 +123,17 @@ home_screen_create()
   place_quantity_widgets(s);
 
   set_output_settings(s, OUTPUT_1,
-      app_cfg_get_output_settings(OUTPUT_1)->function);
+      temp_control_get_output_function(OUTPUT_1));
   set_output_settings(s, OUTPUT_2,
-      app_cfg_get_output_settings(OUTPUT_2)->function);
+      temp_control_get_output_function(OUTPUT_2));
 
   gui_msg_subscribe(MSG_SENSOR_SAMPLE, s->screen);
   gui_msg_subscribe(MSG_SENSOR_TIMEOUT, s->screen);
-  gui_msg_subscribe(MSG_OUTPUT_SETTINGS, s->screen);
   gui_msg_subscribe(MSG_OUTPUT_STATUS, s->screen);
   gui_msg_subscribe(MSG_TEMP_UNIT, s->screen);
   gui_msg_subscribe(MSG_NET_STATUS, s->screen);
   gui_msg_subscribe(MSG_API_STATUS, s->screen);
+  gui_msg_subscribe(MSG_CONTROLLER_SETTINGS, s->screen);
 
   return s->screen;
 }
@@ -146,11 +145,11 @@ home_screen_destroy(widget_t* w)
 
   gui_msg_unsubscribe(MSG_SENSOR_SAMPLE, s->screen);
   gui_msg_unsubscribe(MSG_SENSOR_TIMEOUT, s->screen);
-  gui_msg_unsubscribe(MSG_OUTPUT_SETTINGS, s->screen);
   gui_msg_unsubscribe(MSG_OUTPUT_STATUS, s->screen);
   gui_msg_unsubscribe(MSG_TEMP_UNIT, s->screen);
   gui_msg_unsubscribe(MSG_NET_STATUS, s->screen);
   gui_msg_unsubscribe(MSG_API_STATUS, s->screen);
+  gui_msg_unsubscribe(MSG_CONTROLLER_SETTINGS, s->screen);
 
   free(s);
 }
@@ -169,10 +168,6 @@ home_screen_msg(msg_event_t* event)
     dispatch_sensor_timeout(s, event->msg_data);
     break;
 
-  case MSG_OUTPUT_SETTINGS:
-    dispatch_output_settings(s, event->msg_data);
-    break;
-
   case MSG_OUTPUT_STATUS:
     dispatch_output_status(s, event->msg_data);
     break;
@@ -187,6 +182,10 @@ home_screen_msg(msg_event_t* event)
 
   case MSG_API_STATUS:
     dispatch_api_status(s, event->msg_data);
+    break;
+
+  case MSG_CONTROLLER_SETTINGS:
+    dispatch_controller_settings(s, event->msg_data);
     break;
 
   default:
@@ -314,9 +313,15 @@ place_quantity_widgets(home_screen_t* s)
 }
 
 static void
-dispatch_output_settings(home_screen_t* s, output_settings_msg_t* msg)
+dispatch_controller_settings(home_screen_t* s, controller_settings_t* settings)
 {
-  set_output_settings(s, msg->output, msg->settings.function);
+  (void)settings;
+
+  int i;
+  for (i = 0; i < NUM_OUTPUTS; ++i) {
+    set_output_settings(s, i,
+        temp_control_get_output_function(i));
+  }
 }
 
 static void
@@ -364,6 +369,10 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
       color = ORANGE;
       break;
 
+    case OUTPUT_FUNC_NONE:
+      color = STEEL;
+      break;
+
     default:
       break;
   }
@@ -387,25 +396,6 @@ click_sensor_button(button_event_t* event)
     sensor = SENSOR_2;
 
   widget_t* settings_screen = controller_settings_screen_create(sensor);
-  gui_push_screen(settings_screen);
-}
-
-static void
-click_output_button(button_event_t* event)
-{
-  if (event->id != EVT_BUTTON_CLICK)
-    return;
-
-  widget_t* parent = widget_get_parent(event->widget);
-  home_screen_t* s = widget_get_instance_data(parent);
-
-  output_id_t output;
-  if (event->widget == s->output1_button)
-    output = OUTPUT_1;
-  else
-    output = OUTPUT_2;
-
-  widget_t* settings_screen = output_settings_screen_create(output);
   gui_push_screen(settings_screen);
 }
 

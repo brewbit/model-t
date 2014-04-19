@@ -17,7 +17,6 @@ typedef struct {
   matrix_t touch_calib;
   controller_settings_t controller_settings[NUM_SENSORS];
   temp_profile_t temp_profiles[NUM_SENSORS];
-  output_settings_t output_settings[NUM_OUTPUTS];
   char auth_token[64];
   net_settings_t net_settings;
   fault_data_t fault;
@@ -57,31 +56,49 @@ app_cfg_init()
 
     touch_calib_reset();
 
-    app_cfg_local.data.controller_settings[SENSOR_1].output_selection = SELECT_1;
-    app_cfg_local.data.controller_settings[SENSOR_1].setpoint_type = SP_STATIC;
-    app_cfg_local.data.controller_settings[SENSOR_1].static_setpoint.value = 68;
-    app_cfg_local.data.controller_settings[SENSOR_1].static_setpoint.unit = UNIT_TEMP_DEG_F;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].controller = CONTROLLER_1;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].setpoint_type = SP_STATIC;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].static_setpoint.value = 68;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].static_setpoint.unit = UNIT_TEMP_DEG_F;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_selection = SELECT_1;
 
-    app_cfg_local.data.controller_settings[SENSOR_2].output_selection = SELECT_2;
-    app_cfg_local.data.controller_settings[SENSOR_2].setpoint_type = SP_STATIC;
-    app_cfg_local.data.controller_settings[SENSOR_2].static_setpoint.value = 68;
-    app_cfg_local.data.controller_settings[SENSOR_2].static_setpoint.unit = UNIT_TEMP_DEG_F;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].enabled = true;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].cycle_delay.unit = UNIT_TIME_MIN;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].cycle_delay.value = 3;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].output_mode = ON_OFF;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].hysteresis.value = 1;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].hysteresis.unit = UNIT_TEMP_DEG_F;
 
-    app_cfg_local.data.output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
-    app_cfg_local.data.output_settings[OUTPUT_1].trigger = SENSOR_1;
-    app_cfg_local.data.output_settings[OUTPUT_1].cycle_delay.unit = UNIT_TIME_MIN;
-    app_cfg_local.data.output_settings[OUTPUT_1].cycle_delay.value = 3;
-    app_cfg_local.data.output_settings[OUTPUT_1].output_mode = ON_OFF;
-    app_cfg_local.data.output_settings[OUTPUT_1].hysteresis.value = 1;
-    app_cfg_local.data.output_settings[OUTPUT_1].hysteresis.unit = UNIT_TEMP_DEG_F;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].enabled = false;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].cycle_delay.unit = UNIT_TIME_MIN;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].cycle_delay.value = 3;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].output_mode = ON_OFF;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].hysteresis.value = 1;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].hysteresis.unit = UNIT_TEMP_DEG_F;
 
-    app_cfg_local.data.output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
-    app_cfg_local.data.output_settings[OUTPUT_2].trigger = SENSOR_2;
-    app_cfg_local.data.output_settings[OUTPUT_2].cycle_delay.unit = UNIT_TIME_MIN;
-    app_cfg_local.data.output_settings[OUTPUT_2].cycle_delay.value = 3;
-    app_cfg_local.data.output_settings[OUTPUT_2].output_mode = ON_OFF;
-    app_cfg_local.data.output_settings[OUTPUT_2].hysteresis.value = 1;
-    app_cfg_local.data.output_settings[OUTPUT_2].hysteresis.unit = UNIT_TEMP_DEG_F;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].controller = CONTROLLER_2;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].setpoint_type = SP_STATIC;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].static_setpoint.value = 68;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].static_setpoint.unit = UNIT_TEMP_DEG_F;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_selection = SELECT_2;
+
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].enabled = false;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].cycle_delay.unit = UNIT_TIME_MIN;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].cycle_delay.value = 3;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].output_mode = ON_OFF;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].hysteresis.value = 1;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].hysteresis.unit = UNIT_TEMP_DEG_F;
+
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].enabled = true;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.unit = UNIT_TIME_MIN;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.value = 3;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].output_mode = ON_OFF;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].hysteresis.value = 1;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].hysteresis.unit = UNIT_TEMP_DEG_F;
 
     app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
   }
@@ -162,38 +179,10 @@ app_cfg_set_controller_settings(sensor_id_t sensor, controller_settings_t* setti
     chMtxUnlock();
 
     controller_settings_msg_t msg = {
-        .sensor = sensor,
+        .controller = sensor,
         .settings = *settings
     };
     msg_send(MSG_CONTROLLER_SETTINGS, &msg);
-  }
-}
-
-const output_settings_t*
-app_cfg_get_output_settings(output_id_t output)
-{
-  if (output >= NUM_OUTPUTS)
-    return NULL;
-
-  return &app_cfg_local.data.output_settings[output];
-}
-
-void
-app_cfg_set_output_settings(output_id_t output, output_settings_t* settings)
-{
-  if (output >= NUM_OUTPUTS)
-    return;
-
-  if (memcmp(settings, &app_cfg_local.data.output_settings[output], sizeof(output_settings_t)) != 0) {
-    chMtxLock(&app_cfg_mtx);
-    app_cfg_local.data.output_settings[output] = *settings;
-    chMtxUnlock();
-
-    output_settings_msg_t msg = {
-        .output = output,
-        .settings = *settings
-    };
-    msg_send(MSG_OUTPUT_SETTINGS, &msg);
   }
 }
 

@@ -61,7 +61,6 @@ sensor_thread(void* arg)
     if (sensor_get_sample(tp, &sample)) {
       tp->connected = connected_sensor[tp->sensor] = true;
       tp->last_sample_time = chTimeNow();
-      printf("sensor, %d\r\nsample, %f\r\n",tp->sensor, sample.value);
       send_sensor_msg(tp, &sample);
     }
     else {

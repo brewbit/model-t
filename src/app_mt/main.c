@@ -112,7 +112,13 @@ main(void)
 
   gfx_init();
   touch_init();
-  temp_control_init();
+
+  sensor_init(SENSOR_1, SD_OW1);
+  sensor_init(SENSOR_2, SD_OW2);
+
+  temp_control_init(CONTROLLER_1);
+  temp_control_init(CONTROLLER_2);
+
   net_init();
   ota_update_init();
   web_api_init();

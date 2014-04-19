@@ -9,6 +9,7 @@
 #include "app_cfg.h"
 #include "gui/quantity_select.h"
 #include "gui/button_list.h"
+#include "gui/output_settings.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -29,6 +30,7 @@ static void output_selection_button_clicked(button_event_t* event);
 static void temp_profile_button_clicked(button_event_t* event);
 static void setpoint_type_button_clicked(button_event_t* event);
 static void static_setpoint_button_clicked(button_event_t* event);
+static void output_settings_button_clicked(button_event_t* event);
 static void update_static_setpoint(quantity_t delay, void* user_data);
 static void back_button_clicked(button_event_t* event);
 
@@ -88,7 +90,7 @@ static void
 set_controller_settings(controller_settings_screen_t* s)
 {
   uint32_t num_buttons = 0;
-  button_spec_t buttons[4];
+  button_spec_t buttons[16];
 
   char* subtext;
   char* setpoint_subtext;
@@ -143,9 +145,6 @@ set_controller_settings(controller_settings_screen_t* s)
       break;
   }
 
-  output_settings_t output1 = *app_cfg_get_output_settings(OUTPUT_1);
-  output_settings_t output2 = *app_cfg_get_output_settings(OUTPUT_2);
-
   const controller_settings_t* other_sensor;
 
   switch (s->sensor) {
@@ -163,73 +162,61 @@ set_controller_settings(controller_settings_screen_t* s)
 
   switch (s->settings.output_selection) {
     case SELECT_1:
-    {
       if (other_sensor->output_selection != SELECT_1 &&
           other_sensor->output_selection != SELECT_1_2) {
         subtext = "Use Output #1";
-        output1.enabled = true;
-        output2.enabled = false;
+        s->settings.output_settings[OUTPUT_1].enabled = true;
+        s->settings.output_settings[OUTPUT_2].enabled = false;
 
         s->settings.output_selection = SELECT_1;
         break;
       }
-    }
+      /* Intentional fall-through */
+
     case SELECT_2:
-    {
       if (other_sensor->output_selection != SELECT_2 &&
           other_sensor->output_selection != SELECT_1_2) {
-      subtext = "Use Output #2";
-      output1.enabled = false;
-      output2.enabled = true;
+        subtext = "Use Output #2";
+        s->settings.output_settings[OUTPUT_1].enabled = false;
+        s->settings.output_settings[OUTPUT_2].enabled = true;
 
-      s->settings.output_selection = SELECT_2;
-      break;
+        s->settings.output_selection = SELECT_2;
+        break;
       }
-    }
+      /* Intentional fall-through */
+
     case SELECT_1_2:
-    {
       if (other_sensor->output_selection != SELECT_1 &&
           other_sensor->output_selection != SELECT_2 &&
           other_sensor->output_selection != SELECT_1_2) {
-      subtext = "Use Output #1 & #2";
-      output1.enabled = true;
-      output2.enabled = true;
+        subtext = "Use Output #1 & #2";
+        s->settings.output_settings[OUTPUT_1].enabled = true;
+        s->settings.output_settings[OUTPUT_2].enabled = true;
 
-      s->settings.output_selection = SELECT_1_2;
-      break;
+        s->settings.output_selection = SELECT_1_2;
+        break;
       }
-    }
+      /* Intentional fall-through */
+
     default:
     case SELECT_NONE:
-    {
-      switch(other_sensor->output_selection)
-      {
-      case SELECT_1:
-        output1.enabled = true;
-        output2.enabled = false;
-        break;
-      case SELECT_2:
-        output1.enabled = false;
-        output2.enabled = true;
-        break;
-      case SELECT_1_2:
-        output1.enabled = true;
-        output2.enabled = true;
-        break;
-      case SELECT_NONE:
-        output1.enabled = false;
-        output2.enabled = false;
-      }
-        subtext = "No output";
-        s->settings.output_selection = SELECT_NONE;
-        break;
-    }
+      s->settings.output_settings[OUTPUT_1].enabled = false;
+      s->settings.output_settings[OUTPUT_2].enabled = false;
+      subtext = "No output";
+      s->settings.output_selection = SELECT_NONE;
+      break;
   }
-  app_cfg_set_output_settings(OUTPUT_1, &output1);
-  app_cfg_set_output_settings(OUTPUT_2, &output2);
 
   add_button_spec(buttons, &num_buttons, output_selection_button_clicked, img_plug, CYAN,
       "Output Selection", subtext, s);
+
+  if (s->settings.output_settings[OUTPUT_1].enabled)
+    add_button_spec(buttons, &num_buttons, output_settings_button_clicked, img_plug, CYAN,
+        "Output 1 Settings", "Set settings for output 1", &s->settings.output_settings[OUTPUT_1]);
+
+  if (s->settings.output_settings[OUTPUT_2].enabled)
+    add_button_spec(buttons, &num_buttons, output_settings_button_clicked, img_plug, CYAN,
+        "Output 2 Settings", "Set settings for output 2", &s->settings.output_settings[OUTPUT_2]);
 
   button_list_set_buttons(s->button_list, buttons, num_buttons);
   free(setpoint_subtext);
@@ -306,6 +293,18 @@ static_setpoint_button_clicked(button_event_t* event)
   widget_t* static_setpoint_screen = quantity_select_screen_create(
       title, s->settings.static_setpoint, velocity_steps, 3, update_static_setpoint, s);
   gui_push_screen(static_setpoint_screen);
+}
+
+static void
+output_settings_button_clicked(button_event_t* event)
+{
+  if (event->id != EVT_BUTTON_CLICK)
+    return;
+
+  output_settings_t* output_settings = widget_get_user_data(event->widget);
+
+  widget_t* settings_screen = output_settings_screen_create(output_settings);
+  gui_push_screen(settings_screen);
 }
 
 static void
