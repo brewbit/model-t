@@ -28,6 +28,12 @@ app_cfg_get_control_mode(void);
 void
 app_cfg_set_control_mode(output_ctrl_t control_mode);
 
+quantity_t
+app_cfg_get_hysteresis(void);
+
+void
+app_cfg_set_hysteresis(quantity_t hysteresis);
+
 const matrix_t*
 app_cfg_get_touch_calib(void);
 

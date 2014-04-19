@@ -10,16 +10,19 @@
 #include "ota_update.h"
 #include "gui/info.h"
 #include "gui/button_list.h"
+#include "quantity_select.h"
 
 #include <string.h>
 #include <stdio.h>
 
 
+#define MIN_HYSTERESIS 0.0
+#define MAX_HYSTERESIS 10.0
+
+
 typedef struct {
   widget_t* screen;
   widget_t* button_list;
-
-  unit_t temp_unit;
 } settings_screen_t;
 
 
@@ -31,6 +34,8 @@ static void calibrate_button_clicked(button_event_t* event);
 static void info_button_clicked(button_event_t* event);
 static void control_mode_button_clicked(button_event_t* event);
 static void rebuild_settings_screen(settings_screen_t* s);
+static void hysteresis_button_clicked(button_event_t* event);
+static void update_hysteresis(quantity_t hysteresis, void* user_data);
 
 
 widget_class_t settings_widget_class = {
@@ -48,7 +53,6 @@ settings_screen_create()
   char* title = "Model-T Settings";
   s->button_list = button_list_screen_create(s->screen, title, back_button_clicked, s);
 
-  s->temp_unit = app_cfg_get_temp_unit();
   rebuild_settings_screen(s);
 
   return s->screen;
@@ -67,8 +71,6 @@ back_button_clicked(button_event_t* event)
   if (event->id == EVT_BUTTON_CLICK) {
     settings_screen_t* s = widget_get_user_data(event->widget);
 
-    app_cfg_set_temp_unit(s->temp_unit);
-
     gui_pop_screen();
   }
 }
@@ -79,10 +81,10 @@ unit_button_clicked(button_event_t* event)
   if (event->id == EVT_BUTTON_CLICK) {
     settings_screen_t* s = widget_get_user_data(event->widget);
 
-    if (s->temp_unit == UNIT_TEMP_DEG_C)
-      s->temp_unit = UNIT_TEMP_DEG_F;
+    if (app_cfg_get_temp_unit() == UNIT_TEMP_DEG_C)
+      app_cfg_set_temp_unit(UNIT_TEMP_DEG_F);
     else
-      s->temp_unit = UNIT_TEMP_DEG_C;
+      app_cfg_set_temp_unit(UNIT_TEMP_DEG_C);
 
     rebuild_settings_screen(s);
   }
@@ -145,6 +147,33 @@ control_mode_button_clicked(button_event_t* event)
 }
 
 static void
+hysteresis_button_clicked(button_event_t* event)
+{
+  if (event->id != EVT_BUTTON_CLICK)
+      return;
+
+  settings_screen_t* s = widget_get_user_data(event->widget);
+
+  float velocity_steps[] = {
+      0.1f
+  };
+  quantity_t hysteresis = quantity_convert(app_cfg_get_hysteresis(), app_cfg_get_temp_unit());
+  widget_t* hysteresis_delay_screen = quantity_select_screen_create(
+      "Hysteresis", hysteresis, MIN_HYSTERESIS, MAX_HYSTERESIS, velocity_steps, 1,
+      update_hysteresis, s);
+  gui_push_screen(hysteresis_delay_screen);
+}
+
+static void
+update_hysteresis(quantity_t hysteresis, void* user_data)
+{
+  settings_screen_t* s = user_data;
+  app_cfg_set_hysteresis(hysteresis);
+
+  rebuild_settings_screen(s);
+}
+
+static void
 add_button_spec(
     button_spec_t* buttons,
     uint32_t* num_buttons,
@@ -169,14 +198,15 @@ rebuild_settings_screen(settings_screen_t* s)
 {
   uint32_t num_buttons = 0;
   button_spec_t buttons[8];
-  color_t color;
+  color_t color = DARK_GRAY;
 
   char* subtext;
+  char* hysteresis_subtext = NULL;
   char* text;
   const Image_t* img;
 
   text = "Display Units";
-  if (s->temp_unit == UNIT_TEMP_DEG_F) {
+  if (app_cfg_get_temp_unit() == UNIT_TEMP_DEG_F) {
     img = img_deg_f;
     subtext = "Display units in degrees Fahrenheit";
   }
@@ -201,6 +231,24 @@ rebuild_settings_screen(settings_screen_t* s)
   add_button_spec(buttons, &num_buttons, control_mode_button_clicked, img_graph_signal, color,
       text, subtext, s);
 
+  if (app_cfg_get_control_mode() == ON_OFF) {
+    hysteresis_subtext = malloc(128);
+    quantity_t hysteresis = quantity_convert(app_cfg_get_hysteresis(), app_cfg_get_temp_unit());
+
+    if (hysteresis.unit == UNIT_TEMP_DEG_F)
+      subtext = "F";
+    else
+      subtext = "C";
+
+    snprintf(hysteresis_subtext, 128, "Hysteresis: %d.%d %s",
+      (int)(hysteresis.value),
+      ((int)(fabs(hysteresis.value) * 10.0f)) % 10,
+      subtext);
+
+    add_button_spec(buttons, &num_buttons, hysteresis_button_clicked, img_hysteresis, MAGENTA,
+        "Hysteresis", hysteresis_subtext, s);
+  }
+
   text = "Model-T Updates";
   subtext = "Check for Model-T software updates";
   add_button_spec(buttons, &num_buttons, update_button_clicked, img_update, GREEN,
@@ -217,4 +265,7 @@ rebuild_settings_screen(settings_screen_t* s)
       text, subtext, s);
 
   button_list_set_buttons(s->button_list, buttons, num_buttons);
+
+  if (hysteresis_subtext != NULL)
+    free(hysteresis_subtext);
 }

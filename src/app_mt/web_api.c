@@ -753,6 +753,11 @@ dispatch_device_settings_from_server(DeviceSettings* settings)
 {
   printf("got device settings from server\r\n");
   app_cfg_set_control_mode(settings->control_mode);
+
+  quantity_t hysteresis;
+  hysteresis.value = settings->hysteresis;
+  hysteresis.value = UNIT_TEMP_DEG_F;
+  app_cfg_set_hysteresis(hysteresis);
 }
 
 static void
@@ -818,13 +823,10 @@ dispatch_controller_settings_from_server(ControllerSettings* settings)
     os->cycle_delay.value = osm->cycle_delay;
     os->cycle_delay.unit = UNIT_TIME_MIN;
     os->function = osm->function;
-    os->hysteresis.value = osm->hysteresis;
-    os->hysteresis.value = UNIT_TEMP_DEG_F;
 
     printf("    output %d\r\n", i);
     printf("      delay %f\r\n", os->cycle_delay.value);
     printf("      function %d\r\n", os->function);
-    printf("      hysteresis %f\r\n", os->hysteresis.value);
   }
 
   printf("  got sensor settings\r\n");

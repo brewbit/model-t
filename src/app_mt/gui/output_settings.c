@@ -17,9 +17,6 @@
 #define MIN_CYCLE_DELAY 0.0
 #define MAX_CYCLE_DELAY 30.0
 
-#define MIN_HYSTERESIS 0.0
-#define MAX_HYSTERESIS 10.0
-
 typedef struct {
   widget_t* screen;
   widget_t* button_list;
@@ -34,8 +31,6 @@ static void back_button_clicked(button_event_t* event);
 static void cycle_delay_button_clicked(button_event_t* event);
 static void function_button_clicked(button_event_t* event);
 static void update_cycle_delay(quantity_t delay, void* user_data);
-static void hysteresis_button_clicked(button_event_t* event);
-static void update_hysteresis(quantity_t hysteresis, void* user_data);
 
 
 widget_class_t output_settings_widget_class = {
@@ -95,7 +90,6 @@ set_output_settings(output_screen_t* s)
 
   char* subtext;
   char* delay_subtext;
-  char* hysteresis_subtext;
   char* text;
   color_t color;
   const Image_t* img;
@@ -125,25 +119,8 @@ set_output_settings(output_screen_t* s)
   add_button_spec(buttons, &num_buttons, cycle_delay_button_clicked, img_stopwatch, GREEN,
       "Compressor Delay", delay_subtext, s);
 
-  hysteresis_subtext = malloc(128);
-  quantity_t hysteresis = quantity_convert(s->settings->hysteresis, app_cfg_get_temp_unit());
-
-  if (hysteresis.unit == UNIT_TEMP_DEG_F)
-    subtext = "F";
-  else
-    subtext = "C";
-
-  snprintf(hysteresis_subtext, 128, "Hysteresis: %d.%d %s",
-    (int)(hysteresis.value),
-    ((int)(fabs(hysteresis.value) * 10.0f)) % 10,
-    subtext);
-
-  add_button_spec(buttons, &num_buttons, hysteresis_button_clicked, img_hysteresis, MAGENTA,
-      "Hysteresis", hysteresis_subtext, s);
-
   button_list_set_buttons(s->button_list, buttons, num_buttons);
   free(delay_subtext);
-  free(hysteresis_subtext);
 }
 
 static void
@@ -194,31 +171,3 @@ update_cycle_delay(quantity_t delay, void* user_data)
 
   set_output_settings(s);
 }
-
-static void
-hysteresis_button_clicked(button_event_t* event)
-{
-  if (event->id != EVT_BUTTON_CLICK)
-      return;
-
-    output_screen_t* s = widget_get_user_data(event->widget);
-
-    float velocity_steps[] = {
-        0.1f
-    };
-    quantity_t hysteresis = quantity_convert(s->settings->hysteresis, app_cfg_get_temp_unit());
-    widget_t* hysteresis_delay_screen = quantity_select_screen_create(
-        "Hysteresis", hysteresis, MIN_HYSTERESIS, MAX_HYSTERESIS, velocity_steps, 1,
-        update_hysteresis, s);
-    gui_push_screen(hysteresis_delay_screen);
-}
-
-static void
-update_hysteresis(quantity_t hysteresis, void* user_data)
-{
-  output_screen_t* s = user_data;
-  s->settings->hysteresis = hysteresis;
-
-  set_output_settings(s);
-}
-

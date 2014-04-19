@@ -230,7 +230,7 @@ relay_control(relay_output_t* output)
   switch (app_cfg_get_control_mode()) {
   case ON_OFF:
   {
-    float hysteresis = output_settings->hysteresis.value;
+    float hysteresis = app_cfg_get_hysteresis().value;
 
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
       if (sample < setpoint - hysteresis)
