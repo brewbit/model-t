@@ -184,7 +184,7 @@ output_thread(void* arg)
      */
     if (output->controller->state != TC_ACTIVE ||
         !output_settings->enabled)
-      set_output_state(output, OUTPUT_CONTROL_ENABLED);
+      set_output_state(output, OUTPUT_CONTROL_DISABLED);
 
     switch (output->status.state) {
       case OUTPUT_CONTROL_DISABLED:
