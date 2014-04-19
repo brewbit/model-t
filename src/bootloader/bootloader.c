@@ -149,10 +149,11 @@ static void
 write_app_img(sxfs_part_id_t part)
 {
   chprintf(SD_STDIO, "  Writing app image... ");
-  if (dfuse_apply_update(part))
+  dfu_parse_result_t result = dfuse_apply_update(part);
+  if (result == DFU_PARSE_OK)
     chprintf(SD_STDIO, "OK!\r\n");
   else
-    chprintf(SD_STDIO, "FAILED!\r\n");
+    chprintf(SD_STDIO, "FAILED! (%d)\r\n", result);
 }
 
 const char*

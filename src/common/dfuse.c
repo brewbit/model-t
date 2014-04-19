@@ -228,12 +228,10 @@ dfuse_parse(sxfs_part_id_t part, dfu_parse_ops_t* ops)
   return DFU_PARSE_OK;
 }
 
-bool
+dfu_parse_result_t
 dfuse_verify(sxfs_part_id_t part)
 {
-  dfu_parse_result_t ret;
-  ret = dfuse_parse(part, NULL);
-  return ret == DFU_PARSE_OK;
+  return dfuse_parse(part, NULL);
 }
 
 static void
@@ -245,16 +243,13 @@ handle_img_data(uint32_t addr, uint8_t* data, uint32_t size)
   iflash_write(addr, data, size);
 }
 
-bool
+dfu_parse_result_t
 dfuse_apply_update(sxfs_part_id_t part)
 {
-  dfu_parse_result_t ret;
   dfu_parse_ops_t ops = {
       .img_data = handle_img_data
   };
-  ret = dfuse_parse(part, &ops);
-
-  return ret == DFU_PARSE_OK;
+  return dfuse_parse(part, &ops);
 }
 
 void

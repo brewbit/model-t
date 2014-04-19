@@ -23,10 +23,10 @@ typedef enum {
 } dfu_parse_result_t;
 
 
-bool
+dfu_parse_result_t
 dfuse_verify(sxfs_part_id_t part);
 
-bool
+dfu_parse_result_t
 dfuse_apply_update(sxfs_part_id_t part);
 
 void

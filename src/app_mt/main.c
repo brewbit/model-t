@@ -29,7 +29,8 @@ char device_id[32];
 static void
 ensure_recovery_image_loaded(void)
 {
-  if (!dfuse_verify(SP_RECOVERY_IMG)) {
+  dfu_parse_result_t result = dfuse_verify(SP_RECOVERY_IMG);
+  if (result != DFU_PARSE_OK) {
     extern uint8_t __app_base__;
     image_rec_t img_recs[2] = {
         {
@@ -42,7 +43,7 @@ ensure_recovery_image_loaded(void)
         },
     };
 
-    printf("No recovery image detected\r\n");
+    printf("No recovery image detected (%d)\r\n", result);
     printf("  Copying this image to external flash... ");
 
     widget_t* setup_screen = setup_screen_create();

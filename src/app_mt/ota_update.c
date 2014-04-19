@@ -151,7 +151,8 @@ dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
 
   if (status.update_downloaded >= status.update_size) {
     // Verify the integrity of the image that we just downloaded
-    if (dfuse_verify(SP_UPDATE_IMG)) {
+    dfu_parse_result_t result = dfuse_verify(SP_UPDATE_IMG);
+    if (result == DFU_PARSE_OK) {
       printf("image verified resetting to apply update...\r\n");
 
       set_state(OU_COMPLETE);
@@ -162,7 +163,7 @@ dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
       bootloader_load_update_img();
     }
     else {
-      printf("dfuse verify failed\r\n");
+      printf("dfuse verify failed %d\r\n", result);
       set_state(OU_FAILED);
     }
   }
