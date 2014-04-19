@@ -484,6 +484,7 @@ extern "C" {
   void boardInit(void);
 
   uint32_t* board_get_device_id(void);
+  uint32_t board_get_flash_size(void);
   float board_get_core_temp(void);
 #ifdef __cplusplus
 }

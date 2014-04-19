@@ -119,6 +119,12 @@ board_get_device_id()
   return (uint32_t*)0x1FFF7A10;
 }
 
+uint32_t
+board_get_flash_size()
+{
+  return *((uint16_t*)0x1FFF7A22) * 1024;
+}
+
 float
 board_get_core_temp()
 {

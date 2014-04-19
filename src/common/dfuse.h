@@ -22,12 +22,17 @@ typedef enum {
   DFU_INVALID_CRC,
 } dfu_parse_result_t;
 
+typedef struct {
+  uint32_t start;
+  uint32_t end;
+} addr_range_t;
+
 
 dfu_parse_result_t
 dfuse_verify(sxfs_part_id_t part);
 
 dfu_parse_result_t
-dfuse_apply_update(sxfs_part_id_t part);
+dfuse_apply_update(sxfs_part_id_t part, addr_range_t* valid_addr_range);
 
 void
 dfuse_write_self(sxfs_part_id_t part, image_rec_t* img_recs, uint32_t num_img_recs);

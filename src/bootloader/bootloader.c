@@ -13,6 +13,10 @@
 #include <string.h>
 
 
+#define APP_FLASH_START       0x08004000
+#define BOOTLOADER_FLASH_SIZE 0x4000 /* 16k */
+
+
 typedef void (*app_entry_t)(void);
 
 extern uint8_t __app_start__[];
@@ -45,6 +49,7 @@ bootloader_exec()
       MINOR_VERSION,
       PATCH_VERSION);
 
+  chprintf(SD_STDIO, "  Flash size: %d\r\n", board_get_flash_size());
   process_boot_cmd();
 
   chprintf(SD_STDIO, "Booting app... ");
@@ -149,7 +154,14 @@ static void
 write_app_img(sxfs_part_id_t part)
 {
   chprintf(SD_STDIO, "  Writing app image... ");
-  dfu_parse_result_t result = dfuse_apply_update(part);
+
+  /* Disallow overwriting of the bootloader */
+  addr_range_t valid_addr_range = {
+      .start = APP_FLASH_START,
+      .end = APP_FLASH_START + board_get_flash_size() - BOOTLOADER_FLASH_SIZE - 1
+  };
+
+  dfu_parse_result_t result = dfuse_apply_update(part, &valid_addr_range);
   if (result == DFU_PARSE_OK)
     chprintf(SD_STDIO, "OK!\r\n");
   else

@@ -163,8 +163,14 @@ typedef struct {
   void (*suffix)(dfu_suffix_t*);
 } dfu_parse_ops_t;
 
+static bool
+in_addr_range(addr_range_t* addr_range, uint32_t start, uint32_t end)
+{
+  return (start >= addr_range->start) && (end <= addr_range->end);
+}
+
 static dfu_parse_result_t
-dfuse_parse(sxfs_part_id_t part, dfu_parse_ops_t* ops)
+dfuse_parse(sxfs_part_id_t part, dfu_parse_ops_t* ops, addr_range_t* valid_addr_range)
 {
   int i;
   dfu_prefix_t prefix;
@@ -212,7 +218,10 @@ dfuse_parse(sxfs_part_id_t part, dfu_parse_ops_t* ops)
 
         sxfs_read(part, offset, data, read_len);
 
-        if (ops && ops->img_data)
+        if ((ops != NULL) &&
+            (ops->img_data != NULL) &&
+            (valid_addr_range != NULL) &&
+            (in_addr_range(valid_addr_range, target_addr, target_addr + read_len-1)))
           ops->img_data(target_addr, data, read_len);
 
         offset += read_len;
@@ -231,7 +240,7 @@ dfuse_parse(sxfs_part_id_t part, dfu_parse_ops_t* ops)
 dfu_parse_result_t
 dfuse_verify(sxfs_part_id_t part)
 {
-  return dfuse_parse(part, NULL);
+  return dfuse_parse(part, NULL, NULL);
 }
 
 static void
@@ -244,12 +253,12 @@ handle_img_data(uint32_t addr, uint8_t* data, uint32_t size)
 }
 
 dfu_parse_result_t
-dfuse_apply_update(sxfs_part_id_t part)
+dfuse_apply_update(sxfs_part_id_t part, addr_range_t* valid_addr_range)
 {
   dfu_parse_ops_t ops = {
       .img_data = handle_img_data
   };
-  return dfuse_parse(part, &ops);
+  return dfuse_parse(part, &ops, valid_addr_range);
 }
 
 void
