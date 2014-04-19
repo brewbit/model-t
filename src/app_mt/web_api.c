@@ -824,7 +824,7 @@ dispatch_controller_settings_from_server(ControllerSettings* settings)
     printf("    output %d\r\n", i);
     printf("      delay %f\r\n", os->cycle_delay.value);
     printf("      function %d\r\n", os->function);
-    printf("      function %f\r\n", os->hysteresis);
+    printf("      hysteresis %f\r\n", os->hysteresis.value);
   }
 
   printf("  got sensor settings\r\n");
