@@ -689,6 +689,8 @@ socket_message_rx(web_api_t* api, const uint8_t* data, uint32_t data_len)
 
   if (status)
     dispatch_api_msg(api, msg);
+  else
+    printf("Fucked up message received!\r\n");
 
   free(msg);
 }
