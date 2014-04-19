@@ -151,8 +151,6 @@ app_cfg_get_control_mode(void)
 void
 app_cfg_set_control_mode(output_ctrl_t control_mode)
 {
-  int i;
-
   if (control_mode != ON_OFF &&
       control_mode != PID)
     return;
