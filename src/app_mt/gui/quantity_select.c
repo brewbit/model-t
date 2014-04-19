@@ -10,12 +10,6 @@
 #include <string.h>
 
 #define QUANTITY_STEPS_PER_VELOCITY 15
-#define MAX_TEMP_C (110)
-#define MIN_TEMP_C (-10)
-
-#define MAX_TEMP_F (212)
-#define MIN_TEMP_F (-10)
-
 
 typedef struct {
   widget_t* widget;
@@ -28,6 +22,9 @@ typedef struct {
 
   quantity_select_cb_t cb;
   void* cb_data;
+
+  float min_value;
+  float max_value;
 
   float velocity_steps[4];
   uint8_t num_velocity_steps;
@@ -53,6 +50,8 @@ widget_t*
 quantity_select_screen_create(
     const char* title,
     quantity_t quantity,
+    float min_value,
+    float max_value,
     float* velocity_steps,
     uint8_t num_velocity_steps,
     quantity_select_cb_t cb,
@@ -64,6 +63,9 @@ quantity_select_screen_create(
 
   s->cb = cb;
   s->cb_data = cb_data;
+
+  s->min_value = min_value;
+  s->max_value = max_value;
 
   s->num_velocity_steps = MIN(num_velocity_steps, 4);
   memcpy(s->velocity_steps, velocity_steps, s->num_velocity_steps * sizeof(float));
@@ -166,23 +168,7 @@ adjust_quantity_velocity(quantity_select_screen_t* s)
 static void
 set_quantity(quantity_select_screen_t* s, quantity_t quantity)
 {
-  switch (quantity.unit) {
-  case UNIT_TEMP_DEG_F:
-    quantity.value = LIMIT(quantity.value, MIN_TEMP_F, MAX_TEMP_F);
-    break;
-
-  case UNIT_TEMP_DEG_C:
-    quantity.value = LIMIT(quantity.value, MIN_TEMP_C, MAX_TEMP_C);
-    break;
-
-  case UNIT_TIME_MIN:
-    quantity.value = LIMIT(quantity.value, 0, 30);
-    break;
-
-  default:
-    break;
-  }
-
+  quantity.value = LIMIT(quantity.value, s->min_value, s->max_value);
   s->quantity = quantity;
   quantity_widget_set_value(s->quantity_widget, quantity);
 }

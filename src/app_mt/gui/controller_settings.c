@@ -15,6 +15,13 @@
 #include <stdio.h>
 
 
+#define MAX_TEMP_C (110)
+#define MIN_TEMP_C (-10)
+
+#define MAX_TEMP_F (212)
+#define MIN_TEMP_F (-10)
+
+
 typedef struct {
   widget_t* screen;
   widget_t* button_list;
@@ -114,19 +121,22 @@ set_controller_settings(controller_settings_screen_t* s)
   setpoint_subtext = malloc(128);
   switch (s->settings.setpoint_type) {
     case SP_STATIC:
-      if (s->settings.static_setpoint.unit == UNIT_TEMP_DEG_F) {
-        snprintf(setpoint_subtext, 128, "Setpoint value: %d.%d %c",
-            (int)(s->settings.static_setpoint.value),
-            ((int)(fabs(s->settings.static_setpoint.value) * 10.0f)) % 10, 'F');
-      }
-      else {
-        snprintf(setpoint_subtext, 128, "Setpoint value: %d.%d %c",
-            (int)(s->settings.static_setpoint.value),
-            ((int)(fabs(s->settings.static_setpoint.value) * 10.0f)) % 10, 'C');
-      }
+    {
+      quantity_t setpoint = quantity_convert(s->settings.static_setpoint, app_cfg_get_temp_unit());
+
+      if (setpoint.unit == UNIT_TEMP_DEG_F)
+        subtext = "F";
+      else
+        subtext = "C";
+
+      snprintf(setpoint_subtext, 128, "Setpoint value: %d.%d %s",
+          (int)(setpoint.value),
+          ((int)(fabs(setpoint.value) * 10.0f)) % 10, subtext);
+
       add_button_spec(buttons, &num_buttons, static_setpoint_button_clicked, img_snowflake, CYAN,
           "Static Setpoint", setpoint_subtext, s);
       break;
+    }
 
     case SP_TEMP_PROFILE:
     {
@@ -293,7 +303,8 @@ static_setpoint_button_clicked(button_event_t* event)
       0.1f, 0.5f, 1.0f
   };
   widget_t* static_setpoint_screen = quantity_select_screen_create(
-      title, s->settings.static_setpoint, velocity_steps, 3, update_static_setpoint, s);
+      title, s->settings.static_setpoint, MIN_TEMP_F, MAX_TEMP_F,
+      velocity_steps, 3, update_static_setpoint, s);
   gui_push_screen(static_setpoint_screen);
 }
 
@@ -314,7 +325,7 @@ update_static_setpoint(quantity_t setpoint, void* user_data)
 {
   controller_settings_screen_t* s = user_data;
 
-  s->settings.static_setpoint = setpoint;
+  s->settings.static_setpoint = quantity_convert(setpoint, UNIT_TEMP_DEG_F);
   set_controller_settings(s);
 }
 
