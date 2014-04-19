@@ -291,14 +291,16 @@ web_api_idle(web_api_t* api)
     socket_poll(api);
   }
 
-  /* If we haven't heard from the server in a REALLY long time, reset the WiFi module and try again */
-  if ((chTimeNow() - api->last_recv_time) > CC3000_FUCKED_TIMEOUT) {
-    printf("CC3000 is fucked, restarting\r\n");
-    closesocket(api->socket);
-    api->socket = -1;
-    set_state(api, AS_AWAITING_NET_CONNECTION);
+  if (api->status.state > AS_AWAITING_NET_CONNECTION) {
+    /* If we haven't heard from the server in a REALLY long time, reset the WiFi module and try again */
+    if ((chTimeNow() - api->last_recv_time) > CC3000_FUCKED_TIMEOUT) {
+      printf("CC3000 is fucked, restarting\r\n");
+      closesocket(api->socket);
+      api->socket = -1;
+      set_state(api, AS_AWAITING_NET_CONNECTION);
 
-    msg_post(MSG_NET_RESET, NULL);
+      msg_post(MSG_NET_RESET, NULL);
+    }
   }
 }
 
