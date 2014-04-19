@@ -43,7 +43,7 @@ ota_update_init()
 {
   status.state = OU_IDLE;
 
-  msg_listener_t* l = msg_listener_create("ota_update", 1024, ota_update_dispatch, NULL);
+  msg_listener_t* l = msg_listener_create("ota_update", 2048, ota_update_dispatch, NULL);
 
   msg_subscribe(l, MSG_OTAU_CHECK, NULL);
   msg_subscribe(l, MSG_OTAU_START, NULL);
@@ -129,6 +129,9 @@ dispatch_update_check_response(FirmwareUpdateCheckResponse* response)
 static void
 dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
 {
+  static uint32_t last_update_downloaded;
+  uint8_t count;
+
   status.update_downloaded += update_chunk->data.size;
 
   printf("downloaded %u / %u (%lu%%)\r\n",
@@ -159,12 +162,23 @@ dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
       bootloader_load_update_img();
     }
     else {
-      printf("sxfs verify failed\r\n");
+      printf("dfuse verify failed\r\n");
       set_state(OU_FAILED);
     }
   }
+  else if (status.update_downloaded < last_update_downloaded + 1) {
+    count ++;
+
+    if (count > 20) {
+      set_state(OU_FAILED);
+      printf("OTA update receive timeout\r\n");
+    }
+    firmware_download_request();
+  }
   else
     firmware_download_request();
+
+  last_update_downloaded = status.update_downloaded;
 }
 
 static void

@@ -128,7 +128,7 @@ dfuse_read_suffix(sxfs_part_id_t part, dfu_prefix_t* prefix, dfu_suffix_t* suffi
   if (prefix == NULL || suffix == NULL)
     return DFU_INVALID_ARGS;
 
-  uint32_t suffix_addr = prefix->dfu_image_size - sizeof(dfu_suffix_t);
+  uint32_t suffix_addr = prefix->dfu_image_size;
   sxfs_read(part, suffix_addr, (uint8_t*)suffix, sizeof(dfu_suffix_t));
 
   suffix->firmware_version = U16_LE(suffix->firmware_version);
@@ -147,7 +147,7 @@ dfuse_read_suffix(sxfs_part_id_t part, dfu_prefix_t* prefix, dfu_suffix_t* suffi
     return DFU_INVALID_SUFFIX_LEN;
 
   uint32_t crc;
-  sxfs_crc(part, 0, prefix->dfu_image_size - 4, &crc);
+  sxfs_crc(part, 0, prefix->dfu_image_size + (sizeof(dfu_suffix_t) - 4), &crc);
   if (suffix->crc != crc)
     return DFU_INVALID_CRC;
 
@@ -290,7 +290,7 @@ dfuse_write_self(sxfs_part_id_t part, image_rec_t* img_recs, uint32_t num_img_re
       .alternate_setting = 0,
       .target_named = U32_LE(0),
       .target_name = {0},
-      .target_size = U32_LE(target_size),
+      .target_size = U32_LE(target_size - sizeof(dfu_suffix_t)),
       .num_elements = U32_LE(num_img_recs)
   };
   sxfs_write(part, offset, (uint8_t*)&target, sizeof(dfu_target_prefix_t));

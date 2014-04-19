@@ -226,7 +226,6 @@ xflash_crc(uint32_t addr, uint32_t size)
     addr += nrecv;
     size -= nrecv;
   }
-  crc ^= 0xFFFFFFFF;
 
   free(buf);
 

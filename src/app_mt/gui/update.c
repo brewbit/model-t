@@ -117,8 +117,17 @@ update_screen_msg(msg_event_t* event)
 static void
 back_button_clicked(button_event_t* event)
 {
-  if (event->id == EVT_BUTTON_CLICK)
+  if (event->id == EVT_BUTTON_CLICK) {
+    ota_update_status_t* us = ota_update_get_status();
+
+    /* If update not avail or failed or completed allow retry */
+    if (us->state == OU_UPDATE_NOT_AVAILABLE ||
+                     OU_COMPLETE ||
+                     OU_FAILED)
+      us->state = OU_IDLE;
+
     gui_pop_screen();
+  }
 }
 
 static void
