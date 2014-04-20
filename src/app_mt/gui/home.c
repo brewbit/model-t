@@ -3,6 +3,7 @@
 #include "gfx.h"
 #include "gui.h"
 #include "button.h"
+#include "icon.h"
 #include "label.h"
 #include "gui/history.h"
 #include "gui/output_settings.h"
@@ -37,13 +38,13 @@ typedef struct {
   systime_t sample_timestamp;
 
   widget_t* screen;
-  widget_t* stage_button;
+  widget_t* stage_widget;
   sensor_info_t sensors[NUM_SENSORS];
   net_state_t net_state;
   api_state_t api_state;
 
-  widget_t* output1_button;
-  widget_t* output2_button;
+  widget_t* output1_icon;
+  widget_t* output2_icon;
   widget_t* conn_button;
   widget_t* settings_button;
 } home_screen_t;
@@ -90,7 +91,8 @@ home_screen_create()
       .width  = TILE_SPAN(3),
       .height = TILE_SPAN(2),
   };
-  s->stage_button = button_create(s->screen, rect, NULL, WHITE, GREEN, NULL);
+  s->stage_widget = widget_create(s->screen, NULL, NULL, rect);
+  widget_set_background(s->stage_widget, GREEN, false);
 
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
@@ -102,10 +104,10 @@ home_screen_create()
 
   rect.x = TILE_X(0);
   rect.y = TILE_Y(2);
-  s->output1_button = button_create(s->screen, rect, img_plug, WHITE, ORANGE, NULL);
+  s->output1_icon = icon_create(s->screen, rect, img_plug, WHITE, ORANGE);
 
   rect.x = TILE_X(1);
-  s->output2_button = button_create(s->screen, rect, img_plug, WHITE, CYAN, NULL);
+  s->output2_icon = icon_create(s->screen, rect, img_plug, WHITE, CYAN);
 
   rect.x = TILE_X(2);
   s->conn_button = button_create(s->screen, rect, img_signal, RED, STEEL, click_conn_button);
@@ -115,9 +117,9 @@ home_screen_create()
 
   rect.x = 0;
   rect.width = TILE_SPAN(3);
-  s->sensors[SENSOR_1].quantity_widget = quantity_widget_create(s->stage_button, rect, app_cfg_get_temp_unit());
+  s->sensors[SENSOR_1].quantity_widget = quantity_widget_create(s->stage_widget, rect, app_cfg_get_temp_unit());
 
-  s->sensors[SENSOR_2].quantity_widget = quantity_widget_create(s->stage_button, rect, app_cfg_get_temp_unit());
+  s->sensors[SENSOR_2].quantity_widget = quantity_widget_create(s->stage_widget, rect, app_cfg_get_temp_unit());
 
   place_quantity_widgets(s);
 
@@ -283,7 +285,7 @@ static void
 place_quantity_widgets(home_screen_t* s)
 {
   int i;
-  rect_t rect = widget_get_rect(s->stage_button);
+  rect_t rect = widget_get_rect(s->stage_widget);
 
   sensor_info_t* active_sensors[NUM_SENSORS];
   int num_active_sensors = 0;
@@ -326,17 +328,17 @@ dispatch_controller_settings(home_screen_t* s, controller_settings_t* settings)
 static void
 dispatch_output_status(home_screen_t* s, output_status_t* msg)
 {
-  widget_t* btn;
+  widget_t* icon;
 
   if (msg->output == OUTPUT_1)
-    btn = s->output1_button;
+    icon = s->output1_icon;
   else
-    btn = s->output2_button;
+    icon = s->output2_icon;
 
   if (msg->enabled)
-    button_set_icon_color(btn, LIME);
+    button_set_icon_color(icon, LIME);
   else
-    button_set_icon_color(btn, WHITE);
+    button_set_icon_color(icon, WHITE);
 }
 
 static void
@@ -354,9 +356,9 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
   widget_t* btn;
 
   if (output == OUTPUT_1)
-    btn = s->output1_button;
+    btn = s->output1_icon;
   else
-    btn = s->output2_button;
+    btn = s->output2_icon;
 
   color_t color = 0;
   switch (function) {

@@ -19,7 +19,6 @@ typedef struct {
   systime_t next_event_time;
   char* text;
   const font_t* font;
-  bool disable_button_press;
 
   button_event_handler_t evt_handler;
 } button_t;
@@ -48,9 +47,6 @@ button_create(widget_t* parent, rect_t rect, const Image_t* icon, uint16_t icon_
   b->icon_color = icon_color;
   b->btn_color = btn_color;
   b->evt_handler = evt_handler;
-
-  if (evt_handler == NULL)
-    b->disable_button_press = true;
 
   widget_t* w = widget_create(parent, &button_widget_class, b, rect);
   widget_set_background(w, btn_color, FALSE);
@@ -149,9 +145,6 @@ button_touch(touch_event_t* event)
     return;
 
   button_t* b = widget_get_instance_data(event->widget);
-
-  if (b->disable_button_press)
-    return;
 
   button_event_t be = {
       .widget = event->widget,
