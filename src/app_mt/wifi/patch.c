@@ -133,9 +133,7 @@ static const uint16_t fw_length = 4616;
 static const uint8_t cRMdefaultParams[128] = { 0x03, 0x00, 0x01, 0x01, 0x14, 0x14, 0x00, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27, 0x27, 0x23, 0x25, 0x25, 0x25, 0x25, 0x25, 0x25, 0x25, 0x25, 0x25, 0x23, 0x23, 0x23, 0x23, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x50, 0x01, 0x77, 0x80, 0x1D, 0x1F, 0x22, 0x26, 0x28, 0x29, 0x1A, 0x1F, 0x22, 0x24, 0x26, 0x28, 0x16, 0x1D, 0x1E, 0x20, 0x24, 0x25, 0x1E, 0x2D, 0x01, 0x02, 0x02, 0x02, 0x02, 0x00, 0x15, 0x15, 0x15, 0x11, 0x15, 0x15, 0x0E, 0x00};
 
 
-static uint8_t ucStatus_Dr, ucStatus_FW, return_status = 0xFF;
 static int8_t mac_status = -1;
-static uint8_t counter = 0;
 
 // array to store RM parameters from EEPROM
 static uint8_t cRMParamsFromEeprom[128];
@@ -205,41 +203,47 @@ init_driver(patch_load_command_t patch_load_cmd)
 //! @brief  parse the FAT table from eeprom 
 //
 //*****************************************************************************
-static uint8_t
+static long
 fat_write_content(
     uint16_t const *file_address,
     uint16_t const *file_length)
 {
-  uint16_t  index = 0;
-  uint8_t   ucStatus;
+  int i;
+  long   ret;
   uint8_t   fatTable[48];
   uint8_t*  fatTablePtr = fatTable;
 
   // first, write the magic number
-  ucStatus = nvmem_write(16, 2, 0, (uint8_t*)"LS");
+  ret = nvmem_write(16, 2, 0, (uint8_t*)"LS");
+  if (ret != 0)
+    return ret;
 
-  for (; index <= NVMEM_RM_FILEID; index++) {
+  for (i = 0; i <= NVMEM_RM_FILEID; i++) {
     // write address low char and mark as allocated
-    *fatTablePtr++ = (uint8_t)(file_address[index] & 0xff) | BIT0;
+    *fatTablePtr++ = (uint8_t)(file_address[i] & 0xff) | BIT0;
 
     // write address high char
-    *fatTablePtr++ = (uint8_t)((file_address[index]>>8) & 0xff);
+    *fatTablePtr++ = (uint8_t)((file_address[i]>>8) & 0xff);
 
     // write length low char
-    *fatTablePtr++ = (uint8_t)(file_length[index] & 0xff);
+    *fatTablePtr++ = (uint8_t)(file_length[i] & 0xff);
 
     // write length high char
-    *fatTablePtr++ = (uint8_t)((file_length[index]>>8) & 0xff);
+    *fatTablePtr++ = (uint8_t)((file_length[i]>>8) & 0xff);
   }
 
   // second, write the FAT
-  ucStatus = nvmem_write(16, 48, 4, fatTable);
+  ret = nvmem_write(16, 48, 4, fatTable);
+  if (ret != 0)
+    return ret;
 
   // third, we want to erase any user files
   memset(fatTable, 0, sizeof(fatTable));
-  ucStatus = nvmem_write(16, 16, 52, fatTable);
+  ret = nvmem_write(16, 16, 52, fatTable);
+  if (ret != 0)
+    return ret;
 
-  return ucStatus;
+  return ret;
 }
 
 //*****************************************************************************
@@ -253,7 +257,7 @@ fat_write_content(
 //!  @brief  The main loop is executed here
 //
 //*****************************************************************************
-void
+bool
 wlan_apply_patch(void)
 {
   uint8_t   *pRMParams;
@@ -261,7 +265,7 @@ wlan_apply_patch(void)
   printf("    Initializing device without patches... ");
   // init board and request to load with no patches.
   // this is in order to overwrite restrictions to write to specific places in EEPROM
-  init_driver(PATCH_LOAD_NONE);
+  init_driver(PATCH_LOAD_FROM_HOST);
   printf("OK\r\n");
 
   printf("    Reading MAC address... ");
@@ -269,18 +273,12 @@ wlan_apply_patch(void)
   mac_status = nvmem_get_mac_address(cMacFromEeprom);
   printf("OK\r\n");
 
-  return_status = 1;
-
   printf("    Reading RM parameters... ");
-  while ((return_status) && (counter < 3)) {
-    // read RM parameters
-    return_status = nvmem_read(NVMEM_RM_FILEID, 128, 0, cRMParamsFromEeprom);
-
-    counter++;
-  }
+  // read RM parameters
+  long ret = nvmem_read(NVMEM_RM_FILEID, 128, 0, cRMParamsFromEeprom);
 
   // if RM file is not valid, load the default one
-  if (counter == 3) {
+  if (ret != 0) {
     printf("INVALID - using defaults\r\n");
     pRMParams = (uint8_t *)cRMdefaultParams;
   }
@@ -289,54 +287,55 @@ wlan_apply_patch(void)
     pRMParams = cRMParamsFromEeprom;
   }
 
-  return_status = 1;
-
   printf("    Writing new FAT... ");
-  while (return_status) {
-    // write new FAT
-    return_status = fat_write_content(aFATEntries[0], aFATEntries[1]);
+  // write new FAT
+  ret = fat_write_content(aFATEntries[0], aFATEntries[1]);
+  if (ret != 0) {
+    printf("ERROR 0x%X\r\n", (int)ret);
+    return false;
   }
   printf("OK\r\n");
 
-  return_status = 1;
+  init_driver(PATCH_LOAD_FROM_HOST);
 
   printf("    Writing RM parameters... ");
-  while (return_status) {
-    // write RM parameters
-    return_status = nvmem_write(NVMEM_RM_FILEID, 128, 0, pRMParams);
+  // write RM parameters
+  ret = nvmem_write(NVMEM_RM_FILEID, 128, 0, pRMParams);
+  if (ret != 0) {
+    printf("ERROR 0x%X\r\n", (int)ret);
+    return false;
   }
   printf("OK\r\n");
-
-  return_status = 1;
 
   // write back the MAC address, only if exist
   if (mac_status == 0) {
     printf("    Writing MAC address... ");
     // zero out MCAST bit if set
     cMacFromEeprom[0] &= 0xfe;
-    while (return_status) {
-      return_status = nvmem_set_mac_address(cMacFromEeprom);
+    ret = nvmem_set_mac_address(cMacFromEeprom);
+    if (ret != 0) {
+      printf("ERROR 0x%X\r\n", (int)ret);
+      return false;
     }
     printf("OK\r\n");
   }
 
-  ucStatus_Dr = 1;
+
+  init_driver(PATCH_LOAD_NONE);
 
   printf("    Writing WLAN driver... ");
-  while (ucStatus_Dr) {
-    //writing driver patch to EEPRROM - PORTABLE CODE
-    // Note that the array itself is changing between the different Service Packs
-    ucStatus_Dr = nvmem_write_patch(NVMEM_WLAN_DRIVER_SP_FILEID, drv_length, wlan_drv_patch);
+  ret = nvmem_write_patch(NVMEM_WLAN_DRIVER_SP_FILEID, drv_length, wlan_drv_patch);
+  if (ret != 0) {
+    printf("ERROR 0x%X\r\n", (int)ret);
+    return false;
   }
   printf("OK\r\n");
 
-  ucStatus_FW = 1;
-
   printf("    Writing firmware... ");
-  while (ucStatus_FW) {
-    //writing FW patch to EAPRROM  - PORTABLE CODE
-    //Note that the array itself is changing between the different Service Packs
-    ucStatus_FW = nvmem_write_patch(NVMEM_WLAN_FW_SP_FILEID, fw_length, fw_patch);
+  ret = nvmem_write_patch(NVMEM_WLAN_FW_SP_FILEID, fw_length, fw_patch);
+  if (ret != 0) {
+    printf("ERROR 0x%X\r\n", (int)ret);
+    return false;
   }
   printf("OK\r\n");
 
@@ -344,4 +343,6 @@ wlan_apply_patch(void)
   printf("    Reinitializing device with new patch... ");
   init_driver(PATCH_LOAD_DEFAULT);
   printf("OK\r\n");
+
+  return true;
 }

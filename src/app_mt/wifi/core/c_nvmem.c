@@ -108,7 +108,7 @@ signed long c_nvmem_read(uint32_t ulFileId, uint32_t ulLength,
   params.buf = buff;
   hci_wait_for_data(&params);
 
-  return params.data_len;
+  return ucStatus;
 }
 
 //*****************************************************************************
@@ -212,7 +212,7 @@ uint8_t c_nvmem_get_mac_address(uint8_t *mac)
 uint8_t c_nvmem_write_patch(uint32_t ulFileId, uint32_t spLength,
                                           const uint8_t *spData)
 {
-  uint8_t status = 0;
+  long status = 0;
   uint16_t offset = 0;
   uint8_t* spDataPtr = (uint8_t*)spData;
 
