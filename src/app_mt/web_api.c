@@ -464,10 +464,13 @@ request_auth(web_api_t* api)
 static void
 dispatch_net_status(web_api_t* api, net_status_t* ns)
 {
-  if (ns->net_state == NS_CONNECTED)
-    set_state(api, AS_CONNECTING);
-  else
+  if (ns->dhcp_resolved) {
+    if (api->status.state == AS_AWAITING_NET_CONNECTION)
+      set_state(api, AS_CONNECTING);
+  }
+  else {
     set_state(api, AS_AWAITING_NET_CONNECTION);
+  }
 }
 
 static void

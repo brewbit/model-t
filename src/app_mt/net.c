@@ -144,11 +144,13 @@ dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
         net_status.net_state = NS_CONNECT_FAILED;
       else
         net_status.net_state = NS_DISCONNECTED;
+      net_status.dhcp_resolved = false;
       msg_send(MSG_NET_STATUS, &net_status);
       break;
 
     case MSG_WLAN_DHCP:
       dispatch_dhcp(msg_data);
+      msg_send(MSG_NET_STATUS, &net_status);
       break;
 
     default:
