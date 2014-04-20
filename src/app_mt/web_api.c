@@ -541,10 +541,11 @@ send_controller_settings(
   int i;
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_CONTROLLER_SETTINGS;
+  msg->has_controllerSettings = true;
 
   for (i = 0; i < NUM_CONTROLLERS; ++i) {
     if (api->controller_status[i].new_settings) {
-      msg->has_controllerSettings = true;
+      api->controller_status[i].new_settings = false;
       const controller_settings_t* ssl = app_cfg_get_controller_settings(i);
       ControllerSettings* ss = &msg->controllerSettings;
 
@@ -578,10 +579,8 @@ send_controller_settings(
         os->cycle_delay = osl->cycle_delay.value;
       }
 
-      if (msg->has_controllerSettings) {
-        printf("Sending controller settings\r\n");
-        send_api_msg(api, msg);
-      }
+      printf("Sending controller settings\r\n");
+      send_api_msg(api, msg);
     }
   }
 
