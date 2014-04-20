@@ -427,7 +427,10 @@ widget_is_enabled(widget_t* w)
 void
 widget_set_background(widget_t* w, color_t color, bool transparent)
 {
-  w->bg_color = color;
-  w->bg_transparent = transparent;
-  widget_invalidate(w);
+  if ((w->bg_color != color) ||
+      (w->bg_transparent != transparent)) {
+    w->bg_color = color;
+    w->bg_transparent = transparent;
+    widget_invalidate(w);
+  }
 }

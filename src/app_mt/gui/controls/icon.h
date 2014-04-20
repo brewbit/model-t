@@ -11,4 +11,7 @@ icon_create(widget_t* parent, rect_t rect, const Image_t* icon, uint16_t icon_co
 void
 icon_set_image(widget_t* w, const Image_t* image);
 
+void
+icon_set_color(widget_t* w, color_t icon_color);
+
 #endif

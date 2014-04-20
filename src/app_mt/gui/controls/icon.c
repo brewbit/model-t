@@ -47,8 +47,20 @@ void
 icon_set_image(widget_t* w, const Image_t* image)
 {
   icon_t* i = widget_get_instance_data(w);
-  i->image = image;
-  widget_invalidate(w);
+  if (i->image != image) {
+    i->image = image;
+    widget_invalidate(w);
+  }
+}
+
+void
+icon_set_color(widget_t* w, color_t icon_color)
+{
+  icon_t* i = widget_get_instance_data(w);
+  if (i->icon_color != icon_color) {
+    i->icon_color = icon_color;
+    widget_invalidate(w);
+  }
 }
 
 static void

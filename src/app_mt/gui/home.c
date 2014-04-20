@@ -336,9 +336,9 @@ dispatch_output_status(home_screen_t* s, output_status_t* msg)
     icon = s->output2_icon;
 
   if (msg->enabled)
-    widget_set_background(icon, LIME, false);
+    icon_set_color(icon, LIME);
   else
-    widget_set_background(icon, WHITE, false);
+    icon_set_color(icon, WHITE);
 }
 
 static void
