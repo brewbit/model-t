@@ -58,6 +58,7 @@
 		<buildTargets>
 			<target name="Download All w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
+				<buildArguments/>
 				<buildTarget>JTAG=jlink download</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -65,6 +66,7 @@
 			</target>
 			<target name="Clean" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
+				<buildArguments/>
 				<buildTarget>clean</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -72,6 +74,7 @@
 			</target>
 			<target name="Build App" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
+				<buildArguments/>
 				<buildTarget>app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -79,6 +82,7 @@
 			</target>
 			<target name="Build Bootloader" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
+				<buildArguments/>
 				<buildTarget>bootloader</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -86,6 +90,7 @@
 			</target>
 			<target name="Download Bootloader w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
+				<buildArguments/>
 				<buildTarget>JTAG=jlink download_bootloader</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -93,7 +98,6 @@
 			</target>
 			<target name="Download App (192.168.1.146) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
-				<buildArguments/>
 				<buildTarget>JTAG=jlink WEB_API_HOST=192.168.1.146 WEB_API_PORT=31337 download_app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -101,6 +105,7 @@
 			</target>
 			<target name="Build AppTest" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
+				<buildArguments/>
 				<buildTarget>app_test</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -108,7 +113,6 @@
 			</target>
 			<target name="Download App (staging server) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
-				<buildArguments/>
 				<buildTarget>JTAG=jlink WEB_API_HOST=dg.staging.brewbit.com WEB_API_PORT=31337 download_app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -116,22 +120,22 @@
 			</target>
 			<target name="Clear App Config" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
-				<buildArguments/>
 				<buildTarget>clear_app_cfg</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="Download App (192.168.1.104) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="Download App (192.168.1.105) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
 				<buildArguments/>
-				<buildTarget>JTAG=jlink WEB_API_HOST=192.168.1.104 WEB_API_PORT=3000 download_app_mt</buildTarget>
+				<buildTarget>JTAG=jlink WEB_API_HOST=192.168.1.105 WEB_API_PORT=31337 download_app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
 			<target name="Download App (192.168.1.134) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
+				<buildArguments/>
 				<buildTarget>JTAG=jlink WEB_API_HOST=192.168.1.134 WEB_API_PORT=31337 download_app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -139,6 +143,7 @@
 			</target>
 			<target name="Clear App Header" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
+				<buildArguments/>
 				<buildTarget>clear_app_hdr</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
