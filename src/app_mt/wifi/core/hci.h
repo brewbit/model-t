@@ -176,7 +176,9 @@ void
 hci_patch_send(
     uint8_t ucOpcode,
     char *patch,
-    uint16_t usDataLength);
+    uint16_t usDataLength,
+    uint16_t rx_opcode,
+    void* params);
 
 //*****************************************************************************
 //

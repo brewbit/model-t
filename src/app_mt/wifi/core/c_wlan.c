@@ -41,13 +41,15 @@
 //*****************************************************************************
 #include "ch.h"
 #include "hal.h"
-#include <string.h>
 #include "wlan.h"
 #include "hci.h"
 #include "cc3000_spi.h"
 #include "socket.h"
 #include "nvmem.h"
 #include "security.h"
+
+#include <string.h>
+#include <stdio.h>
 
 
 #define SMART_CONFIG_PROFILE_SIZE       67      // 67 = 32 (max ssid) + 32 (max key) + 1 (SSID length) + 1 (security type) + 1 (key length)
@@ -107,6 +109,7 @@ void
 c_wlan_start(patch_load_command_t patch_load_cmd)
 {
   uint8_t *args;
+  uint8_t patch_req_type;
 
   hci_init();
 
@@ -114,15 +117,26 @@ c_wlan_start(patch_load_command_t patch_load_cmd)
 
   args = hci_get_cmd_buffer();
 
-  // Host loaded patches not supported
-  if (patch_load_cmd == PATCH_LOAD_FROM_HOST)
-    patch_load_cmd = PATCH_LOAD_DEFAULT;
-
   UINT8_TO_STREAM(args, patch_load_cmd);
 
-  // IRQ Line asserted - send HCI_CMND_SIMPLE_LINK_START to CC3000
-  hci_command_send(HCI_CMND_SIMPLE_LINK_START, WLAN_SL_INIT_START_PARAMS_LEN,
-      HCI_CMND_SIMPLE_LINK_START, 0);
+  if (patch_load_cmd == PATCH_LOAD_FROM_HOST) {
+    hci_command_send(HCI_CMND_SIMPLE_LINK_START, WLAN_SL_INIT_START_PARAMS_LEN,
+        HCI_EVNT_PATCHES_REQ, &patch_req_type);
+
+    hci_patch_send(patch_req_type, 0, 0,
+        HCI_EVNT_PATCHES_REQ, &patch_req_type);
+
+    hci_patch_send(patch_req_type, 0, 0,
+        HCI_EVNT_PATCHES_REQ, &patch_req_type);
+
+    hci_patch_send(patch_req_type, 0, 0,
+        HCI_CMND_SIMPLE_LINK_START, NULL);
+  }
+  else {
+    hci_command_send(HCI_CMND_SIMPLE_LINK_START, WLAN_SL_INIT_START_PARAMS_LEN,
+        HCI_CMND_SIMPLE_LINK_START, NULL);
+  }
+
 
   // Read Buffer's size and finish
   hci_command_send(HCI_CMND_READ_BUFFER_SIZE, 0,

@@ -313,7 +313,9 @@ void
 hci_patch_send(
     uint8_t ucOpcode,
     char *patch,
-    uint16_t usDataLength)
+    uint16_t usDataLength,
+    uint16_t rx_opcode,
+    void* params)
 { 
   uint16_t usTransLength;
   uint8_t *stream = spi_get_buffer();
@@ -322,6 +324,11 @@ hci_patch_send(
   UINT8_TO_STREAM(stream, HCI_TYPE_PATCH);
   UINT8_TO_STREAM(stream, ucOpcode);
   stream = UINT16_TO_STREAM(stream, usDataLength + HCI_PATCH_PORTION_HEADER_SIZE);
+
+  // Update the opcode of the event we will be waiting for
+  pending_cmd.params = params;
+  pending_cmd.opcode = rx_opcode;
+  pending_cmd.data_expected = false;
 
   if (usDataLength <= SL_PATCH_PORTION_SIZE) {
     UINT16_TO_STREAM(stream, usDataLength);
@@ -361,6 +368,8 @@ hci_patch_send(
       spi_write(usTransLength + sizeof(usTransLength));
     }
   }
+
+  wait_for_response();
 }
 
 
