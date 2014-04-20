@@ -173,8 +173,13 @@ app_cfg_set_hysteresis(quantity_t hysteresis)
   if (memcmp(&hysteresis, &app_cfg_local.data.hysteresis, sizeof(quantity_t)) == 0)
     return;
 
+  if (hysteresis.unit == UNIT_TEMP_DEG_C) {
+    hysteresis.value *= (9.0f / 5.0f);
+    hysteresis.unit = UNIT_TEMP_DEG_F;
+  }
+
   chMtxLock(&app_cfg_mtx);
-  app_cfg_local.data.hysteresis = quantity_convert(hysteresis, UNIT_TEMP_DEG_F);
+  app_cfg_local.data.hysteresis = hysteresis;
   chMtxUnlock();
 }
 

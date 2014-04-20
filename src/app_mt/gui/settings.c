@@ -68,11 +68,8 @@ settings_screen_destroy(widget_t* w)
 static void
 back_button_clicked(button_event_t* event)
 {
-  if (event->id == EVT_BUTTON_CLICK) {
-    settings_screen_t* s = widget_get_user_data(event->widget);
-
+  if (event->id == EVT_BUTTON_CLICK)
     gui_pop_screen();
-  }
 }
 
 static void
@@ -157,7 +154,11 @@ hysteresis_button_clicked(button_event_t* event)
   float velocity_steps[] = {
       0.1f
   };
-  quantity_t hysteresis = quantity_convert(app_cfg_get_hysteresis(), app_cfg_get_temp_unit());
+  quantity_t hysteresis = app_cfg_get_hysteresis();
+  if (app_cfg_get_temp_unit() == UNIT_TEMP_DEG_C) {
+    hysteresis.value *= (5.0f / 9.0f);
+    hysteresis.unit = UNIT_TEMP_DEG_C;
+  }
   widget_t* hysteresis_delay_screen = quantity_select_screen_create(
       "Hysteresis", hysteresis, MIN_HYSTERESIS, MAX_HYSTERESIS, velocity_steps, 1,
       update_hysteresis, s);
@@ -168,6 +169,7 @@ static void
 update_hysteresis(quantity_t hysteresis, void* user_data)
 {
   settings_screen_t* s = user_data;
+
   app_cfg_set_hysteresis(hysteresis);
 
   rebuild_settings_screen(s);
@@ -233,12 +235,15 @@ rebuild_settings_screen(settings_screen_t* s)
 
   if (app_cfg_get_control_mode() == ON_OFF) {
     hysteresis_subtext = malloc(128);
-    quantity_t hysteresis = quantity_convert(app_cfg_get_hysteresis(), app_cfg_get_temp_unit());
+    quantity_t hysteresis = app_cfg_get_hysteresis();
 
-    if (hysteresis.unit == UNIT_TEMP_DEG_F)
+    if (app_cfg_get_temp_unit() == UNIT_TEMP_DEG_F)
       subtext = "F";
-    else
+    else {
+      /* We don't use quantity_convert() here because this is a relative temperature value */
+      hysteresis.value *= (5.0f / 9.0f);
       subtext = "C";
+    }
 
     snprintf(hysteresis_subtext, 128, "Hysteresis: %d.%d %s",
       (int)(hysteresis.value),
