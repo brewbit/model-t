@@ -112,7 +112,7 @@ home_screen_create()
   s->conn_button = button_create(s->screen, rect, img_signal, RED, STEEL, click_conn_button);
 
   rect.x = TILE_X(3);
-  s->settings_button = button_create(s->screen, rect, img_settings, WHITE, BROWN, click_settings_button);
+  s->settings_button = button_create(s->screen, rect, img_settings, WHITE, COBALT, click_settings_button);
 
   rect.x = 0;
   rect.width = TILE_SPAN(3);
@@ -266,7 +266,7 @@ set_conn_status(home_screen_t* s)
 {
   if (s->net_state == NS_CONNECTED &&
       s->api_state == AS_CONNECTED) {
-      button_set_color(s->conn_button, COBALT);
+      button_set_color(s->conn_button, EMERALD);
       button_set_icon_color(s->conn_button, WHITE);
   }
   else if (s->net_state == NS_CONNECTED ||
@@ -423,7 +423,7 @@ click_stage_button(button_event_t* event)
   (void)event;
   if (event->id == EVT_BUTTON_CLICK) {
 //    widget_t* history_screen = textentry_screen_create();
-//  widget_t* history_screen = history_screen_create();
+//    widget_t* history_screen = history_screen_create();
 //    gui_push_screen(history_screen);
   }
 }

@@ -22,7 +22,7 @@
 #define WHITE      COLOR24(255, 255, 255)
 #define LIME       COLOR24(164, 196, 0)
 #define GREEN      COLOR24(96, 169, 23)
-#define EMERALD    COLOR24(0, 138, 0)
+#define EMERALD    COLOR24(0, 150, 0)
 #define TEAL       COLOR24(0, 171, 169)
 #define CYAN       COLOR24(27, 161, 226)
 #define COBALT     COLOR24(0, 50, 250)
