@@ -66,7 +66,6 @@ typedef struct {
   bool new_device_settings;
   api_controller_status_t controller_status[NUM_SENSORS];
   systime_t last_sensor_report_time;
-  systime_t last_settings_update_time;
   systime_t last_send_time;
   systime_t last_recv_time;
   uint32_t send_errors;
@@ -282,15 +281,7 @@ web_api_idle(web_api_t* api)
         api->new_device_settings = false;
       }
 
-      if ((api->last_settings_update_time != 0) &&
-          (chTimeNow() - api->last_settings_update_time) > SETTINGS_UPDATE_DELAY) {
-        send_controller_settings(api);
-        api->last_settings_update_time = 0;
-      }
-
-      if (api->last_settings_update_time != 0) {
-        printf("Settings update pending, but not yet sent\r\n");
-      }
+      send_controller_settings(api);
       break;
   }
 
@@ -508,11 +499,8 @@ dispatch_controller_settings_from_device(
 {
   printf("controller settings updated\r\n");
 
-  if (ssm != NULL) {
+  if (ssm != NULL)
     api->controller_status[ssm->controller].new_settings = true;
-
-    api->last_settings_update_time = chTimeNow();
-  }
 }
 
 static void
@@ -589,12 +577,12 @@ send_controller_settings(
         os->function = osl->function;
         os->cycle_delay = osl->cycle_delay.value;
       }
-    }
-  }
 
-  if (msg->has_controllerSettings) {
-    printf("Sending controller settings\r\n");
-    send_api_msg(api, msg);
+      if (msg->has_controllerSettings) {
+        printf("Sending controller settings\r\n");
+        send_api_msg(api, msg);
+      }
+    }
   }
 
   free(msg);
