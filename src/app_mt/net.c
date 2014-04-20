@@ -81,6 +81,7 @@ net_init()
   msg_subscribe(l, MSG_WLAN_CONNECT, NULL);
   msg_subscribe(l, MSG_WLAN_DISCONNECT, NULL);
   msg_subscribe(l, MSG_WLAN_DHCP, NULL);
+  msg_subscribe(l, MSG_NET_RESET, NULL);
 }
 
 const net_status_t*
