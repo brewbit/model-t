@@ -55,7 +55,6 @@ static void home_screen_msg(msg_event_t* event);
 static void click_sensor_button(button_event_t* event);
 static void click_conn_button(button_event_t* event);
 static void click_settings_button(button_event_t* event);
-static void click_stage_button(button_event_t* event);
 
 static void dispatch_output_status(home_screen_t* s, output_status_t* msg);
 static void dispatch_temp_unit(home_screen_t* s, unit_t unit);
@@ -91,7 +90,7 @@ home_screen_create()
       .width  = TILE_SPAN(3),
       .height = TILE_SPAN(2),
   };
-  s->stage_button = button_create(s->screen, rect, NULL, WHITE, GREEN, click_stage_button);
+  s->stage_button = button_create(s->screen, rect, NULL, WHITE, GREEN, NULL);
 
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
@@ -414,16 +413,5 @@ click_settings_button(button_event_t* event)
   if (event->id == EVT_BUTTON_CLICK) {
     widget_t* settings_screen = settings_screen_create();
     gui_push_screen(settings_screen);
-  }
-}
-
-static void
-click_stage_button(button_event_t* event)
-{
-  (void)event;
-  if (event->id == EVT_BUTTON_CLICK) {
-//    widget_t* history_screen = textentry_screen_create();
-//    widget_t* history_screen = history_screen_create();
-//    gui_push_screen(history_screen);
   }
 }
