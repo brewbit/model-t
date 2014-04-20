@@ -336,9 +336,9 @@ dispatch_output_status(home_screen_t* s, output_status_t* msg)
     icon = s->output2_icon;
 
   if (msg->enabled)
-    button_set_icon_color(icon, LIME);
+    widget_set_background(icon, LIME, false);
   else
-    button_set_icon_color(icon, WHITE);
+    widget_set_background(icon, WHITE, false);
 }
 
 static void
@@ -353,12 +353,12 @@ dispatch_temp_unit(home_screen_t* s, unit_t unit)
 static void
 set_output_settings(home_screen_t* s, output_id_t output, output_function_t function)
 {
-  widget_t* btn;
+  widget_t* icon;
 
   if (output == OUTPUT_1)
-    btn = s->output1_icon;
+    icon = s->output1_icon;
   else
-    btn = s->output2_icon;
+    icon = s->output2_icon;
 
   color_t color = 0;
   switch (function) {
@@ -378,7 +378,7 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
       break;
   }
 
-  button_set_color(btn, color);
+  widget_set_background(icon, color, false);
 }
 
 static void
