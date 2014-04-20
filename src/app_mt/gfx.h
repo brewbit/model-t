@@ -25,7 +25,7 @@
 #define EMERALD    COLOR24(0, 138, 0)
 #define TEAL       COLOR24(0, 171, 169)
 #define CYAN       COLOR24(27, 161, 226)
-#define COBALT     COLOR24(0, 80, 239)
+#define COBALT     COLOR24(0, 50, 250)
 #define INDIGO     COLOR24(106, 0, 255)
 #define VIOLET     COLOR24(170, 0, 255)
 #define PINK       COLOR24(244, 114, 208)

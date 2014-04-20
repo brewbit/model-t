@@ -112,7 +112,7 @@ home_screen_create()
   s->conn_button = button_create(s->screen, rect, img_signal, RED, STEEL, click_conn_button);
 
   rect.x = TILE_X(3);
-  s->settings_button = button_create(s->screen, rect, img_settings, WHITE, OLIVE, click_settings_button);
+  s->settings_button = button_create(s->screen, rect, img_settings, WHITE, BROWN, click_settings_button);
 
   rect.x = 0;
   rect.width = TILE_SPAN(3);
