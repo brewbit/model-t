@@ -752,11 +752,14 @@ static void
 dispatch_device_settings_from_server(DeviceSettings* settings)
 {
   printf("got device settings from server\r\n");
+  printf("  control mode %d\r\n", settings->control_mode);
+  printf("  hysteresis %f\r\n", settings->hysteresis);
+
   app_cfg_set_control_mode(settings->control_mode);
 
   quantity_t hysteresis;
   hysteresis.value = settings->hysteresis;
-  hysteresis.value = UNIT_TEMP_DEG_F;
+  hysteresis.unit = UNIT_TEMP_DEG_F;
   app_cfg_set_hysteresis(hysteresis);
 }
 
