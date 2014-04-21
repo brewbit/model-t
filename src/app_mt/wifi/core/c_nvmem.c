@@ -147,7 +147,7 @@ signed long c_nvmem_write(uint32_t ulFileId, uint32_t ulLength, uint32_t ulEntry
   args = UINT32_TO_STREAM(args, ulLength);
   args = UINT32_TO_STREAM(args, ulEntryOffset);
 
-  memcpy((args + NVMEM_WRITE_PARAMS_LEN), buff, ulLength);
+  memcpy(args, buff, ulLength);
 
   // Initiate a HCI command but it will come on data channel
   hci_data_command_send(

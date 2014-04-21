@@ -265,7 +265,7 @@ wlan_apply_patch(void)
   printf("    Initializing device without patches... ");
   // init board and request to load with no patches.
   // this is in order to overwrite restrictions to write to specific places in EEPROM
-  init_driver(PATCH_LOAD_FROM_HOST);
+  init_driver(PATCH_LOAD_NONE);
   printf("OK\r\n");
 
   printf("    Reading MAC address... ");
@@ -296,8 +296,6 @@ wlan_apply_patch(void)
   }
   printf("OK\r\n");
 
-  init_driver(PATCH_LOAD_FROM_HOST);
-
   printf("    Writing RM parameters... ");
   // write RM parameters
   ret = nvmem_write(NVMEM_RM_FILEID, 128, 0, pRMParams);
@@ -319,9 +317,6 @@ wlan_apply_patch(void)
     }
     printf("OK\r\n");
   }
-
-
-  init_driver(PATCH_LOAD_NONE);
 
   printf("    Writing WLAN driver... ");
   ret = nvmem_write_patch(NVMEM_WLAN_DRIVER_SP_FILEID, drv_length, wlan_drv_patch);
