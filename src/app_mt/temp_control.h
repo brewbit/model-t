@@ -23,15 +23,6 @@ typedef enum {
 } output_id_t;
 
 typedef enum {
-  SELECT_NONE,
-  SELECT_1,
-  SELECT_2,
-  SELECT_1_2,
-
-  NUM_OUTPUT_SELECTIONS
-} output_selection_t;
-
-typedef enum {
   OUTPUT_FUNC_HEATING,
   OUTPUT_FUNC_COOLING,
   OUTPUT_FUNC_NONE
@@ -58,7 +49,6 @@ typedef struct {
   setpoint_type_t setpoint_type;
   quantity_t static_setpoint;
   uint32_t temp_profile_id;
-  uint8_t output_selection;
   output_settings_t output_settings[NUM_OUTPUTS];
 } controller_settings_t;
 

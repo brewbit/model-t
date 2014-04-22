@@ -41,10 +41,10 @@ void
 app_cfg_set_touch_calib(matrix_t* touch_calib);
 
 const controller_settings_t*
-app_cfg_get_controller_settings(sensor_id_t sensor);
+app_cfg_get_controller_settings(temp_controller_id_t controller);
 
 void
-app_cfg_set_controller_settings(sensor_id_t sensor, controller_settings_t* settings);
+app_cfg_set_controller_settings(temp_controller_id_t controller, controller_settings_t* settings);
 
 const output_settings_t*
 app_cfg_get_output_settings(output_id_t output);

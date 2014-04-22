@@ -17,7 +17,7 @@ typedef struct {
   output_ctrl_t control_mode;
   quantity_t hysteresis;
   matrix_t touch_calib;
-  controller_settings_t controller_settings[NUM_SENSORS];
+  controller_settings_t controller_settings[NUM_CONTROLLERS];
   temp_profile_t temp_profiles[NUM_SENSORS];
   char auth_token[64];
   net_settings_t net_settings;
@@ -66,7 +66,6 @@ app_cfg_init()
     app_cfg_local.data.controller_settings[CONTROLLER_1].setpoint_type = SP_STATIC;
     app_cfg_local.data.controller_settings[CONTROLLER_1].static_setpoint.value = 68;
     app_cfg_local.data.controller_settings[CONTROLLER_1].static_setpoint.unit = UNIT_TEMP_DEG_F;
-    app_cfg_local.data.controller_settings[CONTROLLER_1].output_selection = SELECT_1;
 
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].enabled = true;
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
@@ -82,7 +81,6 @@ app_cfg_init()
     app_cfg_local.data.controller_settings[CONTROLLER_2].setpoint_type = SP_STATIC;
     app_cfg_local.data.controller_settings[CONTROLLER_2].static_setpoint.value = 68;
     app_cfg_local.data.controller_settings[CONTROLLER_2].static_setpoint.unit = UNIT_TEMP_DEG_F;
-    app_cfg_local.data.controller_settings[CONTROLLER_2].output_selection = SELECT_2;
 
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].enabled = false;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
@@ -198,27 +196,27 @@ app_cfg_set_touch_calib(matrix_t* touch_calib)
 }
 
 const controller_settings_t*
-app_cfg_get_controller_settings(sensor_id_t sensor)
+app_cfg_get_controller_settings(temp_controller_id_t controller)
 {
-  if (sensor >= NUM_SENSORS)
+  if (controller >= NUM_CONTROLLERS)
     return NULL;
 
-  return &app_cfg_local.data.controller_settings[sensor];
+  return &app_cfg_local.data.controller_settings[controller];
 }
 
 void
-app_cfg_set_controller_settings(sensor_id_t sensor, controller_settings_t* settings)
+app_cfg_set_controller_settings(temp_controller_id_t controller, controller_settings_t* settings)
 {
-  if (sensor >= NUM_SENSORS)
+  if (controller >= NUM_CONTROLLERS)
     return;
 
-  if (memcmp(settings, &app_cfg_local.data.controller_settings[sensor], sizeof(controller_settings_t)) != 0) {
+  if (memcmp(settings, &app_cfg_local.data.controller_settings[controller], sizeof(controller_settings_t)) != 0) {
     chMtxLock(&app_cfg_mtx);
-    app_cfg_local.data.controller_settings[sensor] = *settings;
+    app_cfg_local.data.controller_settings[controller] = *settings;
     chMtxUnlock();
 
     controller_settings_msg_t msg = {
-        .controller = sensor,
+        .controller = controller,
         .settings = *settings
     };
     msg_send(MSG_CONTROLLER_SETTINGS, &msg);

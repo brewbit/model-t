@@ -22,12 +22,25 @@
 #define MIN_TEMP_F (-10)
 
 
+typedef enum {
+  SELECT_NONE,
+  SELECT_1,
+  SELECT_2,
+  SELECT_1_2,
+
+  NUM_OUTPUT_SELECTIONS
+} output_selection_t;
+
+
 typedef struct {
   widget_t* screen;
   widget_t* button_list;
 
-  sensor_id_t sensor;
+  temp_controller_id_t controller;
   controller_settings_t settings;
+
+  uint8_t output_selection;
+  output_selection_t output_selection_valid[NUM_OUTPUT_SELECTIONS];
 } controller_settings_screen_t;
 
 
@@ -48,18 +61,55 @@ widget_class_t controller_settings_widget_class = {
 
 
 widget_t*
-controller_settings_screen_create(sensor_id_t sensor)
+controller_settings_screen_create(temp_controller_id_t controller)
 {
   controller_settings_screen_t* s = calloc(1, sizeof(controller_settings_screen_t));
 
   s->screen = widget_create(NULL, &controller_settings_widget_class, s, display_rect);
   widget_set_background(s->screen, BLACK, FALSE);
 
-  char* title = (sensor == SENSOR_1) ? "Controller 1 Setup" : "Controller 2 Setup";
+  char* title;
+  temp_controller_id_t other_controller;
+  if (controller == CONTROLLER_1) {
+    title = "Controller 1 Setup";
+    other_controller = CONTROLLER_2;
+  }
+  else {
+    title = "Controller 2 Setup";
+    other_controller = CONTROLLER_1;
+  }
   s->button_list = button_list_screen_create(s->screen, title, back_button_clicked, s);
 
-  s->sensor = sensor;
-  s->settings = *app_cfg_get_controller_settings(sensor);
+  s->controller = controller;
+  s->settings = *app_cfg_get_controller_settings(controller);
+
+  /* Convert enabled flags to selection enum */
+  if (s->settings.output_settings[OUTPUT_1].enabled &&
+      s->settings.output_settings[OUTPUT_2].enabled)
+    s->output_selection = SELECT_1_2;
+  else if (s->settings.output_settings[OUTPUT_1].enabled)
+    s->output_selection = SELECT_1;
+  else if (s->settings.output_settings[OUTPUT_2].enabled)
+    s->output_selection = SELECT_2;
+  else
+    s->output_selection = SELECT_NONE;
+
+  /* Figure out which output selections are allowed by checking which outputs are currently
+   * being controlled by the other controller.
+   */
+  const controller_settings_t* other_controller_settings = app_cfg_get_controller_settings(other_controller);
+  s->output_selection_valid[SELECT_NONE] = true;
+  if (!other_controller_settings->output_settings[OUTPUT_1].enabled)
+    s->output_selection_valid[SELECT_1] = true;
+  if (!other_controller_settings->output_settings[OUTPUT_2].enabled)
+    s->output_selection_valid[SELECT_2] = true;
+  if (!other_controller_settings->output_settings[OUTPUT_1].enabled &&
+      !other_controller_settings->output_settings[OUTPUT_2].enabled)
+    s->output_selection_valid[SELECT_1_2] = true;
+
+  /* If the current output selection is not valid, set it to none */
+  if (!s->output_selection_valid[s->output_selection])
+    s->output_selection = SELECT_NONE;
 
   set_controller_settings(s);
 
@@ -155,67 +205,22 @@ set_controller_settings(controller_settings_screen_t* s)
       break;
   }
 
-  const controller_settings_t* other_sensor;
-
-  switch (s->sensor) {
-    case SENSOR_1:
-      other_sensor = app_cfg_get_controller_settings(SENSOR_2);
-      break;
-
-    case SENSOR_2:
-      other_sensor = app_cfg_get_controller_settings(SENSOR_1);
-      break;
-
-    default:
-      s->settings.output_selection = SELECT_NONE;
-      other_sensor = app_cfg_get_controller_settings(s->sensor);
-      break;
-  }
-
-  switch (s->settings.output_selection) {
+  switch (s->output_selection) {
     case SELECT_1:
-      if (other_sensor->output_selection != SELECT_1 &&
-          other_sensor->output_selection != SELECT_1_2) {
-        subtext = "Use Output #1";
-        s->settings.output_settings[OUTPUT_1].enabled = true;
-        s->settings.output_settings[OUTPUT_2].enabled = false;
-
-        s->settings.output_selection = SELECT_1;
-        break;
-      }
-      /* Intentional fall-through */
+      subtext = "Use Output #1";
+      break;
 
     case SELECT_2:
-      if (other_sensor->output_selection != SELECT_2 &&
-          other_sensor->output_selection != SELECT_1_2) {
-        subtext = "Use Output #2";
-        s->settings.output_settings[OUTPUT_1].enabled = false;
-        s->settings.output_settings[OUTPUT_2].enabled = true;
-
-        s->settings.output_selection = SELECT_2;
-        break;
-      }
-      /* Intentional fall-through */
+      subtext = "Use Output #2";
+      break;
 
     case SELECT_1_2:
-      if (other_sensor->output_selection != SELECT_1 &&
-          other_sensor->output_selection != SELECT_2 &&
-          other_sensor->output_selection != SELECT_1_2) {
-        subtext = "Use Output #1 & #2";
-        s->settings.output_settings[OUTPUT_1].enabled = true;
-        s->settings.output_settings[OUTPUT_2].enabled = true;
-
-        s->settings.output_selection = SELECT_1_2;
-        break;
-      }
-      /* Intentional fall-through */
+      subtext = "Use Output #1 & #2";
+      break;
 
     default:
     case SELECT_NONE:
-      s->settings.output_settings[OUTPUT_1].enabled = false;
-      s->settings.output_settings[OUTPUT_2].enabled = false;
       subtext = "No output";
-      s->settings.output_selection = SELECT_NONE;
       break;
   }
 
@@ -240,9 +245,35 @@ output_selection_button_clicked(button_event_t* event)
   if (event->id == EVT_BUTTON_CLICK) {
     controller_settings_screen_t* s = widget_get_user_data(event->widget);
 
-    s->settings.output_selection += 1;
-    if (s->settings.output_selection == NUM_OUTPUT_SELECTIONS)
-      s->settings.output_selection = 0;
+    /* Find the next valid output selection */
+    do {
+      if (++s->output_selection >= NUM_OUTPUT_SELECTIONS)
+        s->output_selection = 0;
+    } while (!s->output_selection_valid[s->output_selection]);
+
+    /* Set output enabled flags accordingly */
+    switch (s->output_selection) {
+      case SELECT_1:
+        s->settings.output_settings[OUTPUT_1].enabled = true;
+        s->settings.output_settings[OUTPUT_2].enabled = false;
+        break;
+
+      case SELECT_2:
+        s->settings.output_settings[OUTPUT_1].enabled = false;
+        s->settings.output_settings[OUTPUT_2].enabled = true;
+        break;
+
+      case SELECT_1_2:
+        s->settings.output_settings[OUTPUT_1].enabled = true;
+        s->settings.output_settings[OUTPUT_2].enabled = true;
+        break;
+
+      default:
+      case SELECT_NONE:
+        s->settings.output_settings[OUTPUT_1].enabled = false;
+        s->settings.output_settings[OUTPUT_2].enabled = false;
+        break;
+    }
 
     set_controller_settings(s);
   }
@@ -294,7 +325,7 @@ static_setpoint_button_clicked(button_event_t* event)
   controller_settings_screen_t* s = widget_get_user_data(event->widget);
 
   char* title;
-  if (s->sensor == SENSOR_1)
+  if (s->controller == CONTROLLER_1)
     title = "Controller 1 Setpoint";
   else
     title = "Controller 2 Setpoint";
@@ -335,7 +366,7 @@ back_button_clicked(button_event_t* event)
   if (event->id == EVT_BUTTON_CLICK) {
     controller_settings_screen_t* s = widget_get_user_data(event->widget);
 
-    app_cfg_set_controller_settings(s->sensor, &s->settings);
+    app_cfg_set_controller_settings(s->controller, &s->settings);
 
     gui_pop_screen();
   }

@@ -7,6 +7,6 @@
 
 
 widget_t*
-controller_settings_screen_create(sensor_id_t sensor);
+controller_settings_screen_create(temp_controller_id_t controller);
 
 #endif
