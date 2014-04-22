@@ -310,6 +310,7 @@ web_api_idle(web_api_t* api)
       printf("CC3000 is fucked, restarting\r\n");
       closesocket(api->socket);
       api->socket = -1;
+      api->last_recv_time = chTimeNow();
       set_state(api, AS_AWAITING_NET_CONNECTION);
 
       msg_post(MSG_NET_RESET, NULL);
