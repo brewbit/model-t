@@ -573,12 +573,12 @@ send_controller_settings(
 
       int j;
       for (j = 0; j < NUM_OUTPUTS; ++j) {
-        const output_settings_t* osl = &ssl->output_settings[i];
-        if (ssl->output_settings[i].enabled) {
+        const output_settings_t* osl = &ssl->output_settings[j];
+        if (osl->enabled) {
           OutputSettings* os = &msg->controllerSettings.output_settings[msg->controllerSettings.output_settings_count];
           msg->controllerSettings.output_settings_count++;
 
-          os->index = i;
+          os->index = j;
           os->function = osl->function;
           os->cycle_delay = osl->cycle_delay.value;
         }
