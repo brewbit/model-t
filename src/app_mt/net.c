@@ -304,8 +304,6 @@ perform_connect()
     net_status.net_state = NS_CONNECTING;
     msg_send(MSG_NET_STATUS, &net_status);
 
-    wlan_ioctl_set_connection_policy(0, 0, 0);
-
     wlan_disconnect();
 
     chThdSleepMilliseconds(100);
@@ -323,6 +321,8 @@ dispatch_init()
   wlan_stop();
 
   wlan_start(PATCH_LOAD_DEFAULT);
+
+  wlan_ioctl_set_connection_policy(0, 0, 0);
 
   {
     uint32_t dhcp_timeout = 14400;
@@ -373,20 +373,20 @@ dispatch_idle()
     }
   }
   else {
-    if (net_status.net_state != last_net_state) {
-      switch (net_status.net_state) {
+    switch (net_status.net_state) {
+      case NS_CONNECT_FAILED:
+      case NS_DISCONNECTED:
       case NS_CONNECT:
         perform_connect();
         break;
 
       case NS_CONNECTED:
       case NS_CONNECTING:
-      case NS_CONNECT_FAILED:
-      case NS_DISCONNECTED:
       default:
         break;
-      }
+    }
 
+    if (net_status.net_state != last_net_state) {
       msg_send(MSG_NET_STATUS, &net_status);
       last_net_state = net_status.net_state;
     }
