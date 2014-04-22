@@ -183,7 +183,7 @@ output_thread(void* arg)
 
   while (!chThdShouldTerminate()) {
     const output_settings_t* output_settings = get_output_settings(output->controller, output->id);
-    systime_t cycle_delay = 60 * output_settings->cycle_delay.value;
+    systime_t cycle_delay = S2ST(60 * output_settings->cycle_delay.value);
 
     /* If the probe associated with this output is not active or if the output is set
      * to disabled turn OFF the output
