@@ -574,12 +574,14 @@ send_controller_settings(
       int j;
       for (j = 0; j < NUM_OUTPUTS; ++j) {
         const output_settings_t* osl = &ssl->output_settings[i];
-        OutputSettings* os = &msg->controllerSettings.output_settings[i];
-        msg->controllerSettings.output_settings_count++;
+        if (ssl->output_settings[i].enabled) {
+          OutputSettings* os = &msg->controllerSettings.output_settings[msg->controllerSettings.output_settings_count];
+          msg->controllerSettings.output_settings_count++;
 
-        os->index = i;
-        os->function = osl->function;
-        os->cycle_delay = osl->cycle_delay.value;
+          os->index = i;
+          os->function = osl->function;
+          os->cycle_delay = osl->cycle_delay.value;
+        }
       }
 
       printf("Sending controller settings\r\n");
