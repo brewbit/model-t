@@ -811,9 +811,11 @@ dispatch_controller_settings_from_server(ControllerSettings* settings)
   }
 
   printf("  got %d output settings\r\n", settings->output_settings_count);
+  csl->output_settings[OUTPUT_1].enabled = false;
+  csl->output_settings[OUTPUT_2].enabled = false;
   for (i = 0; i < (int)settings->output_settings_count; ++i) {
-    output_settings_t* os = &csl->output_settings[i];
     OutputSettings* osm = &settings->output_settings[i];
+    output_settings_t* os = &csl->output_settings[osm->index];
 
     os->cycle_delay.value = osm->cycle_delay;
     os->cycle_delay.unit = UNIT_TIME_MIN;
