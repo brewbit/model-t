@@ -69,8 +69,8 @@ typedef struct {
   systime_t last_send_time;
   systime_t last_recv_time;
   uint32_t send_errors;
-
   msg_parser_t parser;
+  msg_listener_t* msg_listener;
 } web_api_t;
 
 
@@ -155,15 +155,15 @@ web_api_init()
   api = calloc(1, sizeof(web_api_t));
   api->status.state = AS_AWAITING_NET_CONNECTION;
 
-  msg_listener_t* l = msg_listener_create("web_api", 2048, web_api_dispatch, api);
-  msg_listener_set_idle_timeout(l, 500);
-  msg_listener_enable_watchdog(l, 3 * 60 * 1000);
+  api->msg_listener = msg_listener_create("web_api", 2048, web_api_dispatch, api);
+  msg_listener_set_idle_timeout(api->msg_listener, 500);
+  msg_listener_enable_watchdog(api->msg_listener, 3 * 60 * 1000);
 
-  msg_subscribe(l, MSG_NET_STATUS, NULL);
-  msg_subscribe(l, MSG_API_FW_UPDATE_CHECK, NULL);
-  msg_subscribe(l, MSG_API_FW_DNLD_RQST, NULL);
-  msg_subscribe(l, MSG_SENSOR_SAMPLE, NULL);
-  msg_subscribe(l, MSG_CONTROLLER_SETTINGS, NULL);
+  msg_subscribe(api->msg_listener, MSG_NET_STATUS, NULL);
+  msg_subscribe(api->msg_listener, MSG_API_FW_UPDATE_CHECK, NULL);
+  msg_subscribe(api->msg_listener, MSG_API_FW_DNLD_RQST, NULL);
+  msg_subscribe(api->msg_listener, MSG_SENSOR_SAMPLE, NULL);
+  msg_subscribe(api->msg_listener, MSG_CONTROLLER_SETTINGS, NULL);
 }
 
 const api_status_t*
@@ -859,7 +859,10 @@ dispatch_controller_settings_from_server(ControllerSettings* settings)
   printf("      static %f\r\n", csl->static_setpoint.value);
   printf("      temp profile %d\r\n", (int)csl->temp_profile_id);
 
+  msg_unsubscribe(api->msg_listener, MSG_CONTROLLER_SETTINGS, NULL);
   temp_control_start(csl);
+  msg_subscribe(api->msg_listener, MSG_CONTROLLER_SETTINGS, NULL);
+
   free(csl);
 }
 
