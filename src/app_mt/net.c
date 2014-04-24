@@ -22,13 +22,16 @@
 #define SCAN_INTERVAL 1000
 #define SERVICE_NAME "brewbit-model-t"
 
+#define PING_SEND_FAST_PERIOD S2ST(30)
+#define PING_SEND_SLOW_PERIOD S2ST(1 * 60)
+#define PING_RECV_TIMEOUT S2ST(2 * 60)
 
 typedef struct {
-    bool valid;
-    uint32_t networks_found;
-    uint32_t scan_status;
-    uint32_t frame_time;
-    network_t network;
+  bool valid;
+  uint32_t networks_found;
+  uint32_t scan_status;
+  uint32_t frame_time;
+  network_t network;
 } net_scan_result_t;
 
 
@@ -43,6 +46,9 @@ dispatch_idle(void);
 
 static void
 dispatch_dhcp(netapp_dhcp_params_t* dhcp);
+
+static void
+dispatch_ping(netapp_pingreport_args_t* ping_report);
 
 static void
 save_or_update_network(network_t* network);
@@ -65,10 +71,15 @@ get_scan_result(net_scan_result_t* result);
 static void
 perform_connect(void);
 
+static void
+test_connectivity(void);
+
 
 static net_status_t net_status;
 static net_state_t last_net_state;
 static network_t networks[16];
+static systime_t next_ping_send_time;
+static systime_t ping_timeout_time;
 
 
 void
@@ -81,7 +92,7 @@ net_init()
   msg_subscribe(l, MSG_WLAN_CONNECT, NULL);
   msg_subscribe(l, MSG_WLAN_DISCONNECT, NULL);
   msg_subscribe(l, MSG_WLAN_DHCP, NULL);
-  msg_subscribe(l, MSG_NET_RESET, NULL);
+  msg_subscribe(l, MSG_WLAN_PING_REPORT, NULL);
 }
 
 const net_status_t*
@@ -126,7 +137,6 @@ dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
 
   switch (id) {
     case MSG_INIT:
-    case MSG_NET_RESET:
       dispatch_init();
       break;
 
@@ -153,8 +163,32 @@ dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
       msg_send(MSG_NET_STATUS, &net_status);
       break;
 
+    case MSG_WLAN_PING_REPORT:
+      dispatch_ping(msg_data);
+      break;
+
     default:
       break;
+  }
+}
+
+static void
+dispatch_ping(netapp_pingreport_args_t* ping_report)
+{
+  printf("ping report %u %u %u %u %u\r\n",
+      ping_report->packets_sent,
+      ping_report->packets_received,
+      ping_report->min_round_time,
+      ping_report->avg_round_time,
+      ping_report->max_round_time);
+
+  if ((ping_report->packets_sent > 0) &&
+      (ping_report->packets_received > 0)) {
+    systime_t now = chTimeNow();
+    ping_timeout_time = now + PING_RECV_TIMEOUT;
+
+    /* ping was successful, we can slow down our poll rate */
+    next_ping_send_time = now + PING_SEND_SLOW_PERIOD;
   }
 }
 
@@ -316,8 +350,37 @@ perform_connect()
 }
 
 static void
+test_connectivity()
+{
+  systime_t now = chTimeNow();
+  if (now > next_ping_send_time) {
+    // Assume that the ping will fail and we will have to try again soon
+    next_ping_send_time = now + PING_SEND_FAST_PERIOD;
+
+    printf("sending ping\r\n");
+    // Ping google's public DNS server
+    uint32_t ip = 0x08080808;
+    long ret = netapp_ping_send(&ip, 4, 16, 1000);
+    if (ret != 0)
+      printf("ping failed!\r\n");
+  }
+
+  if (now > ping_timeout_time) {
+    printf("net connection timed out\r\n");
+    dispatch_init();
+  }
+}
+
+static void
 dispatch_init()
 {
+  net_status.net_state = NS_DISCONNECTED;
+  msg_send(MSG_NET_STATUS, &net_status);
+
+  systime_t now = chTimeNow();
+  ping_timeout_time = now + PING_RECV_TIMEOUT;
+  next_ping_send_time = now + PING_SEND_FAST_PERIOD;
+
   wlan_stop();
 
   wlan_start(PATCH_LOAD_DEFAULT);
@@ -391,4 +454,6 @@ dispatch_idle()
       last_net_state = net_status.net_state;
     }
   }
+
+  test_connectivity();
 }
