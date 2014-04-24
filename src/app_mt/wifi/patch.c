@@ -32,6 +32,11 @@
 #define BIT6						0x40
 #define BIT7						0x80
 
+typedef struct {
+  uint16_t addr;
+  uint16_t len;
+} fat_entry_t;
+
 //Service Pack version P4.11.6.14.24 -  Driver patches
 
 static const uint8_t wlan_drv_patch[8168] = { 0x00, 0x01, 0x00, 0x00, 0xE0, 0x1F, 0x00, 0x00, 0x5C, 0x04, 0x18, 0x00, 0xE4, 0x62, 0x08, 0x00, 0x96, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ,
@@ -147,27 +152,72 @@ static uint8_t cMacFromEeprom[MAC_ADDR_LEN];
 //
 static char aucCC3000_prefix[] = {'T', 'T', 'T'};
 
-// 2 dim array to store address and length of new FAT
-static uint16_t aFATEntries[2][NVMEM_RM_FILEID + 1] =
-/*  address 	*/  {{0x50, 	0x1f0, 	0x390, 	0x1390, 	0x2390, 	0x4390, 	0x6390, 	0x63a0, 	0x63b0, 	0x63f0, 	0x6430, 	0x6830},
-/*  length	*/	{0x1a0, 	0x1a0, 	0x1000, 	0x1000, 	0x2000, 	0x2000, 	0x10, 	0x10, 	0x40, 	0x40, 	0x400, 	0x200}};
-	 /* 0. NVS */
-	 /* 1. NVS Shadow */
-	 /* 2. Wireless Conf */
-	 /* 3. Wireless Conf Shadow */
-	 /* 4. BT (WLAN driver) Patches */
-	 /* 5. WiLink (Firmware) Patches */
-	 /* 6. MAC addr */
-	 /* 7. Frontend Vars */
-	 /* 8. IP config */
-	 /* 9. IP config Shadow */
-	 /* 10. Bootloader Patches */
-	 /* 11. Radio Module params */
-	 /* 12. AES128 for smart config */
-	 /* 13. user file */
-	 /* 14. user file */
-	 /* 15. user file */
-
+static fat_entry_t fat_entries[NVMEM_RM_FILEID + 1] = {
+  /* 0. NVS */
+  {
+    .addr = 0x0050,
+    .len  = 0x01a0
+  },
+  /* 1. NVS Shadow */
+  {
+    .addr = 0x01f0,
+    .len  = 0x01a0
+  },
+  /* 2. Wireless Conf */
+  {
+    .addr = 0x0390,
+    .len  = 0x1000
+  },
+  /* 3. Wireless Conf Shadow */
+  {
+    .addr = 0x1390,
+    .len  = 0x1000
+  },
+  /* 4. BT (WLAN driver) Patches */
+  {
+    .addr = 0x2390,
+    .len  = 0x2000
+  },
+  /* 5. WiLink (Firmware) Patches */
+  {
+    .addr = 0x4390,
+    .len  = 0x2000
+  },
+  /* 6. MAC addr */
+  {
+    .addr = 0x6390,
+    .len  = 0x0010
+  },
+  /* 7. Frontend Vars */
+  {
+    .addr = 0x63a0,
+    .len  = 0x0010
+  },
+  /* 8. IP config */
+  {
+    .addr = 0x63b0,
+    .len  = 0x0040
+  },
+  /* 9. IP config Shadow */
+  {
+    .addr = 0x63f0,
+    .len  = 0x0040
+  },
+  /* 10. Bootloader Patches */
+  {
+    .addr = 0x6430,
+    .len  = 0x0400
+  },
+  /* 11. Radio Module params */
+  {
+    .addr = 0x6830,
+    .len  = 0x0200
+  },
+  /* 12. AES128 for smart config */
+  /* 13. user file */
+  /* 14. user file */
+  /* 15. user file */
+};
 
 //*****************************************************************************
 //
@@ -205,8 +255,8 @@ init_driver(patch_load_command_t patch_load_cmd)
 //*****************************************************************************
 static long
 fat_write_content(
-    uint16_t const *file_address,
-    uint16_t const *file_length)
+    fat_entry_t* fat_entries,
+    uint32_t num_entries)
 {
   int i;
   long   ret;
@@ -218,18 +268,20 @@ fat_write_content(
   if (ret != 0)
     return ret;
 
-  for (i = 0; i <= NVMEM_RM_FILEID; i++) {
+  for (i = 0; i < (int)num_entries; i++) {
+    fat_entry_t* entry = &fat_entries[i];
+
     // write address low char and mark as allocated
-    *fatTablePtr++ = (uint8_t)(file_address[i] & 0xff) | BIT0;
+    *fatTablePtr++ = (uint8_t)(entry->addr & 0xff) | BIT0;
 
     // write address high char
-    *fatTablePtr++ = (uint8_t)((file_address[i]>>8) & 0xff);
+    *fatTablePtr++ = (uint8_t)((entry->addr >> 8) & 0xff);
 
     // write length low char
-    *fatTablePtr++ = (uint8_t)(file_length[i] & 0xff);
+    *fatTablePtr++ = (uint8_t)(entry->len & 0xff);
 
     // write length high char
-    *fatTablePtr++ = (uint8_t)((file_length[i]>>8) & 0xff);
+    *fatTablePtr++ = (uint8_t)((entry->len >> 8) & 0xff);
   }
 
   // second, write the FAT
@@ -289,7 +341,7 @@ wlan_apply_patch(void)
 
   printf("    Writing new FAT... ");
   // write new FAT
-  ret = fat_write_content(aFATEntries[0], aFATEntries[1]);
+  ret = fat_write_content(fat_entries, NVMEM_RM_FILEID + 1);
   if (ret != 0) {
     printf("ERROR 0x%X\r\n", (int)ret);
     return false;
