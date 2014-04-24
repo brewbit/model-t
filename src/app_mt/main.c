@@ -146,8 +146,7 @@ main(void)
         resets);
 
     const hci_stats_t* hs = hci_get_stats();
-    printf("HCI: %ld %u %u %u %u %u\r\n",
-        wlan_ioctl_statusget(),
+    printf("HCI: %u %u %u %u %u\r\n",
         hs->num_free_buffers,
         hs->buffer_len,
         (unsigned int)hs->num_sent_packets,
