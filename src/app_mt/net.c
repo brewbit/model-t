@@ -127,6 +127,7 @@ net_connect(network_t* net, const char* passphrase)
   free(ns);
 
   net_status.net_state = NS_CONNECT;
+  msg_send(MSG_NET_STATUS, &net_status);
 }
 
 static void
