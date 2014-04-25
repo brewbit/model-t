@@ -263,7 +263,7 @@ relay_control(relay_output_t* output)
       }
     }
     else {
-      if (sample > (setpoint + output->pid_control.out))
+      if (sample > (setpoint - output->pid_control.out))
         enable_relay(output, true);
       else {
         enable_relay(output, false);
@@ -412,7 +412,9 @@ dispatch_sensor_sample(temp_controller_t* tc, sensor_msg_t* msg)
   temp_profile_update(&tc->temp_profile_run, msg->sample);
 
   for (i = 0; i < NUM_OUTPUTS; ++i) {
-      if (app_cfg_get_control_mode() == PID) {
+    const output_settings_t* output_settings = get_output_settings(tc, tc->outputs[i].id);
+      if (app_cfg_get_control_mode() == PID &&
+          output_settings->enabled == true) {
         pid_exec(&tc->outputs[i].pid_control,
             get_sp(tc),
             msg->sample.value);

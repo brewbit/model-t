@@ -14,11 +14,11 @@
 void
 pid_init(pid_t* pid)
 {
-  pid->sample_time = MS2ST(1000);
+  pid->sample_time = MS2ST(2000);
   pid->last_time   = (chTimeNow() - pid->sample_time);
   pid->enabled     = false;
 
-  pid_set_gains(pid, 10, 0, 0);
+  pid_set_gains(pid, 10, .05, .05);
 }
 
 void
@@ -33,11 +33,14 @@ pid_exec(pid_t* pid, float setpoint, float sample)
   if (time_diff >= pid->sample_time) {
     float err_p = (setpoint - sample);
     float err_d = (sample - pid->last_sample);
+    float err_d_tune = (err_p - pid->last_err)/time_diff;
 
     pid->err_i += (pid->ki * err_p);
     pid->err_i = LIMIT(pid->err_i, pid->out_min, pid->out_max);
+    pid->err_i_tune += err_p;
+    pid->err_i_tune = LIMIT(pid->err_i_tune, pid->out_min, pid->out_max);
 
-    tune_gains(pid, err_p, err_d);
+    tune_gains(pid, err_p, err_d_tune);
 
     pid->out = (pid->kp * err_p) + pid->err_i - (pid->kd * err_d);
     pid->out = LIMIT(pid->out, pid->out_min, pid->out_max);
@@ -48,19 +51,28 @@ pid_exec(pid_t* pid, float setpoint, float sample)
   }
 }
 
-#define GAMMA 0.03
+#define GAMMA 0.005
 void
 tune_gains(pid_t* pid, float err_p, float err_d)
 {
-  pid->kp += -GAMMA * err_p;
-  pid->kp = LIMIT(pid->kp, 0, 1000);
+  if (pid->output_sign == NEGATIVE) {
+    pid->kp = pid->kp *-1;
+    pid->ki = pid->ki *-1;
+    pid->kd = pid->kd *-1;
+  }
 
-  pid->ki += -GAMMA * err_p * pid->err_i;
-  pid->ki = LIMIT(pid->ki, 0, 20);
+  pid->kp += -GAMMA * err_p;
+  pid->kp = LIMIT(pid->kp, 0, 50);
+
+  pid->ki += -GAMMA * err_p * pid->err_i_tune;
+  pid->ki = LIMIT(pid->ki, 0, 5);
 
   pid->kd += -GAMMA * err_p * err_d;
-  pid->kd = LIMIT(pid->kd, 0, 20);
-  //printf("kp, %f\r\nki, %f\r\nkd, %f\r\n",pid->kp, pid->ki, pid->kd);
+  pid->kd = LIMIT(pid->kd, 0, 5);
+
+  pid_set_output_sign(pid, pid->output_sign);
+
+  printf("kp, %f\r\nki, %f\r\nkd, %f\r\n",pid->kp, pid->ki, pid->kd);
 }
 
 void
@@ -93,11 +105,8 @@ pid_enable(pid_t* pid, float sample, bool enabled)
 void
 pid_reinit(pid_t* pid, float sample)
 {
-  // TODO
-//  (void)sample;
-//  pid->last_err = sample.value;
-//  pid->err_i = pid->out;
-//  pid->err_i = LIMIT(pid->err_i, pid->out_min, pid->out_max);
+  pid->last_sample = sample;
+  pid->err_i = 0;
 }
 
 void

@@ -24,6 +24,7 @@ typedef struct {
   float kd;
 
   float err_i;
+  float err_i_tune;
   float last_err;
   float last_sample;
 
