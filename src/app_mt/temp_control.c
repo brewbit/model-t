@@ -237,16 +237,16 @@ relay_control(relay_output_t* output)
     float hysteresis = app_cfg_get_hysteresis().value;
 
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
-      if (sample < setpoint - hysteresis)
+      if (sample <= setpoint - hysteresis)
         enable_relay(output, true);
-      else if (sample > setpoint) {
+      else if (sample >= setpoint) {
         enable_relay(output, false);
       }
     }
     else {
-      if (sample > setpoint + hysteresis)
+      if (sample >= setpoint + hysteresis)
         enable_relay(output, true);
-      else if (sample < setpoint) {
+      else if (sample <= setpoint) {
         enable_relay(output, false);
       }
     }
