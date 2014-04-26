@@ -83,7 +83,7 @@ temp_profile_get_current_setpoint(temp_profile_run_t* run, float* sp)
   const temp_profile_t* profile = app_cfg_get_temp_profile(run->temp_profile_id);
 
   if (run->state == TPS_RUNNING) {
-    if (chTimeNow() > run->current_step_start_time + profile->steps[run->current_step].duration) {
+    if (chTimeNow() > run->current_step_start_time + S2ST(profile->steps[run->current_step].duration)) {
       if (++run->current_step < profile->num_steps) {
         run->current_step_start_time = chTimeNow();
       }
@@ -111,8 +111,8 @@ temp_profile_get_current_setpoint(temp_profile_run_t* run, float* sp)
         else
           last_temp = profile->steps[run->current_step - 1].value.value;
 
-        uint32_t duration_into_step = chTimeNow() - run->current_step_start_time;
-        *sp = last_temp + ((cur_step->value.value - last_temp) * duration_into_step / cur_step->duration);
+        systime_t duration_into_step = chTimeNow() - run->current_step_start_time;
+        *sp = last_temp + ((cur_step->value.value - last_temp) * duration_into_step / S2ST(cur_step->duration));
       }
       break;
     }
