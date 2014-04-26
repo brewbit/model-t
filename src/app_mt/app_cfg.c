@@ -18,7 +18,8 @@ typedef struct {
   quantity_t hysteresis;
   matrix_t touch_calib;
   controller_settings_t controller_settings[NUM_CONTROLLERS];
-  temp_profile_t temp_profiles[NUM_SENSORS];
+  temp_profile_t temp_profiles[NUM_CONTROLLERS];
+  temp_profile_checkpoint_t temp_profile_checkpoints[NUM_CONTROLLERS];
   char auth_token[64];
   net_settings_t net_settings;
   fault_data_t fault;
@@ -52,13 +53,14 @@ app_cfg_init()
     app_cfg_local.data.reset_count++;
   }
   else {
+    printf("setting defaults\r\n");
+
     app_cfg_local.data.reset_count = 0;
 
     app_cfg_local.data.temp_unit = UNIT_TEMP_DEG_F;
     app_cfg_local.data.control_mode = ON_OFF;
     app_cfg_local.data.hysteresis.value = 1;
     app_cfg_local.data.hysteresis.unit = UNIT_TEMP_DEG_F;
-
 
     touch_calib_reset();
 
@@ -91,6 +93,8 @@ app_cfg_init()
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.unit = UNIT_TIME_MIN;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.value = 3;
+
+    printf("sp1 %d\r\n", app_cfg_local.data.controller_settings[CONTROLLER_1].setpoint_type);
 
     app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
   }
@@ -221,6 +225,34 @@ app_cfg_set_controller_settings(temp_controller_id_t controller, controller_sett
     };
     msg_send(MSG_CONTROLLER_SETTINGS, &msg);
   }
+
+  if (app_cfg_local.data.controller_settings[CONTROLLER_1].setpoint_type == 4)
+    printf("fucked 1\r\n");
+}
+
+
+const temp_profile_checkpoint_t*
+app_cfg_get_temp_profile_checkpoint(temp_controller_id_t controller)
+{
+  if (controller >= NUM_CONTROLLERS)
+      return NULL;
+
+  return &app_cfg_local.data.temp_profile_checkpoints[controller];
+}
+
+void
+app_cfg_set_temp_profile_checkpoint(temp_controller_id_t controller, temp_profile_checkpoint_t* checkpoint)
+{
+  if (controller >= NUM_CONTROLLERS)
+      return;
+
+  if (memcmp(checkpoint, &app_cfg_local.data.temp_profile_checkpoints[controller], sizeof(temp_profile_checkpoint_t)) != 0) {
+    chMtxLock(&app_cfg_mtx);
+    app_cfg_local.data.temp_profile_checkpoints[controller] = *checkpoint;
+    chMtxUnlock();
+  }
+  if (app_cfg_local.data.controller_settings[CONTROLLER_1].setpoint_type == 4)
+    printf("fucked 2\r\n");
 }
 
 const char*

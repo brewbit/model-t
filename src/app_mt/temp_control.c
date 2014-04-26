@@ -76,7 +76,7 @@ temp_control_init(temp_controller_id_t controller)
 
   const controller_settings_t* cs = app_cfg_get_controller_settings(controller);
   if (cs->setpoint_type == SP_TEMP_PROFILE)
-    temp_profile_start(&tc->temp_profile_run, cs->temp_profile_id);
+    temp_profile_init(&tc->temp_profile_run, controller);
 
   msg_listener_t* l = msg_listener_create("temp_ctrl", 1024, dispatch_temp_input_msg, tc);
 
@@ -118,7 +118,7 @@ temp_control_get_controller_for(output_id_t output)
   int i;
 
   if (output >= NUM_OUTPUTS)
-    return OUTPUT_FUNC_NONE;
+    return NULL;
 
   for (i = 0; i < NUM_CONTROLLERS; ++i) {
     const controller_settings_t* controller_settings =
@@ -409,7 +409,9 @@ dispatch_sensor_sample(temp_controller_t* tc, sensor_msg_t* msg)
   if (tc->state == TC_SENSOR_TIMED_OUT)
     tc->state = TC_ACTIVE;
 
-  temp_profile_update(&tc->temp_profile_run, msg->sample);
+  const controller_settings_t* cs = app_cfg_get_controller_settings(tc->controller);
+  if (cs->setpoint_type == SP_TEMP_PROFILE)
+    temp_profile_update(&tc->temp_profile_run, msg->sample);
 
   for (i = 0; i < NUM_OUTPUTS; ++i) {
     const output_settings_t* output_settings = get_output_settings(tc, tc->outputs[i].id);

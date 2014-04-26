@@ -83,6 +83,8 @@ controller_settings_screen_create(temp_controller_id_t controller)
   s->controller = controller;
   s->settings = *app_cfg_get_controller_settings(controller);
 
+  printf("loaded settings %d %d\r\n", controller, s->settings.setpoint_type);
+
   /* Convert enabled flags to selection enum */
   if (s->settings.output_settings[OUTPUT_1].enabled &&
       s->settings.output_settings[OUTPUT_2].enabled)

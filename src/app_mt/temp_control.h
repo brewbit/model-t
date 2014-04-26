@@ -5,7 +5,6 @@
 #include "common.h"
 #include "sensor.h"
 #include "types.h"
-#include "temp_profile.h"
 
 
 typedef enum {

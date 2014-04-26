@@ -5,6 +5,7 @@
 #include "types.h"
 #include "wifi/wlan.h"
 #include "sensor.h"
+#include "temp_control.h"
 
 typedef enum {
   STEP_HOLD,
@@ -12,8 +13,6 @@ typedef enum {
 } temp_profile_step_type_t;
 
 typedef enum {
-  TPS_DOWNLOADING,
-  TPS_WAITING_FOR_TIME_SERVER,
   TPS_SEEKING_START_VALUE,
   TPS_RUNNING,
   TPS_COMPLETE
@@ -34,13 +33,24 @@ typedef struct {
 } temp_profile_t;
 
 typedef struct {
-  sensor_id_t sensor;
+  temp_controller_id_t controller;
   uint32_t temp_profile_id;
   temp_profile_run_state_t state;
-  time_t start_time;
   uint32_t current_step;
-  time_t current_step_complete_time;
+  systime_t current_step_start_time;
+  systime_t next_checkpoint;
 } temp_profile_run_t;
+
+typedef struct {
+  uint32_t temp_profile_id;
+  temp_profile_run_state_t state;
+  uint32_t current_step;
+  systime_t current_step_time;
+} temp_profile_checkpoint_t;
+
+
+void
+temp_profile_init(temp_profile_run_t* run, temp_controller_id_t controller);
 
 void
 temp_profile_start(temp_profile_run_t* run, uint32_t temp_profile_id);

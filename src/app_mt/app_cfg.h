@@ -4,6 +4,7 @@
 
 #include "types.h"
 #include "temp_control.h"
+#include "temp_profile.h"
 #include "touch_calib.h"
 #include "web_api.h"
 #include "net.h"
@@ -45,6 +46,12 @@ app_cfg_get_controller_settings(temp_controller_id_t controller);
 
 void
 app_cfg_set_controller_settings(temp_controller_id_t controller, controller_settings_t* settings);
+
+const temp_profile_checkpoint_t*
+app_cfg_get_temp_profile_checkpoint(temp_controller_id_t controller);
+
+void
+app_cfg_set_temp_profile_checkpoint(temp_controller_id_t controller, temp_profile_checkpoint_t* checkpoint);
 
 const output_settings_t*
 app_cfg_get_output_settings(output_id_t output);
