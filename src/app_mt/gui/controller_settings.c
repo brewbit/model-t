@@ -15,11 +15,11 @@
 #include <stdio.h>
 
 
-#define MAX_TEMP_C (110)
-#define MIN_TEMP_C (-10)
+#define MAX_TEMP_C (510)
+#define MIN_TEMP_C (-50)
 
-#define MAX_TEMP_F (212)
-#define MIN_TEMP_F (-10)
+#define MAX_TEMP_F (950)
+#define MIN_TEMP_F (-58)
 
 
 typedef enum {
@@ -308,12 +308,6 @@ static void
 temp_profile_button_clicked(button_event_t* event)
 {
   (void)event;
-//  if (event->id == EVT_BUTTON_CLICK) {
-//  controller_settings_screen_t* s = widget_get_user_data(event->widget);
-//
-//    widget_t* temp_profile_screen = temp_profile_screen_create(s->sensor);
-//    gui_push_screen(temp_profile_screen);
-//  }
 }
 
 static void
@@ -323,6 +317,9 @@ static_setpoint_button_clicked(button_event_t* event)
     return;
 
   controller_settings_screen_t* s = widget_get_user_data(event->widget);
+  unit_t temp_units = app_cfg_get_temp_unit();
+  float min;
+  float max;
 
   char* title;
   if (s->controller == CONTROLLER_1)
@@ -333,8 +330,18 @@ static_setpoint_button_clicked(button_event_t* event)
   float velocity_steps[] = {
       0.1f, 0.5f, 1.0f
   };
+
+  if (temp_units == UNIT_TEMP_DEG_F) {
+    min = MIN_TEMP_F;
+    max = MAX_TEMP_F;
+  }
+  else{
+    min = MIN_TEMP_C;
+    max = MAX_TEMP_C;
+  }
+
   widget_t* static_setpoint_screen = quantity_select_screen_create(
-      title, s->settings.static_setpoint, MIN_TEMP_F, MAX_TEMP_F,
+      title, s->settings.static_setpoint, min, max,
       velocity_steps, 3, update_static_setpoint, s);
   gui_push_screen(static_setpoint_screen);
 }
