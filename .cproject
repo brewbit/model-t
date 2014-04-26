@@ -111,8 +111,9 @@
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="Download App (staging server) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="Download App (staging) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
+				<buildArguments/>
 				<buildTarget>JTAG=jlink WEB_API_HOST=dg.staging.brewbit.com WEB_API_PORT=31337 download_app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
@@ -125,10 +126,9 @@
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="Download App (192.168.1.105) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="Download App (192.168.1.104) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
-				<buildArguments/>
-				<buildTarget>JTAG=jlink WEB_API_HOST=192.168.1.105 WEB_API_PORT=31337 download_app_mt</buildTarget>
+				<buildTarget>JTAG=jlink WEB_API_HOST=192.168.1.104 WEB_API_PORT=3000 download_app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
@@ -145,6 +145,22 @@
 				<buildCommand>make</buildCommand>
 				<buildArguments/>
 				<buildTarget>clear_app_hdr</buildTarget>
+				<stopOnError>true</stopOnError>
+				<useDefaultCommand>true</useDefaultCommand>
+				<runAllBuilders>true</runAllBuilders>
+			</target>
+			<target name="Download App (staging) w/ DFU" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+				<buildCommand>make</buildCommand>
+				<buildArguments/>
+				<buildTarget>JTAG=jlink WEB_API_HOST=dg.staging.brewbit.com WEB_API_PORT=31337 download_dfu_app_mt</buildTarget>
+				<stopOnError>true</stopOnError>
+				<useDefaultCommand>true</useDefaultCommand>
+				<runAllBuilders>true</runAllBuilders>
+			</target>
+			<target name="Download App (production) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+				<buildCommand>make</buildCommand>
+				<buildArguments/>
+				<buildTarget>JTAG=jlink WEB_API_HOST=dg.brewbit.com WEB_API_PORT=31337 download_app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
