@@ -236,7 +236,7 @@ $(AUTOGEN_DIR)/font_resources.c $(AUTOGEN_DIR)/font_resources.h: scripts/fontcon
 	python scripts/fontconv fonts $(AUTOGEN_DIR)
 
 $(AUTOGEN_DIR)/image_resources.c $(AUTOGEN_DIR)/image_resources.h: scripts/imgconv $(wildcard images/*.png) | $(AUTOGEN_DIR)
-	python scripts/imgconv $(wildcard images/*.png)
+	python scripts/imgconv $(AUTOGEN_DIR) $(wildcard images/*.png)
 
 $(AUTOGEN_DIR)/bbmt.pb: $(BBMT_MSGS)/bbmt.proto | $(AUTOGEN_DIR)
 	protoc $(BBMT_MSGS_INCLUDES) -o$@ --python_out=$(AUTOGEN_DIR) $(BBMT_MSGS)/bbmt.proto

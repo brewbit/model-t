@@ -108,8 +108,10 @@ def parse_img(in_file):
 if __name__ == "__main__":
   pygame.init()
   
+  out_dir = os.path.abspath(sys.argv[1])
+  
   img_files = []
-  for arg in sys.argv[1:]:
+  for arg in sys.argv[2:]:
     for f in glob.glob(arg):
       img_files.append(f)
       
@@ -117,9 +119,9 @@ if __name__ == "__main__":
     "images": [ parse_img(img_file) for img_file in img_files ]
   }
   
-  with open('build/app_mt/autogen/image_resources.h', 'w+') as f:
+  with open(os.path.join(out_dir, 'image_resources.h'), 'w+') as f:
     f.write(pystache.render(h_template, context))
     
-  with open('build/app_mt/autogen/image_resources.c', 'w+') as f:
+  with open(os.path.join(out_dir, 'image_resources.c'), 'w+') as f:
     f.write(pystache.render(c_template, context))
   
