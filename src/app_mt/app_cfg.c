@@ -53,8 +53,6 @@ app_cfg_init()
     app_cfg_local.data.reset_count++;
   }
   else {
-    printf("setting defaults\r\n");
-
     app_cfg_local.data.reset_count = 0;
 
     app_cfg_local.data.temp_unit = UNIT_TEMP_DEG_F;
@@ -93,8 +91,6 @@ app_cfg_init()
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.unit = UNIT_TIME_MIN;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.value = 3;
-
-    printf("sp1 %d\r\n", app_cfg_local.data.controller_settings[CONTROLLER_1].setpoint_type);
 
     app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
   }
@@ -230,9 +226,6 @@ app_cfg_set_controller_settings(
 
     msg_send(msg_id, settings);
   }
-
-  if (app_cfg_local.data.controller_settings[CONTROLLER_1].setpoint_type == 4)
-    printf("fucked 1\r\n");
 }
 
 
@@ -256,8 +249,6 @@ app_cfg_set_temp_profile_checkpoint(temp_controller_id_t controller, temp_profil
     app_cfg_local.data.temp_profile_checkpoints[controller] = *checkpoint;
     chMtxUnlock();
   }
-  if (app_cfg_local.data.controller_settings[CONTROLLER_1].setpoint_type == 4)
-    printf("fucked 2\r\n");
 }
 
 const char*

@@ -21,8 +21,6 @@ temp_profile_init(temp_profile_run_t* run, temp_controller_id_t controller)
   run->current_step = checkpoint->current_step;
   run->current_step_start_time = chTimeNow() - checkpoint->current_step_time;
   run->next_checkpoint = chTimeNow() + CHECKPOINT_PERIOD;
-
-  printf("loading checkpoint %d %d %d %d\r\n", checkpoint->temp_profile_id, checkpoint->state, checkpoint->current_step, checkpoint->current_step_time);
 }
 
 void
@@ -71,7 +69,6 @@ write_checkpoint(temp_profile_run_t* run)
       .current_step = run->current_step,
       .current_step_time = chTimeNow() - run->current_step_start_time
   };
-  printf("Writing checkpoint %d %d %d %d\r\n", checkpoint.temp_profile_id, checkpoint.state, checkpoint.current_step, checkpoint.current_step_time);
   app_cfg_set_temp_profile_checkpoint(run->controller, &checkpoint);
   run->next_checkpoint = chTimeNow() + CHECKPOINT_PERIOD;
 }
