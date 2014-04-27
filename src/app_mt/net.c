@@ -39,7 +39,7 @@ static void
 dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_data);
 
 static void
-dispatch_init(void);
+initialize_and_connect(void);
 
 static void
 dispatch_idle(void);
@@ -69,9 +69,6 @@ static long
 get_scan_result(net_scan_result_t* result);
 
 static void
-perform_connect(void);
-
-static void
 test_connectivity(void);
 
 
@@ -80,6 +77,7 @@ static net_state_t last_net_state;
 static network_t networks[16];
 static systime_t next_ping_send_time;
 static systime_t ping_timeout_time;
+static bool wifi_config_applied;
 
 
 void
@@ -138,7 +136,7 @@ dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
 
   switch (id) {
     case MSG_INIT:
-      dispatch_init();
+      initialize_and_connect();
       break;
 
     case MSG_IDLE:
@@ -332,25 +330,6 @@ prune_networks()
 }
 
 static void
-perform_connect()
-{
-  const net_settings_t* ns = app_cfg_get_net_settings();
-  if (strlen(ns->ssid) > 0) {
-    net_status.net_state = NS_CONNECTING;
-    msg_send(MSG_NET_STATUS, &net_status);
-
-    wlan_disconnect();
-
-    chThdSleepMilliseconds(100);
-
-    wlan_connect(ns->security_mode,
-        ns->ssid, strlen(ns->ssid),
-        NULL,
-        (const uint8_t*)ns->passphrase, strlen(ns->passphrase));
-  }
-}
-
-static void
 test_connectivity()
 {
   systime_t now = chTimeNow();
@@ -368,12 +347,12 @@ test_connectivity()
 
   if (now > ping_timeout_time) {
     printf("net connection timed out\r\n");
-    dispatch_init();
+    initialize_and_connect();
   }
 }
 
 static void
-dispatch_init()
+initialize_and_connect()
 {
   net_status.net_state = NS_DISCONNECTED;
   msg_send(MSG_NET_STATUS, &net_status);
@@ -386,16 +365,6 @@ dispatch_init()
 
   wlan_start(PATCH_LOAD_DEFAULT);
 
-  wlan_ioctl_set_connection_policy(0, 0, 0);
-
-  {
-    uint32_t dhcp_timeout = 14400;
-    uint32_t arp_timeout = 3600;
-    uint32_t keepalive = 10;
-    uint32_t inactivity_timeout = 0;
-    netapp_timeout_values(&dhcp_timeout, &arp_timeout, &keepalive, &inactivity_timeout);
-  }
-
   {
     nvmem_sp_version_t sp_version;
     nvmem_read_sp_version(&sp_version);
@@ -406,7 +375,22 @@ dispatch_init()
       printf("  Not up to date. Applying patch.\r\n");
       wlan_apply_patch();
       printf("  Update complete\r\n");
+
+      nvmem_read_sp_version(&sp_version);
+      sprintf(net_status.sp_ver, "%d.%d", sp_version.package_id, sp_version.package_build);
+      printf("Updated CC3000 Service Pack Version: %s\r\n", net_status.sp_ver);
     }
+  }
+
+  if (!wifi_config_applied) {
+    wlan_ioctl_set_connection_policy(0, 0, 0);
+
+    uint32_t dhcp_timeout = 14400;
+    uint32_t arp_timeout = 3600;
+    uint32_t keepalive = 10;
+    uint32_t inactivity_timeout = 0;
+    netapp_timeout_values(&dhcp_timeout, &arp_timeout, &keepalive, &inactivity_timeout);
+    wifi_config_applied = true;
   }
 
   {
@@ -416,7 +400,22 @@ dispatch_init()
         mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
   }
 
-  perform_connect();
+  const net_settings_t* ns = app_cfg_get_net_settings();
+  if (strlen(ns->ssid) > 0) {
+    net_status.net_state = NS_CONNECTING;
+    msg_send(MSG_NET_STATUS, &net_status);
+
+    wlan_disconnect();
+
+    chThdSleepMilliseconds(100);
+
+    wlan_connect(ns->security_mode,
+        ns->ssid,
+        strlen(ns->ssid),
+        NULL,
+        (const uint8_t*)ns->passphrase,
+        strlen(ns->passphrase));
+  }
 }
 
 static void
@@ -441,7 +440,7 @@ dispatch_idle()
       case NS_CONNECT_FAILED:
       case NS_DISCONNECTED:
       case NS_CONNECT:
-        perform_connect();
+        initialize_and_connect();
         break;
 
       case NS_CONNECTED:
