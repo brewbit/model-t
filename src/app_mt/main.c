@@ -98,8 +98,10 @@ get_device_id(void)
 }
 
 static void
-print_device_stats(void)
+print_device_stats(int reset)
 {
+  printf("SYS: %d\r\n", reset);
+
   const hci_stats_t* hs = hci_get_stats();
   printf("HCI: %u %u %u %u %u\r\n",
       hs->num_free_buffers,
@@ -183,8 +185,6 @@ main(void)
   while (TRUE) {
     toggle_LED1();
 
-    printf("SYS: %d\r\n", reset);
-
-    print_device_stats();
+    print_device_stats(reset);
   }
 }
