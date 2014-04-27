@@ -50,10 +50,10 @@ typedef struct {
 
 
 void
-temp_profile_init(temp_profile_run_t* run, temp_controller_id_t controller);
+temp_profile_start(temp_profile_run_t* run, temp_controller_id_t controller, uint32_t temp_profile_id);
 
 void
-temp_profile_start(temp_profile_run_t* run, uint32_t temp_profile_id);
+temp_profile_resume(temp_profile_run_t* run, temp_controller_id_t controller);
 
 void
 temp_profile_update(temp_profile_run_t* run, quantity_t sample);

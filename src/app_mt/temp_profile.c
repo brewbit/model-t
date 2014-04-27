@@ -3,6 +3,7 @@
 #include "sntp.h"
 #include "message.h"
 #include "app_cfg.h"
+#include <stdio.h>
 
 //TODO change to 5 hours...
 #define CHECKPOINT_PERIOD S2ST(1 * 60)
@@ -11,7 +12,27 @@ static void write_checkpoint(temp_profile_run_t* run);
 
 
 void
-temp_profile_init(temp_profile_run_t* run, temp_controller_id_t controller)
+temp_profile_start(temp_profile_run_t* run, temp_controller_id_t controller, uint32_t temp_profile_id)
+{
+  run->controller = controller;
+  run->temp_profile_id = temp_profile_id;
+  run->state = TPS_SEEKING_START_VALUE;
+  run->current_step = 0;
+  run->current_step_start_time = chTimeNow();
+
+  write_checkpoint(run);
+
+  printf("Starting profile\r\n");
+  printf("  controller: %d\r\n", (int)run->controller);
+  printf("  profile id: %d\r\n", (int)run->temp_profile_id);
+  printf("  state: %d\r\n", (int)run->state);
+  printf("  cur step: %d\r\n", (int)run->current_step);
+  printf("  cur step time: %d\r\n", (int)run->current_step_start_time);
+  printf("  next chkpt: %d\r\n", (int)run->next_checkpoint);
+}
+
+void
+temp_profile_resume(temp_profile_run_t* run, temp_controller_id_t controller)
 {
   const temp_profile_checkpoint_t* checkpoint = app_cfg_get_temp_profile_checkpoint(controller);
 
@@ -21,18 +42,14 @@ temp_profile_init(temp_profile_run_t* run, temp_controller_id_t controller)
   run->current_step = checkpoint->current_step;
   run->current_step_start_time = chTimeNow() - checkpoint->current_step_time;
   run->next_checkpoint = chTimeNow() + CHECKPOINT_PERIOD;
-}
 
-void
-temp_profile_start(temp_profile_run_t* run, uint32_t temp_profile_id)
-{
-  run->temp_profile_id = temp_profile_id;
-  run->current_step = 0;
-  run->current_step_start_time = chTimeNow();
-
-  run->state = TPS_SEEKING_START_VALUE;
-
-  write_checkpoint(run);
+  printf("Resuming profile\r\n");
+  printf("  controller: %d\r\n", (int)run->controller);
+  printf("  profile id: %d\r\n", (int)run->temp_profile_id);
+  printf("  state: %d\r\n", (int)run->state);
+  printf("  cur step: %d\r\n", (int)run->current_step);
+  printf("  cur step time: %d\r\n", (int)run->current_step_start_time);
+  printf("  next chkpt: %d\r\n", (int)run->next_checkpoint);
 }
 
 void
@@ -71,6 +88,12 @@ write_checkpoint(temp_profile_run_t* run)
   };
   app_cfg_set_temp_profile_checkpoint(run->controller, &checkpoint);
   run->next_checkpoint = chTimeNow() + CHECKPOINT_PERIOD;
+
+  printf("Saving profile checkpoint\r\n");
+  printf("  profile id: %d\r\n", (int)checkpoint.temp_profile_id);
+  printf("  state: %d\r\n", (int)checkpoint.state);
+  printf("  cur step: %d\r\n", (int)checkpoint.current_step);
+  printf("  cur step time: %d\r\n", (int)checkpoint.current_step_time);
 }
 
 bool

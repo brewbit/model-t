@@ -38,7 +38,7 @@ typedef struct temp_controller_s {
 
 
 static void dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_data);
-static void dispatch_controller_settings(temp_controller_t* tc, controller_settings_t* msg);
+static void dispatch_controller_settings(temp_controller_t* tc, const controller_settings_t* msg, bool resume_profile);
 static void dispatch_init(temp_controller_t* tc);
 static void dispatch_sensor_sample(temp_controller_t* tc, sensor_msg_t* msg);
 static void dispatch_sensor_timeout(temp_controller_t* tc, sensor_timeout_msg_t* msg);
@@ -48,8 +48,6 @@ static void start_cycle_delay(relay_output_t* output);
 static void set_output_state(relay_output_t* output, output_state_t output_state);
 static void relay_control(relay_output_t* output);
 static void enable_relay(relay_output_t* output, bool enabled);
-static void dispatch_start(temp_controller_t* tc, controller_settings_t* settings);
-static void dispatch_halt(temp_controller_t* tc);
 static float get_sp(temp_controller_t* tc);
 static const output_settings_t* get_output_settings(temp_controller_t* tc, output_id_t output);
 
@@ -73,10 +71,6 @@ temp_control_init(temp_controller_id_t controller)
     tc->sensor = SENSOR_2;
 
   tc->state = TC_SENSOR_TIMED_OUT;
-
-  const controller_settings_t* cs = app_cfg_get_controller_settings(controller);
-  if (cs->setpoint_type == SP_TEMP_PROFILE)
-    temp_profile_init(&tc->temp_profile_run, controller);
 
   msg_listener_t* l = msg_listener_create("temp_ctrl", 1024, dispatch_temp_input_msg, tc);
 
@@ -139,6 +133,12 @@ output_init(temp_controller_t* tc, output_id_t output)
   relay_output_t* out = &tc->outputs[output];
   const output_settings_t* settings = get_output_settings(tc, output);
 
+  if (out->thread != NULL) {
+    chThdTerminate(out->thread);
+    chThdWait(out->thread);
+    out->thread = NULL;
+  }
+
   out->id = output;
   out->controller = tc;
 
@@ -159,6 +159,18 @@ output_thread(void* arg)
   relay_output_t* output = arg;
   chRegSetThreadName("output");
 
+  const output_settings_t* output_settings =
+      get_output_settings(output->controller, output->id);
+  systime_t cycle_delay = S2ST(60 * output_settings->cycle_delay.value);
+
+  if (output_settings->function == OUTPUT_FUNC_COOLING)
+    pid_set_output_sign(&output->pid_control, NEGATIVE);
+  else if (output_settings->function == OUTPUT_FUNC_HEATING)
+    pid_set_output_sign(&output->pid_control, POSITIVE);
+
+  pid_reinit(&output->pid_control,
+      output->controller->last_sample.value);
+
   /* Wait 1 cycle delay before starting window and PID */
   start_cycle_delay(output);
 
@@ -167,8 +179,6 @@ output_thread(void* arg)
   palSetPad(GPIOC, out_gpio[output->id]);
 
   while (!chThdShouldTerminate()) {
-    const output_settings_t* output_settings = get_output_settings(output->controller, output->id);
-    systime_t cycle_delay = S2ST(60 * output_settings->cycle_delay.value);
 
     /* If the probe associated with this output is not active or if the output is set
      * to disabled turn OFF the output
@@ -311,50 +321,11 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* listener_data, void* 
 
   case MSG_CONTROLLER_SETTINGS:
   case MSG_API_CONTROLLER_SETTINGS:
-    dispatch_controller_settings(listener_data, msg_data);
+    dispatch_controller_settings(listener_data, msg_data, false);
     break;
 
   default:
     break;
-  }
-}
-
-static void
-dispatch_start(temp_controller_t* tc, controller_settings_t* settings)
-{
-  int i;
-
-  if (tc->controller != settings->controller)
-    return;
-
-  for (i = 0; i < NUM_OUTPUTS; ++i) {
-    tc->outputs[i].controller = tc;
-    if (settings->output_settings[i].enabled)
-      output_init(tc, i);
-  }
-
-  if (settings->setpoint_type == SP_TEMP_PROFILE)
-    temp_profile_start(
-        &tc->temp_profile_run,
-        settings->temp_profile_id);
-
-  tc->state = TC_SENSOR_TIMED_OUT;
-}
-
-static void
-dispatch_halt(temp_controller_t* tc)
-{
-  tc->state = TC_IDLE;
-
-  int i;
-  for (i = 0; i < NUM_OUTPUTS; ++i) {
-    relay_output_t* out = &tc->outputs[i];
-
-    if (out->thread != NULL) {
-      chThdTerminate(out->thread);
-      chThdWait(out->thread);
-      out->thread = NULL;
-    }
   }
 }
 
@@ -376,7 +347,7 @@ static void
 dispatch_init(temp_controller_t* tc)
 {
   const controller_settings_t* cs = app_cfg_get_controller_settings(tc->controller);
-  dispatch_controller_settings(tc, cs);
+  dispatch_controller_settings(tc, cs, true);
 }
 
 static void
@@ -417,25 +388,26 @@ dispatch_sensor_timeout(temp_controller_t* tc, sensor_timeout_msg_t* msg)
 }
 
 static void
-dispatch_controller_settings(temp_controller_t* tc, controller_settings_t* settings)
+dispatch_controller_settings(temp_controller_t* tc, const controller_settings_t* settings, bool resume_profile)
 {
+  int i;
   if (tc->controller != settings->controller)
     return;
 
-  dispatch_halt(tc);
+  tc->state = TC_IDLE;
 
-  uint8_t i;
   for (i = 0; i < NUM_OUTPUTS; ++i) {
-    relay_output_t* output = &tc->outputs[i];
-    output_settings_t* output_settings = &settings->output_settings[i];
-
-    if (output_settings->function == OUTPUT_FUNC_COOLING)
-      pid_set_output_sign(&output->pid_control, NEGATIVE);
-    else if (output_settings->function == OUTPUT_FUNC_HEATING)
-      pid_set_output_sign(&output->pid_control, POSITIVE);
-
-    pid_reinit(&output->pid_control, tc->last_sample.value);
+    if (settings->output_settings[i].enabled)
+      output_init(tc, i);
   }
 
-  dispatch_start(tc, settings);
+  if (settings->setpoint_type == SP_TEMP_PROFILE) {
+    temp_profile_run_t* tpr = &tc->temp_profile_run;
+    if (resume_profile)
+      temp_profile_resume(tpr, tc->controller);
+    else
+      temp_profile_start(tpr, tc->controller, settings->temp_profile_id);
+  }
+
+  tc->state = TC_SENSOR_TIMED_OUT;
 }
