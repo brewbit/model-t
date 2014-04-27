@@ -135,6 +135,7 @@ home_screen_create()
   gui_msg_subscribe(MSG_NET_STATUS, s->screen);
   gui_msg_subscribe(MSG_API_STATUS, s->screen);
   gui_msg_subscribe(MSG_CONTROLLER_SETTINGS, s->screen);
+  gui_msg_subscribe(MSG_API_CONTROLLER_SETTINGS, s->screen);
 
   return s->screen;
 }
@@ -151,6 +152,7 @@ home_screen_destroy(widget_t* w)
   gui_msg_unsubscribe(MSG_NET_STATUS, s->screen);
   gui_msg_unsubscribe(MSG_API_STATUS, s->screen);
   gui_msg_unsubscribe(MSG_CONTROLLER_SETTINGS, s->screen);
+  gui_msg_unsubscribe(MSG_API_CONTROLLER_SETTINGS, s->screen);
 
   free(s);
 }
@@ -186,6 +188,7 @@ home_screen_msg(msg_event_t* event)
     break;
 
   case MSG_CONTROLLER_SETTINGS:
+  case MSG_API_CONTROLLER_SETTINGS:
     dispatch_controller_settings(s, event->msg_data);
     break;
 

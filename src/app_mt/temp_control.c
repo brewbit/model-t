@@ -38,7 +38,8 @@ typedef struct temp_controller_s {
 
 
 static void dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_data);
-static void dispatch_controller_settings(temp_controller_t* tc, controller_settings_msg_t* msg);
+static void dispatch_controller_settings(temp_controller_t* tc, controller_settings_t* msg);
+static void dispatch_init(temp_controller_t* tc);
 static void dispatch_sensor_sample(temp_controller_t* tc, sensor_msg_t* msg);
 static void dispatch_sensor_timeout(temp_controller_t* tc, sensor_timeout_msg_t* msg);
 static void output_init(temp_controller_t* tc, output_id_t id);
@@ -48,7 +49,7 @@ static void set_output_state(relay_output_t* output, output_state_t output_state
 static void relay_control(relay_output_t* output);
 static void enable_relay(relay_output_t* output, bool enabled);
 static void dispatch_start(temp_controller_t* tc, controller_settings_t* settings);
-static void dispatch_halt(temp_controller_t* tc, temp_controller_id_t* controller);
+static void dispatch_halt(temp_controller_t* tc);
 static float get_sp(temp_controller_t* tc);
 static const output_settings_t* get_output_settings(temp_controller_t* tc, output_id_t output);
 
@@ -73,32 +74,16 @@ temp_control_init(temp_controller_id_t controller)
 
   tc->state = TC_SENSOR_TIMED_OUT;
 
-
   const controller_settings_t* cs = app_cfg_get_controller_settings(controller);
   if (cs->setpoint_type == SP_TEMP_PROFILE)
     temp_profile_init(&tc->temp_profile_run, controller);
 
   msg_listener_t* l = msg_listener_create("temp_ctrl", 1024, dispatch_temp_input_msg, tc);
 
-  msg_subscribe(l, MSG_TEMP_CONTROL_START, NULL);
-  msg_subscribe(l, MSG_TEMP_CONTROL_HALT, NULL);
   msg_subscribe(l, MSG_SENSOR_SAMPLE,   NULL);
   msg_subscribe(l, MSG_SENSOR_TIMEOUT,  NULL);
+  msg_subscribe(l, MSG_API_CONTROLLER_SETTINGS, NULL);
   msg_subscribe(l, MSG_CONTROLLER_SETTINGS, NULL);
-
-  temp_control_start(cs);
-}
-
-void
-temp_control_start(controller_settings_t* settings)
-{
-  msg_send(MSG_TEMP_CONTROL_START, settings);
-}
-
-void
-temp_control_halt(temp_controller_id_t controller)
-{
-  msg_send(MSG_TEMP_CONTROL_HALT, &controller);
 }
 
 float
@@ -312,6 +297,10 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* listener_data, void* 
   (void)sub_data;
 
   switch (id) {
+  case MSG_INIT:
+    dispatch_init(listener_data);
+    break;
+
   case MSG_SENSOR_SAMPLE:
     dispatch_sensor_sample(listener_data, msg_data);
     break;
@@ -321,15 +310,8 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* listener_data, void* 
     break;
 
   case MSG_CONTROLLER_SETTINGS:
+  case MSG_API_CONTROLLER_SETTINGS:
     dispatch_controller_settings(listener_data, msg_data);
-    break;
-
-  case MSG_TEMP_CONTROL_START:
-    dispatch_start(listener_data, msg_data);
-    break;
-
-  case MSG_TEMP_CONTROL_HALT:
-    dispatch_halt(listener_data, msg_data);
     break;
 
   default:
@@ -342,11 +324,8 @@ dispatch_start(temp_controller_t* tc, controller_settings_t* settings)
 {
   int i;
 
-  if (tc->controller != settings->controller) {
+  if (tc->controller != settings->controller)
     return;
-  }
-
-  app_cfg_set_controller_settings(tc->controller, settings);
 
   for (i = 0; i < NUM_OUTPUTS; ++i) {
     tc->outputs[i].controller = tc;
@@ -360,15 +339,11 @@ dispatch_start(temp_controller_t* tc, controller_settings_t* settings)
         settings->temp_profile_id);
 
   tc->state = TC_SENSOR_TIMED_OUT;
-
 }
 
 static void
-dispatch_halt(temp_controller_t* tc, temp_controller_id_t* controller)
+dispatch_halt(temp_controller_t* tc)
 {
-  if (tc->controller != *controller)
-    return;
-
   tc->state = TC_IDLE;
 
   int i;
@@ -395,6 +370,13 @@ get_sp(temp_controller_t* tc)
     return sp;
 
   return NAN;
+}
+
+static void
+dispatch_init(temp_controller_t* tc)
+{
+  const controller_settings_t* cs = app_cfg_get_controller_settings(tc->controller);
+  dispatch_controller_settings(tc, cs);
 }
 
 static void
@@ -435,15 +417,17 @@ dispatch_sensor_timeout(temp_controller_t* tc, sensor_timeout_msg_t* msg)
 }
 
 static void
-dispatch_controller_settings(temp_controller_t* tc, controller_settings_msg_t* msg)
+dispatch_controller_settings(temp_controller_t* tc, controller_settings_t* settings)
 {
-  if (tc->controller != msg->controller)
+  if (tc->controller != settings->controller)
     return;
+
+  dispatch_halt(tc);
 
   uint8_t i;
   for (i = 0; i < NUM_OUTPUTS; ++i) {
     relay_output_t* output = &tc->outputs[i];
-    output_settings_t* output_settings = &msg->settings.output_settings[i];
+    output_settings_t* output_settings = &settings->output_settings[i];
 
     if (output_settings->function == OUTPUT_FUNC_COOLING)
       pid_set_output_sign(&output->pid_control, NEGATIVE);
@@ -452,4 +436,6 @@ dispatch_controller_settings(temp_controller_t* tc, controller_settings_msg_t* m
 
     pid_reinit(&output->pid_control, tc->last_sample.value);
   }
+
+  dispatch_start(tc, settings);
 }

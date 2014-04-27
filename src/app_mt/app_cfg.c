@@ -209,7 +209,10 @@ app_cfg_get_controller_settings(temp_controller_id_t controller)
 }
 
 void
-app_cfg_set_controller_settings(temp_controller_id_t controller, controller_settings_t* settings)
+app_cfg_set_controller_settings(
+    temp_controller_id_t controller,
+    settings_source_t source,
+    controller_settings_t* settings)
 {
   if (controller >= NUM_CONTROLLERS)
     return;
@@ -219,11 +222,13 @@ app_cfg_set_controller_settings(temp_controller_id_t controller, controller_sett
     app_cfg_local.data.controller_settings[controller] = *settings;
     chMtxUnlock();
 
-    controller_settings_msg_t msg = {
-        .controller = controller,
-        .settings = *settings
-    };
-    msg_send(MSG_CONTROLLER_SETTINGS, &msg);
+    msg_id_t msg_id;
+    if (source == SS_DEVICE)
+      msg_id = MSG_CONTROLLER_SETTINGS;
+    else
+      msg_id = MSG_API_CONTROLLER_SETTINGS;
+
+    msg_send(msg_id, settings);
   }
 
   if (app_cfg_local.data.controller_settings[CONTROLLER_1].setpoint_type == 4)

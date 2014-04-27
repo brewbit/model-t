@@ -11,6 +11,12 @@
 #include "fault.h"
 
 
+typedef enum {
+  SS_DEVICE,
+  SS_SERVER
+} settings_source_t;
+
+
 void
 app_cfg_init(void);
 
@@ -45,7 +51,10 @@ const controller_settings_t*
 app_cfg_get_controller_settings(temp_controller_id_t controller);
 
 void
-app_cfg_set_controller_settings(temp_controller_id_t controller, controller_settings_t* settings);
+app_cfg_set_controller_settings(
+    temp_controller_id_t controller,
+    settings_source_t source,
+    controller_settings_t* settings);
 
 const temp_profile_checkpoint_t*
 app_cfg_get_temp_profile_checkpoint(temp_controller_id_t controller);

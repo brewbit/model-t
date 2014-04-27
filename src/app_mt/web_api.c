@@ -104,7 +104,7 @@ dispatch_device_settings_from_device(
 
 static void
 dispatch_controller_settings_from_device(web_api_t* api,
-    controller_settings_msg_t* controller_settings_msg);
+    controller_settings_t* controller_settings_msg);
 
 static void
 send_device_settings(
@@ -485,7 +485,7 @@ dispatch_device_settings_from_device(
 static void
 dispatch_controller_settings_from_device(
     web_api_t* api,
-    controller_settings_msg_t* ssm)
+    controller_settings_t* ssm)
 {
   printf("controller settings updated\r\n");
 
@@ -749,8 +749,6 @@ dispatch_controller_settings_from_server(ControllerSettings* settings)
 
   printf("got controller settings from server\r\n");
 
-  temp_control_halt(settings->sensor_index);
-
   controller_settings_t* csl = calloc(1, sizeof(controller_settings_t));
   memcpy(csl, app_cfg_get_controller_settings(settings->sensor_index), sizeof(controller_settings_t));
 
@@ -846,10 +844,7 @@ dispatch_controller_settings_from_server(ControllerSettings* settings)
   printf("      static %f\r\n", csl->static_setpoint.value);
   printf("      temp profile %d\r\n", (int)csl->temp_profile_id);
 
-  msg_unsubscribe(api->msg_listener, MSG_CONTROLLER_SETTINGS, NULL);
-  temp_control_start(csl);
-  msg_subscribe(api->msg_listener, MSG_CONTROLLER_SETTINGS, NULL);
-
+  app_cfg_set_controller_settings(csl->controller, SS_SERVER, csl);
   free(csl);
 }
 

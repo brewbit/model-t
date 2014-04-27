@@ -51,11 +51,6 @@ typedef struct {
   output_settings_t output_settings[NUM_OUTPUTS];
 } controller_settings_t;
 
-typedef struct {
-  temp_controller_id_t controller;
-  controller_settings_t settings;
-} controller_settings_msg_t;
-
 typedef enum {
   CYCLE_DELAY,
   OUTPUT_CONTROL_ENABLED,

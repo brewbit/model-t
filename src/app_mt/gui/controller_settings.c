@@ -375,7 +375,7 @@ back_button_clicked(button_event_t* event)
   if (event->id == EVT_BUTTON_CLICK) {
     controller_settings_screen_t* s = widget_get_user_data(event->widget);
 
-    app_cfg_set_controller_settings(s->controller, &s->settings);
+    app_cfg_set_controller_settings(s->controller, SS_DEVICE, &s->settings);
 
     gui_pop_screen();
   }

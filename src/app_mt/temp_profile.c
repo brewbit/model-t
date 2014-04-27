@@ -100,7 +100,7 @@ temp_profile_get_current_setpoint(temp_profile_run_t* run, float* sp)
 
     case TPS_RUNNING:
     {
-      temp_profile_step_t* cur_step = &profile->steps[run->current_step];
+      const temp_profile_step_t* cur_step = &profile->steps[run->current_step];
       if (cur_step->type == STEP_HOLD) {
         *sp = cur_step->value.value;
       }
