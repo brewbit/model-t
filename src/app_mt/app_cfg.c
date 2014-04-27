@@ -213,7 +213,8 @@ app_cfg_set_controller_settings(
   if (controller >= NUM_CONTROLLERS)
     return;
 
-  if (memcmp(settings, &app_cfg_local.data.controller_settings[controller], sizeof(controller_settings_t)) != 0) {
+  if ((source == SS_SERVER) ||
+      memcmp(settings, &app_cfg_local.data.controller_settings[controller], sizeof(controller_settings_t)) != 0) {
     chMtxLock(&app_cfg_mtx);
     app_cfg_local.data.controller_settings[controller] = *settings;
     chMtxUnlock();
