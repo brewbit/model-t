@@ -11,7 +11,7 @@
 #include "temp_control.h"
 #include "gui/home.h"
 #include "gui/recovery.h"
-#include "gui/setup.h"
+#include "gui/self_test.h"
 #include "gfx.h"
 #include "app_cfg.h"
 #include "net.h"
@@ -26,9 +26,13 @@
 
 char device_id[32];
 
+
 static void
 ensure_recovery_image_loaded(void)
 {
+  recovery_img_load_state_t state = RECOVERY_IMG_CHECKING;
+  msg_send(MSG_RECOVERY_IMG_STATUS, &state);
+
   dfu_parse_result_t result = dfuse_verify(SP_RECOVERY_IMG);
   if (result != DFU_PARSE_OK) {
     extern uint8_t __app_base__;
@@ -46,15 +50,29 @@ ensure_recovery_image_loaded(void)
     printf("No recovery image detected (%d)\r\n", result);
     printf("  Copying this image to external flash... ");
 
-    widget_t* setup_screen = setup_screen_create();
-    gui_push_screen(setup_screen);
+    state = RECOVERY_IMG_LOADING;
+    msg_send(MSG_RECOVERY_IMG_STATUS, &state);
     dfuse_write_self(SP_RECOVERY_IMG, img_recs, 2);
-    gui_pop_screen();
+
+    state = RECOVERY_IMG_CHECKING;
+    msg_send(MSG_RECOVERY_IMG_STATUS, &state);
+
+    result = dfuse_verify(SP_RECOVERY_IMG);
+    if (result == DFU_PARSE_OK) {
+      state = RECOVERY_IMG_LOADED;
+      msg_send(MSG_RECOVERY_IMG_STATUS, &state);
+    }
+    else {
+      state = RECOVERY_IMG_FAILED;
+      msg_send(MSG_RECOVERY_IMG_STATUS, &state);
+    }
 
     printf("OK\r\n");
   }
   else {
     printf("Recovery image is present\r\n");
+    state = RECOVERY_IMG_LOADED;
+    msg_send(MSG_RECOVERY_IMG_STATUS, &state);
   }
 }
 
@@ -168,6 +186,12 @@ main(void)
   create_home_screen();
 
   recovery_screen_create();
+
+  if (palReadPad(PORT_SELF_TEST_EN, PAD_SELF_TEST_EN) == 0) {
+    widget_t* self_test_screen = self_test_screen_create();
+    gui_push_screen(self_test_screen);
+  }
+
   ensure_recovery_image_loaded();
 
   chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);

@@ -84,6 +84,15 @@
 #define PORT_WIFI_CS   GPIOB
 #define PAD_WIFI_CS    12
 
+#define PORT_SELF_TEST_EN   GPIOA
+#define PAD_SELF_TEST_EN    0
+
+#define PORT_RELAY1_TEST   GPIOE
+#define PAD_RELAY1_TEST    2
+
+#define PORT_RELAY2_TEST   GPIOE
+#define PAD_RELAY2_TEST    3
+
 /*
  * Serial port assignments.
  */
@@ -120,7 +129,7 @@
 /*
  * Port A setup.
  * All input with pull-up except:
- * PA0  - Spare
+ * PA0  - Board Setup                 (PU Input)
  * PA1  - Spare
  * PA2  - Onewire-2   - USART2 TX     (alternate 7)
  * PA3  - Backlight Control           (PP Output)
@@ -170,7 +179,7 @@
                                      PIN_OTYPE_PUSHPULL(14) | \
                                      PIN_OTYPE_PUSHPULL(15))
 #define VAL_GPIOA_OSPEEDR           0xFFFFFFFF // all 100 MHz
-#define VAL_GPIOA_PUPDR             0x00000000 // all floating
+#define VAL_GPIOA_PUPDR             0x00000001 // all floating, except PA0
 #define VAL_GPIOA_ODR               0xFFFFFFFF // all high by default
 #define VAL_GPIOA_AFRL              (PIN_AFIO_AF(2, 7))
 #define VAL_GPIOA_AFRH              0x00000000

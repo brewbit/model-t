@@ -45,6 +45,8 @@ typedef enum {
   MSG_API_FW_CHUNK,
   MSG_API_CONTROLLER_SETTINGS,
 
+  MSG_RECOVERY_IMG_STATUS,
+
   MSG_SHUTDOWN,
 
   NUM_THREAD_MSGS
@@ -58,6 +60,13 @@ typedef struct {
   void* user_data;
   void* msg_data;
 } thread_msg_t;
+
+typedef enum {
+  RECOVERY_IMG_CHECKING,
+  RECOVERY_IMG_LOADING,
+  RECOVERY_IMG_LOADED,
+  RECOVERY_IMG_FAILED,
+} recovery_img_load_state_t;
 
 struct msg_listener_s;
 typedef struct msg_listener_s msg_listener_t;

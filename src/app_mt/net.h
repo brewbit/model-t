@@ -59,6 +59,6 @@ void
 net_scan_stop(void);
 
 void
-net_connect(network_t* net, const char* passphrase);
+net_connect(const char* ssid, uint32_t security_mode, const char* passphrase);
 
 #endif

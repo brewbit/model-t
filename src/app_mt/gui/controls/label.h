@@ -12,4 +12,7 @@ label_create(widget_t* parent, rect_t rect, const char* text, const font_t* font
 void
 label_set_text(widget_t* w, const char* text);
 
+void
+label_set_color(widget_t* w, color_t color);
+
 #endif

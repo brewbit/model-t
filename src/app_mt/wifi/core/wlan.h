@@ -48,11 +48,12 @@
 extern "C" {
 #endif
 
-
-#define WLAN_SEC_UNSEC 0
-#define WLAN_SEC_WEP   1
-#define WLAN_SEC_WPA   2
-#define WLAN_SEC_WPA2  3
+typedef enum {
+  WLAN_SEC_UNSEC,
+  WLAN_SEC_WEP,
+  WLAN_SEC_WPA,
+  WLAN_SEC_WPA2
+} wlan_security_t;
 
 typedef enum {
   PATCH_LOAD_DEFAULT   = 0, // Load patches from internal EEPROM
@@ -143,7 +144,7 @@ extern void c_wlan_stop(void);
 //
 //*****************************************************************************
 extern long c_wlan_connect(
-    uint32_t ulSecType,
+    wlan_security_t ulSecType,
     const char *ssid,
     long ssid_len,
     const uint8_t *bssid,
@@ -192,7 +193,7 @@ extern long c_wlan_disconnect(void);
 //
 //*****************************************************************************
 extern long c_wlan_add_profile(
-    uint32_t ulSecType,
+    wlan_security_t ulSecType,
     uint8_t* ucSsid,
     uint32_t ulSsidLen,
     uint8_t *ucBssid,

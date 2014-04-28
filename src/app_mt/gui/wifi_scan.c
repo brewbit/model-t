@@ -193,6 +193,6 @@ handle_passphrase(const char* passphrase, void* user_data)
   (void)user_data;
 
   net_scan_stop();
-  net_connect(selected_net, passphrase);
+  net_connect(selected_net->ssid, selected_net->security_mode, passphrase);
   gui_pop_screen();
 }

@@ -193,7 +193,7 @@ void c_wlan_stop(void)
 //!  @sa         wlan_disconnect
 //
 //*****************************************************************************
-long c_wlan_connect(uint32_t ulSecType, const char *ssid, long ssid_len,
+long c_wlan_connect(wlan_security_t ulSecType, const char *ssid, long ssid_len,
                     const uint8_t *bssid, const uint8_t *key, long key_len)
 {
     long ret;
@@ -340,7 +340,8 @@ long c_wlan_ioctl_set_connection_policy(uint32_t should_connect_to_open_ap,
 //!  @sa        wlan_ioctl_del_profile
 //
 //*****************************************************************************
-long c_wlan_add_profile(uint32_t ulSecType,
+long c_wlan_add_profile(
+    wlan_security_t ulSecType,
     uint8_t* ucSsid,
     uint32_t ulSsidLen,
     uint8_t *ucBssid,

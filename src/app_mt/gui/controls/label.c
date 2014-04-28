@@ -51,6 +51,16 @@ label_set_text(widget_t* w, const char* text)
   }
 }
 
+void
+label_set_color(widget_t* w, color_t color)
+{
+  label_t* l = widget_get_instance_data(w);
+  if (l->color != color) {
+    l->color = color;
+    widget_invalidate(w);
+  }
+}
+
 static void
 label_destroy(widget_t* w)
 {

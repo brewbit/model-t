@@ -113,12 +113,12 @@ net_scan_stop()
 }
 
 void
-net_connect(network_t* net, const char* passphrase)
+net_connect(const char* ssid, uint32_t security_mode, const char* passphrase)
 {
   net_settings_t* ns = malloc(sizeof(net_settings_t));
-  strncpy(ns->ssid, net->ssid, sizeof(ns->ssid));
+  strncpy(ns->ssid, ssid, sizeof(ns->ssid));
   strncpy(ns->passphrase, passphrase, sizeof(ns->passphrase));
-  ns->security_mode = net->security_mode;
+  ns->security_mode = security_mode;
 
   app_cfg_set_net_settings(ns);
 
@@ -146,6 +146,7 @@ dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
     case MSG_WLAN_CONNECT:
       net_status.net_state = NS_CONNECTED;
       msg_send(MSG_NET_STATUS, &net_status);
+      next_ping_send_time = chTimeNow();
       break;
 
     case MSG_WLAN_DISCONNECT:
