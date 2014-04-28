@@ -54,7 +54,7 @@ static void
 relay_test(widget_t* label, uint32_t write_pad, uint32_t read_pad);
 
 static msg_t
-relay_test_thread(void* arg);
+test_thread(void* arg);
 
 
 static const widget_class_t self_test_widget_class = {
@@ -131,21 +131,21 @@ self_test_screen_create()
   gui_msg_subscribe(MSG_NET_STATUS, widget);
   gui_msg_subscribe(MSG_WLAN_PING_REPORT, widget);
 
-  net_connect("internets", WLAN_SEC_WPA2, "password");
-
-  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, relay_test_thread, s);
+  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, test_thread, s);
 
   return widget;
 }
 
 static msg_t
-relay_test_thread(void* arg)
+test_thread(void* arg)
 {
   self_test_screen_t* s = arg;
 
   // Wait for temp control threads to start up and stop messing
   // with the relays...
-  chThdSleepSeconds(3);
+  chThdSleepSeconds(2);
+
+  net_connect("internets", WLAN_SEC_WPA2, "password");
 
   relay_test(s->relay_test_status[OUTPUT_1], PAD_RELAY1, PAD_RELAY1_TEST);
   relay_test(s->relay_test_status[OUTPUT_2], PAD_RELAY2, PAD_RELAY2_TEST);
