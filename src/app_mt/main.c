@@ -58,6 +58,74 @@ ensure_recovery_image_loaded(void)
   }
 }
 
+static void
+check_for_faults(void)
+{
+  const fault_data_t* fault = app_cfg_get_fault_data();
+    if (fault->type != FAULT_NONE) {
+      int i;
+
+      printf("!!! FAULT DETECTED !!!\r\n");
+      printf("  type: %d\r\n  ", fault->type);
+      for (i = 0; i < MAX_FAULT_DATA / 8; ++i) {
+        int j;
+        for (j = 0; j < 8; ++j) {
+          printf("%d ", fault->data[i * 8 + j]);
+        }
+        printf("\r\n");
+      }
+
+      app_cfg_clear_fault_data();
+    }
+}
+
+static int
+get_reset_count(void)
+{
+  int reset = app_cfg_get_reset_count();
+  printf("Reset Count: %d\r\n", reset);
+  return reset;
+}
+
+static void
+get_device_id(void)
+{
+  uint32_t* devid = board_get_device_id();
+  sprintf(device_id, "%08X%08X%08X",
+      (unsigned int)devid[0],
+      (unsigned int)devid[1],
+      (unsigned int)devid[2]);
+}
+
+static void
+print_device_stats(int reset)
+{
+  printf("SYS: %d\r\n", reset);
+
+  const hci_stats_t* hs = hci_get_stats();
+  printf("HCI: %u %u %u %u %u\r\n",
+      hs->num_free_buffers,
+      hs->buffer_len,
+      (unsigned int)hs->num_sent_packets,
+      (unsigned int)hs->num_released_packets,
+      (unsigned int)hs->num_timeouts);
+}
+
+static void
+toggle_LED1(void)
+{
+  palSetPad(PORT_LED1, PAD_LED1);
+  chThdSleepMilliseconds(1000);
+  palClearPad(PORT_LED1, PAD_LED1);
+  chThdSleepMilliseconds(1000);
+}
+
+static void
+create_home_screen(void)
+{
+  widget_t* home_screen = home_screen_create();
+  gui_push_screen(home_screen);
+}
 
 msg_t
 idle_thread(void* arg)
@@ -78,11 +146,7 @@ main(void)
   halInit();
   chSysInit();
 
-  uint32_t* devid = board_get_device_id();
-  sprintf(device_id, "%08X%08X%08X",
-      (unsigned int)devid[0],
-      (unsigned int)devid[1],
-      (unsigned int)devid[2]);
+  get_device_id();
 
   /* start stdout port */
   sdStart(SD_STDIO, NULL);
@@ -91,25 +155,9 @@ main(void)
 
   app_cfg_init();
 
-  int resets = app_cfg_get_reset_count();
-  printf("Reset Count: %d\r\n", resets);
+  int reset = get_reset_count();
 
-  const fault_data_t* fault = app_cfg_get_fault_data();
-  if (fault->type != FAULT_NONE) {
-    int i;
-
-    printf("!!! FAULT DETECTED !!!\r\n");
-    printf("  type: %d\r\n  ", fault->type);
-    for (i = 0; i < MAX_FAULT_DATA / 8; ++i) {
-      int j;
-      for (j = 0; j < 8; ++j) {
-        printf("%d ", fault->data[i * 8 + j]);
-      }
-      printf("\r\n");
-    }
-
-    app_cfg_clear_fault_data();
-  }
+  check_for_faults();
 
   gfx_init();
   touch_init();
@@ -127,30 +175,16 @@ main(void)
   gui_init();
   thread_watchdog_init();
 
-  widget_t* home_screen = home_screen_create();
-  gui_push_screen(home_screen);
+  create_home_screen();
 
   recovery_screen_create();
-
   ensure_recovery_image_loaded();
 
   chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
 
   while (TRUE) {
-    palSetPad(PORT_LED1, PAD_LED1);
-    chThdSleepMilliseconds(1000);
-    palClearPad(PORT_LED1, PAD_LED1);
-    chThdSleepMilliseconds(1000);
+    toggle_LED1();
 
-    printf("SYS: %d\r\n",
-        resets);
-
-    const hci_stats_t* hs = hci_get_stats();
-    printf("HCI: %u %u %u %u %u\r\n",
-        hs->num_free_buffers,
-        hs->buffer_len,
-        (unsigned int)hs->num_sent_packets,
-        (unsigned int)hs->num_released_packets,
-        (unsigned int)hs->num_timeouts);
+    print_device_stats(reset);
   }
 }
