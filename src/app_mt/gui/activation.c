@@ -20,7 +20,7 @@ typedef struct {
 static void activation_screen_destroy(widget_t* w);
 static void back_button_clicked(button_event_t* event);
 
-static widget_class_t activation_screen_widget_class = {
+static const widget_class_t activation_screen_widget_class = {
     .on_destroy = activation_screen_destroy,
 };
 

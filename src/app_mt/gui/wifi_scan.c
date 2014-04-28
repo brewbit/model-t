@@ -37,7 +37,7 @@ static void
 dispatch_network_timeout(wifi_scan_screen_t* s, network_t* network);
 
 
-static widget_class_t wifi_scan_screen_widget_class = {
+static const widget_class_t wifi_scan_screen_widget_class = {
     .on_destroy = wifi_scan_screen_destroy,
     .on_msg     = wifi_scan_screen_msg
 };

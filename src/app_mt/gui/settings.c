@@ -38,7 +38,7 @@ static void hysteresis_button_clicked(button_event_t* event);
 static void update_hysteresis(quantity_t hysteresis, void* user_data);
 
 
-widget_class_t settings_widget_class = {
+static const widget_class_t settings_widget_class = {
     .on_destroy = settings_screen_destroy
 };
 

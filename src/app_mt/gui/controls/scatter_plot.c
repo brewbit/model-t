@@ -17,7 +17,7 @@ static void
 scatter_plot_destroy(widget_t* w);
 
 
-static widget_class_t scatter_plot_widget_class = {
+static const widget_class_t scatter_plot_widget_class = {
     .on_paint   = scatter_plot_paint,
     .on_destroy = scatter_plot_destroy
 };

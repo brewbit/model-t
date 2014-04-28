@@ -35,7 +35,7 @@ static void dispatch_net_status(wifi_screen_t* s, const net_status_t* status);
 static void dispatch_api_status(wifi_screen_t* s, const api_status_t* api_state);
 
 
-static widget_class_t wifi_screen_widget_class = {
+static const widget_class_t wifi_screen_widget_class = {
     .on_destroy = wifi_screen_destroy,
     .on_msg     = wifi_screen_msg
 };

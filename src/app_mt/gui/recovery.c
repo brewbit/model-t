@@ -53,7 +53,7 @@ static void
 trigger_op(recovery_screen_t* s);
 
 
-widget_class_t recovery_screen_widget_class = {
+static const widget_class_t recovery_screen_widget_class = {
     .on_destroy = recovery_screen_destroy,
     .on_msg = recovery_screen_msg
 };

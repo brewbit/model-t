@@ -55,7 +55,7 @@ static void update_static_setpoint(quantity_t delay, void* user_data);
 static void back_button_clicked(button_event_t* event);
 
 
-widget_class_t controller_settings_widget_class = {
+static const widget_class_t controller_settings_widget_class = {
     .on_destroy = controller_settings_screen_destroy,
 };
 

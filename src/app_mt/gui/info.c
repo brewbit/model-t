@@ -27,7 +27,7 @@ static void
 add_info(widget_t* lb, const char* title, const char* version);
 
 
-widget_class_t info_screen_widget_class = {
+static const widget_class_t info_screen_widget_class = {
     .on_destroy = info_screen_destroy
 };
 

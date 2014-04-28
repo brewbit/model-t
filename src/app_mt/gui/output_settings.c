@@ -33,7 +33,7 @@ static void function_button_clicked(button_event_t* event);
 static void update_cycle_delay(quantity_t delay, void* user_data);
 
 
-widget_class_t output_settings_widget_class = {
+static const widget_class_t output_settings_widget_class = {
     .on_destroy = output_settings_screen_destroy,
 };
 

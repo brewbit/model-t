@@ -42,7 +42,7 @@ static void adjust_quantity_velocity(quantity_select_screen_t* s);
 static void set_quantity(quantity_select_screen_t* s, quantity_t quantity);
 
 
-static widget_class_t quantity_select_widget_class = {
+static const widget_class_t quantity_select_widget_class = {
     .on_destroy = quantity_select_screen_destroy
 };
 

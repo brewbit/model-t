@@ -28,7 +28,7 @@ static void update_button_clicked(button_event_t* event);
 static void dispatch_update_status(update_screen_t* s, ota_update_status_t* status);
 
 
-widget_class_t update_screen_widget_class = {
+static const widget_class_t update_screen_widget_class = {
     .on_msg     = update_screen_msg,
     .on_destroy = update_screen_destroy
 };

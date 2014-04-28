@@ -16,7 +16,7 @@ typedef struct {
 static void history_screen_destroy(widget_t* w);
 static void back_button_clicked(button_event_t* event);
 
-widget_class_t history_widget_class = {
+static const widget_class_t history_widget_class = {
     .on_destroy = history_screen_destroy,
 };
 
