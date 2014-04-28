@@ -90,7 +90,7 @@ get_device_id(void)
 }
 
 static void
-print_device_stats()
+print_device_stats(void)
 {
   printf("SYS: %d\r\n", app_cfg_get_reset_count());
 
