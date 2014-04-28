@@ -11,6 +11,7 @@
 #include "touch.h"
 #include "wlan.h"
 #include "net.h"
+#include "app_cfg.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -292,6 +293,11 @@ dispatch_ping_report(self_test_screen_t* s, netapp_pingreport_args_t* ping_repor
       (ping_report->packets_received > 0)) {
     label_set_text(s->wifi_test_status, "PASS");
     label_set_color(s->wifi_test_status, GREEN);
+
+    // Clear out the test net settings
+    net_settings_t settings;
+    memset(&settings, 0, sizeof(settings));
+    app_cfg_set_net_settings(&settings);
   }
 }
 
