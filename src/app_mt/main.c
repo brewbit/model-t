@@ -79,14 +79,6 @@ check_for_faults(void)
     }
 }
 
-static int
-get_reset_count(void)
-{
-  int reset = app_cfg_get_reset_count();
-  printf("Reset Count: %d\r\n", reset);
-  return reset;
-}
-
 static void
 get_device_id(void)
 {
@@ -98,9 +90,9 @@ get_device_id(void)
 }
 
 static void
-print_device_stats(int reset)
+print_device_stats()
 {
-  printf("SYS: %d\r\n", reset);
+  printf("SYS: %d\r\n", app_cfg_get_reset_count());
 
   const hci_stats_t* hs = hci_get_stats();
   printf("HCI: %u %u %u %u %u\r\n",
@@ -155,8 +147,6 @@ main(void)
 
   app_cfg_init();
 
-  int reset = get_reset_count();
-
   check_for_faults();
 
   gfx_init();
@@ -185,6 +175,6 @@ main(void)
   while (TRUE) {
     toggle_LED1();
 
-    print_device_stats(reset);
+    print_device_stats();
   }
 }
