@@ -201,6 +201,11 @@ output_thread(void* arg)
         break;
 
       case CYCLE_DELAY:
+        if (cycle_delay < 1) {
+          set_output_state(output, OUTPUT_CONTROL_ENABLED);
+          break;
+        }
+
         if ((chTimeNow() - output->cycle_delay_start_time) > cycle_delay) {
           /* Restart PID after cycle delay */
           if (output->pid_control.enabled == false)
