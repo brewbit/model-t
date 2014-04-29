@@ -190,17 +190,17 @@ dispatch_api_status(wifi_screen_t* s, const api_status_t* api_status)
 {
   switch (api_status->state) {
   case AS_AWAITING_NET_CONNECTION:
-    label_set_text(s->acct_status1, "Awaiting net conn");
+    label_set_text(s->acct_status1, "Waiting for network connection");
     label_set_text(s->acct_status2, "");
     break;
 
   case AS_CONNECTING:
-    label_set_text(s->acct_status1, "Connecting");
+    label_set_text(s->acct_status1, "Connecting to server");
     label_set_text(s->acct_status2, "");
     break;
 
   case AS_REQUESTING_AUTH:
-    label_set_text(s->acct_status1, "Requesting auth");
+    label_set_text(s->acct_status1, "Authenticating");
     label_set_text(s->acct_status2, "");
     break;
 
@@ -211,7 +211,7 @@ dispatch_api_status(wifi_screen_t* s, const api_status_t* api_status)
 
   case AS_AWAITING_ACTIVATION:
     label_set_text(s->acct_status1, "Awaiting activation");
-    label_set_text(s->acct_status2, "");
+    label_set_text(s->acct_status2, "Touch here to view activation token");
     break;
 
   case AS_CONNECTED:

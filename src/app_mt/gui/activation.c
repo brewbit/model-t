@@ -47,11 +47,11 @@ activation_screen_create(const char* activation_token)
 
   rect.x = 40;
   rect.y = 100;
-  rect.width = 220;
-  label_create(screen->widget, rect, "Please enter the following code on BrewBit.com", font_opensans_regular_18, WHITE, 2);
+  rect.width = 240;
+  label_create(screen->widget, rect, "Please navigate to http://brewbit.com/activate and enter the code:", font_opensans_regular_18, WHITE, 3);
 
   rect.x = 100;
-  rect.y = 150;
+  rect.y = 180;
   rect.width = 220;
   label_create(screen->widget, rect, activation_token, font_opensans_regular_22, ORANGE, 1);
 
