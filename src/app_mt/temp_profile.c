@@ -5,8 +5,8 @@
 #include "app_cfg.h"
 #include <stdio.h>
 
-//TODO change to 5 hours...
-#define CHECKPOINT_PERIOD S2ST(1 * 60)
+// 4 hours
+#define CHECKPOINT_PERIOD S2ST(4 * 60 * 60)
 
 static void write_checkpoint(temp_profile_run_t* run);
 
