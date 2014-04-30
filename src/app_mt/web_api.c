@@ -171,6 +171,12 @@ web_api_get_status()
   return &api->status;
 }
 
+const char*
+web_api_get_endpoint()
+{
+  return WEB_API_HOST_STR;
+}
+
 static void
 web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
 {

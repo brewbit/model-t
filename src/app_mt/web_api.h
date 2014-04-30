@@ -23,4 +23,7 @@ web_api_init(void);
 const api_status_t*
 web_api_get_status(void);
 
+const char*
+web_api_get_endpoint(void);
+
 #endif

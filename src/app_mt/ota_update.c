@@ -130,7 +130,7 @@ static void
 dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
 {
   static uint32_t last_update_downloaded;
-  uint8_t count;
+  static uint8_t invalid_chunk_count;
 
   status.update_downloaded += update_chunk->data.size;
 
@@ -168,9 +168,8 @@ dispatch_fw_chunk(FirmwareDownloadResponse* update_chunk)
     }
   }
   else if (status.update_downloaded < last_update_downloaded + 1) {
-    count ++;
-
-    if (count > 20) {
+    if (++invalid_chunk_count > 20) {
+      invalid_chunk_count = 0;
       set_state(OU_FAILED);
       printf("OTA update receive timeout\r\n");
     }
