@@ -67,7 +67,7 @@ app_cfg_init()
     app_cfg_local.data.controller_settings[CONTROLLER_1].static_setpoint.value = 68;
     app_cfg_local.data.controller_settings[CONTROLLER_1].static_setpoint.unit = UNIT_TEMP_DEG_F;
 
-    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].enabled = true;
+    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].enabled = false;
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].cycle_delay.unit = UNIT_TIME_MIN;
     app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].cycle_delay.value = 3;
@@ -87,7 +87,7 @@ app_cfg_init()
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].cycle_delay.unit = UNIT_TIME_MIN;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].cycle_delay.value = 3;
 
-    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].enabled = true;
+    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].enabled = false;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.unit = UNIT_TIME_MIN;
     app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.value = 3;

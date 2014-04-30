@@ -104,10 +104,10 @@ home_screen_create()
 
   rect.x = TILE_X(0);
   rect.y = TILE_Y(2);
-  s->output1_icon = icon_create(s->screen, rect, img_plug, WHITE, ORANGE);
+  s->output1_icon = icon_create(s->screen, rect, img_plug, WHITE, STEEL);
 
   rect.x = TILE_X(1);
-  s->output2_icon = icon_create(s->screen, rect, img_plug, WHITE, CYAN);
+  s->output2_icon = icon_create(s->screen, rect, img_plug, WHITE, STEEL);
 
   rect.x = TILE_X(2);
   s->conn_button = button_create(s->screen, rect, img_signal, RED, STEEL, click_conn_button);
