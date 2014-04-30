@@ -181,6 +181,13 @@ static void
 self_test_screen_destroy(widget_t* w)
 {
   self_test_screen_t* s = widget_get_instance_data(w);
+
+  gui_msg_unsubscribe(MSG_TOUCH_INPUT, w);
+  gui_msg_unsubscribe(MSG_SENSOR_SAMPLE, w);
+  gui_msg_unsubscribe(MSG_RECOVERY_IMG_STATUS, w);
+  gui_msg_unsubscribe(MSG_NET_STATUS, w);
+  gui_msg_unsubscribe(MSG_WLAN_PING_REPORT, w);
+
   free(s);
 }
 
