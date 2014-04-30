@@ -147,8 +147,12 @@ test_thread(void* arg)
 
   net_connect("internets", WLAN_SEC_WPA2, "password");
 
-  relay_test(s->relay_test_status[OUTPUT_1], PAD_RELAY1, PAD_RELAY1_TEST);
-  relay_test(s->relay_test_status[OUTPUT_2], PAD_RELAY2, PAD_RELAY2_TEST);
+  while (1) {
+    relay_test(s->relay_test_status[OUTPUT_1], PAD_RELAY1, PAD_RELAY1_TEST);
+    chThdSleepSeconds(1);
+    relay_test(s->relay_test_status[OUTPUT_2], PAD_RELAY2, PAD_RELAY2_TEST);
+    chThdSleepSeconds(1);
+  }
 
   return 0;
 }
