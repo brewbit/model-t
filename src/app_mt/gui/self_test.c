@@ -305,6 +305,7 @@ dispatch_ping_report(self_test_screen_t* s, netapp_pingreport_args_t* ping_repor
     net_settings_t settings;
     memset(&settings, 0, sizeof(settings));
     app_cfg_set_net_settings(&settings);
+    app_cfg_flush();
   }
 }
 
