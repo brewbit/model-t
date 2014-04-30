@@ -207,6 +207,9 @@ dfuse_parse(sxfs_part_id_t part, dfu_parse_ops_t* ops, addr_range_t* valid_addr_
         return result;
       offset += sizeof(dfu_image_element_t);
 
+      if (img_element.element_size == 0)
+        return DFU_INVALID_IMG_ELEMENT_SIZE;
+
       if (ops && ops->img_element)
         ops->img_element(&img_element);
 
