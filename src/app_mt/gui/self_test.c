@@ -23,6 +23,7 @@ typedef struct {
   widget_t* wifi_test_status;
   widget_t* recovery_img_status;
   widget_t* touch_status;
+  Thread* thd_test;
 } self_test_screen_t;
 
 
@@ -131,7 +132,7 @@ self_test_screen_create()
   gui_msg_subscribe(MSG_NET_STATUS, widget);
   gui_msg_subscribe(MSG_WLAN_PING_REPORT, widget);
 
-  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, test_thread, s);
+  s->thd_test = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, test_thread, s);
 
   return widget;
 }
@@ -147,7 +148,7 @@ test_thread(void* arg)
 
   net_connect("internets", WLAN_SEC_WPA2, "password");
 
-  while (1) {
+  while (!chThdShouldTerminate()) {
     relay_test(s->relay_test_status[OUTPUT_1], PAD_RELAY1, PAD_RELAY1_TEST);
     chThdSleepSeconds(1);
     relay_test(s->relay_test_status[OUTPUT_2], PAD_RELAY2, PAD_RELAY2_TEST);
@@ -185,6 +186,9 @@ static void
 self_test_screen_destroy(widget_t* w)
 {
   self_test_screen_t* s = widget_get_instance_data(w);
+
+  chThdTerminate(s->thd_test);
+  chThdWait(s->thd_test);
 
   gui_msg_unsubscribe(MSG_TOUCH_INPUT, w);
   gui_msg_unsubscribe(MSG_SENSOR_SAMPLE, w);
