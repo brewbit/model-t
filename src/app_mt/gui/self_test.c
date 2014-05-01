@@ -187,9 +187,6 @@ self_test_screen_destroy(widget_t* w)
 {
   self_test_screen_t* s = widget_get_instance_data(w);
 
-  chThdTerminate(s->thd_test);
-  chThdWait(s->thd_test);
-
   gui_msg_unsubscribe(MSG_TOUCH_INPUT, w);
   gui_msg_unsubscribe(MSG_SENSOR_SAMPLE, w);
   gui_msg_unsubscribe(MSG_RECOVERY_IMG_STATUS, w);
@@ -320,6 +317,13 @@ dispatch_ping_report(self_test_screen_t* s, netapp_pingreport_args_t* ping_repor
 static void
 back_button_clicked(button_event_t* event)
 {
-  if (event->id == EVT_BUTTON_CLICK)
+  if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* w = widget_get_parent(event->widget);
+    self_test_screen_t* s = widget_get_instance_data(w);
+
+    chThdTerminate(s->thd_test);
+    chThdWait(s->thd_test);
+
     gui_pop_screen();
+  }
 }
