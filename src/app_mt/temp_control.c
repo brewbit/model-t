@@ -133,12 +133,6 @@ output_init(temp_controller_t* tc, output_id_t output)
   relay_output_t* out = &tc->outputs[output];
   const output_settings_t* settings = get_output_settings(tc, output);
 
-  if (out->thread != NULL) {
-    chThdTerminate(out->thread);
-    chThdWait(out->thread);
-    out->thread = NULL;
-  }
-
   out->id = output;
   out->controller = tc;
 
@@ -398,6 +392,16 @@ dispatch_controller_settings(temp_controller_t* tc, const controller_settings_t*
   int i;
   if (tc->controller != settings->controller)
     return;
+
+  /* Stop output threads */
+  for (i = 0; i < NUM_OUTPUTS; ++i) {
+    relay_output_t* out = &tc->outputs[i];
+    if (out->thread != NULL) {
+      chThdTerminate(out->thread);
+      chThdWait(out->thread);
+      out->thread = NULL;
+    }
+  }
 
   tc->state = TC_IDLE;
 
