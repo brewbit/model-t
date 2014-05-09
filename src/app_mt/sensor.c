@@ -28,7 +28,7 @@ typedef struct sensor_port_s {
 
 static msg_t sensor_thread(void* arg);
 static bool sensor_get_sample(sensor_port_t* tp, quantity_t* sample);
-static float filter_sample(sensor_port_t* tp, quantity_t* sample);
+static void filter_sample(sensor_port_t* tp, quantity_t* sample);
 static void send_sensor_msg(sensor_port_t* tp, quantity_t* sample);
 static void send_timeout_msg(sensor_port_t* tp);
 
@@ -60,7 +60,7 @@ sensor_thread(void* arg)
     quantity_t sample;
 
     if (sensor_get_sample(tp, &sample)) {
-      sample.value = filter_sample(tp, &sample);
+      filter_sample(tp, &sample);
       tp->connected = true;
       tp->last_sample_time = chTimeNow();
       send_sensor_msg(tp, &sample);
@@ -79,36 +79,30 @@ sensor_thread(void* arg)
   return 0;
 }
 
-static float
+static void
 filter_sample(sensor_port_t* tp, quantity_t* sample)
 {
   float filtered_sample = 0;
   uint8_t i;
 
-  if((sample->value > tp->last_sample + MAX_SAMPLE_DELTA   ||
-      sample->value < tp->last_sample - MAX_SAMPLE_DELTA ) &&
-      tp->sample_size == SENSOR_SAMPLE_SIZE)
-    return tp->last_sample;
-
-  tp->sample_filter[tp->sample_filter_index] = sample->value;
-  if (tp->sample_filter_index < SENSOR_SAMPLE_SIZE - 1)
-    tp->sample_filter_index++;
-  else
-    tp->sample_filter_index = 0;
-
-  if (tp->sample_size < SENSOR_SAMPLE_SIZE)
-    tp->sample_size++;
-
-  for (i = 0; i < SENSOR_SAMPLE_SIZE; i++)
-  {
-    printf("%f\r\n",tp->sample_filter[i]);
-    filtered_sample += tp->sample_filter[i];
+  if ((fabs(sample->value - tp->last_sample) > MAX_SAMPLE_DELTA) &&
+      (tp->sample_size == SENSOR_SAMPLE_SIZE)) {
+    sample->value = tp->last_sample;
   }
-  tp->last_sample = filtered_sample = filtered_sample / (float)tp->sample_size;
+  else {
+    tp->sample_filter[tp->sample_filter_index] = sample->value;
+    if (++tp->sample_filter_index >= SENSOR_SAMPLE_SIZE)
+      tp->sample_filter_index = 0;
 
-  printf("%f %d %d\r\n",filtered_sample, tp->sample_size, tp->sample_filter_index);
+    if (tp->sample_size < SENSOR_SAMPLE_SIZE)
+      tp->sample_size++;
 
-  return filtered_sample;
+    for (i = 0; i < SENSOR_SAMPLE_SIZE; i++) {
+      filtered_sample += tp->sample_filter[i];
+    }
+    sample->value = filtered_sample / tp->sample_size;
+    tp->last_sample = sample->value;
+  }
 }
 
 static void
@@ -187,9 +181,8 @@ read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample)
   if (!onewire_send_byte(tp->bus, 0xBE))
     return false;
 
-
   uint8_t scratchpad[9];
-  for (i = 0; i < 9; ++i) {
+  for (i = 0; i < (int)sizeof(scratchpad); ++i) {
     if (!onewire_recv_byte(tp->bus, &scratchpad[i]))
       return false;
   }
