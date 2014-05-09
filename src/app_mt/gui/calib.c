@@ -19,6 +19,7 @@ typedef struct {
   int ref_pt_idx;
   uint8_t calib_complete;
   point_t sampled_pts[NUM_CALIB_POINTS][NUM_SAMPLES_PER_POINT];
+  uint32_t sample_count[NUM_CALIB_POINTS];
   int sample_idx;
   point_t last_touch_pos;
 
@@ -115,6 +116,7 @@ restart_calib(button_event_t* event)
     s->calib_complete = false;
     s->sample_idx = 0;
     s->ref_pt_idx = 0;
+    memset(s->sample_count, 0, sizeof(s->sample_count));
 
     widget_show(s->lbl_instructions);
     widget_hide(s->recal_button);
@@ -184,6 +186,8 @@ static void
 calib_touch_down(calib_screen_t* s, point_t p)
 {
   s->sampled_pts[s->ref_pt_idx][s->sample_idx % NUM_SAMPLES_PER_POINT] = p;
+  if (s->sample_count[s->ref_pt_idx] < NUM_SAMPLES_PER_POINT)
+    s->sample_count[s->ref_pt_idx] += 1;
   s->sample_idx++;
 
   if ((s->sample_idx == 1) ||
@@ -196,6 +200,9 @@ calib_touch_up(calib_screen_t* s, point_t p)
 {
   (void)p;
 
+  if (s->sample_count[s->ref_pt_idx] < NUM_SAMPLES_PER_POINT)
+    return;
+
   if (++s->ref_pt_idx < NUM_CALIB_POINTS) {
     s->sample_idx = 0;
     widget_invalidate(s->widget);
@@ -203,16 +210,16 @@ calib_touch_up(calib_screen_t* s, point_t p)
   else {
     int i,j;
     s->calib_complete = 1;
-    point_t avg_sample[3];
-    for (i = 0; i < 3; ++i) {
+    point_t avg_sample[NUM_CALIB_POINTS];
+    for (i = 0; i < NUM_CALIB_POINTS; ++i) {
       avg_sample[i].x = 0;
       avg_sample[i].y = 0;
-      for (j = 0; j < NUM_SAMPLES_PER_POINT; ++j) {
+      for (j = 0; j < (int)s->sample_count[i]; ++j) {
         avg_sample[i].x += s->sampled_pts[i][j].x;
         avg_sample[i].y += s->sampled_pts[i][j].y;
       }
-      avg_sample[i].x /= NUM_SAMPLES_PER_POINT;
-      avg_sample[i].y /= NUM_SAMPLES_PER_POINT;
+      avg_sample[i].x /= s->sample_count[i];
+      avg_sample[i].y /= s->sample_count[i];
     }
     touch_calibrate(ref_pts, avg_sample);
 
