@@ -144,13 +144,17 @@ read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample)
     return false;
   if (!onewire_send_byte(tp->bus, 0xBE))
     return false;
-  uint8_t t1, t2;
-  if (!onewire_recv_byte(tp->bus, &t1))
+  uint8_t d1, d2;
+  if (!onewire_recv_byte(tp->bus, &d1))
     return false;
-  if (!onewire_recv_byte(tp->bus, &t2))
+  if (!onewire_recv_byte(tp->bus, &d2))
     return false;
 
-  uint16_t t = (t2 << 8) + t1;
+  // two unsigned data bytes need to be combined and converted to a signed short
+  uint16_t d = (d2 << 8) + d1;
+  int16_t t = d;
+
+  // convert from 16ths of a degree Celsius to degrees Fahrenheit
   sample->unit = UNIT_TEMP_DEG_F;
   sample->value = ((t / 16.0f) * 1.8f) + 32;
 
