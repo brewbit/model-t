@@ -7,13 +7,19 @@
 #include <string.h>
 
 
-#define SENSOR_TIMEOUT S2ST(2)
+#define SENSOR_TIMEOUT S2ST (2)
+#define SENSOR_SAMPLE_SIZE  (10)
+#define MAX_SAMPLE_DELTA    (40)
 
 
 typedef struct sensor_port_s {
   sensor_id_t sensor;
+  float sample_filter[SENSOR_SAMPLE_SIZE];
+  uint8_t sample_filter_index;
+  uint8_t sample_size;
   onewire_bus_t* bus;
   Thread* thread;
+  float last_sample;
   systime_t last_sample_time;
   bool connected;
 } sensor_port_t;
@@ -21,6 +27,7 @@ typedef struct sensor_port_s {
 
 static msg_t sensor_thread(void* arg);
 static bool sensor_get_sample(sensor_port_t* tp, quantity_t* sample);
+static float filter_sample(sensor_port_t* tp, quantity_t* sample);
 static void send_sensor_msg(sensor_port_t* tp, quantity_t* sample);
 static void send_timeout_msg(sensor_port_t* tp);
 
@@ -52,6 +59,7 @@ sensor_thread(void* arg)
     quantity_t sample;
 
     if (sensor_get_sample(tp, &sample)) {
+      sample.value = filter_sample(tp, &sample);
       tp->connected = true;
       tp->last_sample_time = chTimeNow();
       send_sensor_msg(tp, &sample);
@@ -68,6 +76,38 @@ sensor_thread(void* arg)
   }
 
   return 0;
+}
+
+static float
+filter_sample(sensor_port_t* tp, quantity_t* sample)
+{
+  float filtered_sample = 0;
+  uint8_t i;
+
+  if((sample->value > tp->last_sample + MAX_SAMPLE_DELTA   ||
+      sample->value < tp->last_sample - MAX_SAMPLE_DELTA ) &&
+      tp->sample_size == SENSOR_SAMPLE_SIZE)
+    return tp->last_sample;
+
+  tp->sample_filter[tp->sample_filter_index] = sample->value;
+  if (tp->sample_filter_index < SENSOR_SAMPLE_SIZE - 1)
+    tp->sample_filter_index++;
+  else
+    tp->sample_filter_index = 0;
+
+  if (tp->sample_size < SENSOR_SAMPLE_SIZE)
+    tp->sample_size++;
+
+  for (i = 0; i < SENSOR_SAMPLE_SIZE; i++)
+  {
+    printf("%f\r\n",tp->sample_filter[i]);
+    filtered_sample += tp->sample_filter[i];
+  }
+  tp->last_sample = filtered_sample = filtered_sample / (float)tp->sample_size;
+
+  printf("%f %d %d\r\n",filtered_sample, tp->sample_size, tp->sample_filter_index);
+
+  return filtered_sample;
 }
 
 static void
