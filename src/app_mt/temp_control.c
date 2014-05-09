@@ -213,6 +213,8 @@ output_thread(void* arg)
     chThdSleepSeconds(1);
   }
 
+  palClearPad(GPIOC, out_gpio[output->id]);
+
   return 0;
 }
 
