@@ -3,6 +3,7 @@
 #include "common.h"
 #include "message.h"
 #include "app_cfg.h"
+#include "crc/crc8.h"
 
 #include <string.h>
 
@@ -155,6 +156,8 @@ sensor_get_sample(sensor_port_t* tp, quantity_t* sample)
 static bool
 read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample)
 {
+  int i;
+
   // issue a T convert command
   if (!onewire_reset(tp->bus))
     return false;
@@ -177,21 +180,26 @@ read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample)
   }
 
   // read the scratchpad register
-  if (!onewire_reset(tp->bus)) {
+  if (!onewire_reset(tp->bus))
     return false;
-  }
   if (!onewire_send_byte(tp->bus, SKIP_ROM))
     return false;
   if (!onewire_send_byte(tp->bus, 0xBE))
     return false;
-  uint8_t t1, t2;
-  if (!onewire_recv_byte(tp->bus, &t1))
-    return false;
-  if (!onewire_recv_byte(tp->bus, &t2))
+
+
+  uint8_t scratchpad[9];
+  for (i = 0; i < 9; ++i) {
+    if (!onewire_recv_byte(tp->bus, &scratchpad[i]))
+      return false;
+  }
+
+  uint8_t crc = crc8_block(0, scratchpad, 8);
+  if (crc != scratchpad[8])
     return false;
 
   // two unsigned data bytes need to be combined and converted to a signed short
-  int16_t t = (t2 << 8) + t1;
+  int16_t t = (scratchpad[1] << 8) + scratchpad[0];
 
   // convert from 16ths of a degree Celsius to degrees Fahrenheit
   sample->unit = UNIT_TEMP_DEG_F;
