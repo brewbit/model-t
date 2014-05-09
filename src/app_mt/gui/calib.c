@@ -128,8 +128,10 @@ restart_calib(button_event_t* event)
 static void
 complete_calib(button_event_t* event)
 {
-  if (event->id == EVT_BUTTON_CLICK)
+  if (event->id == EVT_BUTTON_CLICK) {
+    touch_save_calib();
     gui_pop_screen();
+  }
 }
 
 static void
@@ -221,7 +223,7 @@ calib_touch_up(calib_screen_t* s, point_t p)
       avg_sample[i].x /= s->sample_count[i];
       avg_sample[i].y /= s->sample_count[i];
     }
-    touch_calibrate(ref_pts, avg_sample);
+    touch_set_calib(ref_pts, avg_sample);
 
     widget_hide(s->lbl_instructions);
     widget_show(s->recal_button);

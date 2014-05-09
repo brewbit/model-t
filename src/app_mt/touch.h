@@ -16,9 +16,12 @@ void
 touch_init(void);
 
 void
-touch_calibrate(
+touch_set_calib(
     const point_t* ref_pts,
     const point_t* sampled_pts);
+
+void
+touch_save_calib(void);
 
 void
 touch_calib_reset(void);

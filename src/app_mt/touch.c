@@ -133,10 +133,12 @@ static uint8_t down_samples;
 static uint8_t sample_idx;
 static point_t touch_coord_raw[SAMPLE_DELAY];
 static point_t touch_coord_calib[SAMPLE_DELAY];
+static matrix_t calib_matrix;
 
 void
 touch_init()
 {
+  memcpy(&calib_matrix, app_cfg_get_touch_calib(), sizeof(matrix_t));
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, touch_thread, NULL);
 }
 
@@ -152,12 +154,16 @@ touch_dispatch()
 }
 
 void
-touch_calibrate(
+touch_set_calib(
     const point_t* ref_pts,
     const point_t* sampled_pts)
 {
-  matrix_t calib_matrix;
   setCalibrationMatrix(ref_pts, sampled_pts, &calib_matrix);
+}
+
+void
+touch_save_calib()
+{
   app_cfg_set_touch_calib(&calib_matrix);
 }
 
@@ -238,7 +244,7 @@ touch_thread(void* arg)
       getDisplayPoint(
           &touch_coord_calib[sample_idx],
           &touch_coord_raw[sample_idx],
-          app_cfg_get_touch_calib());
+          &calib_matrix);
 
       touch_down = 1;
       last_touch_time = chTimeNow();
