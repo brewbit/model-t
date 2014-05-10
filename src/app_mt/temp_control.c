@@ -230,19 +230,19 @@ relay_control(relay_output_t* output)
   switch (app_cfg_get_control_mode()) {
   case ON_OFF:
   {
-    float hysteresis = app_cfg_get_hysteresis().value;
+    float half_hysteresis = app_cfg_get_hysteresis().value / 2;
 
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
-      if (sample <= setpoint - hysteresis)
+      if (sample <= setpoint - half_hysteresis)
         enable_relay(output, true);
-      else if (sample >= setpoint) {
+      else if (sample >= setpoint + half_hysteresis) {
         enable_relay(output, false);
       }
     }
     else {
-      if (sample >= setpoint + hysteresis)
+      if (sample >= setpoint + half_hysteresis)
         enable_relay(output, true);
-      else if (sample <= setpoint) {
+      else if (sample <= setpoint - half_hysteresis) {
         enable_relay(output, false);
       }
     }
