@@ -1,0 +1,11 @@
+*** 1.0.1 ***
+- FIX: Change hysteresis to force heating cooling until SP +/- H/2 is reached.
+- FIX: Disable outputs when the session is stopped.
+- NEW: Filter sensor readings.
+- NEW: Verify DS18B20 scratchpad register CRC before using temperature readings.
+- FIX: Support reading negative temperatures from DS18B20.
+- FIX: Improve touchscreen calibration robustness.
+- FIX: Fix lockup when selecting a dual stage configuration from the device.
+
+*** 1.0.0 ***
+- First release!
