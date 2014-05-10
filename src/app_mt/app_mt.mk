@@ -52,6 +52,7 @@ PROJECT_CSRC = \
        gui/history.c \
        gui/info.c \
        gui/home.c \
+       gui/network_settings.c \
        gui/output_settings.c \
        gui/quantity_select.c \
        gui/recovery.c \
@@ -59,7 +60,7 @@ PROJECT_CSRC = \
        gui/settings.c \
        gui/textentry.c \
        gui/update.c \
-       gui/wifi.c \
+       gui/conn_status.c \
        gui/wifi_scan.c \
        gui/self_test.c \
        wifi/core/cc3000_common.c \

@@ -6,10 +6,13 @@
 
 #include <stdbool.h>
 
+#include "wlan.h"
+
 typedef enum {
   NS_DISCONNECTED,
   NS_CONNECT,
   NS_CONNECTING,
+  NS_WAIT_DHCP,
   NS_CONNECTED,
   NS_CONNECT_FAILED
 } net_state_t;
@@ -33,16 +36,27 @@ typedef struct {
 
 typedef struct {
   long rssi;
-  uint32_t security_mode;
+  wlan_security_t security_mode;
   char ssid[33];
   uint8_t bssid[6];
   systime_t last_seen;
 } network_t;
 
+typedef enum {
+  IP_CFG_DHCP,
+  IP_CFG_STATIC
+} ip_config_t;
+
 typedef struct {
   char ssid[33];
   char passphrase[128];
   uint32_t security_mode;
+
+  ip_config_t ip_config;
+  uint32_t ip;
+  uint32_t subnet_mask;
+  uint32_t gateway;
+  uint32_t dns_server;
 } net_settings_t;
 
 

@@ -60,6 +60,13 @@ app_cfg_init()
     app_cfg_local.data.hysteresis.value = 1;
     app_cfg_local.data.hysteresis.unit = UNIT_TEMP_DEG_F;
 
+    app_cfg_local.data.net_settings.security_mode = 0;
+    app_cfg_local.data.net_settings.ip_config = IP_CFG_DHCP;
+    app_cfg_local.data.net_settings.ip = 0;
+    app_cfg_local.data.net_settings.subnet_mask = 0;
+    app_cfg_local.data.net_settings.gateway = 0;
+    app_cfg_local.data.net_settings.dns_server = 0;
+
     touch_calib_reset();
 
     app_cfg_local.data.controller_settings[CONTROLLER_1].controller = CONTROLLER_1;
@@ -277,9 +284,13 @@ app_cfg_get_net_settings()
 void
 app_cfg_set_net_settings(const net_settings_t* settings)
 {
-  chMtxLock(&app_cfg_mtx);
-  app_cfg_local.data.net_settings = *settings;
-  chMtxUnlock();
+  if (memcmp(settings, &app_cfg_local.data.net_settings, sizeof(net_settings_t)) != 0) {
+    chMtxLock(&app_cfg_mtx);
+    app_cfg_local.data.net_settings = *settings;
+    chMtxUnlock();
+
+    msg_send(MSG_NET_NETWORK_SETTINGS, settings);
+  }
 }
 
 const temp_profile_t*

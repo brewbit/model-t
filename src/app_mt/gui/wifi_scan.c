@@ -18,6 +18,8 @@
 typedef struct {
   widget_t* widget;
   widget_t* net_list;
+  network_select_handler_t handler;
+  void* user_data;
 } wifi_scan_screen_t;
 
 
@@ -44,11 +46,13 @@ static const widget_class_t wifi_scan_screen_widget_class = {
 
 
 widget_t*
-wifi_scan_screen_create()
+wifi_scan_screen_create(network_select_handler_t handler, void* user_data)
 {
   wifi_scan_screen_t* s = calloc(1, sizeof(wifi_scan_screen_t));
 
   s->widget = widget_create(NULL, &wifi_scan_screen_widget_class, s, display_rect);
+  s->handler = handler;
+  s->user_data = user_data;
 
   rect_t rect = {
       .x = 15,
@@ -172,27 +176,19 @@ back_button_clicked(button_event_t* event)
   }
 }
 
-static network_t* selected_net;
-
 static void
 network_button_event(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
+    widget_t* cont = widget_get_parent(event->widget);
+    widget_t* lb = widget_get_parent(cont);
+    widget_t* screen = widget_get_parent(lb);
+    wifi_scan_screen_t* s = widget_get_instance_data(screen);
+
     network_t* net = widget_get_user_data(event->widget);
-    selected_net = net;
-    if (selected_net->security_mode == 0 /* WLAN_SEC_UNSEC */)
-      handle_passphrase(NULL, NULL);
-    else
-      textentry_screen_show(handle_passphrase, NULL);
+    s->handler(net->ssid, net->security_mode, s->user_data);
+
+    net_scan_stop();
+    gui_pop_screen();
   }
-}
-
-static void
-handle_passphrase(const char* passphrase, void* user_data)
-{
-  (void)user_data;
-
-  net_scan_stop();
-  net_connect(selected_net->ssid, selected_net->security_mode, passphrase);
-  gui_pop_screen();
 }

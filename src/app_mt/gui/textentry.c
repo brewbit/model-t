@@ -11,8 +11,13 @@
 #include <string.h>
 
 
-#define NUM_ROWS 21
+#define NUM_ROWS_ALL      21
+#define NUM_ROWS_NUMERIC  3
+
 #define MAX_TEXT_LEN 256
+
+
+typedef const char* btn_row_t[5];
 
 
 typedef struct {
@@ -24,6 +29,9 @@ typedef struct {
   widget_t* text_label;
   int row_idx;
   char text[MAX_TEXT_LEN];
+
+  btn_row_t* btn_layout;
+  uint32_t num_rows;
 } textentry_screen_t;
 
 
@@ -40,7 +48,7 @@ static const widget_class_t textentry_screen_widget_class = {
     .on_destroy = textentry_screen_destroy,
 };
 
-static const char* btn_layout[NUM_ROWS][5] = {
+static btn_row_t btn_layout_all[NUM_ROWS_ALL] = {
     {"A","B","C","D","E"},
     {"F","G","H","I","J"},
     {"K","L","M","N","O"},
@@ -70,14 +78,33 @@ static const char* btn_layout[NUM_ROWS][5] = {
     {"?","`","~"," ",NULL},
 };
 
+static btn_row_t btn_layout_numeric[NUM_ROWS_NUMERIC] = {
+    {"0","1","2","3","4"},
+    {"5","6","7","8","9"},
+    {".",NULL,NULL,NULL,NULL},
+};
+
 void
-textentry_screen_show(text_handler_t text_handler, void* user_data)
+textentry_screen_show(textentry_format_t format, text_handler_t text_handler, void* user_data)
 {
   int i;
   textentry_screen_t* screen = calloc(1, sizeof(textentry_screen_t));
 
   screen->text_handler = text_handler;
   screen->user_data = user_data;
+
+  switch (format) {
+    case TXT_FMT_IP:
+      screen->btn_layout = btn_layout_numeric;
+      screen->num_rows = NUM_ROWS_NUMERIC;
+      break;
+
+    default:
+    case TXT_FMT_ANY:
+      screen->btn_layout = btn_layout_all;
+      screen->num_rows = NUM_ROWS_ALL;
+      break;
+  }
 
   screen->widget = widget_create(NULL, &textentry_screen_widget_class, screen, display_rect);
 
@@ -132,10 +159,12 @@ update_input_buttons(textentry_screen_t* screen)
 {
   int i;
   for (i = 0; i < 3; ++i) {
+    btn_row_t* row = &screen->btn_layout[screen->row_idx + i];
+
     int j;
     for (j = 0; j < 5; ++j) {
       widget_t* btn = screen->buttons[i][j];
-      const char* btn_text = btn_layout[screen->row_idx + i][j];
+      const char* btn_text = (*row)[j];
 
       if (btn_text == NULL)
         widget_hide(btn);
@@ -214,7 +243,7 @@ down_button_clicked(button_event_t* event)
     widget_t* w = widget_get_parent(event->widget);
     textentry_screen_t* screen = widget_get_instance_data(w);
 
-    if (screen->row_idx < NUM_ROWS - 3)
+    if (screen->row_idx < screen->num_rows - 3)
       screen->row_idx += 3;
     update_input_buttons(screen);
   }

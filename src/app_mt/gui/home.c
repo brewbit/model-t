@@ -9,7 +9,7 @@
 #include "gui/output_settings.h"
 #include "gui/settings.h"
 #include "gui/controller_settings.h"
-#include "gui/wifi.h"
+#include "gui/conn_status.h"
 #include "gui/textentry.h"
 #include "gui/quantity_select.h"
 #include "quantity_widget.h"
@@ -407,8 +407,8 @@ static void
 click_conn_button(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    widget_t* wifi_screen = wifi_screen_create();
-    gui_push_screen(wifi_screen);
+    widget_t* conn_status_screen = conn_status_screen_create();
+    gui_push_screen(conn_status_screen);
   }
 }
 

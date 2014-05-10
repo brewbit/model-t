@@ -1,7 +1,7 @@
 
 #include "ch.h"
 #include "hal.h"
-#include "gui/wifi.h"
+#include "gui/conn_status.h"
 #include "button.h"
 #include "label.h"
 #include "icon.h"
@@ -10,7 +10,7 @@
 #include "net.h"
 #include "web_api.h"
 #include "gui/activation.h"
-#include "gui/wifi_scan.h"
+#include "gui/network_settings.h"
 #include "app_cfg.h"
 
 #include <string.h>
@@ -22,31 +22,31 @@ typedef struct {
   widget_t* nwk_status2;
   widget_t* acct_status1;
   widget_t* acct_status2;
-} wifi_screen_t;
+} conn_status_screen_t;
 
 
-static void wifi_screen_destroy(widget_t* w);
-static void wifi_screen_msg(msg_event_t* event);
+static void conn_status_screen_destroy(widget_t* w);
+static void conn_status_screen_msg(msg_event_t* event);
 static void back_button_clicked(button_event_t* event);
 static void network_button_clicked(button_event_t* event);
 static void acct_button_clicked(button_event_t* event);
 
-static void dispatch_net_status(wifi_screen_t* s, const net_status_t* status);
-static void dispatch_api_status(wifi_screen_t* s, const api_status_t* api_state);
+static void dispatch_net_status(conn_status_screen_t* s, const net_status_t* status);
+static void dispatch_api_status(conn_status_screen_t* s, const api_status_t* api_state);
 
 
-static const widget_class_t wifi_screen_widget_class = {
-    .on_destroy = wifi_screen_destroy,
-    .on_msg     = wifi_screen_msg
+static const widget_class_t conn_status_screen_widget_class = {
+    .on_destroy = conn_status_screen_destroy,
+    .on_msg     = conn_status_screen_msg
 };
 
 
 widget_t*
-wifi_screen_create()
+conn_status_screen_create()
 {
-  wifi_screen_t* s = calloc(1, sizeof(wifi_screen_t));
+  conn_status_screen_t* s = calloc(1, sizeof(conn_status_screen_t));
 
-  s->widget = widget_create(NULL, &wifi_screen_widget_class, s, display_rect);
+  s->widget = widget_create(NULL, &conn_status_screen_widget_class, s, display_rect);
 
   rect_t rect = {
       .x = 15,
@@ -59,7 +59,7 @@ wifi_screen_create()
   rect.x = 85;
   rect.y = 26;
   rect.width = 220;
-  label_create(s->widget, rect, "Connection Settings", font_opensans_regular_22, WHITE, 1);
+  label_create(s->widget, rect, "Connection Status", font_opensans_regular_22, WHITE, 1);
 
   // create network connection button
   {
@@ -124,9 +124,9 @@ wifi_screen_create()
 }
 
 static void
-wifi_screen_destroy(widget_t* w)
+conn_status_screen_destroy(widget_t* w)
 {
-  wifi_screen_t* s = widget_get_instance_data(w);
+  conn_status_screen_t* s = widget_get_instance_data(w);
 
   gui_msg_unsubscribe(MSG_NET_STATUS, w);
   gui_msg_unsubscribe(MSG_API_STATUS, w);
@@ -135,9 +135,9 @@ wifi_screen_destroy(widget_t* w)
 }
 
 static void
-wifi_screen_msg(msg_event_t* event)
+conn_status_screen_msg(msg_event_t* event)
 {
-  wifi_screen_t* s = widget_get_instance_data(event->widget);
+  conn_status_screen_t* s = widget_get_instance_data(event->widget);
 
   switch (event->msg_id) {
   case MSG_NET_STATUS:
@@ -154,28 +154,33 @@ wifi_screen_msg(msg_event_t* event)
 }
 
 static void
-dispatch_net_status(wifi_screen_t* s, const net_status_t* status)
+dispatch_net_status(conn_status_screen_t* s, const net_status_t* status)
 {
   switch (status->net_state) {
   case NS_CONNECT:
   case NS_CONNECTING:
-    label_set_text(s->nwk_status1, "Connecting to:");
-    label_set_text(s->nwk_status2, app_cfg_get_net_settings()->ssid);
+    label_set_text(s->nwk_status1, "Connecting to WiFi network");
+    label_set_text(s->nwk_status2, "");
     break;
 
   case NS_CONNECT_FAILED:
-    label_set_text(s->nwk_status1, "Failed to connect to:");
-    label_set_text(s->nwk_status2, app_cfg_get_net_settings()->ssid);
+    label_set_text(s->nwk_status1, "WiFi network connection failed");
+    label_set_text(s->nwk_status2, "");
+    break;
+
+  case NS_WAIT_DHCP:
+    label_set_text(s->nwk_status1, "Waiting for IP assignment");
+    label_set_text(s->nwk_status2, "");
     break;
 
   case NS_CONNECTED:
-    label_set_text(s->nwk_status1, "Connected to:");
-    label_set_text(s->nwk_status2, app_cfg_get_net_settings()->ssid);
+    label_set_text(s->nwk_status1, "Connection established");
+    label_set_text(s->nwk_status2, "");
     break;
 
   case NS_DISCONNECTED:
     label_set_text(s->nwk_status1, "Not connected");
-    label_set_text(s->nwk_status2, "Touch to scan for networks");
+    label_set_text(s->nwk_status2, "Touch to set network settings");
     break;
 
   default:
@@ -186,7 +191,7 @@ dispatch_net_status(wifi_screen_t* s, const net_status_t* status)
 }
 
 static void
-dispatch_api_status(wifi_screen_t* s, const api_status_t* api_status)
+dispatch_api_status(conn_status_screen_t* s, const api_status_t* api_status)
 {
   switch (api_status->state) {
   case AS_AWAITING_NET_CONNECTION:
@@ -215,7 +220,7 @@ dispatch_api_status(wifi_screen_t* s, const api_status_t* api_status)
     break;
 
   case AS_CONNECTED:
-    label_set_text(s->acct_status1, "Connected");
+    label_set_text(s->acct_status1, "Connection established");
     label_set_text(s->acct_status2, "");
     break;
 
@@ -238,8 +243,8 @@ static void
 network_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    widget_t* wifi_scan_screen = wifi_scan_screen_create();
-    gui_push_screen(wifi_scan_screen);
+    widget_t* network_settings_screen = network_settings_screen_create();
+    gui_push_screen(network_settings_screen);
   }
 }
 

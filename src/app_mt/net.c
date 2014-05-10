@@ -85,7 +85,7 @@ net_init()
 {
   wlan_init();
 
-  msg_listener_t* l = msg_listener_create("net", 1024, dispatch_net_msg, NULL);
+  msg_listener_t* l = msg_listener_create("net", 2048, dispatch_net_msg, NULL);
   msg_listener_set_idle_timeout(l, 500);
   msg_subscribe(l, MSG_WLAN_CONNECT, NULL);
   msg_subscribe(l, MSG_WLAN_DISCONNECT, NULL);
@@ -144,7 +144,7 @@ dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
       break;
 
     case MSG_WLAN_CONNECT:
-      net_status.net_state = NS_CONNECTED;
+      net_status.net_state = NS_WAIT_DHCP;
       msg_send(MSG_NET_STATUS, &net_status);
       next_ping_send_time = chTimeNow();
       break;
@@ -159,6 +159,7 @@ dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
       break;
 
     case MSG_WLAN_DHCP:
+      net_status.net_state = NS_CONNECTED;
       dispatch_dhcp(msg_data);
       msg_send(MSG_NET_STATUS, &net_status);
       break;
@@ -391,6 +392,13 @@ initialize_and_connect()
     uint32_t keepalive = 10;
     uint32_t inactivity_timeout = 0;
     netapp_timeout_values(&dhcp_timeout, &arp_timeout, &keepalive, &inactivity_timeout);
+
+    uint32_t ip = 0;
+    uint32_t subnet_mask = 0;
+    uint32_t gateway = 0;
+    uint32_t dns_server = 0;
+    netapp_dhcp(&ip, &subnet_mask, &gateway, &dns_server);
+
     wifi_config_applied = true;
   }
 
@@ -444,6 +452,7 @@ dispatch_idle()
         initialize_and_connect();
         break;
 
+      case NS_WAIT_DHCP:
       case NS_CONNECTED:
       case NS_CONNECTING:
       default:
