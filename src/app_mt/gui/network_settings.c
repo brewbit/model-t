@@ -124,7 +124,7 @@ ip_cfg_button_clicked(button_event_t* event)
         s->settings.ip_config = IP_CFG_STATIC;
 
         if (s->settings.subnet_mask == 0)
-          s->settings.subnet_mask = 0xFFFFFF00;
+          s->settings.subnet_mask = 0x00FFFFFF;
 
         if (s->settings.dns_server == 0)
           s->settings.dns_server = 0x08080808;
@@ -196,7 +196,7 @@ static bool
 inet_aton(const char* ipa, uint32_t* ipn)
 {
   unsigned int u1, u2, u3, u4;
-  int ret = sscanf(ipa, "%u.%u.%u.%u", &u1, &u2, &u3, &u4);
+  int ret = sscanf(ipa, "%u.%u.%u.%u", &u4, &u3, &u2, &u1);
   if (ret != 4)
     return false;
 
@@ -214,7 +214,7 @@ inet_ntoa(uint32_t ip)
   char* ipa = malloc(16);
   uint8_t* ipc = (uint8_t*)&ip;
 
-  snprintf(ipa, 16, "%d.%d.%d.%d", ipc[3], ipc[2], ipc[1], ipc[0]);
+  snprintf(ipa, 16, "%d.%d.%d.%d", ipc[0], ipc[1], ipc[2], ipc[3]);
 
   return ipa;
 }

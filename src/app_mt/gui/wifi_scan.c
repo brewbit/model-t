@@ -27,7 +27,6 @@ static void wifi_scan_screen_destroy(widget_t* w);
 static void wifi_scan_screen_msg(msg_event_t* event);
 static void back_button_clicked(button_event_t* event);
 static void network_button_event(button_event_t* event);
-static void handle_passphrase(const char* passphrase, void* user_data);
 
 static void
 dispatch_new_network(wifi_scan_screen_t* s, network_t* network);

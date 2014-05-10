@@ -146,7 +146,7 @@ test_thread(void* arg)
   // with the relays...
   chThdSleepSeconds(2);
 
-  net_connect("internets", WLAN_SEC_WPA2, "password");
+//  net_connect("internets", WLAN_SEC_WPA2, "password");
 
   while (!chThdShouldTerminate()) {
     relay_test(s->relay_test_status[OUTPUT_1], PAD_RELAY1, PAD_RELAY1_TEST);

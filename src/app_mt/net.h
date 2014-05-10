@@ -72,7 +72,4 @@ net_scan_start(void);
 void
 net_scan_stop(void);
 
-void
-net_connect(const char* ssid, uint32_t security_mode, const char* passphrase);
-
 #endif

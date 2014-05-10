@@ -51,6 +51,9 @@ static void
 dispatch_ping(netapp_pingreport_args_t* ping_report);
 
 static void
+dispatch_network_settings(net_settings_t* settings);
+
+static void
 save_or_update_network(network_t* network);
 
 static void
@@ -87,6 +90,7 @@ net_init()
 
   msg_listener_t* l = msg_listener_create("net", 2048, dispatch_net_msg, NULL);
   msg_listener_set_idle_timeout(l, 500);
+  msg_subscribe(l, MSG_NET_NETWORK_SETTINGS, NULL);
   msg_subscribe(l, MSG_WLAN_CONNECT, NULL);
   msg_subscribe(l, MSG_WLAN_DISCONNECT, NULL);
   msg_subscribe(l, MSG_WLAN_DHCP, NULL);
@@ -110,22 +114,6 @@ void
 net_scan_stop()
 {
   net_status.scan_active = false;
-}
-
-void
-net_connect(const char* ssid, uint32_t security_mode, const char* passphrase)
-{
-  net_settings_t* ns = malloc(sizeof(net_settings_t));
-  strncpy(ns->ssid, ssid, sizeof(ns->ssid));
-  strncpy(ns->passphrase, passphrase, sizeof(ns->passphrase));
-  ns->security_mode = security_mode;
-
-  app_cfg_set_net_settings(ns);
-
-  free(ns);
-
-  net_status.net_state = NS_CONNECT;
-  msg_send(MSG_NET_STATUS, &net_status);
 }
 
 static void
@@ -168,9 +156,20 @@ dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
       dispatch_ping(msg_data);
       break;
 
+    case MSG_NET_NETWORK_SETTINGS:
+      dispatch_network_settings(msg_data);
+      break;
+
     default:
       break;
   }
+}
+
+static void
+dispatch_network_settings(net_settings_t* settings)
+{
+  wifi_config_applied = false;
+  net_status.net_state = NS_CONNECT;
 }
 
 static void
@@ -356,6 +355,8 @@ test_connectivity()
 static void
 initialize_and_connect()
 {
+  const net_settings_t* ns = app_cfg_get_net_settings();
+
   net_status.net_state = NS_DISCONNECTED;
   msg_send(MSG_NET_STATUS, &net_status);
 
@@ -393,11 +394,11 @@ initialize_and_connect()
     uint32_t inactivity_timeout = 0;
     netapp_timeout_values(&dhcp_timeout, &arp_timeout, &keepalive, &inactivity_timeout);
 
-    uint32_t ip = 0;
-    uint32_t subnet_mask = 0;
-    uint32_t gateway = 0;
-    uint32_t dns_server = 0;
-    netapp_dhcp(&ip, &subnet_mask, &gateway, &dns_server);
+    netapp_dhcp(&ns->ip, &ns->subnet_mask, &ns->gateway, &ns->dns_server);
+
+    wlan_stop();
+
+    wlan_start(PATCH_LOAD_DEFAULT);
 
     wifi_config_applied = true;
   }
@@ -409,7 +410,6 @@ initialize_and_connect()
         mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
   }
 
-  const net_settings_t* ns = app_cfg_get_net_settings();
   if (strlen(ns->ssid) > 0) {
     net_status.net_state = NS_CONNECTING;
     msg_send(MSG_NET_STATUS, &net_status);
