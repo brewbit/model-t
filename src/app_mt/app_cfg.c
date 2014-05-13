@@ -289,7 +289,7 @@ app_cfg_set_net_settings(const net_settings_t* settings)
     app_cfg_local.data.net_settings = *settings;
     chMtxUnlock();
 
-    msg_send(MSG_NET_NETWORK_SETTINGS, settings);
+    msg_post(MSG_NET_NETWORK_SETTINGS, NULL);
   }
 }
 

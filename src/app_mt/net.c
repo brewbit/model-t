@@ -51,7 +51,7 @@ static void
 dispatch_ping(netapp_pingreport_args_t* ping_report);
 
 static void
-dispatch_network_settings(net_settings_t* settings);
+dispatch_network_settings(void);
 
 static void
 save_or_update_network(network_t* network);
@@ -157,7 +157,7 @@ dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
       break;
 
     case MSG_NET_NETWORK_SETTINGS:
-      dispatch_network_settings(msg_data);
+      dispatch_network_settings();
       break;
 
     default:
@@ -166,7 +166,7 @@ dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
 }
 
 static void
-dispatch_network_settings(net_settings_t* settings)
+dispatch_network_settings()
 {
   wifi_config_applied = false;
   net_status.net_state = NS_CONNECT;
