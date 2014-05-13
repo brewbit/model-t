@@ -1,4 +1,4 @@
-*** 1.0.1 ***
+*** 1.1.0 ***
 - NEW: Support static IP address assignment.
 - FIX: Change hysteresis to force heating cooling until SP +/- H/2 is reached.
 - FIX: Disable outputs when the session is stopped.
