@@ -187,7 +187,7 @@ output_thread(void* arg)
 
         if (output->controller->state == TC_ACTIVE &&
             output_settings->enabled)
-          set_output_state(output, CYCLE_DELAY);
+          start_cycle_delay(output);
         break;
 
       case OUTPUT_CONTROL_ENABLED:
