@@ -11,6 +11,7 @@
 #include <string.h>
 
 
+#define ABS(v) ((v) < 0 ? -(v) : (v))
 #define SPACE 8
 
 
@@ -100,8 +101,8 @@ quantity_widget_paint(paint_event_t* event)
   else
     snprintf(value_str, sizeof(value_str), "%s%d.%d",
         sign,
-        (s->value / 10),
-        (s->value % 10));
+        ABS(s->value / 10),
+        ABS(s->value % 10));
 
   Extents_t value_ext = font_text_extents(font_opensans_regular_62, value_str);
   Extents_t unit_ext = font_text_extents(font_opensans_regular_22, unit_str);
