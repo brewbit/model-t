@@ -56,6 +56,13 @@
 	</storageModule>
 	<storageModule moduleId="org.eclipse.cdt.make.core.buildtargets">
 		<buildTargets>
+			<target name="Download All w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+				<buildCommand>make</buildCommand>
+				<buildTarget>JTAG=jlink download</buildTarget>
+				<stopOnError>true</stopOnError>
+				<useDefaultCommand>true</useDefaultCommand>
+				<runAllBuilders>true</runAllBuilders>
+			</target>
 			<target name="Clean" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
 				<buildTarget>clean</buildTarget>
@@ -77,37 +84,9 @@
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="Download All w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
-				<buildCommand>make</buildCommand>
-				<buildTarget>JTAG=jlink download</buildTarget>
-				<stopOnError>true</stopOnError>
-				<useDefaultCommand>true</useDefaultCommand>
-				<runAllBuilders>true</runAllBuilders>
-			</target>
 			<target name="Download Bootloader w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
 				<buildTarget>JTAG=jlink download_bootloader</buildTarget>
-				<stopOnError>true</stopOnError>
-				<useDefaultCommand>true</useDefaultCommand>
-				<runAllBuilders>true</runAllBuilders>
-			</target>
-			<target name="Download App (production) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
-				<buildCommand>make</buildCommand>
-				<buildTarget>JTAG=jlink WEB_API_HOST=dg.brewbit.com WEB_API_PORT=31337 download_app_mt</buildTarget>
-				<stopOnError>true</stopOnError>
-				<useDefaultCommand>true</useDefaultCommand>
-				<runAllBuilders>true</runAllBuilders>
-			</target>
-			<target name="Download App (staging) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
-				<buildCommand>make</buildCommand>
-				<buildTarget>JTAG=jlink WEB_API_HOST=dg.staging.brewbit.com WEB_API_PORT=31337 download_app_mt</buildTarget>
-				<stopOnError>true</stopOnError>
-				<useDefaultCommand>true</useDefaultCommand>
-				<runAllBuilders>true</runAllBuilders>
-			</target>
-			<target name="Download App (staging) w/ DFU" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
-				<buildCommand>make</buildCommand>
-				<buildTarget>JTAG=jlink WEB_API_HOST=dg.staging.brewbit.com WEB_API_PORT=31337 download_dfu_app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
@@ -120,37 +99,39 @@
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="Download All w/ Olimex" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="Build AppTest" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
-				<buildTarget>JTAG=ftdi/olimex-arm-usb-tiny-h download</buildTarget>
+				<buildTarget>app_test</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="Download Bootloader w/ Olimex" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="Download App (staging) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
-				<buildTarget>JTAG=ftdi/olimex-arm-usb-tiny-h download_bootloader</buildTarget>
+				<buildTarget>JTAG=jlink WEB_API_HOST=dg.staging.brewbit.com WEB_API_PORT=31337 download_app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="Download App (production) w/ Olimex" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="Clear App Config" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
-				<buildTarget>JTAG=ftdi/olimex-arm-usb-tiny-h WEB_API_HOST=dg.brewbit.com WEB_API_PORT=31337 download_app_mt</buildTarget>
+				<buildArguments/>
+				<buildTarget>clear_app_cfg</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="Download App (staging) w/ Olimex" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="Download App (192.168.1.104) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
-				<buildTarget>JTAG=ftdi/olimex-arm-usb-tiny-h WEB_API_HOST=dg.staging.brewbit.com WEB_API_PORT=31337 download_app_mt</buildTarget>
+				<buildArguments/>
+				<buildTarget>JTAG=jlink WEB_API_HOST=192.168.1.104 WEB_API_PORT=3000 download_app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="Download App (staging) w/ DFU w/ Olimex" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="Download App (192.168.1.134) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
-				<buildTarget>JTAG=ftdi/olimex-arm-usb-tiny-h WEB_API_HOST=dg.staging.brewbit.com WEB_API_PORT=31337 download_dfu_app_mt</buildTarget>
+				<buildTarget>JTAG=jlink WEB_API_HOST=192.168.1.134 WEB_API_PORT=31337 download_app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
@@ -162,10 +143,31 @@
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
 			</target>
-			<target name="Clear App Config" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+			<target name="Download App (staging) w/ DFU" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+				<buildCommand>make</buildCommand>
+				<buildTarget>JTAG=jlink WEB_API_HOST=dg.staging.brewbit.com WEB_API_PORT=31337 download_dfu_app_mt</buildTarget>
+				<stopOnError>true</stopOnError>
+				<useDefaultCommand>true</useDefaultCommand>
+				<runAllBuilders>true</runAllBuilders>
+			</target>
+			<target name="Download App (production) w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+				<buildCommand>make</buildCommand>
+				<buildTarget>JTAG=jlink WEB_API_HOST=dg.brewbit.com WEB_API_PORT=31337 download_app_mt</buildTarget>
+				<stopOnError>true</stopOnError>
+				<useDefaultCommand>true</useDefaultCommand>
+				<runAllBuilders>true</runAllBuilders>
+			</target>
+			<target name="Download Test w/ J-Link" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
+				<buildCommand>make</buildCommand>
+				<buildTarget>JTAG=jlink download_app_test</buildTarget>
+				<stopOnError>true</stopOnError>
+				<useDefaultCommand>true</useDefaultCommand>
+				<runAllBuilders>true</runAllBuilders>
+			</target>
+			<target name="Download App (production) w/ DFU" path="" targetID="org.eclipse.cdt.build.MakeTargetBuilder">
 				<buildCommand>make</buildCommand>
 				<buildArguments/>
-				<buildTarget>clear_app_cfg</buildTarget>
+				<buildTarget>JTAG=jlink WEB_API_HOST=dg.brewbit.com WEB_API_PORT=31337 download_dfu_app_mt</buildTarget>
 				<stopOnError>true</stopOnError>
 				<useDefaultCommand>true</useDefaultCommand>
 				<runAllBuilders>true</runAllBuilders>
