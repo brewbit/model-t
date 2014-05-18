@@ -118,8 +118,10 @@ home_screen_create()
   rect.x = 0;
   rect.width = TILE_SPAN(3);
   s->sensors[SENSOR_1].quantity_widget = quantity_widget_create(s->stage_widget, rect, app_cfg_get_temp_unit());
+  widget_disable(s->sensors[SENSOR_1].quantity_widget);
 
   s->sensors[SENSOR_2].quantity_widget = quantity_widget_create(s->stage_widget, rect, app_cfg_get_temp_unit());
+  widget_disable(s->sensors[SENSOR_2].quantity_widget);
 
   place_quantity_widgets(s);
 
