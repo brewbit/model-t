@@ -1,3 +1,12 @@
+*** 1.2.0 ***
+- FIX: Fix display of negative quantities between 0 and -1.
+- NEW: Add a configurable screen turn-off delay.
+- FIX: Fix static setpoint units/conversion when set to Celsius.
+- FIX: Add hysteresis to PID mode to prevent constant heater/cooler cycling.
+- FIX: Fix hysteresis implementation.
+- NEW: Add probe calibration utility.
+- FIX: Fix rapid relay cycling caused by invalid cycle delay setup.
+
 *** 1.1.0 ***
 - NEW: Support static IP address assignment.
 - FIX: Change hysteresis to force heating cooling until SP +/- H/2 is reached.
