@@ -216,6 +216,7 @@ dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg)
     msg->sample.value = 999.9;
   else if (msg->sample.value < -99.9)
     msg->sample.value = -99.9;
+  widget_enable(w, true);
   quantity_widget_set_value(w, msg->sample);
 
   /* Enable the sensor button and adjust the placement of the quantity display widgets */
@@ -242,11 +243,7 @@ dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg)
   if (widget_is_enabled(s->sensors[msg->sensor].button)) {
     button_set_icon(s->sensors[msg->sensor].button, img_temp_low);
     button_set_color(s->sensors[msg->sensor].button, STEEL);
-    quantity_t sample = {
-        .unit = UNIT_NONE,
-        .value = NAN
-    };
-    quantity_widget_set_value(w, sample);
+    widget_disable(w);
     place_quantity_widgets(s);
   }
 }

@@ -15,7 +15,8 @@
 
 
 typedef struct {
-  quantity_t sample;
+  int value;
+  unit_t unit;
   widget_t* widget;
 } quantity_widget_t;
 
@@ -37,8 +38,8 @@ quantity_widget_create(widget_t* parent, rect_t rect, unit_t display_unit)
   rect.height = font_opensans_regular_62->line_height;
   s->widget = widget_create(parent, &quantity_widget_class, s, rect);
 
-  s->sample.unit = display_unit;
-  s->sample.value = NAN;
+  s->unit = display_unit;
+  s->value = 0;
 
   return s->widget;
 }
@@ -58,7 +59,7 @@ quantity_widget_paint(paint_event_t* event)
   rect_t rect = widget_get_rect(event->widget);
 
   char* unit_str;
-  switch (s->sample.unit) {
+  switch (s->unit) {
   case UNIT_TEMP_DEG_C:
     unit_str = "C";
     break;
@@ -90,17 +91,17 @@ quantity_widget_paint(paint_event_t* event)
   }
 
   char* sign = "";
-  if (s->sample.value < 0)
+  if (s->value < 0)
     sign = "-";
 
   char value_str[16];
-  if (isnan(s->sample.value))
+  if (!widget_is_enabled(event->widget))
     strncpy(value_str, "--.-", sizeof(value_str));
   else
     snprintf(value_str, sizeof(value_str), "%s%d.%d",
         sign,
-        (int)(fabs(s->sample.value)),
-        ((int)(fabs(s->sample.value) * 10.0f)) % 10);
+        (s->value / 10),
+        (s->value % 10));
 
   Extents_t value_ext = font_text_extents(font_opensans_regular_62, value_str);
   Extents_t unit_ext = font_text_extents(font_opensans_regular_22, unit_str);
@@ -124,10 +125,11 @@ quantity_widget_set_value(widget_t* w, quantity_t sample)
   quantity_widget_t* s = widget_get_instance_data(w);
 
   // ensure that the given quantity is in the correct display unit
-  sample = quantity_convert(sample, s->sample.unit);
+  sample = quantity_convert(sample, s->unit);
+  int value = (int)(sample.value * 10);
 
-  if (s->sample.value != sample.value) {
-    s->sample.value = sample.value;
+  if (value != sample.value) {
+    s->value = value;
     widget_invalidate(s->widget);
   }
 }
@@ -137,8 +139,8 @@ quantity_widget_set_unit(widget_t* w, unit_t unit)
 {
   quantity_widget_t* s = widget_get_instance_data(w);
 
-  if (s->sample.unit != unit) {
-    s->sample.unit = unit;
+  if (s->unit != unit) {
+    s->unit = unit;
     widget_invalidate(s->widget);
   }
 }
