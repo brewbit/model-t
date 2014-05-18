@@ -122,8 +122,6 @@ app_cfg_get_temp_unit(void)
 void
 app_cfg_set_temp_unit(unit_t temp_unit)
 {
-  int i;
-
   if (temp_unit != UNIT_TEMP_DEG_C &&
       temp_unit != UNIT_TEMP_DEG_F)
     return;
@@ -132,12 +130,6 @@ app_cfg_set_temp_unit(unit_t temp_unit)
     return;
 
   chMtxLock(&app_cfg_mtx);
-
-  for (i = 0; i < NUM_SENSORS; ++i) {
-    controller_settings_t* s = &app_cfg_local.data.controller_settings[i];
-    s->static_setpoint = quantity_convert(s->static_setpoint, temp_unit);
-  }
-
   app_cfg_local.data.temp_unit = temp_unit;
   chMtxUnlock();
 

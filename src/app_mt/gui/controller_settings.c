@@ -318,6 +318,7 @@ static_setpoint_button_clicked(button_event_t* event)
 
   controller_settings_screen_t* s = widget_get_user_data(event->widget);
   unit_t temp_units = app_cfg_get_temp_unit();
+  quantity_t setpoint;
   float min;
   float max;
 
@@ -339,9 +340,10 @@ static_setpoint_button_clicked(button_event_t* event)
     min = MIN_TEMP_C;
     max = MAX_TEMP_C;
   }
+  setpoint = quantity_convert(s->settings.static_setpoint, temp_units);
 
   widget_t* static_setpoint_screen = quantity_select_screen_create(
-      title, s->settings.static_setpoint, min, max,
+      title, setpoint, min, max,
       velocity_steps, 3, update_static_setpoint, s);
   gui_push_screen(static_setpoint_screen);
 }
