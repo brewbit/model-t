@@ -28,8 +28,10 @@ typedef struct {
   sensor_id_t sensor;
 } sensor_timeout_msg_t;
 
+typedef uint8_t sensor_serial_t[6];
+
 typedef struct {
-  uint8_t sensor_sn[6];
+  sensor_serial_t sensor_serial;
   quantity_t offset;
 } sensor_config_t;
 

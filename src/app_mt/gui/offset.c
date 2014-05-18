@@ -28,6 +28,7 @@ static void rebuild_offset_screen(offset_screen_t* s);
 static void offset_screen_destroy(widget_t* w);
 static void offset_widget_msg(msg_event_t* event);
 static void update_probe_offset(quantity_t probe_offset, void* user_data);
+static void build_offset_screen(offset_screen_t* s, char* title);
 
 
 static const widget_class_t offset_widget_class = {
@@ -129,19 +130,7 @@ probe1_offset_button_clicked(button_event_t* event)
   offset_screen_t* s = widget_get_user_data(event->widget);
   s->sensor_id = SENSOR_1;
 
-  float velocity_steps[] = {
-      0.1f
-  };
-  sensor_config_t* sensor1_cfg = get_sensor_cfg(SENSOR_1);
-  quantity_t probe_offset = app_cfg_get_probe_offset(sensor1_cfg);
-  if (app_cfg_get_temp_unit() == UNIT_TEMP_DEG_C) {
-    probe_offset.value *= (5.0f / 9.0f);
-    probe_offset.unit = UNIT_TEMP_DEG_C;
-  }
-  widget_t* probe_offset_screen = quantity_select_screen_create(
-      "Probe 1 Offset", probe_offset, MIN_PROBE_OFFSET, MAX_PROBE_OFFSET, velocity_steps, 1,
-      update_probe_offset, s);
-  gui_push_screen(probe_offset_screen);
+  build_offset_screen(s, "Probe 1 Offset");
 }
 
 static void
@@ -153,17 +142,24 @@ probe2_offset_button_clicked(button_event_t* event)
   offset_screen_t* s = widget_get_user_data(event->widget);
   s->sensor_id = SENSOR_2;
 
+  build_offset_screen(s, "Probe 2 Offset");
+}
+
+static void
+build_offset_screen(offset_screen_t* s, char* title)
+{
   float velocity_steps[] = {
       0.1f
   };
-  sensor_config_t* sensor2_cfg = get_sensor_cfg(SENSOR_2);
-  quantity_t probe_offset = app_cfg_get_probe_offset(sensor2_cfg);
+  sensor_config_t* sensor_cfg = get_sensor_cfg(s->sensor_id);
+  quantity_t probe_offset = app_cfg_get_probe_offset(sensor_cfg->sensor_serial);
   if (app_cfg_get_temp_unit() == UNIT_TEMP_DEG_C) {
     probe_offset.value *= (5.0f / 9.0f);
     probe_offset.unit = UNIT_TEMP_DEG_C;
   }
+
   widget_t* probe_offset_screen = quantity_select_screen_create(
-      "Probe 2 Offset", probe_offset, MIN_PROBE_OFFSET, MAX_PROBE_OFFSET, velocity_steps, 1,
+      title, probe_offset, MIN_PROBE_OFFSET, MAX_PROBE_OFFSET, velocity_steps, 1,
       update_probe_offset, s);
   gui_push_screen(probe_offset_screen);
 }
@@ -173,14 +169,8 @@ update_probe_offset(quantity_t probe_offset, void* user_data)
 {
   offset_screen_t* s = user_data;
 
-  if (s->sensor_id == SENSOR_1) {
-    sensor_config_t* sensor1_cfg = get_sensor_cfg(SENSOR_1);
-    app_cfg_set_probe_offset(probe_offset, sensor1_cfg);
-  }
-  else {
-    sensor_config_t* sensor2_cfg = get_sensor_cfg(SENSOR_2);
-    app_cfg_set_probe_offset(probe_offset, sensor2_cfg);
-  }
+  sensor_config_t* sensor_cfg = get_sensor_cfg(s->sensor_id);
+  app_cfg_set_probe_offset(probe_offset, sensor_cfg->sensor_serial);
 
   rebuild_offset_screen(s);
 }
@@ -201,8 +191,8 @@ rebuild_offset_screen(offset_screen_t* s)
   sensor_config_t* sensor1_cfg = get_sensor_cfg(SENSOR_1);
   sensor_config_t* sensor2_cfg = get_sensor_cfg(SENSOR_2);
 
-  quantity_t probe1_offset = app_cfg_get_probe_offset(sensor1_cfg);
-  quantity_t probe2_offset = app_cfg_get_probe_offset(sensor2_cfg);
+  quantity_t probe1_offset = app_cfg_get_probe_offset(sensor1_cfg->sensor_serial);
+  quantity_t probe2_offset = app_cfg_get_probe_offset(sensor2_cfg->sensor_serial);
 
   if (app_cfg_get_temp_unit() == UNIT_TEMP_DEG_F) {
     units_subtext = "F";

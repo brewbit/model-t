@@ -141,13 +141,11 @@ sensor_get_sample(sensor_port_t* tp, quantity_t* sample)
     return false;
   }
 
-  tp->sensor_config.offset = app_cfg_get_probe_offset(&tp->sensor_config);
+  tp->sensor_config.offset = app_cfg_get_probe_offset(tp->sensor_config.sensor_serial);
 
-  if (memcmp(&tp->sensor_config.sensor_sn[0], &addr[1], 6 != 0)) {
-    memcpy(&tp->sensor_config.sensor_sn[0], &addr[1], 6);
-    tp->sensor_config.offset = app_cfg_get_probe_offset(&tp->sensor_config);
-    open_ports[tp->sensor]->sensor_config.offset = tp->sensor_config.offset;
-    memcpy(open_ports[tp->sensor]->sensor_config.sensor_sn, &tp->sensor_config.sensor_sn, 6);
+  if (memcmp(&tp->sensor_config.sensor_serial[0], &addr[1], sizeof(sensor_serial_t)) != 0) {
+    memcpy(&tp->sensor_config.sensor_serial[0], &addr[1], sizeof(sensor_serial_t));
+    tp->sensor_config.offset = app_cfg_get_probe_offset(tp->sensor_config.sensor_serial);
   }
 
   switch (addr[0]) {
@@ -216,7 +214,8 @@ read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample)
   return true;
 }
 
-sensor_config_t* get_sensor_cfg(sensor_id_t sensor_id)
+sensor_config_t*
+get_sensor_cfg(sensor_id_t sensor_id)
 {
   return &open_ports[sensor_id]->sensor_config;
 }

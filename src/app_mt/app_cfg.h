@@ -50,10 +50,10 @@ void
 app_cfg_set_screen_saver(quantity_t screen_saver);
 
 quantity_t
-app_cfg_get_probe_offset(sensor_config_t* sensor_cfg);
+app_cfg_get_probe_offset(sensor_serial_t sensor_serial);
 
 void
-app_cfg_set_probe_offset(quantity_t probe_offset, sensor_config_t* sensor_cfg);
+app_cfg_set_probe_offset(quantity_t probe_offset, sensor_serial_t sensor_serial);
 
 const matrix_t*
 app_cfg_get_touch_calib(void);

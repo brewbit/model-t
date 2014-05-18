@@ -200,23 +200,24 @@ app_cfg_set_screen_saver(quantity_t screen_saver)
 }
 
 quantity_t
-app_cfg_get_probe_offset(sensor_config_t* sensor_cfg)
+app_cfg_get_probe_offset(sensor_serial_t sensor_serial)
 {
   uint8_t i;
   quantity_t offset;
 
+  offset.unit = UNIT_TEMP_DEG_F;
   offset.value = 0;
 
-  for(i = 0; i < MAX_NUM_SENSOR_CONFIGS; i++)
-  {
-    if(memcmp(sensor_cfg->sensor_sn, app_cfg_local.data.sensor_configs[i].sensor_sn, 6) == 0)
+  for (i = 0; i < MAX_NUM_SENSOR_CONFIGS; i++) {
+    if (memcmp(sensor_serial, app_cfg_local.data.sensor_configs[i].sensor_serial, sizeof(sensor_serial_t)) == 0)
       return app_cfg_local.data.sensor_configs[i].offset;
   }
+  
   return offset;
 }
 
 void
-app_cfg_set_probe_offset(quantity_t probe_offset, sensor_config_t* sensor_cfg)
+app_cfg_set_probe_offset(quantity_t probe_offset, sensor_serial_t sensor_serial)
 {
   uint8_t i;
   int idx, next_idx;
@@ -224,8 +225,8 @@ app_cfg_set_probe_offset(quantity_t probe_offset, sensor_config_t* sensor_cfg)
   idx = next_idx = -1;
 
   for(i = 0; i < MAX_NUM_SENSOR_CONFIGS; i++) {
-    uint8_t* sensor_sn = app_cfg_local.data.sensor_configs[i].sensor_sn;
-    if(memcmp(&sensor_cfg->sensor_sn, sensor_sn, 6) == 0) {
+    sensor_serial_t* sensor_sn = &app_cfg_local.data.sensor_configs[i].sensor_serial;
+    if(memcmp(sensor_serial, sensor_sn, sizeof(sensor_serial_t)) == 0) {
       idx = i;
       next_idx = i;
       break;
@@ -237,18 +238,19 @@ app_cfg_set_probe_offset(quantity_t probe_offset, sensor_config_t* sensor_cfg)
     }
   }
 
+  if (next_idx < 0)
+    return;
+
+  if (idx < 0)
+    idx = next_idx;
+
   if (probe_offset.unit == UNIT_TEMP_DEG_C) {
     probe_offset.value *= (9.0f / 5.0f);
     probe_offset.unit = UNIT_TEMP_DEG_F;
   }
 
-  if (next_idx < 0)
-    return;
-  else if (idx < 0)
-    idx = next_idx;
-
   chMtxLock(&app_cfg_mtx);
-  memcpy(&app_cfg_local.data.sensor_configs[idx].sensor_sn, &sensor_cfg->sensor_sn, 6);
+  memcpy(app_cfg_local.data.sensor_configs[idx].sensor_serial, sensor_serial, sizeof(sensor_serial_t));
   app_cfg_local.data.sensor_configs[idx].offset = probe_offset;
   chMtxUnlock();
 }

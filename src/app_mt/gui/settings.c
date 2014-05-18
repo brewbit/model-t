@@ -324,6 +324,9 @@ rebuild_settings_screen(settings_screen_t* s)
 
   button_list_set_buttons(s->button_list, buttons, num_buttons);
 
+  if (screen_saver_subtext != NULL)
+    free(screen_saver_subtext);
+
   if (hysteresis_subtext != NULL)
     free(hysteresis_subtext);
 }
