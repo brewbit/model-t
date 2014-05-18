@@ -153,3 +153,12 @@ lcd_clr_cursor()
 {
   lcd_set_cursor(0, 0, DISP_WIDTH - 1, DISP_HEIGHT - 1);
 }
+
+void
+lcd_set_brightness(uint8_t percent)
+{
+  if (percent > 0)
+    palSetPad(PORT_TFT_BKLT, PAD_TFT_BKLT);
+  else
+    palClearPad(PORT_TFT_BKLT, PAD_TFT_BKLT);
+}

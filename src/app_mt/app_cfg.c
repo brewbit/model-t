@@ -183,6 +183,23 @@ app_cfg_set_hysteresis(quantity_t hysteresis)
 }
 
 quantity_t
+app_cfg_get_screen_saver(void)
+{
+  return app_cfg_local.data.screen_saver;
+}
+
+void
+app_cfg_set_screen_saver(quantity_t screen_saver)
+{
+  if (memcmp(&screen_saver, &app_cfg_local.data.screen_saver, sizeof(quantity_t)) == 0)
+    return;
+
+  chMtxLock(&app_cfg_mtx);
+  app_cfg_local.data.screen_saver = screen_saver;
+  chMtxUnlock();
+}
+
+quantity_t
 app_cfg_get_probe_offset(sensor_config_t* sensor_cfg)
 {
   uint8_t i;

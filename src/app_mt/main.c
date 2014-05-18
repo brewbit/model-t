@@ -187,6 +187,8 @@ main(void)
 
   recovery_screen_create();
 
+  screen_saver_create();
+
   if (palReadPad(PORT_SELF_TEST_EN, PAD_SELF_TEST_EN) == 0) {
     widget_t* self_test_screen = self_test_screen_create();
     gui_push_screen(self_test_screen);

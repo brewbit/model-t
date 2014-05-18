@@ -56,6 +56,7 @@ PROJECT_CSRC = \
        gui/output_settings.c \
        gui/quantity_select.c \
        gui/recovery.c \
+       gui/screen_saver.c \
        gui/controller_settings.c \
        gui/settings.c \
        gui/textentry.c \
