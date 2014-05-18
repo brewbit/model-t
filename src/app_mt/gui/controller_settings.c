@@ -165,7 +165,7 @@ set_controller_settings(controller_settings_screen_t* s)
       subtext = "Invalid setpoint type!";
       break;
   }
-  add_button_spec(buttons, &num_buttons, setpoint_type_button_clicked, img_snowflake, CYAN,
+  add_button_spec(buttons, &num_buttons, setpoint_type_button_clicked, img_hysteresis, CYAN,
       "Setpoint Type", subtext, s);
 
   setpoint_subtext = malloc(128);
@@ -183,7 +183,7 @@ set_controller_settings(controller_settings_screen_t* s)
           (int)(setpoint.value),
           ((int)(fabs(setpoint.value) * 10.0f)) % 10, subtext);
 
-      add_button_spec(buttons, &num_buttons, static_setpoint_button_clicked, img_snowflake, CYAN,
+      add_button_spec(buttons, &num_buttons, static_setpoint_button_clicked, img_temp_hi_small, CYAN,
           "Static Setpoint", setpoint_subtext, s);
       break;
     }
@@ -196,7 +196,7 @@ set_controller_settings(controller_settings_screen_t* s)
       else
         snprintf(setpoint_subtext, 128, "Selected profile: id=%u", (unsigned int)s->settings.temp_profile_id);
 
-      add_button_spec(buttons, &num_buttons, temp_profile_button_clicked, img_snowflake, CYAN,
+      add_button_spec(buttons, &num_buttons, temp_profile_button_clicked, img_temp_hi_small, CYAN,
           "Temp Profile", setpoint_subtext, s);
       break;
     }
