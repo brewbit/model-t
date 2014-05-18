@@ -16,6 +16,7 @@ typedef struct {
   unit_t temp_unit;
   output_ctrl_t control_mode;
   quantity_t hysteresis;
+  sensor_config_t sensor_configs[MAX_NUM_SENSOR_CONFIGS];
   matrix_t touch_calib;
   controller_settings_t controller_settings[NUM_CONTROLLERS];
   temp_profile_t temp_profiles[NUM_CONTROLLERS];
@@ -185,6 +186,70 @@ app_cfg_set_hysteresis(quantity_t hysteresis)
 
   chMtxLock(&app_cfg_mtx);
   app_cfg_local.data.hysteresis = hysteresis;
+  chMtxUnlock();
+}
+
+quantity_t
+app_cfg_get_probe_offset(sensor_config_t* sensor_cfg)
+{
+  uint8_t i;
+  quantity_t offset;
+
+  offset.value = 0;
+
+  for(i = 0; i < MAX_NUM_SENSOR_CONFIGS; i++)
+  {
+    if(memcmp(sensor_cfg->sensor_sn, app_cfg_local.data.sensor_configs[i].sensor_sn, 6) == 0) {
+      printf("FOUND IT\r\n",i);
+      return app_cfg_local.data.sensor_configs[i].offset;
+    }
+  }
+  return offset;
+}
+
+void
+app_cfg_set_probe_offset(quantity_t probe_offset, sensor_config_t* sensor_cfg)
+{
+  uint8_t i;
+  int idx, next_idx;
+
+  idx = next_idx = -1;
+
+  for(i = 0; i < MAX_NUM_SENSOR_CONFIGS; i++) {
+    uint8_t* sensor_sn = app_cfg_local.data.sensor_configs[i].sensor_sn;
+    if(memcmp(&sensor_cfg->sensor_sn, sensor_sn, 6) == 0) {
+      printf("FOUND ONE TO SET %d\r\n",i);
+      idx = i;
+      next_idx = i;
+      break;
+    }
+    /* super cryptic non-zero check */
+    else if (sensor_sn[0] == 0 && memcmp(sensor_sn, sensor_sn + 1, 5) == 0) {
+      printf("FOUND OPEN SPOT %d\r\n",i);
+      next_idx = i;
+      break;
+    }
+  }
+
+  if (probe_offset.unit == UNIT_TEMP_DEG_C) {
+    probe_offset.value *= (9.0f / 5.0f);
+    probe_offset.unit = UNIT_TEMP_DEG_F;
+  }
+
+  if (next_idx < 0) {
+    printf("TITS\r\n",idx);
+    return;
+  }
+  else if (idx < 0) {
+    printf("TITS\r\n",idx);
+    idx = next_idx;
+  }
+
+  printf("SET %d\r\n",idx);
+
+  chMtxLock(&app_cfg_mtx);
+  memcpy(&app_cfg_local.data.sensor_configs[idx].sensor_sn, &sensor_cfg->sensor_sn, 6);
+  app_cfg_local.data.sensor_configs[idx].offset = probe_offset;
   chMtxUnlock();
 }
 

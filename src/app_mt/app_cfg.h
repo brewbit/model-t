@@ -9,6 +9,8 @@
 #include "web_api.h"
 #include "net.h"
 #include "fault.h"
+#include "offset.h"
+#include "sensor.h"
 
 
 typedef enum {
@@ -40,6 +42,12 @@ app_cfg_get_hysteresis(void);
 
 void
 app_cfg_set_hysteresis(quantity_t hysteresis);
+
+quantity_t
+app_cfg_get_probe_offset(sensor_config_t* sensor_cfg);
+
+void
+app_cfg_set_probe_offset(quantity_t probe_offset, sensor_config_t* sensor_cfg);
 
 const matrix_t*
 app_cfg_get_touch_calib(void);

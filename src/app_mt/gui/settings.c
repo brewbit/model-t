@@ -11,6 +11,7 @@
 #include "gui/info.h"
 #include "gui/button_list.h"
 #include "quantity_select.h"
+#include "gui/offset.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -30,7 +31,8 @@ static void settings_screen_destroy(widget_t* w);
 static void back_button_clicked(button_event_t* event);
 static void unit_button_clicked(button_event_t* event);
 static void update_button_clicked(button_event_t* event);
-static void calibrate_button_clicked(button_event_t* event);
+static void calibrate_screen_button_clicked(button_event_t* event);
+static void probe_offset_button_clicked(button_event_t* event);
 static void info_button_clicked(button_event_t* event);
 static void control_mode_button_clicked(button_event_t* event);
 static void rebuild_settings_screen(settings_screen_t* s);
@@ -115,13 +117,27 @@ info_button_clicked(button_event_t* event)
 }
 
 static void
-calibrate_button_clicked(button_event_t* event)
+calibrate_screen_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
     settings_screen_t* s = widget_get_user_data(event->widget);
     widget_t* calib_screen = calib_screen_create();
 
     gui_push_screen(calib_screen);
+
+    rebuild_settings_screen(s);
+  }
+}
+
+
+static void
+probe_offset_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
+    settings_screen_t* s = widget_get_user_data(event->widget);
+    widget_t* offset_screen = offset_screen_create();
+
+    gui_push_screen(offset_screen);
 
     rebuild_settings_screen(s);
   }
@@ -159,10 +175,10 @@ hysteresis_button_clicked(button_event_t* event)
     hysteresis.value *= (5.0f / 9.0f);
     hysteresis.unit = UNIT_TEMP_DEG_C;
   }
-  widget_t* hysteresis_delay_screen = quantity_select_screen_create(
+  widget_t* hysteresis_screen = quantity_select_screen_create(
       "Hysteresis", hysteresis, MIN_HYSTERESIS, MAX_HYSTERESIS, velocity_steps, 1,
       update_hysteresis, s);
-  gui_push_screen(hysteresis_delay_screen);
+  gui_push_screen(hysteresis_screen);
 }
 
 static void
@@ -261,8 +277,14 @@ rebuild_settings_screen(settings_screen_t* s)
 
   text = "Screen Calibration";
   subtext = "Perform 3 point screen calibration";
-  add_button_spec(buttons, &num_buttons, calibrate_button_clicked, img_hand, AMBER,
+  add_button_spec(buttons, &num_buttons, calibrate_screen_button_clicked, img_hand, AMBER,
       text, subtext, s);
+
+  text = "Probe Offset";
+  subtext = "Add temperature probe offset";
+  add_button_spec(buttons, &num_buttons, probe_offset_button_clicked, img_temp_med, COBALT,
+      text, subtext, s);
+
 
   text = "Model-T Info";
   subtext = "Display detailed device information";

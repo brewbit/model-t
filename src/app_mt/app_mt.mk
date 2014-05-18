@@ -63,6 +63,7 @@ PROJECT_CSRC = \
        gui/conn_status.c \
        gui/wifi_scan.c \
        gui/self_test.c \
+       gui/offset.c \
        wifi/core/cc3000_common.c \
        wifi/core/cc3000_spi.c \
        wifi/core/hci.c \

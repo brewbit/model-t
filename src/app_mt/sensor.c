@@ -15,6 +15,7 @@
 
 typedef struct sensor_port_s {
   sensor_id_t sensor;
+  sensor_config_t sensor_config;
   float sample_filter[SENSOR_SAMPLE_SIZE];
   uint8_t sample_filter_index;
   uint8_t sample_size;
@@ -25,6 +26,7 @@ typedef struct sensor_port_s {
   bool connected;
 } sensor_port_t;
 
+static sensor_port_t* open_ports[NUM_SENSORS];
 
 static msg_t sensor_thread(void* arg);
 static bool sensor_get_sample(sensor_port_t* tp, quantity_t* sample);
@@ -39,6 +41,7 @@ sensor_port_t*
 sensor_init(sensor_id_t sensor, onewire_bus_t* port)
 {
   sensor_port_t* tp = calloc(1, sizeof(sensor_port_t));
+  open_ports[sensor] = tp;
 
   tp->sensor = sensor;
   tp->bus = port;
@@ -61,6 +64,7 @@ sensor_thread(void* arg)
 
     if (sensor_get_sample(tp, &sample)) {
       filter_sample(tp, &sample);
+      sample.value = (sample.value + tp->sensor_config.offset.value);
       tp->connected = true;
       tp->last_sample_time = chTimeNow();
       send_sensor_msg(tp, &sample);
@@ -112,6 +116,7 @@ send_sensor_msg(sensor_port_t* tp, quantity_t* sample)
       .sensor = tp->sensor,
       .sample = *sample
   };
+  open_ports[tp->sensor]->connected = true;
   msg_send(MSG_SENSOR_SAMPLE, &msg);
 }
 
@@ -121,6 +126,7 @@ send_timeout_msg(sensor_port_t* tp)
   sensor_timeout_msg_t msg = {
       .sensor = tp->sensor
   };
+  open_ports[tp->sensor]->connected = false;
   msg_send(MSG_SENSOR_TIMEOUT, &msg);
 }
 
@@ -133,6 +139,15 @@ sensor_get_sample(sensor_port_t* tp, quantity_t* sample)
   }
   if (!onewire_read_rom(tp->bus, addr)) {
     return false;
+  }
+
+  tp->sensor_config.offset = app_cfg_get_probe_offset(&tp->sensor_config);
+
+  if (memcmp(&tp->sensor_config.sensor_sn[0], &addr[1], 6 != 0)) {
+    memcpy(&tp->sensor_config.sensor_sn[0], &addr[1], 6);
+    tp->sensor_config.offset = app_cfg_get_probe_offset(&tp->sensor_config);
+    open_ports[tp->sensor]->sensor_config.offset = tp->sensor_config.offset;
+    memcpy(open_ports[tp->sensor]->sensor_config.sensor_sn, &tp->sensor_config.sensor_sn, 6);
   }
 
   switch (addr[0]) {
@@ -199,4 +214,15 @@ read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample)
   sample->value = ((t / 16.0f) * 1.8f) + 32;
 
   return true;
+}
+
+sensor_config_t* get_sensor_cfg(sensor_id_t sensor_id)
+{
+  return &open_ports[sensor_id]->sensor_config;
+}
+
+bool
+get_sensor_conn_status(sensor_id_t sensor_id)
+{
+  return open_ports[sensor_id]->connected;
 }
