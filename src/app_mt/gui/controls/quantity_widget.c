@@ -89,12 +89,17 @@ quantity_widget_paint(paint_event_t* event)
     break;
   }
 
+  char* sign = "";
+  if (s->sample.value < 0)
+    sign = "-";
+
   char value_str[16];
   if (isnan(s->sample.value))
     strncpy(value_str, "--.-", sizeof(value_str));
   else
-    snprintf(value_str, sizeof(value_str), "%d.%d",
-        (int)(s->sample.value),
+    snprintf(value_str, sizeof(value_str), "%s%d.%d",
+        sign,
+        (int)(fabs(s->sample.value)),
         ((int)(fabs(s->sample.value) * 10.0f)) % 10);
 
   Extents_t value_ext = font_text_extents(font_opensans_regular_62, value_str);
