@@ -224,25 +224,26 @@ relay_control(relay_output_t* output)
   const output_settings_t* output_settings = get_output_settings(output->controller, output->id);
   float sample = output->controller->last_sample.value;
   float setpoint = get_sp(output->controller);
+  float hysteresis = app_cfg_get_hysteresis().value;
 
   output->status.output = output->id;
 
   switch (app_cfg_get_control_mode()) {
   case ON_OFF:
   {
-    float half_hysteresis = app_cfg_get_hysteresis().value / 2;
+
 
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
-      if (sample <= setpoint - half_hysteresis)
+      if (sample <= setpoint - hysteresis)
         enable_relay(output, true);
-      else if (sample >= setpoint + half_hysteresis) {
+      else if (sample >= setpoint) {
         enable_relay(output, false);
       }
     }
     else {
-      if (sample >= setpoint + half_hysteresis)
+      if (sample >= setpoint + hysteresis)
         enable_relay(output, true);
-      else if (sample <= setpoint - half_hysteresis) {
+      else if (sample <= setpoint) {
         enable_relay(output, false);
       }
     }
@@ -252,14 +253,14 @@ relay_control(relay_output_t* output)
 
   case PID:
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
-      if (sample < (setpoint + output->pid_control.out))
+      if (sample < (setpoint + output->pid_control.out) - hysteresis)
         enable_relay(output, true);
       else {
         enable_relay(output, false);
       }
     }
     else {
-      if (sample > (setpoint - output->pid_control.out))
+      if (sample > (setpoint - output->pid_control.out) + hysteresis)
         enable_relay(output, true);
       else {
         enable_relay(output, false);
