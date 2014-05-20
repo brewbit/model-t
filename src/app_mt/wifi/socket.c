@@ -972,7 +972,7 @@ socket_io_thread(void *arg)
   int maxFD = 0;
   int i = 0;
 
-  chRegSetThreadName("socket_io_thread");
+  chRegSetThreadName("socket_io");
 
   memset(&timeout, 0, sizeof(struct timeval));
   timeout.tv_sec = 0;

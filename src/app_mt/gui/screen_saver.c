@@ -57,6 +57,10 @@ screen_saver_destroy(widget_t* w)
 static msg_t
 screen_saver_thread(void* arg)
 {
+  (void)arg;
+
+  chRegSetThreadName("screen_saver");
+
   while (1) {
     screen_saver_t* s = arg;
     quantity_t screen_saver_timeout = app_cfg_get_screen_saver();

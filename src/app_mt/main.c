@@ -19,6 +19,8 @@
 #include "ota_update.h"
 #include "thread_watchdog.h"
 #include "app_hdr.h"
+#include "screen_saver.h"
+#include "cmdline.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -161,6 +163,8 @@ main(void)
   /* start stdout port */
   sdStart(SD_STDIO, NULL);
 
+  cmdline_init();
+
   rngStart(&RNGD);
 
   app_cfg_init();
@@ -199,8 +203,10 @@ main(void)
   chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
 
   while (TRUE) {
+    cmdline_restart();
+
     toggle_LED1();
 
-    print_device_stats();
+//    print_device_stats();
   }
 }

@@ -63,6 +63,7 @@ static msg_t
 thread_watchdog_thread(void* arg)
 {
   (void)arg;
+  chRegSetThreadName("thd_wd");
 
   while (1) {
     uint32_t i;

@@ -3,8 +3,7 @@
 	<name>model-t</name>
 	<comment></comment>
 	<projects>
-		<project>ChibiOS-RT (whole tree)</project>
-		<project>nanopb</project>
+		<project>ChibiOS-RT</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
