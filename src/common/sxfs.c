@@ -20,11 +20,15 @@ static const part_info_t part_info[NUM_SXFS_PARTS] = {
     },
     [SP_RECOVERY_IMG] = {
         .offset = 0x00010000,
-        .size   = 0x00110000 // 1024 KB
+        .size   = 0x00100000 // 1024 KB
     },
     [SP_UPDATE_IMG] = {
         .offset = 0x00110000,
-        .size   = 0x00110000 // 1024 KB
+        .size   = 0x00100000 // 1024 KB
+    },
+    [SP_OFFLINE_LOG] = {
+        .offset = 0x00210000,
+        .size   = 0x00100000 // 1024 KB
     },
 };
 

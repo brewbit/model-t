@@ -12,6 +12,7 @@ typedef enum {
   SP_BOOT_PARAMS,
   SP_RECOVERY_IMG,
   SP_UPDATE_IMG,
+  SP_OFFLINE_LOG,
   NUM_SXFS_PARTS
 } sxfs_part_id_t;
 
