@@ -228,21 +228,21 @@ app_cfg_set_probe_offset(quantity_t probe_offset, sensor_serial_t sensor_serial)
     sensor_serial_t* sensor_sn = &app_cfg_local.data.sensor_configs[i].sensor_serial;
     if(memcmp(sensor_serial, sensor_sn, sizeof(sensor_serial_t)) == 0) {
       idx = i;
-      next_idx = i;
       break;
     }
     /* super cryptic non-zero check */
-    else if (sensor_sn[0] == 0 && memcmp(sensor_sn, sensor_sn + 1, 5) == 0) {
+    else if (((*sensor_sn)[0] == 0) &&
+             (memcmp(*sensor_sn, *(sensor_sn + 1), 5) == 0)) {
       next_idx = i;
       break;
     }
   }
 
-  if (next_idx < 0)
-    return;
-
   if (idx < 0)
     idx = next_idx;
+
+  if (idx < 0)
+    return;
 
   if (probe_offset.unit == UNIT_TEMP_DEG_C) {
     probe_offset.value *= (9.0f / 5.0f);
