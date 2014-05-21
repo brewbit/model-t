@@ -70,7 +70,7 @@ cmd_threads(BaseChannel *chp, int argc, char *argv[])
     return;
   }
   chprintf(chp, "name            trace     addr    stack prio refs state     time\r\n");
-  chprintf(chp, "===========================================================\r\n");
+  chprintf(chp, "================================================================\r\n");
   tp = chRegFirstThread();
   do {
     chprintf(chp, "%-16s %4d %.8lx %.8lx %4lu %4lu %-9s %lu\r\n",
