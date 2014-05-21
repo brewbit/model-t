@@ -18,6 +18,7 @@
 #include "temp_control.h"
 #include "app_cfg.h"
 #include "ota_update.h"
+#include "sntp.h"
 
 #ifndef WEB_API_HOST
 #define WEB_API_HOST_STR "dg.brewbit.com"
@@ -416,6 +417,10 @@ send_sensor_report(web_api_t* api)
       pr->controller_index = i;
       pr->sensor_reading = api->controller_status[i].last_sample.value;
       pr->setpoint = temp_control_get_current_setpoint(i);
+      if (sntp_time_available()) {
+        pr->has_timestamp = true;
+        pr->timestamp = sntp_get_time();
+      }
     }
   }
 
