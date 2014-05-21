@@ -5,14 +5,21 @@
 #include <shell.h>
 #include <chprintf.h>
 
+#include "app_cfg.h"
+#include "net.h"
+
 
 static void cmd_mem(BaseChannel *chp, int argc, char *argv[]);
 static void cmd_threads(BaseChannel *chp, int argc, char *argv[]);
+static void cmd_slinfo(BaseChannel *chp, int argc, char *argv[]);
+static void cmd_sysinfo(BaseChannel *chp, int argc, char *argv[]);
 
 
 static const ShellCommand commands[] = {
   {"mem", cmd_mem},
   {"threads", cmd_threads},
+  {"slinfo", cmd_slinfo},
+  {"sysinfo", cmd_sysinfo},
   {NULL, NULL}
 };
 
@@ -40,6 +47,35 @@ cmdline_restart()
 
   if (shelltp == NULL)
     shelltp = shellCreate(&shell_cfg, 1024, NORMALPRIO);
+}
+
+static void
+cmd_slinfo(BaseChannel *chp, int argc, char *argv[])
+{
+  (void)argv;
+  if (argc > 0) {
+    chprintf(chp, "Usage: slinfo\r\n");
+    return;
+  }
+
+  const hci_stats_t* hs = hci_get_stats();
+  chprintf(chp, "free buffers     : %u\r\n", hs->num_free_buffers);
+  chprintf(chp, "buffer len       : %u\r\n", hs->buffer_len);
+  chprintf(chp, "sent packets     : %u\r\n", hs->num_sent_packets);
+  chprintf(chp, "released packets : %u\r\n", hs->num_released_packets);
+  chprintf(chp, "comm timeouts    : %u\r\n", hs->num_timeouts);
+}
+
+static void
+cmd_sysinfo(BaseChannel *chp, int argc, char *argv[])
+{
+  (void)argv;
+  if (argc > 0) {
+    chprintf(chp, "Usage: sysinfo\r\n");
+    return;
+  }
+
+  chprintf(chp, "resets : %u\r\n", app_cfg_get_reset_count());
 }
 
 static void

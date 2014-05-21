@@ -110,20 +110,6 @@ get_device_id(void)
 }
 
 static void
-print_device_stats(void)
-{
-  printf("SYS: %d\r\n", app_cfg_get_reset_count());
-
-  const hci_stats_t* hs = hci_get_stats();
-  printf("HCI: %u %u %u %u %u\r\n",
-      hs->num_free_buffers,
-      hs->buffer_len,
-      (unsigned int)hs->num_sent_packets,
-      (unsigned int)hs->num_released_packets,
-      (unsigned int)hs->num_timeouts);
-}
-
-static void
 toggle_LED1(void)
 {
   palSetPad(PORT_LED1, PAD_LED1);
@@ -206,7 +192,5 @@ main(void)
     cmdline_restart();
 
     toggle_LED1();
-
-//    print_device_stats();
   }
 }
