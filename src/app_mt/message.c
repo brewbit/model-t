@@ -72,16 +72,22 @@ msg_thread_func(void* arg)
 
   chRegSetThreadName(l->name);
 
+  chThdTrace(MSG_INIT);
   l->dispatch(MSG_INIT, NULL, l->user_data, NULL);
 
   while (1) {
+    chThdTrace(-1);
     thread_msg_t* msg = msg_get(l);
 
     if (msg != NULL) {
+      chThdTrace(msg->id);
       l->dispatch(msg->id, msg->msg_data, l->user_data, msg->user_data);
+
+      chThdTrace(-2);
       msg_release(msg);
     }
     else {
+      chThdTrace(MSG_IDLE);
       l->dispatch(MSG_IDLE, NULL, l->user_data, NULL);
     }
     if (l->watchdog_enabled)

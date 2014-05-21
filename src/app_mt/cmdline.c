@@ -69,12 +69,13 @@ cmd_threads(BaseChannel *chp, int argc, char *argv[])
     chprintf(chp, "Usage: threads\r\n");
     return;
   }
-  chprintf(chp, "name                 addr    stack prio refs state     time\r\n");
+  chprintf(chp, "name            trace     addr    stack prio refs state     time\r\n");
   chprintf(chp, "===========================================================\r\n");
   tp = chRegFirstThread();
   do {
-    chprintf(chp, "%-16s %.8lx %.8lx %4lu %4lu %-9s %lu\r\n",
+    chprintf(chp, "%-16s %4d %.8lx %.8lx %4lu %4lu %-9s %lu\r\n",
             chRegGetThreadName(tp),
+            tp->tracepoint,
             (uint32_t)tp,
             (uint32_t)tp->p_ctx.r13,
             (uint32_t)tp->p_prio,

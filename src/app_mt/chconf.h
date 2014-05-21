@@ -454,6 +454,7 @@
 /*===========================================================================*/
 
 #define MAX_THREAD_MAILBOX_MSGS 64
+#define chThdTrace(t) chThdSelf()->tracepoint = (t)
 
 /**
  * @brief   Threads descriptor structure extension.
@@ -465,7 +466,8 @@
   Mailbox mb;                                                               \
   msg_t mb_buf[MAX_THREAD_MAILBOX_MSGS];                                    \
   Semaphore mb_sem;                                                         \
-  int local_errno;
+  int local_errno;                                                          \
+  int tracepoint;
 #endif
 
 /**
@@ -480,6 +482,7 @@
   /* Add threads initialization code here.*/                                \
   chMBInit(&tp->mb, tp->mb_buf, MAX_THREAD_MAILBOX_MSGS);                   \
   chSemInit(&tp->mb_sem, 0);                                                \
+  tp->tracepoint = 0;                                                       \
 }
 #endif
 
