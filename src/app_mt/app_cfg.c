@@ -2,13 +2,14 @@
 #include "ch.h"
 #include "app_cfg.h"
 #include "message.h"
-#include "iflash.h"
+#include "sxfs.h"
 #include "common.h"
 #include "crc/crc32.h"
 #include "touch.h"
 #include "types.h"
 
 #include <string.h>
+#include <stdio.h>
 
 
 typedef struct {
@@ -33,9 +34,9 @@ typedef struct {
 } app_cfg_rec_t;
 
 
-/* app_cfg stored in flash */
-__attribute__ ((section("app_cfg")))
-app_cfg_rec_t app_cfg_stored;
+static app_cfg_rec_t* app_cfg_load(sxfs_part_id_t* loaded_from);
+static app_cfg_rec_t* app_cfg_load_from(sxfs_part_id_t part);
+
 
 /* Local RAM copy of app_cfg */
 static app_cfg_rec_t app_cfg_local;
@@ -48,11 +49,11 @@ app_cfg_init()
 {
   chMtxInit(&app_cfg_mtx);
 
-  uint32_t calc_crc = crc32_block(0, &app_cfg_stored.data, sizeof(app_cfg_data_t));
-
-  if (app_cfg_stored.crc == calc_crc) {
-    app_cfg_local = app_cfg_stored;
+  app_cfg_rec_t* app_cfg = app_cfg_load(NULL);
+  if (app_cfg != NULL) {
+    app_cfg_local = *app_cfg;
     app_cfg_local.data.reset_count++;
+    free(app_cfg);
   }
   else {
     app_cfg_local.data.reset_count = 0;
@@ -103,6 +104,49 @@ app_cfg_init()
 
     app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
   }
+}
+
+static app_cfg_rec_t*
+app_cfg_load(sxfs_part_id_t* loaded_from)
+{
+  app_cfg_rec_t* app_cfg = app_cfg_load_from(SP_APP_CFG_1);
+  if (app_cfg != NULL) {
+    if (loaded_from != NULL)
+      *loaded_from = SP_APP_CFG_1;
+
+    return app_cfg;
+  }
+
+  app_cfg = app_cfg_load_from(SP_APP_CFG_2);
+  if (app_cfg != NULL) {
+    if (loaded_from != NULL)
+      *loaded_from = SP_APP_CFG_2;
+
+    return app_cfg;
+  }
+
+  return NULL;
+}
+
+static app_cfg_rec_t*
+app_cfg_load_from(sxfs_part_id_t part)
+{
+  bool ret;
+  app_cfg_rec_t* app_cfg = malloc(sizeof(app_cfg_rec_t));
+
+  ret = sxfs_read(part, 0, app_cfg, sizeof(app_cfg_rec_t));
+  if (!ret) {
+    free(app_cfg);
+    return NULL;
+  }
+
+  uint32_t calc_crc = crc32_block(0, &app_cfg->data, sizeof(app_cfg_data_t));
+  if (calc_crc != app_cfg->crc) {
+    free(app_cfg);
+    return NULL;
+  }
+
+  return app_cfg;
 }
 
 void
@@ -415,12 +459,27 @@ app_cfg_set_fault_data(fault_type_t fault_type, void* data, uint32_t data_size)
 void
 app_cfg_flush()
 {
+  sxfs_part_id_t used_app_cfg_part = SP_APP_CFG_1;
+  app_cfg_rec_t* app_cfg = app_cfg_load(&used_app_cfg_part);
+
   chMtxLock(&app_cfg_mtx);
   app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
+  if (memcmp(&app_cfg_local, app_cfg, sizeof(app_cfg_rec_t)) != 0) {
+    sxfs_part_id_t unused_app_cfg_part =
+        (used_app_cfg_part == SP_APP_CFG_1) ? SP_APP_CFG_2 : SP_APP_CFG_1;
 
-  if (memcmp(&app_cfg_local, &app_cfg_stored, sizeof(app_cfg_local)) != 0) {
-    iflash_sector_erase(1);
-    iflash_write((uint32_t)&app_cfg_stored, (uint8_t*)&app_cfg_local, sizeof(app_cfg_local));
+    bool ret = sxfs_write(unused_app_cfg_part, 0, (uint8_t*)&app_cfg_local, sizeof(app_cfg_local));
+    if (ret) {
+      ret = sxfs_erase(used_app_cfg_part);
+      if (!ret)
+        printf("app cfg erase failed! %d\r\n", used_app_cfg_part);
+    }
+    else {
+      printf("app cfg write failed! %d\r\n", unused_app_cfg_part);
+    }
   }
   chMtxUnlock();
+
+  if (app_cfg != NULL)
+    free(app_cfg);
 }

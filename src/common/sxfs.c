@@ -30,6 +30,14 @@ static const part_info_t part_info[NUM_SXFS_PARTS] = {
         .offset = 0x00210000,
         .size   = 0x00100000 // 1024 KB
     },
+    [SP_APP_CFG_1] = {
+        .offset = 0x00310000,
+        .size   = 0x00010000 // 64 KB
+    },
+    [SP_APP_CFG_2] = {
+        .offset = 0x00320000,
+        .size   = 0x00010000 // 64 KB
+    },
 };
 
 

@@ -13,6 +13,9 @@ typedef enum {
   SP_RECOVERY_IMG,
   SP_UPDATE_IMG,
   SP_OFFLINE_LOG,
+  SP_APP_CFG_1,
+  SP_APP_CFG_2,
+
   NUM_SXFS_PARTS
 } sxfs_part_id_t;
 
