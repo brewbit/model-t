@@ -26,7 +26,7 @@ static const part_info_t part_info[NUM_SXFS_PARTS] = {
         .offset = 0x00110000,
         .size   = 0x00100000 // 1024 KB
     },
-    [SP_OFFLINE_LOG] = {
+    [SP_WEB_API_BACKLOG] = {
         .offset = 0x00210000,
         .size   = 0x00100000 // 1024 KB
     },

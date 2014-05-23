@@ -9,10 +9,15 @@
 
 
 typedef enum {
+  /* Bootloader required sections.
+   *   DO NOT MODIFY. EVER!
+   */
   SP_BOOT_PARAMS,
   SP_RECOVERY_IMG,
   SP_UPDATE_IMG,
-  SP_OFFLINE_LOG,
+
+  /* Application sections */
+  SP_WEB_API_BACKLOG,
   SP_APP_CFG_1,
   SP_APP_CFG_2,
 
