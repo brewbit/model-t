@@ -170,7 +170,9 @@ dispatch_update_status(update_screen_t* s, const ota_update_status_t* status)
 
   case OU_UPDATE_AVAILABLE:
     header = "Update available!";
-    desc = "Touch here to download the update.";
+    desc = formatted_str = malloc(256);
+    snprintf(formatted_str, 256, "Version %s is available. Touch here to download.",
+        status->update_ver);
     break;
 
   case OU_UPDATE_NOT_AVAILABLE:
