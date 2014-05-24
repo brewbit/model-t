@@ -488,12 +488,14 @@ app_cfg_set_fault_data(fault_type_t fault_type, void* data, uint32_t data_size)
 void
 app_cfg_flush()
 {
+  chMtxLock(&app_cfg_mtx);
+
   sxfs_part_id_t used_app_cfg_part = SP_APP_CFG_1;
   app_cfg_rec_t* app_cfg = app_cfg_load(&used_app_cfg_part);
 
-  chMtxLock(&app_cfg_mtx);
   app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
-  if (memcmp(&app_cfg_local, app_cfg, sizeof(app_cfg_rec_t)) != 0) {
+
+  if (app_cfg == NULL || memcmp(&app_cfg_local, app_cfg, sizeof(app_cfg_rec_t)) != 0) {
     sxfs_part_id_t unused_app_cfg_part =
         (used_app_cfg_part == SP_APP_CFG_1) ? SP_APP_CFG_2 : SP_APP_CFG_1;
 
