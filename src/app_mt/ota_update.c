@@ -177,6 +177,8 @@ dispatch_api_status(api_status_t* as)
 {
   if (as->state == AS_CONNECTED) {
     set_state(update.last_online_state);
+    if (update.last_online_state == OU_DOWNLOADING)
+      firmware_download_request(update.last_block_offset);
   }
   else {
     if (update.state != OU_WAIT_API_CONN) {
