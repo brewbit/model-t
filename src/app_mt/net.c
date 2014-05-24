@@ -334,6 +334,11 @@ static void
 test_connectivity()
 {
   systime_t now = chTimeNow();
+  if (now > ping_timeout_time) {
+    printf("net connection timed out\r\n");
+    initialize_and_connect();
+  }
+
   if (now > next_ping_send_time) {
     // Assume that the ping will fail and we will have to try again soon
     next_ping_send_time = now + PING_SEND_FAST_PERIOD;
@@ -345,11 +350,6 @@ test_connectivity()
     if (ret != 0)
       printf("ping failed!\r\n");
   }
-
-  if (now > ping_timeout_time) {
-    printf("net connection timed out\r\n");
-    initialize_and_connect();
-  }
 }
 
 static void
@@ -357,6 +357,7 @@ initialize_and_connect()
 {
   const net_settings_t* ns = app_cfg_get_net_settings();
 
+  net_status.dhcp_resolved = false;
   net_status.net_state = NS_DISCONNECTED;
   msg_send(MSG_NET_STATUS, &net_status);
 
