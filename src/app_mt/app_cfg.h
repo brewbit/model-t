@@ -11,6 +11,7 @@
 #include "fault.h"
 #include "offset.h"
 #include "sensor.h"
+#include "ota_update.h"
 
 
 typedef enum {
@@ -21,6 +22,9 @@ typedef enum {
 
 void
 app_cfg_init(void);
+
+void
+app_cfg_reset(void);
 
 void
 app_cfg_idle(void);
@@ -99,6 +103,12 @@ app_cfg_get_temp_profile(uint32_t temp_profile_id);
 
 void
 app_cfg_set_temp_profile(const temp_profile_t* profile, uint32_t index);
+
+const ota_update_checkpoint_t*
+app_cfg_get_ota_update_checkpoint(void);
+
+void
+app_cfg_set_ota_update_checkpoint(const ota_update_checkpoint_t* checkpoint);
 
 uint32_t
 app_cfg_get_reset_count(void);

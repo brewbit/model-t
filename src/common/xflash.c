@@ -143,22 +143,46 @@ write_enable()
   send_cmd(CMD_WREN, NO_ADDR, NULL, 0, NULL, 0);
 }
 
-void
+int
 xflash_erase(uint32_t addr, uint32_t size)
 {
   int bytes_remaining = size;
   uint32_t erase_addr = addr;
 
   while (bytes_remaining > 0) {
+    uint8_t cmd;
+    uint32_t erase_size;
+
+    if ((bytes_remaining >= XFLASH_SECTOR_SIZE) &&
+        ((erase_addr & (XFLASH_SECTOR_SIZE - 1)) == 0)) {
+      cmd = CMD_SE;
+      erase_size = XFLASH_SECTOR_SIZE;
+    }
+    else if ((bytes_remaining >= XFLASH_SUBSECTOR_8_SIZE) &&
+        ((erase_addr & (XFLASH_SUBSECTOR_8_SIZE - 1)) == 0)) {
+      cmd = CMD_P8E;
+      erase_size = XFLASH_SUBSECTOR_8_SIZE;
+    }
+    else if ((bytes_remaining >= XFLASH_SUBSECTOR_4_SIZE) &&
+        ((erase_addr & (XFLASH_SUBSECTOR_4_SIZE - 1)) == 0)) {
+      cmd = CMD_P4E;
+      erase_size = XFLASH_SUBSECTOR_4_SIZE;
+    }
+    else {
+      return -1;
+    }
+
     write_enable();
-    send_cmd(CMD_SE, erase_addr, NULL, 0, NULL, 0);
+    send_cmd(cmd, erase_addr, NULL, 0, NULL, 0);
 
     while (read_status_reg() & SR_WIP)
-      chThdSleepMilliseconds(100);
+      chThdSleepMilliseconds(10);
 
-    erase_addr += XFLASH_SECTOR_SIZE;
-    bytes_remaining -= XFLASH_SECTOR_SIZE;
+    erase_addr += erase_size;
+    bytes_remaining -= erase_size;
   }
+
+  return 0;
 }
 
 // erases sectors start through end (inclusive)
@@ -173,8 +197,38 @@ xflash_erase_sectors(uint32_t start, uint32_t end)
     send_cmd(CMD_SE, erase_addr, NULL, 0, NULL, 0);
 
     while (read_status_reg() & SR_WIP)
-      chThdSleepMilliseconds(100);
+      chThdSleepMilliseconds(10);
   }
+}
+
+bool
+xflash_is_erased(uint32_t addr, uint32_t len)
+{
+  uint8_t* buf = malloc(256);
+  bool erased = true;
+
+  while (len > 0) {
+    uint32_t read_len = MIN(256, len);
+    xflash_read(addr, buf, read_len);
+
+    int i;
+    for (i = 0; i < read_len; ++i) {
+      if (buf[i] != 0xFF) {
+        erased = false;
+        break;
+      }
+    }
+
+    if (!erased)
+      break;
+
+    addr += read_len;
+    len -= read_len;
+  }
+
+  free(buf);
+
+  return erased;
 }
 
 static void
@@ -185,7 +239,7 @@ page_program(uint32_t addr, const uint8_t* buf, uint32_t buf_len)
   send_cmd(CMD_PP, addr, buf, buf_len, NULL, 0);
 
   while (read_status_reg() & SR_WIP)
-    chThdSleepMilliseconds(100);
+    chThdSleepMilliseconds(10);
 }
 
 void

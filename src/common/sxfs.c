@@ -42,15 +42,37 @@ static const part_info_t part_info[NUM_SXFS_PARTS] = {
 
 
 bool
-sxfs_erase(sxfs_part_id_t part_id)
+sxfs_erase(sxfs_part_id_t part_id, uint32_t offset, uint32_t len)
 {
   if (part_id >= NUM_SXFS_PARTS)
     return false;
 
   part_info_t pinfo = part_info[part_id];
-  xflash_erase(pinfo.offset, pinfo.size);
+  if (xflash_erase(pinfo.offset + offset, len) != 0)
+    return false;
 
   return true;
+}
+
+
+bool
+sxfs_erase_all(sxfs_part_id_t part_id)
+{
+  if (part_id >= NUM_SXFS_PARTS)
+    return false;
+
+  part_info_t pinfo = part_info[part_id];
+  return sxfs_erase(part_id, 0, pinfo.size);
+}
+
+bool
+sxfs_is_erased(sxfs_part_id_t part_id, uint32_t offset, uint32_t data_len)
+{
+  if (part_id >= NUM_SXFS_PARTS)
+    return false;
+
+  part_info_t pinfo = part_info[part_id];
+  return xflash_is_erased(pinfo.offset + offset, data_len);
 }
 
 bool

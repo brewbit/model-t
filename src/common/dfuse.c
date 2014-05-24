@@ -278,7 +278,7 @@ dfuse_write_self(sxfs_part_id_t part, image_rec_t* img_recs, uint32_t num_img_re
   uint32_t dfu_image_size = sizeof(dfu_prefix_t) + sizeof(dfu_target_prefix_t) + target_size;
 
   // Clear space for the image
-  sxfs_erase(part);
+  sxfs_erase_all(part);
 
   // write prefix
   dfu_prefix_t prefix = {

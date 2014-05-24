@@ -32,7 +32,13 @@ bool
 sxfs_read(sxfs_part_id_t part_id, uint32_t offset, uint8_t* data, uint32_t data_len);
 
 bool
-sxfs_erase(sxfs_part_id_t part_id);
+sxfs_erase(sxfs_part_id_t part_id, uint32_t offset, uint32_t len);
+
+bool
+sxfs_erase_all(sxfs_part_id_t part_id);
+
+bool
+sxfs_is_erased(sxfs_part_id_t part_id, uint32_t offset, uint32_t data_len);
 
 bool
 sxfs_crc(sxfs_part_id_t part_id, uint32_t offset, uint32_t size, uint32_t* crc);

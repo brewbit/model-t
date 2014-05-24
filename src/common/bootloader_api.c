@@ -8,7 +8,7 @@
 static void
 save_boot_cmd(boot_cmd_t boot_cmd)
 {
-  sxfs_erase(SP_BOOT_PARAMS);
+  sxfs_erase_all(SP_BOOT_PARAMS);
   sxfs_write(SP_BOOT_PARAMS, 0, (uint8_t*)&boot_cmd, sizeof(boot_cmd));
 
   NVIC_SystemReset();

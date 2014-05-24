@@ -156,7 +156,7 @@ web_api_init()
   api->status.state = AS_AWAITING_NET_CONNECTION;
 
   api->msg_listener = msg_listener_create("web_api", 2048, web_api_dispatch, api);
-  msg_listener_set_idle_timeout(api->msg_listener, 500);
+  msg_listener_set_idle_timeout(api->msg_listener, 100);
   msg_listener_enable_watchdog(api->msg_listener, 3 * 60 * 1000);
 
   msg_subscribe(api->msg_listener, MSG_NET_STATUS, NULL);

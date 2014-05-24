@@ -166,8 +166,8 @@ main(void)
   temp_control_init(CONTROLLER_1);
   temp_control_init(CONTROLLER_2);
 
-  net_init();
   ota_update_init();
+  net_init();
   web_api_init();
   sntp_init();
   gui_init();

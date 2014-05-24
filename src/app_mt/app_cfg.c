@@ -23,6 +23,7 @@ typedef struct {
   controller_settings_t controller_settings[NUM_CONTROLLERS];
   temp_profile_t temp_profiles[NUM_CONTROLLERS];
   temp_profile_checkpoint_t temp_profile_checkpoints[NUM_CONTROLLERS];
+  ota_update_checkpoint_t ota_update_checkpoint;
   char auth_token[64];
   net_settings_t net_settings;
   fault_data_t fault;
@@ -56,54 +57,68 @@ app_cfg_init()
     free(app_cfg);
   }
   else {
-    app_cfg_local.data.reset_count = 0;
-
-    app_cfg_local.data.temp_unit = UNIT_TEMP_DEG_F;
-    app_cfg_local.data.control_mode = ON_OFF;
-    app_cfg_local.data.hysteresis.value = 1;
-    app_cfg_local.data.hysteresis.unit = UNIT_TEMP_DEG_F;
-
-    app_cfg_local.data.net_settings.security_mode = 0;
-    app_cfg_local.data.net_settings.ip_config = IP_CFG_DHCP;
-    app_cfg_local.data.net_settings.ip = 0;
-    app_cfg_local.data.net_settings.subnet_mask = 0;
-    app_cfg_local.data.net_settings.gateway = 0;
-    app_cfg_local.data.net_settings.dns_server = 0;
-
-    touch_calib_reset();
-
-    app_cfg_local.data.controller_settings[CONTROLLER_1].controller = CONTROLLER_1;
-    app_cfg_local.data.controller_settings[CONTROLLER_1].setpoint_type = SP_STATIC;
-    app_cfg_local.data.controller_settings[CONTROLLER_1].static_setpoint.value = 68;
-    app_cfg_local.data.controller_settings[CONTROLLER_1].static_setpoint.unit = UNIT_TEMP_DEG_F;
-
-    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].enabled = false;
-    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
-    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].cycle_delay.unit = UNIT_TIME_MIN;
-    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].cycle_delay.value = 3;
-
-    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].enabled = false;
-    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
-    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].cycle_delay.unit = UNIT_TIME_MIN;
-    app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].cycle_delay.value = 3;
-
-    app_cfg_local.data.controller_settings[CONTROLLER_2].controller = CONTROLLER_2;
-    app_cfg_local.data.controller_settings[CONTROLLER_2].setpoint_type = SP_STATIC;
-    app_cfg_local.data.controller_settings[CONTROLLER_2].static_setpoint.value = 68;
-    app_cfg_local.data.controller_settings[CONTROLLER_2].static_setpoint.unit = UNIT_TEMP_DEG_F;
-
-    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].enabled = false;
-    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
-    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].cycle_delay.unit = UNIT_TIME_MIN;
-    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].cycle_delay.value = 3;
-
-    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].enabled = false;
-    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
-    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.unit = UNIT_TIME_MIN;
-    app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.value = 3;
-
-    app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
+    app_cfg_reset();
   }
+}
+
+void
+app_cfg_reset()
+{
+  memset(&app_cfg_local.data, 0, sizeof(app_cfg_local.data));
+
+  app_cfg_local.data.reset_count = 0;
+
+  app_cfg_local.data.ota_update_checkpoint.last_online_state = OU_IDLE;
+  app_cfg_local.data.ota_update_checkpoint.update_size = 0;
+  app_cfg_local.data.ota_update_checkpoint.last_block_offset = 0;
+  memset(app_cfg_local.data.ota_update_checkpoint.update_ver, 0, sizeof(app_cfg_local.data.ota_update_checkpoint.update_ver));
+
+  app_cfg_local.data.temp_unit = UNIT_TEMP_DEG_F;
+  app_cfg_local.data.control_mode = ON_OFF;
+  app_cfg_local.data.hysteresis.value = 1;
+  app_cfg_local.data.hysteresis.unit = UNIT_TEMP_DEG_F;
+
+  app_cfg_local.data.net_settings.security_mode = 0;
+  app_cfg_local.data.net_settings.ip_config = IP_CFG_DHCP;
+  app_cfg_local.data.net_settings.ip = 0;
+  app_cfg_local.data.net_settings.subnet_mask = 0;
+  app_cfg_local.data.net_settings.gateway = 0;
+  app_cfg_local.data.net_settings.dns_server = 0;
+
+  touch_calib_reset();
+
+  app_cfg_local.data.controller_settings[CONTROLLER_1].controller = CONTROLLER_1;
+  app_cfg_local.data.controller_settings[CONTROLLER_1].setpoint_type = SP_STATIC;
+  app_cfg_local.data.controller_settings[CONTROLLER_1].static_setpoint.value = 68;
+  app_cfg_local.data.controller_settings[CONTROLLER_1].static_setpoint.unit = UNIT_TEMP_DEG_F;
+
+  app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].enabled = false;
+  app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
+  app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].cycle_delay.unit = UNIT_TIME_MIN;
+  app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_1].cycle_delay.value = 3;
+
+  app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].enabled = false;
+  app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
+  app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].cycle_delay.unit = UNIT_TIME_MIN;
+  app_cfg_local.data.controller_settings[CONTROLLER_1].output_settings[OUTPUT_2].cycle_delay.value = 3;
+
+  app_cfg_local.data.controller_settings[CONTROLLER_2].controller = CONTROLLER_2;
+  app_cfg_local.data.controller_settings[CONTROLLER_2].setpoint_type = SP_STATIC;
+  app_cfg_local.data.controller_settings[CONTROLLER_2].static_setpoint.value = 68;
+  app_cfg_local.data.controller_settings[CONTROLLER_2].static_setpoint.unit = UNIT_TEMP_DEG_F;
+
+  app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].enabled = false;
+  app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].function = OUTPUT_FUNC_COOLING;
+  app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].cycle_delay.unit = UNIT_TIME_MIN;
+  app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_1].cycle_delay.value = 3;
+
+  app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].enabled = false;
+  app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].function = OUTPUT_FUNC_HEATING;
+  app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.unit = UNIT_TIME_MIN;
+  app_cfg_local.data.controller_settings[CONTROLLER_2].output_settings[OUTPUT_2].cycle_delay.value = 3;
+
+  app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
+  app_cfg_flush();
 }
 
 static app_cfg_rec_t*
@@ -134,7 +149,7 @@ app_cfg_load_from(sxfs_part_id_t part)
   bool ret;
   app_cfg_rec_t* app_cfg = malloc(sizeof(app_cfg_rec_t));
 
-  ret = sxfs_read(part, 0, app_cfg, sizeof(app_cfg_rec_t));
+  ret = sxfs_read(part, 0, (uint8_t*)app_cfg, sizeof(app_cfg_rec_t));
   if (!ret) {
     free(app_cfg);
     return NULL;
@@ -428,6 +443,20 @@ app_cfg_set_temp_profile(const temp_profile_t* profile, uint32_t index)
   chMtxUnlock();
 }
 
+const ota_update_checkpoint_t*
+app_cfg_get_ota_update_checkpoint(void)
+{
+  return &app_cfg_local.data.ota_update_checkpoint;
+}
+
+void
+app_cfg_set_ota_update_checkpoint(const ota_update_checkpoint_t* checkpoint)
+{
+  chMtxLock(&app_cfg_mtx);
+  app_cfg_local.data.ota_update_checkpoint = *checkpoint;
+  chMtxUnlock();
+}
+
 uint32_t
 app_cfg_get_reset_count(void)
 {
@@ -470,7 +499,7 @@ app_cfg_flush()
 
     bool ret = sxfs_write(unused_app_cfg_part, 0, (uint8_t*)&app_cfg_local, sizeof(app_cfg_local));
     if (ret) {
-      ret = sxfs_erase(used_app_cfg_part);
+      ret = sxfs_erase_all(used_app_cfg_part);
       if (!ret)
         printf("app cfg erase failed! %d\r\n", used_app_cfg_part);
     }

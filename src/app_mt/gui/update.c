@@ -9,6 +9,7 @@
 #include "ota_update.h"
 
 #include <string.h>
+#include <stdio.h>
 
 
 typedef struct {
@@ -25,7 +26,7 @@ static void update_screen_msg(msg_event_t* event);
 static void update_screen_destroy(widget_t* w);
 static void back_button_clicked(button_event_t* event);
 static void update_button_clicked(button_event_t* event);
-static void dispatch_update_status(update_screen_t* s, ota_update_status_t* status);
+static void dispatch_update_status(update_screen_t* s, const ota_update_status_t* status);
 
 
 static const widget_class_t update_screen_widget_class = {
@@ -81,8 +82,8 @@ update_screen_create()
   s->progress = progressbar_create(s->widget, rect, CYAN, ORANGE);
   widget_hide(s->progress);
 
-  ota_update_status_t* us = ota_update_get_status();
-  dispatch_update_status(s, us);
+  ota_update_status_t us = ota_update_get_status();
+  dispatch_update_status(s, &us);
 
   gui_msg_subscribe(MSG_OTAU_STATUS, s->widget);
 
@@ -117,41 +118,49 @@ update_screen_msg(msg_event_t* event)
 static void
 back_button_clicked(button_event_t* event)
 {
-  if (event->id == EVT_BUTTON_CLICK) {
-    ota_update_status_t* us = ota_update_get_status();
-
-    /* If update not avail or failed or completed allow retry */
-    if (us->state == OU_UPDATE_NOT_AVAILABLE ||
-                     OU_COMPLETE ||
-                     OU_FAILED)
-      us->state = OU_IDLE;
-
+  if (event->id == EVT_BUTTON_CLICK)
     gui_pop_screen();
-  }
 }
 
 static void
 update_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    ota_update_status_t* us = ota_update_get_status();
-    if (us->state == OU_IDLE)
+    ota_update_status_t us = ota_update_get_status();
+
+    switch (us.state) {
+    case OU_IDLE:
+    case OU_UPDATE_NOT_AVAILABLE:
+    case OU_FAILED:
       msg_post(MSG_OTAU_CHECK, NULL);
-    else if (us->state == OU_UPDATE_AVAILABLE)
+      break;
+
+    case OU_UPDATE_AVAILABLE:
       msg_post(MSG_OTAU_START, NULL);
+      break;
+
+    default:
+      break;
+    }
   }
 }
 
 static void
-dispatch_update_status(update_screen_t* s, ota_update_status_t* status)
+dispatch_update_status(update_screen_t* s, const ota_update_status_t* status)
 {
   char* header = NULL;
   char* desc = NULL;
+  char* formatted_str = NULL;
 
   switch (status->state) {
   case OU_IDLE:
     header = "Check";
     desc = "Touch here to check for updates";
+    break;
+
+  case OU_WAIT_API_CONN:
+    header = "Not Connected";
+    desc = "Waiting for account connection";
     break;
 
   case OU_CHECKING:
@@ -166,26 +175,28 @@ dispatch_update_status(update_screen_t* s, ota_update_status_t* status)
 
   case OU_UPDATE_NOT_AVAILABLE:
     header = "You're up to date!";
-    desc = "There are currently no updates.";
+    desc = "No updates found. Touch to check again";
     break;
 
-  case OU_PREPARING:
-    header = "Preparing";
-    desc = "Making space for the update...";
-    break;
-
-  case OU_STARTING_DOWNLOAD:
+  case OU_CHUNK_TIMEOUT:
     header = "Downloading";
-    desc = "Starting the update download...";
+    desc = "Request timed out. Retrying.";
     break;
 
   case OU_DOWNLOADING:
+  {
+    int percent_complete = (100 * status->update_downloaded) / status->update_size;
     header = "Downloading";
-    desc = "Download in progress...";
+    desc = formatted_str = malloc(256);
+    snprintf(formatted_str, 256, "Received %d / %d bytes (%d%% complete)",
+        (int)status->update_downloaded,
+        (int)status->update_size,
+        percent_complete);
 
     widget_show(s->progress);
-    progressbar_set_progress(s->progress, (100 * status->update_downloaded) / status->update_size);
+    progressbar_set_progress(s->progress, percent_complete);
     break;
+  }
 
   case OU_COMPLETE:
     header = "Installing";
@@ -194,7 +205,7 @@ dispatch_update_status(update_screen_t* s, ota_update_status_t* status)
 
   case OU_FAILED:
     header = "Update failed!";
-    desc = "";
+    desc = "Touch to try again.";
     break;
 
   default:
@@ -203,4 +214,7 @@ dispatch_update_status(update_screen_t* s, ota_update_status_t* status)
 
   label_set_text(s->header_label, header);
   label_set_text(s->desc_label, desc);
+
+  if (formatted_str != NULL)
+    free(formatted_str);
 }

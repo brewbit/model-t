@@ -13,6 +13,7 @@ static void cmd_mem(BaseChannel *chp, int argc, char *argv[]);
 static void cmd_threads(BaseChannel *chp, int argc, char *argv[]);
 static void cmd_slinfo(BaseChannel *chp, int argc, char *argv[]);
 static void cmd_sysinfo(BaseChannel *chp, int argc, char *argv[]);
+static void cmd_app_cfg_reset(BaseChannel *chp, int argc, char *argv[]);
 
 
 static const ShellCommand commands[] = {
@@ -20,6 +21,7 @@ static const ShellCommand commands[] = {
   {"threads", cmd_threads},
   {"slinfo", cmd_slinfo},
   {"sysinfo", cmd_sysinfo},
+  {"app_cfg_reset", cmd_app_cfg_reset},
   {NULL, NULL}
 };
 
@@ -120,4 +122,16 @@ cmd_threads(BaseChannel *chp, int argc, char *argv[])
             (uint32_t)tp->p_time);
     tp = chRegNextThread(tp);
   } while (tp != NULL);
+}
+
+static void
+cmd_app_cfg_reset(BaseChannel *chp, int argc, char *argv[])
+{
+  (void)argv;
+  if (argc > 0) {
+    chprintf(chp, "Usage: threads\r\n");
+    return;
+  }
+
+  app_cfg_reset();
 }
