@@ -47,7 +47,13 @@ sxfs_erase(sxfs_part_id_t part_id, uint32_t offset, uint32_t len)
   if (part_id >= NUM_SXFS_PARTS)
     return false;
 
+  // Round up to the nearest 4K which is the smallest erasable size
+  len = (((len - 1) / XFLASH_SUBSECTOR_4_SIZE) + 1) * XFLASH_SUBSECTOR_4_SIZE;
+
   part_info_t pinfo = part_info[part_id];
+  if (offset + len > pinfo.size)
+    return false;
+
   if (xflash_erase(pinfo.offset + offset, len) != 0)
     return false;
 
