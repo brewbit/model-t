@@ -496,17 +496,24 @@ app_cfg_flush()
   app_cfg_local.crc = crc32_block(0, &app_cfg_local.data, sizeof(app_cfg_data_t));
 
   if (app_cfg == NULL || memcmp(&app_cfg_local, app_cfg, sizeof(app_cfg_rec_t)) != 0) {
+    bool ret;
     sxfs_part_id_t unused_app_cfg_part =
         (used_app_cfg_part == SP_APP_CFG_1) ? SP_APP_CFG_2 : SP_APP_CFG_1;
 
-    bool ret = sxfs_write(unused_app_cfg_part, 0, (uint8_t*)&app_cfg_local, sizeof(app_cfg_local));
+    ret = sxfs_erase_all(unused_app_cfg_part);
     if (ret) {
-      ret = sxfs_erase_all(used_app_cfg_part);
-      if (!ret)
-        printf("app cfg erase failed! %d\r\n", used_app_cfg_part);
+      ret = sxfs_write(unused_app_cfg_part, 0, (uint8_t*)&app_cfg_local, sizeof(app_cfg_local));
+      if (ret) {
+        ret = sxfs_erase_all(used_app_cfg_part);
+        if (!ret)
+          printf("used app cfg erase failed! %d\r\n", used_app_cfg_part);
+      }
+      else {
+        printf("unused app cfg write failed! %d\r\n", unused_app_cfg_part);
+      }
     }
     else {
-      printf("app cfg write failed! %d\r\n", unused_app_cfg_part);
+      printf("unused app cfg erase failed! %d\r\n", unused_app_cfg_part);
     }
   }
   chMtxUnlock();
