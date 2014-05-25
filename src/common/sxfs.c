@@ -47,8 +47,8 @@ sxfs_erase(sxfs_part_id_t part_id, uint32_t offset, uint32_t len)
   if (part_id >= NUM_SXFS_PARTS)
     return false;
 
-  // Round up to the nearest 4K which is the smallest erasable size
-  len = (((len - 1) / XFLASH_SUBSECTOR_4_SIZE) + 1) * XFLASH_SUBSECTOR_4_SIZE;
+  // Round up to the nearest 64K which is the smallest erasable size
+  len = (((len - 1) / XFLASH_SECTOR_SIZE) + 1) * XFLASH_SECTOR_SIZE;
 
   part_info_t pinfo = part_info[part_id];
   if (offset + len > pinfo.size)
@@ -59,7 +59,6 @@ sxfs_erase(sxfs_part_id_t part_id, uint32_t offset, uint32_t len)
 
   return true;
 }
-
 
 bool
 sxfs_erase_all(sxfs_part_id_t part_id)
@@ -91,7 +90,8 @@ sxfs_write(sxfs_part_id_t part_id, uint32_t offset, uint8_t* data, uint32_t data
   if ((offset + data_len) > pinfo.size)
     return false;
 
-  xflash_write(pinfo.offset + offset, data, data_len);
+  if (xflash_write(pinfo.offset + offset, data, data_len) != 0)
+    return false;
 
   return true;
 }

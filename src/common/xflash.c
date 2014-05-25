@@ -6,6 +6,8 @@
 
 #include "xflash.h"
 
+#include <stdio.h>
+
 
 #define NO_ADDR 0xFFFFFFFF
 
@@ -158,16 +160,6 @@ xflash_erase(uint32_t addr, uint32_t size)
       cmd = CMD_SE;
       erase_size = XFLASH_SECTOR_SIZE;
     }
-    else if ((bytes_remaining >= XFLASH_SUBSECTOR_8_SIZE) &&
-        ((erase_addr & (XFLASH_SUBSECTOR_8_SIZE - 1)) == 0)) {
-      cmd = CMD_P8E;
-      erase_size = XFLASH_SUBSECTOR_8_SIZE;
-    }
-    else if ((bytes_remaining >= XFLASH_SUBSECTOR_4_SIZE) &&
-        ((erase_addr & (XFLASH_SUBSECTOR_4_SIZE - 1)) == 0)) {
-      cmd = CMD_P4E;
-      erase_size = XFLASH_SUBSECTOR_4_SIZE;
-    }
     else {
       return -1;
     }
@@ -175,30 +167,24 @@ xflash_erase(uint32_t addr, uint32_t size)
     write_enable();
     send_cmd(cmd, erase_addr, NULL, 0, NULL, 0);
 
-    while (read_status_reg() & SR_WIP)
-      chThdSleepMilliseconds(10);
+    while (1) {
+      uint8_t sr = read_status_reg();
+      if (sr & SR_E_ERR) {
+        send_cmd(CMD_CLSR, NO_ADDR, NULL, 0, NULL, 0);
+        return -1;
+      }
+
+      if (sr & SR_WIP)
+        chThdSleepMilliseconds(10);
+      else
+        break;
+    }
 
     erase_addr += erase_size;
     bytes_remaining -= erase_size;
   }
 
   return 0;
-}
-
-// erases sectors start through end (inclusive)
-void
-xflash_erase_sectors(uint32_t start, uint32_t end)
-{
-  uint32_t i;
-  for (i = start; i <= end; ++i) {
-    uint32_t erase_addr = i * XFLASH_SECTOR_SIZE;
-
-    write_enable();
-    send_cmd(CMD_SE, erase_addr, NULL, 0, NULL, 0);
-
-    while (read_status_reg() & SR_WIP)
-      chThdSleepMilliseconds(10);
-  }
 }
 
 bool
@@ -208,7 +194,7 @@ xflash_is_erased(uint32_t addr, uint32_t len)
   bool erased = true;
 
   while (len > 0) {
-    uint32_t read_len = MIN(256, len);
+    int read_len = MIN(256, len);
     xflash_read(addr, buf, read_len);
 
     int i;
@@ -231,31 +217,47 @@ xflash_is_erased(uint32_t addr, uint32_t len)
   return erased;
 }
 
-static void
+static int
 page_program(uint32_t addr, const uint8_t* buf, uint32_t buf_len)
 {
   write_enable();
 
   send_cmd(CMD_PP, addr, buf, buf_len, NULL, 0);
 
-  while (read_status_reg() & SR_WIP)
-    chThdSleepMilliseconds(10);
+  while (1) {
+    uint8_t sr = read_status_reg();
+    if (sr & SR_P_ERR) {
+      send_cmd(CMD_CLSR, NO_ADDR, NULL, 0, NULL, 0);
+      return -1;
+    }
+
+    if (sr & SR_WIP)
+      chThdSleepMilliseconds(10);
+    else
+      break;
+  }
+
+  return 0;
 }
 
-void
+int
 xflash_write(uint32_t addr, const uint8_t* buf, uint32_t buf_len)
 {
   uint32_t data_to_write = (XFLASH_PAGE_SIZE - (addr % XFLASH_PAGE_SIZE));
   data_to_write = MIN(data_to_write, buf_len);
 
   while (buf_len != 0) {
-    page_program(addr, buf, data_to_write);
+    int ret = page_program(addr, buf, data_to_write);
+    if (ret != 0)
+      return ret;
 
     addr += data_to_write;
     buf += data_to_write;
     buf_len -= data_to_write;
     data_to_write = MIN(XFLASH_PAGE_SIZE, buf_len);
   }
+
+  return 0;
 }
 
 void

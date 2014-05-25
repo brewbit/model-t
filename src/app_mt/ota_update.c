@@ -20,8 +20,16 @@
 
 #define CHUNK_TIMEOUT S2ST(30)
 
-// Write a checkpoint after every 32KB downloaded
-#define UPDATE_BLOCK_SIZE 0x8000
+// Write a checkpoint after every 64KB downloaded
+#define UPDATE_BLOCK_SIZE 0x10000
+
+
+typedef enum {
+  OU_ERR_ERASE = -1,
+  OU_ERR_ERASE_VERIFY = -2,
+  OU_ERR_WRITE = -3,
+  OU_ERR_WRITE_VERIFY = -4
+} ota_update_error_t;
 
 
 typedef struct {
@@ -32,6 +40,7 @@ typedef struct {
   uint32_t last_block_offset;
   uint32_t update_size;
   uint32_t update_downloaded;
+  int error_code;
 } ota_update_t;
 
 
@@ -76,6 +85,7 @@ ota_update_init()
   update.update_size = checkpoint->update_size;
   update.last_block_offset = checkpoint->last_block_offset;
   update.update_downloaded = checkpoint->last_block_offset;
+  update.error_code = 0;
   strncpy(update.update_ver, checkpoint->update_ver, sizeof(update.update_ver));
 
   msg_listener_t* l = msg_listener_create("ota_update", 2048, ota_update_dispatch, NULL);
@@ -94,7 +104,8 @@ ota_update_get_status(void)
   ota_update_status_t status = {
       .state = update.state,
       .update_size = update.update_size,
-      .update_downloaded = update.update_downloaded
+      .update_downloaded = update.update_downloaded,
+      .error_code = update.error_code
   };
   strncpy(status.update_ver, update.update_ver, sizeof(status.update_ver));
   return status;
@@ -170,6 +181,7 @@ write_checkpoint()
   strncpy(checkpoint.update_ver, update.update_ver, sizeof(checkpoint.update_ver));
 
   app_cfg_set_ota_update_checkpoint(&checkpoint);
+  app_cfg_flush();
 }
 
 static void
@@ -215,26 +227,48 @@ dispatch_chunk(FirmwareDownloadResponse* update_chunk)
 
   if ((update_chunk->offset & (UPDATE_BLOCK_SIZE - 1)) == 0) {
     update.last_block_offset = update_chunk->offset;
-    sxfs_erase(SP_UPDATE_IMG, update.last_block_offset, UPDATE_BLOCK_SIZE);
+    if (!sxfs_erase(SP_UPDATE_IMG, update.last_block_offset, UPDATE_BLOCK_SIZE)) {
+      update.error_code = OU_ERR_ERASE;
+      set_state(OU_FAILED);
+      return;
+    }
+
+    if (!sxfs_is_erased(SP_UPDATE_IMG, update.last_block_offset, UPDATE_BLOCK_SIZE)) {
+      update.error_code = OU_ERR_ERASE_VERIFY;
+      set_state(OU_FAILED);
+      return;
+    }
+
     write_checkpoint();
-    app_cfg_flush();
   }
 
   if (!sxfs_write(SP_UPDATE_IMG,
       update_chunk->offset,
       update_chunk->data.bytes,
       update_chunk->data.size)) {
+    update.error_code = OU_ERR_WRITE;
     set_state(OU_FAILED);
     return;
   }
 
+  uint8_t* tmp = malloc(update_chunk->data.size);
+
+  sxfs_read(SP_UPDATE_IMG, update_chunk->offset, tmp, update_chunk->data.size);
+  if (memcmp(update_chunk->data.bytes, tmp, update_chunk->data.size)) {
+    update.error_code = OU_ERR_WRITE_VERIFY;
+    set_state(OU_FAILED);
+    free(tmp);
+    return;
+  }
+
+  free(tmp);
+
   if (update.update_downloaded >= update.update_size) {
     update.last_online_state = OU_IDLE;
     update.update_size = 0;
-    update.update_downloaded = 0;
+    update.last_block_offset = 0;
     memset(update.update_ver, 0, sizeof(update.update_ver));
     write_checkpoint();
-    app_cfg_flush();
 
     // Verify the integrity of the image that we just downloaded
     dfu_parse_result_t result = dfuse_verify(SP_UPDATE_IMG);
@@ -247,6 +281,7 @@ dispatch_chunk(FirmwareDownloadResponse* update_chunk)
       bootloader_load_update_img();
     }
     else {
+      update.error_code = result;
       set_state(OU_FAILED);
     }
   }

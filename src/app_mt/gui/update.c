@@ -207,7 +207,9 @@ dispatch_update_status(update_screen_t* s, const ota_update_status_t* status)
 
   case OU_FAILED:
     header = "Update failed!";
-    desc = "Touch to try again.";
+    desc = formatted_str = malloc(256);
+    snprintf(formatted_str, 256, "Error code: %d. Touch to try again.",
+        status->error_code);
     break;
 
   default:

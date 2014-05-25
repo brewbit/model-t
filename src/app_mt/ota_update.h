@@ -19,6 +19,7 @@ typedef struct {
   char update_ver[16];
   uint32_t update_size;
   uint32_t update_downloaded;
+  int error_code;
 } ota_update_status_t;
 
 typedef struct {
