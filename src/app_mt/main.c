@@ -21,6 +21,7 @@
 #include "app_hdr.h"
 #include "screen_saver.h"
 #include "cmdline.h"
+#include "xflash.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -149,6 +150,7 @@ main(void)
   /* start stdout port */
   sdStart(SD_STDIO, NULL);
 
+  xflash_init();
   cmdline_init();
 
   rngStart(&RNGD);

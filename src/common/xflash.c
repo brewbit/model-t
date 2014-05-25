@@ -86,7 +86,14 @@ static const SPIConfig flash_spi_cfg = {
     .sspad = PAD_SFLASH_CS,
     .cr1 = SPI_CR1_CPOL | SPI_CR1_CPHA
 };
+static Mutex xflash_mutex;
 
+
+void
+xflash_init()
+{
+  chMtxInit(&xflash_mutex);
+}
 
 static void
 xflash_txn_begin()
@@ -145,6 +152,28 @@ write_enable()
   send_cmd(CMD_WREN, NO_ADDR, NULL, 0, NULL, 0);
 }
 
+static int
+erase(uint32_t erase_addr)
+{
+  write_enable();
+  send_cmd(CMD_SE, erase_addr, NULL, 0, NULL, 0);
+
+  while (1) {
+    uint8_t sr = read_status_reg();
+    if (sr & SR_E_ERR) {
+      send_cmd(CMD_CLSR, NO_ADDR, NULL, 0, NULL, 0);
+      return -1;
+    }
+
+    if (sr & SR_WIP)
+      chThdSleepMilliseconds(10);
+    else
+      break;
+  }
+
+  return 0;
+}
+
 int
 xflash_erase(uint32_t addr, uint32_t size)
 {
@@ -152,36 +181,19 @@ xflash_erase(uint32_t addr, uint32_t size)
   uint32_t erase_addr = addr;
 
   while (bytes_remaining > 0) {
-    uint8_t cmd;
-    uint32_t erase_size;
-
-    if ((bytes_remaining >= XFLASH_SECTOR_SIZE) &&
-        ((erase_addr & (XFLASH_SECTOR_SIZE - 1)) == 0)) {
-      cmd = CMD_SE;
-      erase_size = XFLASH_SECTOR_SIZE;
-    }
-    else {
+    if ((bytes_remaining < XFLASH_SECTOR_SIZE) ||
+        ((erase_addr & (XFLASH_SECTOR_SIZE - 1)) != 0))
       return -1;
-    }
 
-    write_enable();
-    send_cmd(cmd, erase_addr, NULL, 0, NULL, 0);
+    chMtxLock(&xflash_mutex);
+    int ret = erase(erase_addr);
+    chMtxUnlock();
 
-    while (1) {
-      uint8_t sr = read_status_reg();
-      if (sr & SR_E_ERR) {
-        send_cmd(CMD_CLSR, NO_ADDR, NULL, 0, NULL, 0);
-        return -1;
-      }
+    if (ret != 0)
+      return ret;
 
-      if (sr & SR_WIP)
-        chThdSleepMilliseconds(10);
-      else
-        break;
-    }
-
-    erase_addr += erase_size;
-    bytes_remaining -= erase_size;
+    erase_addr += XFLASH_SECTOR_SIZE;
+    bytes_remaining -= XFLASH_SECTOR_SIZE;
   }
 
   return 0;
@@ -247,7 +259,10 @@ xflash_write(uint32_t addr, const uint8_t* buf, uint32_t buf_len)
   data_to_write = MIN(data_to_write, buf_len);
 
   while (buf_len != 0) {
+    chMtxLock(&xflash_mutex);
     int ret = page_program(addr, buf, data_to_write);
+    chMtxUnlock();
+
     if (ret != 0)
       return ret;
 
@@ -263,7 +278,9 @@ xflash_write(uint32_t addr, const uint8_t* buf, uint32_t buf_len)
 void
 xflash_read(uint32_t addr, uint8_t* buf, uint32_t buf_len)
 {
+  chMtxLock(&xflash_mutex);
   send_cmd(CMD_READ, addr, NULL, 0, buf, buf_len);
+  chMtxUnlock();
 }
 
 uint32_t

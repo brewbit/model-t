@@ -5,6 +5,9 @@
 #define XFLASH_SECTOR_SIZE      0x10000 // 64K
 #define XFLASH_PAGE_SIZE        0x100   // 256
 
+void
+xflash_init(void);
+
 int
 xflash_erase(uint32_t addr, uint32_t size);
 
