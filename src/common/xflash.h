@@ -2,8 +2,12 @@
 #ifndef XFLASH_H
 #define XFLASH_H
 
+#include <stdbool.h>
+
+
 #define XFLASH_SECTOR_SIZE      0x10000 // 64K
 #define XFLASH_PAGE_SIZE        0x100   // 256
+
 
 void
 xflash_init(void);
