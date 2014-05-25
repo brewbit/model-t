@@ -76,8 +76,10 @@ sensor_thread(void* arg)
           send_timeout_msg(tp);
         }
       }
-      chThdSleepMilliseconds(100);
     }
+
+    chThdTrace(0);
+    chThdSleepMilliseconds(100);
   }
 
   return 0;
@@ -86,6 +88,8 @@ sensor_thread(void* arg)
 static void
 filter_sample(sensor_port_t* tp, quantity_t* sample)
 {
+  chThdTrace(1);
+
   float filtered_sample = 0;
   uint8_t i;
 
@@ -112,17 +116,20 @@ filter_sample(sensor_port_t* tp, quantity_t* sample)
 static void
 send_sensor_msg(sensor_port_t* tp, quantity_t* sample)
 {
+  chThdTrace(2);
+
   sensor_msg_t msg = {
       .sensor = tp->sensor,
       .sample = *sample
   };
-  open_ports[tp->sensor]->connected = true;
   msg_send(MSG_SENSOR_SAMPLE, &msg);
 }
 
 static void
 send_timeout_msg(sensor_port_t* tp)
 {
+  chThdTrace(3);
+
   sensor_timeout_msg_t msg = {
       .sensor = tp->sensor
   };
@@ -134,12 +141,14 @@ static bool
 sensor_get_sample(sensor_port_t* tp, quantity_t* sample)
 {
   uint8_t addr[8];
-  if (!onewire_reset(tp->bus)) {
+
+  chThdTrace(4);
+  if (!onewire_reset(tp->bus))
     return false;
-  }
-  if (!onewire_read_rom(tp->bus, addr)) {
+
+  chThdTrace(5);
+  if (!onewire_read_rom(tp->bus, addr))
     return false;
-  }
 
   tp->sensor_config.offset = app_cfg_get_probe_offset(tp->sensor_config.sensor_serial);
 
@@ -166,10 +175,13 @@ read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample)
   int i;
 
   // issue a T convert command
+  chThdTrace(6);
   if (!onewire_reset(tp->bus))
     return false;
+  chThdTrace(7);
   if (!onewire_send_byte(tp->bus, SKIP_ROM))
     return false;
+  chThdTrace(8);
   if (!onewire_send_byte(tp->bus, 0x44))
     return false;
 
@@ -177,6 +189,7 @@ read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample)
   chThdSleepMilliseconds(700);
   while (1) {
     uint8_t bit;
+    chThdTrace(9);
     if (!onewire_recv_bit(tp->bus, &bit))
       return false;
 
@@ -187,19 +200,24 @@ read_maxim_temp_sensor(sensor_port_t* tp, quantity_t* sample)
   }
 
   // read the scratchpad register
+  chThdTrace(10);
   if (!onewire_reset(tp->bus))
     return false;
+  chThdTrace(11);
   if (!onewire_send_byte(tp->bus, SKIP_ROM))
     return false;
+  chThdTrace(12);
   if (!onewire_send_byte(tp->bus, 0xBE))
     return false;
 
   uint8_t scratchpad[9];
   for (i = 0; i < (int)sizeof(scratchpad); ++i) {
+    chThdTrace(13);
     if (!onewire_recv_byte(tp->bus, &scratchpad[i]))
       return false;
   }
 
+  chThdTrace(14);
   uint8_t crc = crc8_block(0, scratchpad, 8);
   if (crc != scratchpad[8])
     return false;
