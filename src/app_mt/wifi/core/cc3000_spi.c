@@ -313,10 +313,7 @@ spi_write(uint16_t usLength)
     txPacket = wlan_tx_buffer;
 
     /* Signal the I/O thread to handle the write */
-    chSemSignal(&sem_io_ready);
-
-    /* Wait for write to complete */
-    chSemWait(&sem_write_complete);
+    chSemSignalWait(&sem_io_ready, &sem_write_complete);
   }
 }
 

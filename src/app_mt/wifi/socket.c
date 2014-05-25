@@ -355,8 +355,8 @@ accept(long sd, sockaddr *addr, socklen_t *addrlen)
     setsockopt( sd, SOL_SOCKET, SOCKOPT_ACCEPT_NONBLOCK, &val, sizeof(val));
 
     should_poll_accept = 1;
-    chSemSignal(&select_sleep_semaphore); /* wakeup select thread if needed */
-    chSemWait(&accept_semaphore); /* go to sleep until polling succeeds */
+    /* wakeup select thread if needed, and go to sleep until polling succeeds */
+    chSemSignalWait(&select_sleep_semaphore, &accept_semaphore);
     chSemWait(&select_sleep_semaphore); /* suspend select thread until waiting for more data */
 
     if (g_wlan_stopped) { /* if wlan_stop then return */
