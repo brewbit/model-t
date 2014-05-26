@@ -1,5 +1,5 @@
 *** 1.3.0 ***
-- FIX: Improve server connection monitoring.
+- FIX (INCOMPLETE): Improve server connection monitoring.
 - NEW: Make OTA updates resumable so that it is easier to download updates on intermittent connections.
 - FIX: Fix occasional loss of device settings due to device resetting in the middle of updating settings.
 - FIX: Fix contention of web API and network management threads leading to device lockup and reset.
