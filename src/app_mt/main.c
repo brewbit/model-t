@@ -126,19 +126,6 @@ create_home_screen(void)
   gui_push_screen(home_screen);
 }
 
-msg_t
-idle_thread(void* arg)
-{
-  (void)arg;
-  chRegSetThreadName("idle");
-
-  while (1) {
-    app_cfg_idle();
-  }
-
-  return 0;
-}
-
 int
 main(void)
 {
@@ -187,8 +174,6 @@ main(void)
   }
 
   ensure_recovery_image_loaded();
-
-  chThdCreateFromHeap(NULL, 1024, LOWPRIO, idle_thread, NULL);
 
   while (TRUE) {
     cmdline_restart();

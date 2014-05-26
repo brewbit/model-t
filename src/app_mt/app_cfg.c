@@ -35,6 +35,7 @@ typedef struct {
 } app_cfg_rec_t;
 
 
+static msg_t app_cfg_thread(void* arg);
 static app_cfg_rec_t* app_cfg_load(sxfs_part_id_t* loaded_from);
 static app_cfg_rec_t* app_cfg_load_from(sxfs_part_id_t part);
 
@@ -42,7 +43,6 @@ static app_cfg_rec_t* app_cfg_load_from(sxfs_part_id_t part);
 /* Local RAM copy of app_cfg */
 static app_cfg_rec_t app_cfg_local;
 static Mutex app_cfg_mtx;
-static systime_t last_idle;
 
 
 void
@@ -59,6 +59,22 @@ app_cfg_init()
   else {
     app_cfg_reset();
   }
+
+  chThdCreateFromHeap(NULL, 1024, LOWPRIO, app_cfg_thread, NULL);
+}
+
+static msg_t
+app_cfg_thread(void* arg)
+{
+  (void)arg;
+  chRegSetThreadName("app_cfg");
+
+  while (!chThdShouldTerminate()) {
+    app_cfg_flush();
+    chThdSleepSeconds(2);
+  }
+
+  return 0;
 }
 
 void
@@ -162,15 +178,6 @@ app_cfg_load_from(sxfs_part_id_t part)
   }
 
   return app_cfg;
-}
-
-void
-app_cfg_idle()
-{
-  if ((chTimeNow() - last_idle) > S2ST(2)) {
-    app_cfg_flush();
-    last_idle = chTimeNow();
-  }
 }
 
 unit_t

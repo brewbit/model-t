@@ -26,9 +26,6 @@ app_cfg_init(void);
 void
 app_cfg_reset(void);
 
-void
-app_cfg_idle(void);
-
 unit_t
 app_cfg_get_temp_unit(void);
 
