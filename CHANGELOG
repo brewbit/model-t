@@ -1,3 +1,13 @@
+*** 1.3.0 ***
+- NEW: Make OTA updates resumable so that it is easier to download updates on intermittent connections.
+- FIX: Fix occasional loss of device settings due to device resetting in the middle of updating settings.
+- FIX: Fix contention of web API and network management threads leading to device lockup and reset.
+- NEW: Add thread tracing for enhanced debugging of thread lockups.
+- NEW (INCOMPLETE): Add a shell interface accessible over a serial port or telnet for more detailed debugging.
+- NEW (INCOMPLETE): Add support for local logging while device is not connected to the internet.
+- NEW: Update to CC3000 SP 1.13 (http://processors.wiki.ti.com/index.php/CC3000_Release_Notes#Version_1.13:)
+- FIX: Fix probe offset adjustment for new probes.
+
 *** 1.2.0 ***
 - FIX: Fix display of negative quantities between 0 and -1.
 - NEW: Add a configurable screen turn-off delay.
