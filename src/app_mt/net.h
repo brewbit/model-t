@@ -10,15 +10,21 @@
 
 typedef enum {
   NS_DISCONNECTED,
-  NS_CONNECT,
   NS_CONNECTING,
   NS_WAIT_DHCP,
   NS_CONNECTED,
-  NS_CONNECT_FAILED
 } net_state_t;
 
+typedef enum {
+  SCAN_IDLE,
+  SCAN_DISABLE,
+  SCAN_START_INTERVAL,
+  SCAN_WAIT_INTERVAL,
+  SCAN_PROCESS_RESULTS,
+} scan_state_t;
+
 typedef struct {
-  bool scan_active;
+  scan_state_t scan_state;
 
   char sp_ver[8];
   char mac_addr[32];

@@ -157,14 +157,8 @@ static void
 dispatch_net_status(conn_status_screen_t* s, const net_status_t* status)
 {
   switch (status->net_state) {
-  case NS_CONNECT:
   case NS_CONNECTING:
     label_set_text(s->nwk_status1, "Connecting to WiFi network");
-    label_set_text(s->nwk_status2, "");
-    break;
-
-  case NS_CONNECT_FAILED:
-    label_set_text(s->nwk_status1, "WiFi network connection failed");
     label_set_text(s->nwk_status2, "");
     break;
 

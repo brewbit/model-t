@@ -22,9 +22,11 @@
 #define SCAN_INTERVAL 1000
 #define SERVICE_NAME "brewbit-model-t"
 
-#define PING_SEND_FAST_PERIOD S2ST(30)
-#define PING_SEND_SLOW_PERIOD S2ST(1 * 60)
-#define PING_RECV_TIMEOUT S2ST(2 * 60)
+
+#define DHCP_TIMEOUT    S2ST(3 * 60)
+#define CONNECT_TIMEOUT S2ST(3 * 60)
+#define API_TIMEOUT     S2ST(3 * 60)
+
 
 typedef struct {
   bool valid;
@@ -48,9 +50,6 @@ static void
 dispatch_dhcp(netapp_dhcp_params_t* dhcp);
 
 static void
-dispatch_ping(netapp_pingreport_args_t* ping_report);
-
-static void
 dispatch_network_settings(void);
 
 static void
@@ -65,22 +64,19 @@ save_network(network_t* net);
 static int
 enable_scan(bool enable);
 
-static long
-perform_scan(void);
+static void
+scan_exec(void);
 
 static long
 get_scan_result(net_scan_result_t* result);
 
-static void
-test_connectivity(void);
-
 
 static net_status_t net_status;
-static net_state_t last_net_state;
 static network_t networks[16];
-static systime_t next_ping_send_time;
-static systime_t ping_timeout_time;
+static bool force_reconnect;
 static bool wifi_config_applied;
+static systime_t state_begin_time;
+static systime_t scan_interval_start;
 
 
 void
@@ -94,7 +90,6 @@ net_init()
   msg_subscribe(l, MSG_WLAN_CONNECT, NULL);
   msg_subscribe(l, MSG_WLAN_DISCONNECT, NULL);
   msg_subscribe(l, MSG_WLAN_DHCP, NULL);
-  msg_subscribe(l, MSG_WLAN_PING_REPORT, NULL);
 }
 
 const net_status_t*
@@ -107,13 +102,23 @@ void
 net_scan_start()
 {
   memset(networks, 0, sizeof(networks));
-  net_status.scan_active = true;
+  net_status.scan_state = SCAN_START_INTERVAL;
 }
 
 void
 net_scan_stop()
 {
-  net_status.scan_active = false;
+  net_status.scan_state = SCAN_DISABLE;
+}
+
+static void
+set_state(net_state_t state)
+{
+  if (net_status.net_state != state) {
+    state_begin_time = chTimeNow();
+    net_status.net_state = state;
+    msg_send(MSG_NET_STATUS, &net_status);
+  }
 }
 
 static void
@@ -132,28 +137,18 @@ dispatch_net_msg(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
       break;
 
     case MSG_WLAN_CONNECT:
-      net_status.net_state = NS_WAIT_DHCP;
-      msg_send(MSG_NET_STATUS, &net_status);
-      next_ping_send_time = chTimeNow();
+      set_state(NS_WAIT_DHCP);
       break;
 
     case MSG_WLAN_DISCONNECT:
-      if (net_status.net_state == NS_CONNECTING)
-        net_status.net_state = NS_CONNECT_FAILED;
-      else
-        net_status.net_state = NS_DISCONNECTED;
       net_status.dhcp_resolved = false;
-      msg_send(MSG_NET_STATUS, &net_status);
+      set_state(NS_DISCONNECTED);
       break;
 
     case MSG_WLAN_DHCP:
-      net_status.net_state = NS_CONNECTED;
       dispatch_dhcp(msg_data);
-      msg_send(MSG_NET_STATUS, &net_status);
-      break;
-
-    case MSG_WLAN_PING_REPORT:
-      dispatch_ping(msg_data);
+      if (net_status.dhcp_resolved)
+        set_state(NS_CONNECTED);
       break;
 
     case MSG_NET_NETWORK_SETTINGS:
@@ -169,27 +164,7 @@ static void
 dispatch_network_settings()
 {
   wifi_config_applied = false;
-  net_status.net_state = NS_CONNECT;
-}
-
-static void
-dispatch_ping(netapp_pingreport_args_t* ping_report)
-{
-  printf("ping report %u %u %u %u %u\r\n",
-      ping_report->packets_sent,
-      ping_report->packets_received,
-      ping_report->min_round_time,
-      ping_report->avg_round_time,
-      ping_report->max_round_time);
-
-  if ((ping_report->packets_sent > 0) &&
-      (ping_report->packets_received > 0)) {
-    systime_t now = chTimeNow();
-    ping_timeout_time = now + PING_RECV_TIMEOUT;
-
-    /* ping was successful, we can slow down our poll rate */
-    next_ping_send_time = now + PING_SEND_SLOW_PERIOD;
-  }
+  force_reconnect = true;
 }
 
 static void
@@ -235,19 +210,51 @@ enable_scan(bool enable)
   return wlan_ioctl_set_scan_params(interval, 100, 100, 5, 0x1FFF, -80, 0, 205, channel_interval_list);
 }
 
-static long
-perform_scan()
+static void
+scan_exec()
 {
-  // enable scanning
-  long ret = enable_scan(true);
-  if (ret != 0)
-    return ret;
+  switch (net_status.scan_state) {
+  case SCAN_IDLE:
+    break;
 
-  // wait for scan to complete
-  chThdSleepMilliseconds(SCAN_INTERVAL);
+  case SCAN_DISABLE:
+    enable_scan(false);
+    net_status.scan_state = SCAN_IDLE;
+    break;
 
-  // disable scanning
-  return enable_scan(false);
+  case SCAN_START_INTERVAL:
+    enable_scan(true);
+    scan_interval_start = chTimeNow();
+    net_status.scan_state = SCAN_WAIT_INTERVAL;
+    break;
+
+  case SCAN_WAIT_INTERVAL:
+    if ((chTimeNow() - scan_interval_start) > MS2ST(SCAN_INTERVAL)) {
+      enable_scan(false);
+      net_status.scan_state = SCAN_PROCESS_RESULTS;
+    }
+    break;
+
+  case SCAN_PROCESS_RESULTS:
+  {
+    net_scan_result_t result;
+    do {
+      if (get_scan_result(&result) != 0)
+        break;
+
+      if (result.scan_status == 1 && result.valid)
+        save_or_update_network(&result.network);
+    } while (result.networks_found > 1);
+
+    prune_networks();
+
+    net_status.scan_state = SCAN_START_INTERVAL;
+    break;
+  }
+
+  default:
+    break;
+  }
 }
 
 static long
@@ -331,39 +338,14 @@ prune_networks()
 }
 
 static void
-test_connectivity()
-{
-  systime_t now = chTimeNow();
-  if (now > ping_timeout_time) {
-    printf("net connection timed out\r\n");
-    initialize_and_connect();
-  }
-
-  if (now > next_ping_send_time) {
-    // Assume that the ping will fail and we will have to try again soon
-    next_ping_send_time = now + PING_SEND_FAST_PERIOD;
-
-    printf("sending ping\r\n");
-    // Ping google's public DNS server
-    uint32_t ip = 0x08080808;
-    long ret = netapp_ping_send(&ip, 4, 16, 1000);
-    if (ret != 0)
-      printf("ping failed!\r\n");
-  }
-}
-
-static void
 initialize_and_connect()
 {
   const net_settings_t* ns = app_cfg_get_net_settings();
 
   net_status.dhcp_resolved = false;
-  net_status.net_state = NS_DISCONNECTED;
-  msg_send(MSG_NET_STATUS, &net_status);
+  set_state(NS_DISCONNECTED);
 
   systime_t now = chTimeNow();
-  ping_timeout_time = now + PING_RECV_TIMEOUT;
-  next_ping_send_time = now + PING_SEND_FAST_PERIOD;
 
   wlan_stop();
 
@@ -412,8 +394,7 @@ initialize_and_connect()
   }
 
   if (strlen(ns->ssid) > 0) {
-    net_status.net_state = NS_CONNECTING;
-    msg_send(MSG_NET_STATUS, &net_status);
+    set_state(NS_CONNECTING);
 
     wlan_disconnect();
 
@@ -431,40 +412,43 @@ initialize_and_connect()
 static void
 dispatch_idle()
 {
-  if (net_status.scan_active) {
-    if (perform_scan() == 0) {
-      net_scan_result_t result;
-      do {
-        if (get_scan_result(&result) != 0)
-          break;
+  scan_exec();
 
-        if (result.scan_status == 1 && result.valid)
-          save_or_update_network(&result.network);
-      } while (result.networks_found > 1);
-
-      prune_networks();
-    }
+  if (force_reconnect) {
+    net_status.net_state = NS_DISCONNECTED;
+    force_reconnect = false;
   }
-  else {
-    switch (net_status.net_state) {
-      case NS_CONNECT_FAILED:
-      case NS_DISCONNECTED:
-      case NS_CONNECT:
+
+  switch (net_status.net_state) {
+    case NS_DISCONNECTED:
+      if (strlen(app_cfg_get_net_settings()->ssid) > 0)
         initialize_and_connect();
-        break;
+      break;
 
-      case NS_WAIT_DHCP:
-      case NS_CONNECTED:
-      case NS_CONNECTING:
-      default:
-        break;
-    }
+    case NS_WAIT_DHCP:
+      if ((chTimeNow() - state_begin_time) > DHCP_TIMEOUT) {
+        printf("DHCP Timeout\r\n");
+        initialize_and_connect();
+      }
+      break;
 
-    if (net_status.net_state != last_net_state) {
-      msg_send(MSG_NET_STATUS, &net_status);
-      last_net_state = net_status.net_state;
-    }
+    case NS_CONNECTING:
+      if ((chTimeNow() - state_begin_time) > CONNECT_TIMEOUT) {
+        printf("Connect Timeout\r\n");
+        initialize_and_connect();
+      }
+      break;
+
+    case NS_CONNECTED:
+      if (web_api_get_status()->state > AS_CONNECTING)
+        state_begin_time = chTimeNow();
+      else if ((chTimeNow() - state_begin_time) > API_TIMEOUT) {
+        printf("API Timeout\r\n");
+        initialize_and_connect();
+      }
+      break;
+
+    default:
+      break;
   }
-
-  test_connectivity();
 }

@@ -280,7 +280,6 @@ dispatch_net_status(self_test_screen_t* s, net_status_t* status)
       label_set_text(s->wifi_test_status, "DISCONNECTED");
       break;
 
-    case NS_CONNECT:
     case NS_CONNECTING:
       label_set_text(s->wifi_test_status, "CONNECTING");
       break;
@@ -291,10 +290,6 @@ dispatch_net_status(self_test_screen_t* s, net_status_t* status)
 
     case NS_CONNECTED:
       label_set_text(s->wifi_test_status, "CONNECTED");
-      break;
-
-    case NS_CONNECT_FAILED:
-      label_set_text(s->wifi_test_status, "FAILED");
       break;
 
     default:
