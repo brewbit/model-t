@@ -196,44 +196,41 @@ void c_wlan_stop(void)
 long c_wlan_connect(wlan_security_t ulSecType, const char *ssid, long ssid_len,
                     const uint8_t *bssid, const uint8_t *key, long key_len)
 {
-    long ret;
-    uint8_t *args;
-    uint8_t bssid_zero[] = {0, 0, 0, 0, 0, 0};
+  long ret;
+  uint8_t *args;
+  uint8_t bssid_zero[] = {0, 0, 0, 0, 0, 0};
 
-    ret     = EFAIL;
-    args = hci_get_cmd_buffer();
+  ret     = EFAIL;
+  args = hci_get_cmd_buffer();
 
-    // Fill in command buffer
-    args = UINT32_TO_STREAM(args, 0x0000001c);
-    args = UINT32_TO_STREAM(args, ssid_len);
-    args = UINT32_TO_STREAM(args, ulSecType);
-    args = UINT32_TO_STREAM(args, 0x00000010 + ssid_len);
-    args = UINT32_TO_STREAM(args, key_len);
-    args = UINT16_TO_STREAM(args, 0);
+  // Fill in command buffer
+  args = UINT32_TO_STREAM(args, 0x0000001c);
+  args = UINT32_TO_STREAM(args, ssid_len);
+  args = UINT32_TO_STREAM(args, ulSecType);
+  args = UINT32_TO_STREAM(args, 0x00000010 + ssid_len);
+  args = UINT32_TO_STREAM(args, key_len);
+  args = UINT16_TO_STREAM(args, 0);
 
-    // padding shall be zeroed
-    if(bssid)
-    {
-        ARRAY_TO_STREAM(args, bssid, ETH_ALEN);
-    }
-    else
-    {
-        ARRAY_TO_STREAM(args, bssid_zero, ETH_ALEN);
-    }
+  // padding shall be zeroed
+  if(bssid) {
+    ARRAY_TO_STREAM(args, bssid, ETH_ALEN);
+  }
+  else {
+    ARRAY_TO_STREAM(args, bssid_zero, ETH_ALEN);
+  }
 
-    ARRAY_TO_STREAM(args, ssid, ssid_len);
+  ARRAY_TO_STREAM(args, ssid, ssid_len);
 
-    if(key_len && key)
-    {
-        ARRAY_TO_STREAM(args, key, key_len);
-    }
+  if(key_len && key) {
+    ARRAY_TO_STREAM(args, key, key_len);
+  }
 
-    // Initiate a HCI command
-    hci_command_send(HCI_CMND_WLAN_CONNECT, WLAN_CONNECT_PARAM_LEN + ssid_len + key_len - 1,
-        HCI_CMND_WLAN_CONNECT, &ret);
-    errno = ret;
+  // Initiate a HCI command
+  hci_command_send(HCI_CMND_WLAN_CONNECT, WLAN_CONNECT_PARAM_LEN + ssid_len + key_len - 1,
+      HCI_CMND_WLAN_CONNECT, &ret);
+  errno = ret;
 
-    return(ret);
+  return(ret);
 }
 
 //*****************************************************************************
@@ -249,15 +246,15 @@ long c_wlan_connect(wlan_security_t ulSecType, const char *ssid, long ssid_len,
 //*****************************************************************************
 long c_wlan_disconnect(void)
 {
-    long ret;
+  long ret;
 
-    ret = EFAIL;
+  ret = EFAIL;
 
-    hci_command_send(HCI_CMND_WLAN_DISCONNECT, 0,
-        HCI_CMND_WLAN_DISCONNECT, &ret);
-    errno = ret;
+  hci_command_send(HCI_CMND_WLAN_DISCONNECT, 0,
+      HCI_CMND_WLAN_DISCONNECT, &ret);
+  errno = ret;
 
-    return(ret);
+  return(ret);
 }
 
 //*****************************************************************************
@@ -295,22 +292,22 @@ long c_wlan_ioctl_set_connection_policy(uint32_t should_connect_to_open_ap,
     uint32_t ulShouldUseFastConnect,
     uint32_t ulUseProfiles)
 {
-    long ret;
-    uint8_t *args;
+  long ret;
+  uint8_t *args;
 
-    ret = EFAIL;
-    args = hci_get_cmd_buffer();
+  ret = EFAIL;
+  args = hci_get_cmd_buffer();
 
-    // Fill in HCI packet structure
-    args = UINT32_TO_STREAM(args, should_connect_to_open_ap);
-    args = UINT32_TO_STREAM(args, ulShouldUseFastConnect);
-    args = UINT32_TO_STREAM(args, ulUseProfiles);
+  // Fill in HCI packet structure
+  args = UINT32_TO_STREAM(args, should_connect_to_open_ap);
+  args = UINT32_TO_STREAM(args, ulShouldUseFastConnect);
+  args = UINT32_TO_STREAM(args, ulUseProfiles);
 
-    // Initiate a HCI command
-    hci_command_send(HCI_CMND_WLAN_IOCTL_SET_CONNECTION_POLICY, WLAN_SET_CONNECTION_POLICY_PARAMS_LEN,
-        HCI_CMND_WLAN_IOCTL_SET_CONNECTION_POLICY, &ret);
+  // Initiate a HCI command
+  hci_command_send(HCI_CMND_WLAN_IOCTL_SET_CONNECTION_POLICY, WLAN_SET_CONNECTION_POLICY_PARAMS_LEN,
+      HCI_CMND_WLAN_IOCTL_SET_CONNECTION_POLICY, &ret);
 
-    return(ret);
+  return(ret);
 }
 
 //*****************************************************************************
@@ -352,112 +349,104 @@ long c_wlan_add_profile(
     uint8_t* ucPf_OrKey,
     uint32_t ulPassPhraseLen)
 {
-    uint16_t arg_len;
-    long ret;
-    long i = 0;
-    uint8_t *args;
-    uint8_t bssid_zero[] = {0, 0, 0, 0, 0, 0};
+  uint16_t arg_len;
+  long ret;
+  long i = 0;
+  uint8_t *args;
+  uint8_t bssid_zero[] = {0, 0, 0, 0, 0, 0};
 
-    args = hci_get_cmd_buffer();
+  args = hci_get_cmd_buffer();
 
-    args = UINT32_TO_STREAM(args, ulSecType);
+  args = UINT32_TO_STREAM(args, ulSecType);
 
-    // Setup arguments in accordance with the security type
-    switch (ulSecType)
-    {
-        //OPEN
-        case WLAN_SEC_UNSEC:
-        {
-            args = UINT32_TO_STREAM(args, 0x00000014);
-            args = UINT32_TO_STREAM(args, ulSsidLen);
-            args = UINT16_TO_STREAM(args, 0);
-            if(ucBssid)
-            {
-                ARRAY_TO_STREAM(args, ucBssid, ETH_ALEN);
-            }
-            else
-            {
-                ARRAY_TO_STREAM(args, bssid_zero, ETH_ALEN);
-            }
-            args = UINT32_TO_STREAM(args, ulPriority);
-            ARRAY_TO_STREAM(args, ucSsid, ulSsidLen);
+  // Setup arguments in accordance with the security type
+  switch (ulSecType) {
+  //OPEN
+  case WLAN_SEC_UNSEC:
+  {
+    args = UINT32_TO_STREAM(args, 0x00000014);
+    args = UINT32_TO_STREAM(args, ulSsidLen);
+    args = UINT16_TO_STREAM(args, 0);
+    if(ucBssid) {
+      ARRAY_TO_STREAM(args, ucBssid, ETH_ALEN);
+    }
+    else {
+      ARRAY_TO_STREAM(args, bssid_zero, ETH_ALEN);
+    }
+    args = UINT32_TO_STREAM(args, ulPriority);
+    ARRAY_TO_STREAM(args, ucSsid, ulSsidLen);
 
-            arg_len = WLAN_ADD_PROFILE_NOSEC_PARAM_LEN + ulSsidLen;
-        }
-        break;
+    arg_len = WLAN_ADD_PROFILE_NOSEC_PARAM_LEN + ulSsidLen;
+  }
+  break;
 
-        //WEP
-        case WLAN_SEC_WEP:
-        {
-            args = UINT32_TO_STREAM(args, 0x00000020);
-            args = UINT32_TO_STREAM(args, ulSsidLen);
-            args = UINT16_TO_STREAM(args, 0);
-            if(ucBssid)
-            {
-                ARRAY_TO_STREAM(args, ucBssid, ETH_ALEN);
-            }
-            else
-            {
-                ARRAY_TO_STREAM(args, bssid_zero, ETH_ALEN);
-            }
-            args = UINT32_TO_STREAM(args, ulPriority);
-            args = UINT32_TO_STREAM(args, 0x0000000C + ulSsidLen);
-            args = UINT32_TO_STREAM(args, ulPairwiseCipher_Or_TxKeyLen);
-            args = UINT32_TO_STREAM(args, ulGroupCipher_TxKeyIndex);
-            ARRAY_TO_STREAM(args, ucSsid, ulSsidLen);
+  //WEP
+  case WLAN_SEC_WEP:
+  {
+    args = UINT32_TO_STREAM(args, 0x00000020);
+    args = UINT32_TO_STREAM(args, ulSsidLen);
+    args = UINT16_TO_STREAM(args, 0);
+    if(ucBssid) {
+      ARRAY_TO_STREAM(args, ucBssid, ETH_ALEN);
+    }
+    else {
+      ARRAY_TO_STREAM(args, bssid_zero, ETH_ALEN);
+    }
+    args = UINT32_TO_STREAM(args, ulPriority);
+    args = UINT32_TO_STREAM(args, 0x0000000C + ulSsidLen);
+    args = UINT32_TO_STREAM(args, ulPairwiseCipher_Or_TxKeyLen);
+    args = UINT32_TO_STREAM(args, ulGroupCipher_TxKeyIndex);
+    ARRAY_TO_STREAM(args, ucSsid, ulSsidLen);
 
-            for(i = 0; i < 4; i++)
-            {
-              uint8_t *p = &ucPf_OrKey[i * ulPairwiseCipher_Or_TxKeyLen];
+    for(i = 0; i < 4; i++) {
+      uint8_t *p = &ucPf_OrKey[i * ulPairwiseCipher_Or_TxKeyLen];
 
-                ARRAY_TO_STREAM(args, p, ulPairwiseCipher_Or_TxKeyLen);
-            }
-
-            arg_len = WLAN_ADD_PROFILE_WEP_PARAM_LEN + ulSsidLen +
-                ulPairwiseCipher_Or_TxKeyLen * 4;
-
-        }
-        break;
-
-        //WPA
-        //WPA2
-        case WLAN_SEC_WPA:
-        case WLAN_SEC_WPA2:
-        {
-            args = UINT32_TO_STREAM(args, 0x00000028);
-            args = UINT32_TO_STREAM(args, ulSsidLen);
-            args = UINT16_TO_STREAM(args, 0);
-            if(ucBssid)
-            {
-                ARRAY_TO_STREAM(args, ucBssid, ETH_ALEN);
-            }
-            else
-            {
-                ARRAY_TO_STREAM(args, bssid_zero, ETH_ALEN);
-            }
-            args = UINT32_TO_STREAM(args, ulPriority);
-            args = UINT32_TO_STREAM(args, ulPairwiseCipher_Or_TxKeyLen);
-            args = UINT32_TO_STREAM(args, ulGroupCipher_TxKeyIndex);
-            args = UINT32_TO_STREAM(args, ulKeyMgmt);
-            args = UINT32_TO_STREAM(args, 0x00000008 + ulSsidLen);
-            args = UINT32_TO_STREAM(args, ulPassPhraseLen);
-            ARRAY_TO_STREAM(args, ucSsid, ulSsidLen);
-            ARRAY_TO_STREAM(args, ucPf_OrKey, ulPassPhraseLen);
-
-            arg_len = WLAN_ADD_PROFILE_WPA_PARAM_LEN + ulSsidLen + ulPassPhraseLen;
-        }
-
-        break;
-
-        default:
-          return -1;
+      ARRAY_TO_STREAM(args, p, ulPairwiseCipher_Or_TxKeyLen);
     }
 
-    // Initiate a HCI command
-    hci_command_send(HCI_CMND_WLAN_IOCTL_ADD_PROFILE, arg_len,
-        HCI_CMND_WLAN_IOCTL_ADD_PROFILE, &ret);
+    arg_len = WLAN_ADD_PROFILE_WEP_PARAM_LEN + ulSsidLen +
+        ulPairwiseCipher_Or_TxKeyLen * 4;
 
-    return(ret);
+  }
+  break;
+
+  //WPA
+  //WPA2
+  case WLAN_SEC_WPA:
+  case WLAN_SEC_WPA2:
+  {
+    args = UINT32_TO_STREAM(args, 0x00000028);
+    args = UINT32_TO_STREAM(args, ulSsidLen);
+    args = UINT16_TO_STREAM(args, 0);
+    if(ucBssid) {
+      ARRAY_TO_STREAM(args, ucBssid, ETH_ALEN);
+    }
+    else {
+      ARRAY_TO_STREAM(args, bssid_zero, ETH_ALEN);
+    }
+    args = UINT32_TO_STREAM(args, ulPriority);
+    args = UINT32_TO_STREAM(args, ulPairwiseCipher_Or_TxKeyLen);
+    args = UINT32_TO_STREAM(args, ulGroupCipher_TxKeyIndex);
+    args = UINT32_TO_STREAM(args, ulKeyMgmt);
+    args = UINT32_TO_STREAM(args, 0x00000008 + ulSsidLen);
+    args = UINT32_TO_STREAM(args, ulPassPhraseLen);
+    ARRAY_TO_STREAM(args, ucSsid, ulSsidLen);
+    ARRAY_TO_STREAM(args, ucPf_OrKey, ulPassPhraseLen);
+
+    arg_len = WLAN_ADD_PROFILE_WPA_PARAM_LEN + ulSsidLen + ulPassPhraseLen;
+  }
+
+  break;
+
+  default:
+    return -1;
+  }
+
+  // Initiate a HCI command
+  hci_command_send(HCI_CMND_WLAN_IOCTL_ADD_PROFILE, arg_len,
+      HCI_CMND_WLAN_IOCTL_ADD_PROFILE, &ret);
+
+  return(ret);
 }
 
 //*****************************************************************************
@@ -477,21 +466,21 @@ long c_wlan_add_profile(
 //*****************************************************************************
 long c_wlan_ioctl_del_profile(uint32_t ulIndex)
 {
-    long ret;
-    uint8_t *args;
+  long ret;
+  uint8_t *args;
 
-    args = hci_get_cmd_buffer();
+  args = hci_get_cmd_buffer();
 
-    // Fill in HCI packet structure
-    args = UINT32_TO_STREAM(args, ulIndex);
-    ret = EFAIL;
+  // Fill in HCI packet structure
+  args = UINT32_TO_STREAM(args, ulIndex);
+  ret = EFAIL;
 
-    // Initiate a HCI command
-    hci_command_send(
-        HCI_CMND_WLAN_IOCTL_DEL_PROFILE, WLAN_DEL_PROFILE_PARAMS_LEN,
-        HCI_CMND_WLAN_IOCTL_DEL_PROFILE, &ret);
+  // Initiate a HCI command
+  hci_command_send(
+      HCI_CMND_WLAN_IOCTL_DEL_PROFILE, WLAN_DEL_PROFILE_PARAMS_LEN,
+      HCI_CMND_WLAN_IOCTL_DEL_PROFILE, &ret);
 
-    return(ret);
+  return(ret);
 }
 
 //*****************************************************************************
@@ -672,14 +661,14 @@ long c_wlan_set_event_mask(uint32_t ulMask)
 //*****************************************************************************
 long c_wlan_ioctl_statusget(void)
 {
-    long ret;
+  long ret;
 
-    ret = EFAIL;
+  ret = EFAIL;
 
-    hci_command_send(HCI_CMND_WLAN_IOCTL_STATUSGET, 0,
-        HCI_CMND_WLAN_IOCTL_STATUSGET, &ret);
+  hci_command_send(HCI_CMND_WLAN_IOCTL_STATUSGET, 0,
+      HCI_CMND_WLAN_IOCTL_STATUSGET, &ret);
 
-    return(ret);
+  return(ret);
 }
 
 //*****************************************************************************
