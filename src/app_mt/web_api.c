@@ -19,6 +19,7 @@
 #include "app_cfg.h"
 #include "ota_update.h"
 #include "sntp.h"
+#include "sxfs.h"
 
 #ifndef WEB_API_HOST
 #define WEB_API_HOST_STR "dg.brewbit.com"
@@ -71,6 +72,7 @@ typedef struct {
   uint32_t send_errors;
   msg_parser_t parser;
   msg_listener_t* msg_listener;
+  uint32_t backlog_pos;
 } web_api_t;
 
 
@@ -84,10 +86,22 @@ static void
 web_api_idle(web_api_t* api);
 
 static void
+connect_to_server(web_api_t* api);
+
+static void
+monitor_connection(web_api_t* api);
+
+static void
+send_data_to_server(web_api_t* api);
+
+static void
+send_backlog(web_api_t* api);
+
+static void
 socket_message_rx(web_api_t* api, const uint8_t* data, uint32_t data_len);
 
 static void
-send_api_msg(web_api_t* api, ApiMessage* msg);
+send_api_msg(web_api_t* api, ApiMessage* msg, bool can_backlog);
 
 static void
 dispatch_api_msg(web_api_t* api, ApiMessage* msg);
@@ -143,7 +157,10 @@ static void
 socket_poll(web_api_t* api);
 
 static bool
-send_all(web_api_t* api, void* buf, uint32_t buf_len);
+send_or_store(web_api_t* api, void* buf, uint32_t buf_len, bool can_backlog);
+
+static bool
+socket_send(web_api_t* api, void* buf, uint32_t buf_len);
 
 
 static web_api_t* api;
@@ -154,6 +171,16 @@ web_api_init()
 {
   api = calloc(1, sizeof(web_api_t));
   api->status.state = AS_AWAITING_NET_CONNECTION;
+
+  api->backlog_pos = 0;
+  while (1) {
+    uint32_t msg_len = 0xFFFFFFFF;
+    bool ret = sxfs_read(SP_WEB_API_BACKLOG, api->backlog_pos, (uint8_t*)&msg_len, sizeof(msg_len));
+    if (!ret || msg_len == 0xFFFFFFFF)
+      break;
+
+    api->backlog_pos += msg_len;
+  }
 
   api->msg_listener = msg_listener_create("web_api", 2048, web_api_dispatch, api);
   msg_listener_set_idle_timeout(api->msg_listener, 100);
@@ -244,71 +271,107 @@ set_state(web_api_t* api, api_state_t state)
 static void
 web_api_idle(web_api_t* api)
 {
-  switch (api->status.state) {
-    case AS_AWAITING_NET_CONNECTION:
-      /* do nothing, wait for net to come up */
-      break;
-
-    case AS_CONNECTING:
-      printf("Connecting to: %s:%d\r\n", WEB_API_HOST_STR, WEB_API_PORT);
-      if (socket_connect(api, WEB_API_HOST_STR, WEB_API_PORT)) {
-        api->last_recv_time = chTimeNow();
-        api->send_errors = 0;
-
-        api->parser.state = RECV_LEN;
-        api->parser.bytes_remaining = 4;
-        api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
-
-        const char* auth_token = app_cfg_get_auth_token();
-        if (strlen(auth_token) > 0) {
-          request_auth(api);
-          set_state(api, AS_REQUESTING_AUTH);
-        }
-        else {
-          request_activation_token(api);
-          set_state(api, AS_REQUESTING_ACTIVATION_TOKEN);
-        }
-      }
-      break;
-
-    case AS_REQUESTING_ACTIVATION_TOKEN:
-    case AS_REQUESTING_AUTH:
-    case AS_AWAITING_ACTIVATION:
-      break;
-
-    case AS_CONNECTED:
-      if ((chTimeNow() - api->last_sensor_report_time) > SENSOR_REPORT_INTERVAL) {
-        send_sensor_report(api);
-        api->last_sensor_report_time = chTimeNow();
-      }
-
-      if (api->new_device_settings) {
-        send_device_settings(api);
-        api->new_device_settings = false;
-      }
-
-      send_controller_settings(api);
-      break;
-  }
-
-  if (api->status.state > AS_CONNECTING) {
-    /* If we haven't heard from the server in a while, disconnect and try again */
-    if ((chTimeNow() - api->last_recv_time) > RECV_TIMEOUT) {
-      printf("Server timed out\r\n");
-      closesocket(api->socket);
-      api->socket = -1;
-      set_state(api, AS_CONNECTING);
-      return;
-    }
-
-    /* If we haven't sent anything to the server in a while, send a keepalive */
-    if ((chTimeNow() - api->last_send_time) > MIN_SEND_INTERVAL) {
-      uint32_t keepalive = 0;
-      send_all(api, &keepalive, 4);
-    }
-
+  if (api->status.state == AS_CONNECTING)
+    connect_to_server(api);
+  else if (api->status.state > AS_CONNECTING) {
+    monitor_connection(api);
     socket_poll(api);
   }
+
+  send_data_to_server(api);
+}
+
+static void
+connect_to_server(web_api_t* api)
+{
+  printf("Connecting to: %s:%d\r\n", WEB_API_HOST_STR, WEB_API_PORT);
+  if (socket_connect(api, WEB_API_HOST_STR, WEB_API_PORT)) {
+    api->last_recv_time = chTimeNow();
+    api->send_errors = 0;
+
+    api->parser.state = RECV_LEN;
+    api->parser.bytes_remaining = 4;
+    api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
+
+    const char* auth_token = app_cfg_get_auth_token();
+    if (strlen(auth_token) > 0) {
+      set_state(api, AS_REQUESTING_AUTH);
+      request_auth(api);
+    }
+    else {
+      set_state(api, AS_REQUESTING_ACTIVATION_TOKEN);
+      request_activation_token(api);
+    }
+  }
+}
+
+static void
+monitor_connection(web_api_t* api)
+{
+  /* If we haven't heard from the server in a while, disconnect and try again */
+  if ((chTimeNow() - api->last_recv_time) > RECV_TIMEOUT) {
+    printf("Server timed out\r\n");
+    closesocket(api->socket);
+    api->socket = -1;
+    set_state(api, AS_CONNECTING);
+    return;
+  }
+
+  /* If we haven't sent anything to the server in a while, send a keepalive */
+  if ((chTimeNow() - api->last_send_time) > MIN_SEND_INTERVAL) {
+    uint32_t keepalive = 0;
+    socket_send(api, &keepalive, 4);
+  }
+}
+
+static void
+send_data_to_server(web_api_t* api)
+{
+  if ((api->status.state == AS_CONNECTED) &&
+      (api->backlog_pos > 0))
+    send_backlog(api);
+
+  if ((chTimeNow() - api->last_sensor_report_time) > SENSOR_REPORT_INTERVAL) {
+    send_sensor_report(api);
+    api->last_sensor_report_time = chTimeNow();
+  }
+
+  if (api->new_device_settings) {
+    send_device_settings(api);
+    api->new_device_settings = false;
+  }
+
+  send_controller_settings(api);
+}
+
+static void
+send_backlog(web_api_t* api)
+{
+  uint32_t backlog_read_pos = 0;
+  uint32_t data_left_to_send = api->backlog_pos;
+  uint8_t* send_buf = malloc(1024);
+
+  printf("Sending %d bytes from backlog\r\n", (int)data_left_to_send);
+
+  while (data_left_to_send > 0) {
+    uint32_t send_len = MIN(1024, data_left_to_send);
+    if (!sxfs_read(SP_WEB_API_BACKLOG, backlog_read_pos, send_buf, send_len)) {
+      printf("Backlog read failed!\r\n");
+      break;
+    }
+
+    if (!socket_send(api, send_buf, send_len)) {
+      printf("Backlog send failed!\r\n");
+      break;
+    }
+
+    backlog_read_pos += send_len;
+    data_left_to_send -= send_len;
+  }
+  free(send_buf);
+
+  sxfs_erase_all(SP_WEB_API_BACKLOG);
+  api->backlog_pos = 0;
 }
 
 static bool
@@ -426,7 +489,7 @@ send_sensor_report(web_api_t* api)
 
   if (msg->deviceReport.controller_reports_count > 0) {
     printf("sending sensor report %d\r\n", msg->deviceReport.controller_reports_count);
-    send_api_msg(api, msg);
+    send_api_msg(api, msg, sntp_time_available());
   }
 
   free(msg);
@@ -440,7 +503,7 @@ request_activation_token(web_api_t* api)
   msg->has_activationTokenRequest = true;
   strcpy(msg->activationTokenRequest.device_id, device_id);
 
-  send_api_msg(api, msg);
+  send_api_msg(api, msg, false);
 
   free(msg);
 }
@@ -454,7 +517,7 @@ request_auth(web_api_t* api)
   strcpy(msg->authRequest.device_id, device_id);
   sprintf(msg->authRequest.auth_token, app_cfg_get_auth_token());
 
-  send_api_msg(api, msg);
+  send_api_msg(api, msg, false);
 
   free(msg);
 }
@@ -531,7 +594,7 @@ send_device_settings(
   }
 
   printf("Sending device settings\r\n");
-  send_api_msg(api, msg);
+  send_api_msg(api, msg, true);
 
   free(msg);
 }
@@ -584,7 +647,7 @@ send_controller_settings(
       }
 
       printf("Sending controller settings\r\n");
-      send_api_msg(api, msg);
+      send_api_msg(api, msg, true);
     }
   }
 
@@ -600,7 +663,7 @@ check_for_update(web_api_t* api)
   msg->has_firmwareUpdateCheckRequest = true;
   sprintf(msg->firmwareUpdateCheckRequest.current_version, "%d.%d.%d", MAJOR_VERSION, MINOR_VERSION, PATCH_VERSION);
 
-  send_api_msg(api, msg);
+  send_api_msg(api, msg, false);
 
   free(msg);
 }
@@ -617,13 +680,13 @@ dispatch_firmware_rqst(web_api_t* api, firmware_update_t* firmware_data)
       firmware_data->version,
       sizeof(msg->firmwareDownloadRequest.requested_version));
 
-  send_api_msg(api, msg);
+  send_api_msg(api, msg, false);
 
   free(msg);
 }
 
 static void
-send_api_msg(web_api_t* api, ApiMessage* msg)
+send_api_msg(web_api_t* api, ApiMessage* msg, bool can_backlog)
 {
   uint8_t* buffer = malloc(ApiMessage_size);
 
@@ -632,8 +695,8 @@ send_api_msg(web_api_t* api, ApiMessage* msg)
 
   if (encoded_ok) {
     uint32_t buf_len = htonl(stream.bytes_written);
-    if (send_all(api, &buf_len, sizeof(buf_len))) {
-      if (!send_all(api, buffer, stream.bytes_written)) {
+    if (send_or_store(api, &buf_len, sizeof(buf_len), can_backlog)) {
+      if (!send_or_store(api, buffer, stream.bytes_written, can_backlog)) {
         printf("buffer send failed!\r\n");
       }
     }
@@ -646,7 +709,27 @@ send_api_msg(web_api_t* api, ApiMessage* msg)
 }
 
 static bool
-send_all(web_api_t* api, void* buf, uint32_t buf_len)
+send_or_store(web_api_t* api, void* buf, uint32_t buf_len, bool can_backlog)
+{
+  if (api->status.state > AS_CONNECTING) {
+    return socket_send(api, buf, buf_len);
+  }
+  else {
+    if (!can_backlog) {
+      printf("Unable to save message to backlog!\r\n");
+      return false;
+    }
+
+    printf("Not connected. Saving to backlog %d\r\n", (int)api->backlog_pos);
+    bool ret = sxfs_write(SP_WEB_API_BACKLOG, api->backlog_pos, buf, buf_len);
+    if (ret)
+      api->backlog_pos += buf_len;
+    return ret;
+  }
+}
+
+static bool
+socket_send(web_api_t* api, void* buf, uint32_t buf_len)
 {
   int bytes_left = buf_len;
   while (bytes_left > 0) {
