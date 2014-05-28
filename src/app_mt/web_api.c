@@ -85,6 +85,9 @@ web_api_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_dat
 static void
 web_api_idle(web_api_t* api);
 
+static bool
+was_authenticated(void);
+
 static void
 connect_to_server(web_api_t* api);
 
@@ -281,6 +284,13 @@ web_api_idle(web_api_t* api)
   send_data_to_server(api);
 }
 
+static bool
+was_authenticated()
+{
+  const char* auth_token = app_cfg_get_auth_token();
+  return auth_token[0] != 0;
+}
+
 static void
 connect_to_server(web_api_t* api)
 {
@@ -293,8 +303,7 @@ connect_to_server(web_api_t* api)
     api->parser.bytes_remaining = 4;
     api->parser.recv_buf = (uint8_t*)&api->parser.data_len;
 
-    const char* auth_token = app_cfg_get_auth_token();
-    if (strlen(auth_token) > 0) {
+    if (was_authenticated()) {
       set_state(api, AS_REQUESTING_AUTH);
       request_auth(api);
     }
@@ -331,17 +340,19 @@ send_data_to_server(web_api_t* api)
       (api->backlog_pos > 0))
     send_backlog(api);
 
-  if ((chTimeNow() - api->last_sensor_report_time) > SENSOR_REPORT_INTERVAL) {
-    send_sensor_report(api);
-    api->last_sensor_report_time = chTimeNow();
-  }
+  if (was_authenticated()) {
+    if ((chTimeNow() - api->last_sensor_report_time) > SENSOR_REPORT_INTERVAL) {
+      send_sensor_report(api);
+      api->last_sensor_report_time = chTimeNow();
+    }
 
-  if (api->new_device_settings) {
-    send_device_settings(api);
-    api->new_device_settings = false;
-  }
+    if (api->new_device_settings) {
+      send_device_settings(api);
+      api->new_device_settings = false;
+    }
 
-  send_controller_settings(api);
+    send_controller_settings(api);
+  }
 }
 
 static void
@@ -514,8 +525,8 @@ request_auth(web_api_t* api)
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_AUTH_REQUEST;
   msg->has_authRequest = true;
-  strcpy(msg->authRequest.device_id, device_id);
-  sprintf(msg->authRequest.auth_token, app_cfg_get_auth_token());
+  strncpy(msg->authRequest.device_id, device_id, sizeof(msg->authRequest.device_id));
+  strncpy(msg->authRequest.auth_token, app_cfg_get_auth_token(), sizeof(msg->authRequest.auth_token));
 
   send_api_msg(api, msg, false);
 
