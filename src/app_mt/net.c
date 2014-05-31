@@ -23,9 +23,9 @@
 #define SERVICE_NAME "brewbit-model-t"
 
 
-#define DHCP_TIMEOUT    S2ST(3 * 60)
-#define CONNECT_TIMEOUT S2ST(3 * 60)
-#define API_TIMEOUT     S2ST(3 * 60)
+#define DHCP_TIMEOUT    S2ST(90)
+#define CONNECT_TIMEOUT S2ST(90)
+#define API_TIMEOUT     S2ST(90)
 
 
 typedef struct {
