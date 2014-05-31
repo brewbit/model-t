@@ -34,7 +34,7 @@ typedef enum {
 
 typedef struct {
   systime_t chunk_request_time;
-  ota_update_state_t last_online_state;
+  bool download_in_progress;
   ota_update_state_t state;
   char update_ver[16];
   uint32_t last_block_offset;
@@ -81,7 +81,7 @@ ota_update_init()
   const ota_update_checkpoint_t* checkpoint = app_cfg_get_ota_update_checkpoint();
 
   update.state = OU_WAIT_API_CONN;
-  update.last_online_state = checkpoint->last_online_state;
+  update.download_in_progress = checkpoint->download_in_progress;
   update.update_size = checkpoint->update_size;
   update.last_block_offset = checkpoint->last_block_offset;
   update.update_downloaded = checkpoint->last_block_offset;
@@ -115,9 +115,6 @@ static void
 set_state(ota_update_state_t state)
 {
   update.state = state;
-
-  if (state != OU_WAIT_API_CONN)
-    update.last_online_state = state;
 
   ota_update_status_t status = ota_update_get_status();
   msg_send(MSG_OTAU_STATUS, &status);
@@ -174,7 +171,7 @@ static void
 write_checkpoint()
 {
   ota_update_checkpoint_t checkpoint = {
-      .last_online_state = update.last_online_state,
+      .download_in_progress = update.download_in_progress,
       .update_size = update.update_size,
       .last_block_offset = update.last_block_offset,
   };
@@ -188,15 +185,17 @@ static void
 dispatch_api_status(api_status_t* as)
 {
   if (as->state == AS_CONNECTED) {
-    set_state(update.last_online_state);
-    if (update.last_online_state == OU_DOWNLOADING)
+    if (update.download_in_progress) {
+      set_state(OU_DOWNLOADING);
       firmware_download_request(update.last_block_offset);
+    }
+    else {
+      set_state(OU_IDLE);
+    }
   }
   else {
-    if (update.state != OU_WAIT_API_CONN) {
-      update.last_online_state = update.state;
+    if (update.state != OU_WAIT_API_CONN)
       set_state(OU_WAIT_API_CONN);
-    }
   }
 }
 
@@ -264,7 +263,7 @@ dispatch_chunk(FirmwareDownloadResponse* update_chunk)
   free(tmp);
 
   if (update.update_downloaded >= update.update_size) {
-    update.last_online_state = OU_IDLE;
+    update.download_in_progress = false;
     update.update_size = 0;
     update.last_block_offset = 0;
     memset(update.update_ver, 0, sizeof(update.update_ver));

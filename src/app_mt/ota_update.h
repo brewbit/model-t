@@ -2,6 +2,8 @@
 #ifndef OTA_UPDATE_H
 #define OTA_UPDATE_H
 
+#include <stdbool.h>
+
 typedef enum {
   OU_IDLE,
   OU_WAIT_API_CONN,
@@ -29,7 +31,7 @@ typedef struct {
 } firmware_update_t;
 
 typedef struct {
-  ota_update_state_t last_online_state;
+  bool download_in_progress;
   char update_ver[16];
   uint32_t update_size;
   uint32_t last_block_offset;

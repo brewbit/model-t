@@ -84,7 +84,7 @@ app_cfg_reset()
 
   app_cfg_local.data.reset_count = 0;
 
-  app_cfg_local.data.ota_update_checkpoint.last_online_state = OU_IDLE;
+  app_cfg_local.data.ota_update_checkpoint.download_in_progress = false;
   app_cfg_local.data.ota_update_checkpoint.update_size = 0;
   app_cfg_local.data.ota_update_checkpoint.last_block_offset = 0;
   memset(app_cfg_local.data.ota_update_checkpoint.update_ver, 0, sizeof(app_cfg_local.data.ota_update_checkpoint.update_ver));
