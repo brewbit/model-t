@@ -203,6 +203,7 @@ static void
 dispatch_ota_update_start()
 {
   firmware_download_request(0);
+  update.download_in_progress = true;
 }
 
 static void
