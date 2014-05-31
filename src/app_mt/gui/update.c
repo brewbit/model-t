@@ -203,6 +203,7 @@ dispatch_update_status(update_screen_t* s, const ota_update_status_t* status)
   case OU_COMPLETE:
     header = "Installing";
     desc = "Do not remove power during update!";
+    widget_hide(s->progress);
     break;
 
   case OU_FAILED:
