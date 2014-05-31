@@ -292,7 +292,7 @@ dispatch_chunk(FirmwareDownloadResponse* update_chunk)
 static void
 firmware_download_request(uint32_t offset)
 {
-  firmware_update_t* firmware_data = malloc(sizeof(firmware_data));
+  firmware_update_t* firmware_data = malloc(sizeof(firmware_update_t));
 
   firmware_data->version = update.update_ver;
   firmware_data->offset = offset;
