@@ -156,7 +156,13 @@ test_thread(void* arg)
   // with the relays...
   chThdSleepSeconds(2);
 
-//  net_connect("internets", WLAN_SEC_WPA2, "password");
+  net_settings_t ns = {
+      .ssid = "network",
+      .passphrase = "password",
+      .security_mode = WLAN_SEC_WPA2,
+      .ip_config = IP_CFG_DHCP,
+  };
+  app_cfg_set_net_settings(&ns);
 
   while (!chThdShouldTerminate()) {
     relay_test(s->relay_test_status[OUTPUT_1], PAD_RELAY1, PAD_RELAY1_TEST);
