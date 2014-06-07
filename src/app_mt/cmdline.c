@@ -7,6 +7,7 @@
 
 #include "app_cfg.h"
 #include "net.h"
+#include "recovery_img.h"
 
 
 static void cmd_mem(BaseChannel *chp, int argc, char *argv[]);
@@ -14,6 +15,7 @@ static void cmd_threads(BaseChannel *chp, int argc, char *argv[]);
 static void cmd_slinfo(BaseChannel *chp, int argc, char *argv[]);
 static void cmd_sysinfo(BaseChannel *chp, int argc, char *argv[]);
 static void cmd_app_cfg_reset(BaseChannel *chp, int argc, char *argv[]);
+static void cmd_recovery_img_write(BaseChannel *chp, int argc, char *argv[]);
 
 
 static const ShellCommand commands[] = {
@@ -22,6 +24,7 @@ static const ShellCommand commands[] = {
   {"slinfo", cmd_slinfo},
   {"sysinfo", cmd_sysinfo},
   {"app_cfg_reset", cmd_app_cfg_reset},
+  {"ri_write", cmd_recovery_img_write},
   {NULL, NULL}
 };
 
@@ -129,9 +132,21 @@ cmd_app_cfg_reset(BaseChannel *chp, int argc, char *argv[])
 {
   (void)argv;
   if (argc > 0) {
-    chprintf(chp, "Usage: threads\r\n");
+    chprintf(chp, "Usage: app_cfg_reset\r\n");
     return;
   }
 
   app_cfg_reset();
+}
+
+static void
+cmd_recovery_img_write(BaseChannel *chp, int argc, char *argv[])
+{
+  (void)argv;
+  if (argc > 0) {
+    chprintf(chp, "Usage: ri_write\r\n");
+    return;
+  }
+
+  recovery_img_write();
 }

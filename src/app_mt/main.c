@@ -22,6 +22,7 @@
 #include "screen_saver.h"
 #include "cmdline.h"
 #include "xflash.h"
+#include "recovery_img.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -29,55 +30,6 @@
 
 char device_id[32];
 
-
-static void
-ensure_recovery_image_loaded(void)
-{
-  recovery_img_load_state_t state = RECOVERY_IMG_CHECKING;
-  msg_send(MSG_RECOVERY_IMG_STATUS, &state);
-
-  dfu_parse_result_t result = dfuse_verify(SP_RECOVERY_IMG);
-  if (result != DFU_PARSE_OK) {
-    extern uint8_t __app_base__;
-    image_rec_t img_recs[2] = {
-        {
-            .data = (uint8_t*)&_app_hdr,
-            .size = sizeof(_app_hdr)
-        },
-        {
-            .data = &__app_base__,
-            .size = _app_hdr.img_size
-        },
-    };
-
-    printf("No recovery image detected (%d)\r\n", result);
-    printf("  Copying this image to external flash... ");
-
-    state = RECOVERY_IMG_LOADING;
-    msg_send(MSG_RECOVERY_IMG_STATUS, &state);
-    dfuse_write_self(SP_RECOVERY_IMG, img_recs, 2);
-
-    state = RECOVERY_IMG_CHECKING;
-    msg_send(MSG_RECOVERY_IMG_STATUS, &state);
-
-    result = dfuse_verify(SP_RECOVERY_IMG);
-    if (result == DFU_PARSE_OK) {
-      state = RECOVERY_IMG_LOADED;
-      msg_send(MSG_RECOVERY_IMG_STATUS, &state);
-    }
-    else {
-      state = RECOVERY_IMG_FAILED;
-      msg_send(MSG_RECOVERY_IMG_STATUS, &state);
-    }
-
-    printf("OK\r\n");
-  }
-  else {
-    printf("Recovery image is present\r\n");
-    state = RECOVERY_IMG_LOADED;
-    msg_send(MSG_RECOVERY_IMG_STATUS, &state);
-  }
-}
 
 static void
 check_for_faults(void)
@@ -173,7 +125,7 @@ main(void)
     gui_push_screen(self_test_screen);
   }
 
-  ensure_recovery_image_loaded();
+  recovery_img_init();
 
   while (TRUE) {
     cmdline_restart();

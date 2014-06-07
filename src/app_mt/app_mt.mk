@@ -38,6 +38,7 @@ PROJECT_CSRC = \
        ota_update.c \
        pid.c \
        quantity_widget.c \
+       recovery_img.c \
        sensor.c \
        sntp.c \
        temp_control.c \
