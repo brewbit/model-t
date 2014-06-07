@@ -14,14 +14,6 @@ recovery_img_thread(void* arg);
 void
 recovery_img_init()
 {
-  chThdCreateFromHeap(NULL, 1024, NORMALPRIO, recovery_img_thread, NULL);
-}
-
-static msg_t
-recovery_img_thread(void* arg)
-{
-  (void)arg;
-
   recovery_img_load_state_t state = RECOVERY_IMG_CHECKING;
   msg_send(MSG_RECOVERY_IMG_STATUS, &state);
 
@@ -37,13 +29,13 @@ recovery_img_thread(void* arg)
     state = RECOVERY_IMG_LOADED;
     msg_send(MSG_RECOVERY_IMG_STATUS, &state);
   }
-
-  return 0;
 }
 
-void
-recovery_img_write()
+static msg_t
+recovery_img_thread(void* arg)
 {
+  (void)arg;
+
   recovery_img_load_state_t state;
   dfu_parse_result_t result;
 
@@ -77,4 +69,12 @@ recovery_img_write()
   }
 
   printf("OK\r\n");
+
+  return 0;
+}
+
+void
+recovery_img_write()
+{
+  chThdCreateFromHeap(NULL, 2048, NORMALPRIO, recovery_img_thread, NULL);
 }

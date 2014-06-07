@@ -12,6 +12,7 @@
 #include "wlan.h"
 #include "net.h"
 #include "app_cfg.h"
+#include "recovery_img.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -37,6 +38,9 @@ static void
 back_button_clicked(button_event_t* event);
 
 static void
+update_recovery_img_button_clicked(button_event_t* event);
+
+static void
 dispatch_touch(self_test_screen_t* s, touch_msg_t* msg);
 
 static void
@@ -49,7 +53,7 @@ static void
 dispatch_net_status(self_test_screen_t* s, net_status_t* status);
 
 static void
-dispatch_ping_report(self_test_screen_t* s, netapp_pingreport_args_t* ping_report);
+dispatch_api_status(self_test_screen_t* s, api_status_t* status);
 
 static void
 relay_test(widget_t* label, uint32_t write_pad, uint32_t read_pad);
@@ -96,6 +100,12 @@ self_test_screen_create()
   rect.x = 160;
   s->recovery_img_status = label_create(widget, rect, "NOT CHECKED", font_opensans_regular_12, WHITE, 1);
 
+  rect.width = 32;
+  rect.height = 32;
+  rect.x = 280;
+  button_create(widget, rect, img_update, WHITE, BLACK, update_recovery_img_button_clicked);
+  rect.width = 120;
+
   rect.x = 30;
   rect.y += 20;
   label_create(widget, rect, "Sensor 1:", font_opensans_regular_12, WHITE, 1);
@@ -130,7 +140,7 @@ self_test_screen_create()
   gui_msg_subscribe(MSG_SENSOR_SAMPLE, widget);
   gui_msg_subscribe(MSG_RECOVERY_IMG_STATUS, widget);
   gui_msg_subscribe(MSG_NET_STATUS, widget);
-  gui_msg_subscribe(MSG_WLAN_PING_REPORT, widget);
+  gui_msg_subscribe(MSG_API_STATUS, widget);
 
   s->thd_test = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, test_thread, s);
 
@@ -191,7 +201,7 @@ self_test_screen_destroy(widget_t* w)
   gui_msg_unsubscribe(MSG_SENSOR_SAMPLE, w);
   gui_msg_unsubscribe(MSG_RECOVERY_IMG_STATUS, w);
   gui_msg_unsubscribe(MSG_NET_STATUS, w);
-  gui_msg_unsubscribe(MSG_WLAN_PING_REPORT, w);
+  gui_msg_unsubscribe(MSG_API_STATUS, w);
 
   free(s);
 }
@@ -218,8 +228,8 @@ self_test_screen_msg(msg_event_t* event)
       dispatch_net_status(s, event->msg_data);
       break;
 
-    case MSG_WLAN_PING_REPORT:
-      dispatch_ping_report(s, event->msg_data);
+    case MSG_API_STATUS:
+      dispatch_api_status(s, event->msg_data);
       break;
 
     default:
@@ -298,10 +308,9 @@ dispatch_net_status(self_test_screen_t* s, net_status_t* status)
 }
 
 static void
-dispatch_ping_report(self_test_screen_t* s, netapp_pingreport_args_t* ping_report)
+dispatch_api_status(self_test_screen_t* s, api_status_t* status)
 {
-  if ((ping_report->packets_sent > 0) &&
-      (ping_report->packets_received > 0)) {
+  if (status->state > AS_CONNECTING) {
     label_set_text(s->wifi_test_status, "PASS");
     label_set_color(s->wifi_test_status, GREEN);
 
@@ -324,5 +333,13 @@ back_button_clicked(button_event_t* event)
     chThdWait(s->thd_test);
 
     gui_pop_screen();
+  }
+}
+
+static void
+update_recovery_img_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
+    recovery_img_write();
   }
 }
