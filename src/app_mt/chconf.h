@@ -467,7 +467,8 @@
   msg_t mb_buf[MAX_THREAD_MAILBOX_MSGS];                                    \
   Semaphore mb_sem;                                                         \
   int local_errno;                                                          \
-  int tracepoint;
+  int tracepoint;                                                           \
+  void* msg_listener;
 #endif
 
 /**
@@ -481,8 +482,8 @@
 #define THREAD_EXT_INIT_HOOK(tp) {                                          \
   /* Add threads initialization code here.*/                                \
   chMBInit(&tp->mb, tp->mb_buf, MAX_THREAD_MAILBOX_MSGS);                   \
-  chSemInit(&tp->mb_sem, 0);                                                \
   tp->tracepoint = 0;                                                       \
+  tp->msg_listener = NULL;                                                  \
 }
 #endif
 

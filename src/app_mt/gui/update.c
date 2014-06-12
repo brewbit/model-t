@@ -132,11 +132,11 @@ update_button_clicked(button_event_t* event)
     case OU_IDLE:
     case OU_UPDATE_NOT_AVAILABLE:
     case OU_FAILED:
-      msg_post(MSG_OTAU_CHECK, NULL);
+      msg_send(MSG_OTAU_CHECK, NULL);
       break;
 
     case OU_UPDATE_AVAILABLE:
-      msg_post(MSG_OTAU_START, NULL);
+      msg_send(MSG_OTAU_START, NULL);
       break;
 
     default:

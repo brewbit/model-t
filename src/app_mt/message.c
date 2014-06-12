@@ -27,7 +27,7 @@ static msg_t
 msg_thread_func(void* arg);
 
 static void
-msg_broadcast(msg_id_t id, void* msg_data, bool wait);
+msg_loop_exec(msg_listener_t* l);
 
 static thread_msg_t*
 msg_get(msg_listener_t* l);
@@ -69,6 +69,7 @@ static msg_t
 msg_thread_func(void* arg)
 {
   msg_listener_t* l = arg;
+  chThdSelf()->msg_listener = l;
 
   chRegSetThreadName(l->name);
 
@@ -76,25 +77,31 @@ msg_thread_func(void* arg)
   l->dispatch(MSG_INIT, NULL, l->user_data, NULL);
 
   while (1) {
-    chThdTrace(-1);
-    thread_msg_t* msg = msg_get(l);
-
-    if (msg != NULL) {
-      chThdTrace(msg->id);
-      l->dispatch(msg->id, msg->msg_data, l->user_data, msg->user_data);
-
-      chThdTrace(-2);
-      msg_release(msg);
-    }
-    else {
-      chThdTrace(MSG_IDLE);
-      l->dispatch(MSG_IDLE, NULL, l->user_data, NULL);
-    }
-    if (l->watchdog_enabled)
-      thread_watchdog_kick();
+    msg_loop_exec(l);
   }
 
   return 0;
+}
+
+static void
+msg_loop_exec(msg_listener_t* l)
+{
+  chThdTrace(-1);
+  thread_msg_t* msg = msg_get(l);
+
+  if (msg != NULL) {
+    chThdTrace(msg->id);
+    l->dispatch(msg->id, msg->msg_data, l->user_data, msg->user_data);
+
+    chThdTrace(-2);
+    msg_release(msg);
+  }
+  else {
+    chThdTrace(MSG_IDLE);
+    l->dispatch(MSG_IDLE, NULL, l->user_data, NULL);
+  }
+  if (l->watchdog_enabled)
+    thread_watchdog_kick();
 }
 
 void
@@ -140,36 +147,10 @@ msg_unsubscribe(msg_listener_t* l, msg_id_t id, void* user_data)
 void
 msg_send(msg_id_t id, void* msg_data)
 {
-  msg_broadcast(id, msg_data, true);
-}
-
-void
-msg_post(msg_id_t id, void* msg_data)
-{
-  msg_broadcast(id, msg_data, false);
-}
-
-static void
-msg_broadcast(msg_id_t id, void* msg_data, bool wait)
-{
   msg_subscription_t* sub;
 
   if (id >= NUM_THREAD_MSGS)
     return;
-
-  uint32_t* thread_count = NULL;
-  if (!wait) {
-    thread_count = malloc(sizeof(int));
-    *thread_count = 0;
-
-    // count subs
-    for (sub = subs[id]; sub != NULL; sub = sub->next) {
-      if (sub->listener->thread != chThdSelf())
-        *thread_count += 1;
-    }
-    if (*thread_count == 0)
-      free(thread_count);
-  }
 
   for (sub = subs[id]; sub != NULL; sub = sub->next) {
     if (sub->listener->thread == chThdSelf()) {
@@ -179,20 +160,22 @@ msg_broadcast(msg_id_t id, void* msg_data, bool wait)
         chDbgPanic("message broadcast to self, but no dispatch method provided");
     }
     else {
+      thread_msg_t msg = {
+        .id = id,
+        .msg_data = msg_data,
+        .user_data = sub->user_data,
+        .waiting_thd = chThdSelf(),
+        .processed = false
+      };
 
-      thread_msg_t* msg = malloc(sizeof(thread_msg_t));
-      msg->id = id;
-      msg->msg_data = msg_data;
-      msg->user_data = sub->user_data;
-      msg->waiting_thd = wait ? chThdSelf() : NULL;
-      msg->thread_count = thread_count;
+      chMBPost(&sub->listener->thread->mb, (msg_t)&msg, TIME_INFINITE);
 
-      // Ownership of msg is transferred to the thread it was sent to here.
-      // Do not reference it again because it might not exist anymore!
-      chMBPost(&sub->listener->thread->mb, (msg_t)msg, TIME_INFINITE);
-
-      if (wait)
-        chSemWait(&chThdSelf()->mb_sem);
+      while (!msg.processed) {
+        if (chThdSelf()->msg_listener != NULL)
+          msg_loop_exec(chThdSelf()->msg_listener);
+        else
+          chThdSleepMilliseconds(10);
+      }
     }
   }
 }
@@ -215,29 +198,11 @@ msg_release(thread_msg_t* msg)
   if (msg == NULL)
     return;
 
-  // If a thread is waiting for this message to be processed,
-  // signal it and let it clean up the message data
-  if (msg->waiting_thd != NULL) {
-    chSemSignal(&msg->waiting_thd->mb_sem);
+  msg->processed = true;
+
+  if (msg->waiting_thd->msg_listener != NULL) {
+    thread_msg_t release_msg = {
+        .id = MSG_RELEASE,        .msg_data = msg,        .user_data = NULL,        .waiting_thd = NULL,        .processed = true    };
+    chMBPost(&msg->waiting_thd->mb, (msg_t)&release_msg, TIME_INFINITE);
   }
-  else {
-    // atomic decrement
-    uint32_t result;
-    uint32_t thd_cnt;
-    do {
-      thd_cnt = __LDREXW(msg->thread_count) - 1;
-      result = __STREXW(thd_cnt, msg->thread_count);
-    } while (result != 0);
-
-    // This is the last thread to process the message, so we have to clean
-    // it up
-    if (thd_cnt == 0) {
-      if (msg->msg_data != NULL)
-        free(msg->msg_data);
-
-      free(msg->thread_count);
-    }
-  }
-
-  free(msg);
 }

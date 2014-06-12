@@ -484,7 +484,7 @@ hci_dispatch_event(
       hci_event_unsol_flowcontrol_handler(event_hdr);
 
       if (hci.stats.num_released_packets == hci.stats.num_sent_packets)
-        msg_post(MSG_WLAN_FLUSHED, NULL);
+        msg_send(MSG_WLAN_FLUSHED, NULL);
       break;
 
     case HCI_EVNT_WLAN_KEEPALIVE:
@@ -493,11 +493,11 @@ hci_dispatch_event(
       break;
 
     case HCI_EVNT_WLAN_UNSOL_CONNECT:
-      msg_post(MSG_WLAN_CONNECT, NULL);
+      msg_send(MSG_WLAN_CONNECT, NULL);
       break;
 
     case HCI_EVNT_WLAN_UNSOL_DISCONNECT:
-      msg_post(MSG_WLAN_DISCONNECT, NULL);
+      msg_send(MSG_WLAN_DISCONNECT, NULL);
       break;
 
     case HCI_EVNT_WLAN_UNSOL_DHCP:

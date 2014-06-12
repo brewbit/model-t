@@ -3,10 +3,12 @@
 #define MESSAGE_H
 
 #include "ch.h"
+#include <stdbool.h>
 
 typedef enum {
   MSG_INIT,
   MSG_IDLE,
+  MSG_RELEASE,
 
   MSG_TOUCH_INPUT,
 
@@ -56,10 +58,10 @@ typedef enum {
 
 typedef struct {
   Thread* waiting_thd;
-  uint32_t* thread_count;
   msg_id_t id;
   void* user_data;
   void* msg_data;
+  bool processed;
 } thread_msg_t;
 
 typedef enum {
@@ -90,12 +92,7 @@ msg_subscribe(msg_listener_t* l, msg_id_t id, void* user_data);
 void
 msg_unsubscribe(msg_listener_t* l, msg_id_t id, void* user_data);
 
-// send a message and wait for it to be processed
 void
 msg_send(msg_id_t id, void* msg_data);
-
-// send a message but don't wait for it to be processed
-void
-msg_post(msg_id_t id, void* msg_data);
 
 #endif

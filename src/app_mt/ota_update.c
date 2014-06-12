@@ -132,7 +132,7 @@ ota_update_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_
     break;
 
   case MSG_OTAU_CHECK:
-    msg_post(MSG_API_FW_UPDATE_CHECK, NULL);
+    msg_send(MSG_API_FW_UPDATE_CHECK, NULL);
     set_state(OU_CHECKING);
     break;
 
@@ -301,6 +301,6 @@ firmware_download_request(uint32_t offset)
 
   update.chunk_request_time = chTimeNow();
 
-  msg_post(MSG_API_FW_DNLD_RQST, firmware_data);
+  msg_send(MSG_API_FW_DNLD_RQST, firmware_data);
   set_state(OU_DOWNLOADING);
 }
