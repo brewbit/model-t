@@ -453,7 +453,8 @@
  */
 /*===========================================================================*/
 
-#define MAX_THREAD_MAILBOX_MSGS 64
+// TODO why the hell does this crash when this is less than 66 ?!?!?
+#define MAX_THREAD_MAILBOX_MSGS 66
 #define chThdTrace(t) chThdSelf()->tracepoint = (t)
 
 /**
@@ -465,7 +466,6 @@
   /* Add threads custom fields here.*/                                      \
   Mailbox mb;                                                               \
   msg_t mb_buf[MAX_THREAD_MAILBOX_MSGS];                                    \
-  Semaphore mb_sem;                                                         \
   int local_errno;                                                          \
   int tracepoint;                                                           \
   void* msg_listener;
