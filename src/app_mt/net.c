@@ -345,8 +345,6 @@ initialize_and_connect()
   net_status.dhcp_resolved = false;
   set_state(NS_DISCONNECTED);
 
-  systime_t now = chTimeNow();
-
   wlan_stop();
 
   wlan_start(PATCH_LOAD_DEFAULT);
