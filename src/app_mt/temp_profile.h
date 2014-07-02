@@ -7,30 +7,12 @@
 #include "sensor.h"
 #include "temp_control.h"
 
-typedef enum {
-  STEP_HOLD,
-  STEP_RAMP
-} temp_profile_step_type_t;
 
 typedef enum {
   TPS_SEEKING_START_VALUE,
   TPS_RUNNING,
   TPS_COMPLETE
 } temp_profile_run_state_t;
-
-typedef struct {
-  uint32_t duration;
-  quantity_t value;
-  temp_profile_step_type_t type;
-} temp_profile_step_t;
-
-typedef struct {
-  uint32_t id;
-  char name[100];
-  uint32_t num_steps;
-  quantity_t start_value;
-  temp_profile_step_t steps[32];
-} temp_profile_t;
 
 typedef struct {
   temp_controller_id_t controller;

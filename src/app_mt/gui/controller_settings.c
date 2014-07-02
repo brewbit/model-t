@@ -190,11 +190,11 @@ set_controller_settings(controller_settings_screen_t* s)
 
     case SP_TEMP_PROFILE:
     {
-      const temp_profile_t* tp = app_cfg_get_temp_profile(s->settings.temp_profile_id);
-      if (tp != NULL)
+      const temp_profile_t* tp = &s->settings.temp_profile;
+      if (strlen(tp->name) > 0)
         snprintf(setpoint_subtext, 128, "Selected profile: '%s'", tp->name);
       else
-        snprintf(setpoint_subtext, 128, "Selected profile: id=%u", (unsigned int)s->settings.temp_profile_id);
+        snprintf(setpoint_subtext, 128, "Selected profile: No profiles uploaded from the web!");
 
       add_button_spec(buttons, &num_buttons, temp_profile_button_clicked, img_temp_hi_small, INDIGO,
           "Temp Profile", setpoint_subtext, s);

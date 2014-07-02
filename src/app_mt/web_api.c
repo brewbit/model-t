@@ -636,7 +636,7 @@ send_controller_settings(
         case SP_TEMP_PROFILE:
           ss->setpoint_type = ControllerSettings_SetpointType_TEMP_PROFILE;
           ss->has_temp_profile_id = true;
-          ss->temp_profile_id = ssl->temp_profile_id;
+          ss->temp_profile_id = ssl->temp_profile.id;
           break;
 
         default:
@@ -861,46 +861,6 @@ dispatch_controller_settings_from_server(ControllerSettings* settings)
   csl->controller = settings->sensor_index;
 
   printf("  got %d temp profiles\r\n", settings->temp_profiles_count);
-  for (i = 0; i < (int)settings->temp_profiles_count; ++i) {
-    temp_profile_t tp;
-    TempProfile* tpm = &settings->temp_profiles[i];
-
-    tp.id = tpm->id;
-    strncpy(tp.name, tpm->name, sizeof(tp.name));
-    tp.num_steps = tpm->steps_count;
-    tp.start_value.value = tpm->start_value;
-    tp.start_value.unit = UNIT_TEMP_DEG_F;
-
-    printf("    profile '%s' (%d)\r\n", tp.name, (int)tp.id);
-    printf("      steps %d\r\n", (int)tp.num_steps);
-    printf("      start %f\r\n", tp.start_value.value);
-
-    int j;
-    for (j = 0; j < (int)tpm->steps_count; ++j) {
-      temp_profile_step_t* step = &tp.steps[j];
-      TempProfileStep* stepm = &tpm->steps[j];
-
-      step->duration = stepm->duration;
-      step->value.value = stepm->value;
-      step->value.unit = UNIT_TEMP_DEG_F;
-      switch(stepm->type) {
-        case TempProfileStep_TempProfileStepType_HOLD:
-          step->type = STEP_HOLD;
-          break;
-
-        case TempProfileStep_TempProfileStepType_RAMP:
-          step->type = STEP_RAMP;
-          break;
-
-        default:
-          printf("Invalid step type: %d\r\n", stepm->type);
-          break;
-      }
-    }
-
-    app_cfg_set_temp_profile(&tp, i);
-  }
-
   printf("  got %d output settings\r\n", settings->output_settings_count);
   csl->output_settings[OUTPUT_1].enabled = false;
   csl->output_settings[OUTPUT_2].enabled = false;
@@ -936,7 +896,39 @@ dispatch_controller_settings_from_server(ControllerSettings* settings)
         printf("Sensor settings specified temp profile, but no provided!\r\n");
       else {
         csl->setpoint_type = SP_TEMP_PROFILE;
-        csl->temp_profile_id = settings->temp_profile_id;
+
+        TempProfile* tpm = &settings->temp_profiles[0];
+        csl->temp_profile.id = tpm->id;
+        strncpy(csl->temp_profile.name, tpm->name, sizeof(csl->temp_profile.name));
+        csl->temp_profile.num_steps = tpm->steps_count;
+        csl->temp_profile.start_value.value = tpm->start_value;
+        csl->temp_profile.start_value.unit = UNIT_TEMP_DEG_F;
+
+        printf("    profile '%s' (%d)\r\n", csl->temp_profile.name, (int)csl->temp_profile.id);
+        printf("      steps %d\r\n", (int)csl->temp_profile.num_steps);
+        printf("      start %f\r\n", csl->temp_profile.start_value.value);
+
+        for (i = 0; i < (int)tpm->steps_count; ++i) {
+          temp_profile_step_t* step = &csl->temp_profile.steps[i];
+          TempProfileStep* stepm = &tpm->steps[i];
+
+          step->duration = stepm->duration;
+          step->value.value = stepm->value;
+          step->value.unit = UNIT_TEMP_DEG_F;
+          switch(stepm->type) {
+            case TempProfileStep_TempProfileStepType_HOLD:
+              step->type = STEP_HOLD;
+              break;
+
+            case TempProfileStep_TempProfileStepType_RAMP:
+              step->type = STEP_RAMP;
+              break;
+
+            default:
+              printf("Invalid step type: %d\r\n", stepm->type);
+              break;
+          }
+        }
       }
       break;
 
@@ -948,9 +940,8 @@ dispatch_controller_settings_from_server(ControllerSettings* settings)
   printf("    sensor %d\r\n", csl->controller);
   printf("      setpoint_type %d\r\n", csl->setpoint_type);
   printf("      static %f\r\n", csl->static_setpoint.value);
-  printf("      temp profile %d\r\n", (int)csl->temp_profile_id);
+  printf("      temp profile %d\r\n", (int)csl->temp_profile.id);
 
   app_cfg_set_controller_settings(csl->controller, SS_SERVER, csl);
   free(csl);
 }
-

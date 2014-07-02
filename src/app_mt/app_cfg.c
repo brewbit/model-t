@@ -21,7 +21,6 @@ typedef struct {
   sensor_config_t sensor_configs[MAX_NUM_SENSOR_CONFIGS];
   matrix_t touch_calib;
   controller_settings_t controller_settings[NUM_CONTROLLERS];
-  temp_profile_t temp_profiles[NUM_CONTROLLERS];
   temp_profile_checkpoint_t temp_profile_checkpoints[NUM_CONTROLLERS];
   ota_update_checkpoint_t ota_update_checkpoint;
   char auth_token[64];
@@ -424,30 +423,6 @@ app_cfg_set_net_settings(const net_settings_t* settings)
 
     msg_send(MSG_NET_NETWORK_SETTINGS, NULL);
   }
-}
-
-const temp_profile_t*
-app_cfg_get_temp_profile(uint32_t temp_profile_id)
-{
-  int i;
-  for (i = 0; i < NUM_SENSORS; ++i) {
-    temp_profile_t* profile = &app_cfg_local.data.temp_profiles[i];
-    if (profile->id == temp_profile_id)
-      return profile;
-  }
-
-  return NULL;
-}
-
-void
-app_cfg_set_temp_profile(const temp_profile_t* profile, uint32_t index)
-{
-  if (index >= 2)
-    return;
-
-  chMtxLock(&app_cfg_mtx);
-  app_cfg_local.data.temp_profiles[index] = *profile;
-  chMtxUnlock();
 }
 
 const ota_update_checkpoint_t*

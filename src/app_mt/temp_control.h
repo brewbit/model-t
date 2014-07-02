@@ -13,6 +13,8 @@ typedef enum {
   NUM_CONTROLLERS
 } temp_controller_id_t;
 
+#include "temp_profile.h"
+
 typedef enum {
   OUTPUT_NONE = -1,
   OUTPUT_1,
@@ -37,6 +39,11 @@ typedef enum {
   SP_TEMP_PROFILE
 } setpoint_type_t;
 
+typedef enum {
+  STEP_HOLD,
+  STEP_RAMP
+} temp_profile_step_type_t;
+
 typedef struct {
   bool enabled;
   output_function_t function;
@@ -44,10 +51,24 @@ typedef struct {
 } output_settings_t;
 
 typedef struct {
+  uint32_t duration;
+  quantity_t value;
+  temp_profile_step_type_t type;
+} temp_profile_step_t;
+
+typedef struct {
+  uint32_t id;
+  char name[100];
+  uint32_t num_steps;
+  quantity_t start_value;
+  temp_profile_step_t steps[32];
+} temp_profile_t;
+
+typedef struct {
   temp_controller_id_t controller;
   setpoint_type_t setpoint_type;
   quantity_t static_setpoint;
-  uint32_t temp_profile_id;
+  temp_profile_t temp_profile;
   output_settings_t output_settings[NUM_OUTPUTS];
 } controller_settings_t;
 

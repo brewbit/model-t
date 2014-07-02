@@ -58,7 +58,7 @@ temp_profile_update(temp_profile_run_t* run, quantity_t sample)
   switch (run->state) {
     case TPS_SEEKING_START_VALUE:
     {
-      const temp_profile_t* profile = app_cfg_get_temp_profile(run->temp_profile_id);
+      const temp_profile_t* profile = &app_cfg_get_controller_settings(run->controller)->temp_profile;
       float start_err = sample.value - profile->start_value.value;
 
       if (start_err < 1 && start_err > -1) {
@@ -100,7 +100,7 @@ bool
 temp_profile_get_current_setpoint(temp_profile_run_t* run, float* sp)
 {
   bool ret = true;
-  const temp_profile_t* profile = app_cfg_get_temp_profile(run->temp_profile_id);
+  const temp_profile_t* profile = &app_cfg_get_controller_settings(run->controller)->temp_profile;
 
   if (run->state == TPS_RUNNING) {
     if (chTimeNow() > run->current_step_start_time + S2ST(profile->steps[run->current_step].duration)) {
