@@ -170,8 +170,6 @@ output_thread(void* arg)
 
   output->status.output = output->id;
 
-  palSetPad(GPIOC, out_gpio[output->id]);
-
   while (!chThdShouldTerminate()) {
 
     /* If the probe associated with this output is not active or if the output is set
@@ -213,7 +211,7 @@ output_thread(void* arg)
     chThdSleepSeconds(1);
   }
 
-  palClearPad(GPIOC, out_gpio[output->id]);
+  enable_relay(output, false);
 
   return 0;
 }
