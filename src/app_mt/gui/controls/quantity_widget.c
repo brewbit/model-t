@@ -129,7 +129,7 @@ quantity_widget_set_value(widget_t* w, quantity_t sample)
   sample = quantity_convert(sample, s->unit);
   int value = (int)(sample.value * 10);
 
-  if (value != sample.value) {
+  if (value != s->value) {
     s->value = value;
     widget_invalidate(s->widget);
   }
