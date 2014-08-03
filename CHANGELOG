@@ -1,3 +1,9 @@
+*** 1.3.3 ***
+- FIX: Remove brief relay enable when changing controller settings.
+- FIX: Allow for two simultaneous sessions to be executed.
+- FIX: Fix quantity selection of 0.
+- FIX: Update output status display when output is disabled.
+
 *** 1.3.2 ***
 - FIX: Prevent messaging deadlock by allowing threads to process messages while waiting for sent messages to complete.
 
