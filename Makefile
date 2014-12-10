@@ -2,10 +2,22 @@
 
 include deps.mk
 
-OLIMEX_JTAG = ftdi/olimex-arm-usb-tiny-h
-JLINK_JTAG = jlink
+JTAG ?= jlink
 
-JTAG ?= $(JLINK_JTAG)
+ifeq ($(JTAG),jlink)
+	INTERFACE_SCRIPT=jlink
+	TARGET_SCRIPT=stm32f2x
+endif
+
+ifeq ($(JTAG),stlink)
+	INTERFACE_SCRIPT=stlink-v2
+	TARGET_SCRIPT=stm32f2x_stlink
+endif
+
+ifeq ($(JTAG),olimex)
+	INTERFACE_SCRIPT=ftdi/olimex-arm-usb-tiny-h
+	TARGET_SCRIPT=stm32f2x
+endif
 
 all: bootloader app_mt
 
@@ -19,8 +31,8 @@ bootloader:
 	$(call make_prog,bootloader)
 
 prog_download = @openocd \
-	-f interface/$(JTAG).cfg \
-	-f target/stm32f2x.cfg \
+	-f interface/$(INTERFACE_SCRIPT).cfg \
+	-f target/$(TARGET_SCRIPT).cfg \
 	-f stm32f2x-setup.cfg \
 	-c "flash write_image erase build/$(1)/$(1).elf" \
 	-c "reset init" \
@@ -30,8 +42,8 @@ prog_download = @openocd \
 	
 clear_app_cfg:
 	@openocd \
-	-f interface/$(JTAG).cfg \
-	-f target/stm32f2x.cfg \
+	-f interface/$(INTERFACE_SCRIPT).cfg \
+	-f target/$(TARGET_SCRIPT).cfg \
 	-f stm32f2x-setup.cfg \
 	-c "flash erase_sector 0 1 1" \
 	-c "reset init" \
@@ -41,8 +53,8 @@ clear_app_cfg:
 
 clear_app_hdr:
 	@openocd \
-	-f interface/$(JTAG).cfg \
-	-f target/stm32f2x.cfg \
+	-f interface/$(INTERFACE_SCRIPT).cfg \
+	-f target/$(TARGET_SCRIPT).cfg \
 	-f stm32f2x-setup.cfg \
 	-c "flash erase_sector 0 2 2" \
 	-c "reset init" \
@@ -57,8 +69,8 @@ upgrade_image: app_mt
 
 download_app_mt: upgrade_image
 	@openocd \
-	-f interface/$(JTAG).cfg \
-	-f target/stm32f2x.cfg \
+	-f interface/$(INTERFACE_SCRIPT).cfg \
+	-f target/$(TARGET_SCRIPT).cfg \
 	-f stm32f2x-setup.cfg \
 	-c "flash erase_sector 0 2 last" \
 	-c "flash write_bank 0 build/app_mt/app_mt_app.bin 0x8200" \
