@@ -10,6 +10,8 @@
 
 #include <string.h>
 
+#define NUM_VISIBLE_ROWS 3
+#define NUM_BUTTONS_PER_ROW 5
 
 #define NUM_ROWS_ALL      21
 #define NUM_ROWS_NUMERIC  3
@@ -17,7 +19,7 @@
 #define MAX_TEXT_LEN 256
 
 
-typedef const char* btn_row_t[5];
+typedef const char* btn_row_t[NUM_BUTTONS_PER_ROW];
 
 
 typedef struct {
@@ -25,7 +27,7 @@ typedef struct {
   void* user_data;
 
   widget_t* widget;
-  widget_t* buttons[3][5];
+  widget_t* buttons[NUM_VISIBLE_ROWS][NUM_BUTTONS_PER_ROW];
   widget_t* text_label;
   int row_idx;
   char text[MAX_TEXT_LEN];
@@ -118,9 +120,9 @@ textentry_screen_show(textentry_format_t format, text_handler_t text_handler, vo
 
   rect.x = 7;
   rect.y = 65;
-  for (i = 0; i < 3; ++i) {
+  for (i = 0; i < NUM_VISIBLE_ROWS; ++i) {
     int j;
-    for (j = 0; j < 5; ++j) {
+    for (j = 0; j < NUM_BUTTONS_PER_ROW; ++j) {
       widget_t* b = button_create(screen->widget, rect, img_circle, WHITE, BLACK, char_button_clicked);
       button_set_font(b, font_opensans_regular_22);
       screen->buttons[i][j] = b;
@@ -158,11 +160,11 @@ static void
 update_input_buttons(textentry_screen_t* screen)
 {
   int i;
-  for (i = 0; i < 3; ++i) {
+  for (i = 0; i < NUM_VISIBLE_ROWS; ++i) {
     btn_row_t* row = &screen->btn_layout[screen->row_idx + i];
 
     int j;
-    for (j = 0; j < 5; ++j) {
+    for (j = 0; j < NUM_BUTTONS_PER_ROW; ++j) {
       widget_t* btn = screen->buttons[i][j];
       const char* btn_text = (*row)[j];
 
@@ -230,8 +232,8 @@ up_button_clicked(button_event_t* event)
     widget_t* w = widget_get_parent(event->widget);
     textentry_screen_t* screen = widget_get_instance_data(w);
 
-    if (screen->row_idx >= 3)
-      screen->row_idx -= 3;
+    if (screen->row_idx >= NUM_VISIBLE_ROWS)
+      screen->row_idx -= NUM_VISIBLE_ROWS;
     update_input_buttons(screen);
   }
 }
@@ -243,8 +245,8 @@ down_button_clicked(button_event_t* event)
     widget_t* w = widget_get_parent(event->widget);
     textentry_screen_t* screen = widget_get_instance_data(w);
 
-    if (screen->row_idx < screen->num_rows - 3)
-      screen->row_idx += 3;
+    if (screen->row_idx < (int)(screen->num_rows - NUM_VISIBLE_ROWS))
+      screen->row_idx += NUM_VISIBLE_ROWS;
     update_input_buttons(screen);
   }
 }

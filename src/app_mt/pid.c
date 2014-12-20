@@ -1,5 +1,6 @@
 
 #include "pid.h"
+#include <stdio.h>
 
 /*
  * This code is based on Brett Beauregard's Improved Beginner PID series of
@@ -12,7 +13,7 @@
  */
 
 void
-pid_init(pid_t* pid)
+pid_init(pid_controller_t* pid)
 {
   pid->sample_time = MS2ST(2000);
   pid->last_time   = (chTimeNow() - pid->sample_time);
@@ -22,7 +23,7 @@ pid_init(pid_t* pid)
 }
 
 void
-pid_exec(pid_t* pid, float setpoint, float sample)
+pid_exec(pid_controller_t* pid, float setpoint, float sample)
 {
   if (!pid->enabled)
     return;
@@ -53,7 +54,7 @@ pid_exec(pid_t* pid, float setpoint, float sample)
 
 #define GAMMA 0.005
 void
-tune_gains(pid_t* pid, float err_p, float err_d)
+tune_gains(pid_controller_t* pid, float err_p, float err_d)
 {
   if (pid->output_sign == NEGATIVE) {
     pid->kp = pid->kp *-1;
@@ -76,7 +77,7 @@ tune_gains(pid_t* pid, float err_p, float err_d)
 }
 
 void
-pid_set_gains(pid_t* pid, float kp, float ki, float kd)
+pid_set_gains(pid_controller_t* pid, float kp, float ki, float kd)
 {
   if (kp < 0 || ki < 0 || kd < 0)
     return;
@@ -94,7 +95,7 @@ pid_set_gains(pid_t* pid, float kp, float ki, float kd)
 }
 
 void
-pid_enable(pid_t* pid, float sample, bool enabled)
+pid_enable(pid_controller_t* pid, float sample, bool enabled)
 {
   if (enabled && !pid->enabled)
     pid_reinit(pid, sample);
@@ -103,14 +104,14 @@ pid_enable(pid_t* pid, float sample, bool enabled)
 }
 
 void
-pid_reinit(pid_t* pid, float sample)
+pid_reinit(pid_controller_t* pid, float sample)
 {
   pid->last_sample = sample;
   pid->err_i = 0;
 }
 
 void
-pid_set_output_sign(pid_t* pid, uint8_t sign)
+pid_set_output_sign(pid_controller_t* pid, uint8_t sign)
 {
    pid->output_sign = sign;
 
@@ -122,7 +123,7 @@ pid_set_output_sign(pid_t* pid, uint8_t sign)
 }
 
 void
-pid_set_output_limits(pid_t* pid, float min, float max)
+pid_set_output_limits(pid_controller_t* pid, float min, float max)
 {
   if (min >= max)
    return;

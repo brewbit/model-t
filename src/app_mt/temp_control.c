@@ -20,7 +20,7 @@ struct temp_controller_s;
 
 typedef struct {
   output_id_t id;
-  pid_t pid_control;
+  pid_controller_t pid_control;
   output_status_t status;
   systime_t cycle_delay_start_time;
   struct temp_controller_s* controller;

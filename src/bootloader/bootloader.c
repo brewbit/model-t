@@ -120,7 +120,7 @@ process_boot_cmd()
 static void
 boot_app()
 {
-  if (memcmp(_app_hdr.magic, "BBMT-APP", 8) == 0) {
+  if (memcmp((const void*)_app_hdr.magic, "BBMT-APP", 8) == 0) {
     chprintf(SD_STDIO, "OK\r\n");
     chprintf(SD_STDIO, "  Version: %d.%d.%d\r\n",
         _app_hdr.major_version,
