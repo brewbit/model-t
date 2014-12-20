@@ -40,6 +40,7 @@
 //******************************************************************************
 #include "ch.h"
 #include "hal.h"
+#include "error_codes.h"
 #include <stdlib.h>
 #include <errno.h>
 #include <stdint.h>
@@ -64,7 +65,6 @@ extern "C" {
 //*****************************************************************************
 //                  COMMON DEFINES
 //*****************************************************************************
-#define ERROR_SOCKET_INACTIVE   -57
 
 #define MAC_ADDR_LEN     (6)
 
@@ -285,13 +285,6 @@ typedef struct {
 
 #define ntohs                   htons
 
-// mDNS port - 5353    mDNS multicast address - 224.0.0.251
-#define SET_mDNS_ADD(sockaddr)          sockaddr.sa_data[0] = 0x14; \
-                                        sockaddr.sa_data[1] = 0xe9; \
-                                        sockaddr.sa_data[2] = 0xe0; \
-                                        sockaddr.sa_data[3] = 0x0; \
-                                        sockaddr.sa_data[4] = 0x0; \
-                                        sockaddr.sa_data[5] = 0xfb;
 //@@@ Socket Common Header - End
 //**************************************************************************************
 
@@ -358,7 +351,6 @@ typedef struct {
 #define  HCI_CMND_CLOSE_SOCKET                        0x100B
 #define  HCI_CMND_RECVFROM                            0x100D
 #define  HCI_CMND_GETHOSTNAME                         0x1010
-#define  HCI_CMND_MDNS_ADVERTISE                      0x1011
 
 #define HCI_DATA_BASE                                 0x80
 #define HCI_CMND_SEND                                 (0x01 + HCI_DATA_BASE)
@@ -411,7 +403,6 @@ typedef struct {
 #define  HCI_EVNT_SETSOCKOPT                    HCI_CMND_SETSOCKOPT
 #define  HCI_EVNT_GETSOCKOPT                    HCI_CMND_GETSOCKOPT
 #define  HCI_EVNT_BSD_GETHOSTBYNAME             HCI_CMND_GETHOSTNAME
-#define  HCI_EVNT_MDNS_ADVERTISE                HCI_CMND_MDNS_ADVERTISE
 
 #define  HCI_EVNT_SEND                          0x1003
 #define  HCI_EVNT_WRITE                         0x100E

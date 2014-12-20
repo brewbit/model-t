@@ -97,10 +97,10 @@ long  c_netapp_config_mac_adrress( uint8_t *mac )
 //!
 //*****************************************************************************
 long c_netapp_dhcp(
-    uint32_t *aucIP,
-    uint32_t *aucSubnetMask,
-    uint32_t *aucDefaultGateway,
-    uint32_t *aucDNSServer)
+    uint32_t const *aucIP,
+    uint32_t const *aucSubnetMask,
+    uint32_t const *aucDefaultGateway,
+    uint32_t const *aucDNSServer)
 {
     signed char scRet;
     uint8_t *args;

@@ -616,34 +616,6 @@ long wlan_smart_config_process()
 
 //*****************************************************************************
 //
-//!  mdns_advertiser
-//!
-//!  @param[in] mdnsEnabled         flag to enable/disable the mDNS feature
-//!  @param[in] deviceServiceName   Service name as part of the published
-//!                                 canonical domain name
-//!  @param[in] deviceServiceNameLength   Length of the service name
-//!
-//!
-//!  @return   On success, zero is returned, return SOC_ERROR if socket was not
-//!            opened successfully, or if an error occurred.
-//!
-//!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
-//
-//*****************************************************************************
-int
-mdns_advertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength)
-{
-  int ret;
-
-  chMtxLock(&g_main_mutex);
-  ret = c_mdns_advertiser(mdnsEnabled, deviceServiceName, deviceServiceNameLength);
-  chMtxUnlock();
-
-  return(ret);
-}
-
-//*****************************************************************************
-//
 // Close the Doxygen group.
 //! @}
 //

@@ -355,7 +355,7 @@ initialize_and_connect()
     sprintf(net_status.sp_ver, "%d.%d", sp_version.package_id, sp_version.package_build);
     printf("CC3000 Service Pack Version: %s\r\n", net_status.sp_ver);
 
-    if (sp_version.package_id != 1 || sp_version.package_build != 28) {
+    if (sp_version.package_id != 1 || sp_version.package_build != 32) {
       printf("  Not up to date. Applying patch.\r\n");
       wlan_apply_patch();
       printf("  Update complete\r\n");

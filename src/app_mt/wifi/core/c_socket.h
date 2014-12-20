@@ -488,24 +488,6 @@ extern int c_sendto(long sd, const void *buf, long len, long flags,
 
 //*****************************************************************************
 //
-//!  mdns_advertiser
-//!
-//!  @param[in] mdnsEnabled         flag to enable/disable the mDNS feature
-//!  @param[in] deviceServiceName   Service name as part of the published
-//!                                 canonical domain name
-//!  @param[in] deviceServiceNameLength   Length of the service name
-//!
-//!
-//!  @return   On success, zero is returned, return SOC_ERROR if socket was not
-//!            opened successfully, or if an error occurred.
-//!
-//!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
-//
-//*****************************************************************************
-extern int c_mdns_advertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength);
-
-//*****************************************************************************
-//
 // Close the Doxygen group.
 //! @}
 //

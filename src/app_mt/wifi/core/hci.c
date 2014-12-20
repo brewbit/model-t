@@ -577,7 +577,6 @@ hci_dispatch_event(
     case HCI_EVNT_NVMEM_CREATE_ENTRY:
     case HCI_CMND_NVMEM_WRITE_PATCH:
     case HCI_NETAPP_PING_REPORT:
-    case HCI_EVNT_MDNS_ADVERTISE:
       {
         uint8_t* status = pending_cmd.params;
         *status = STREAM_TO_UINT8(event_hdr, HCI_EVENT_STATUS_OFFSET);

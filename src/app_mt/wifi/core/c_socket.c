@@ -57,20 +57,15 @@
 #define SOCKET_GET_SOCK_OPT_PARAMS_LEN      (12)
 #define SOCKET_RECV_FROM_PARAMS_LEN         (12)
 #define SOCKET_SENDTO_PARAMS_LEN            (24)
-#define SOCKET_MDNS_ADVERTISE_PARAMS_LEN    (12)
 
 
-// The legnth of arguments for the SEND command: sd + buff_offset + len + flags,
+// The length of arguments for the SEND command: sd + buff_offset + len + flags,
 // while size of each parameter is 32 bit - so the total length is 16 bytes;
 
 #define HCI_CMND_SEND_ARG_LENGTH    (16)
 
 
 #define SELECT_TIMEOUT_MIN_MICRO_SECONDS  5000
-
-#define MDNS_DEVICE_SERVICE_MAX_LENGTH  (32)
-
-
 
 
 //*****************************************************************************
@@ -957,44 +952,4 @@ int c_sendto(long sd, const void *buf, long len, long flags,
                   const sockaddr *to, socklen_t tolen)
 {
   return(simple_link_send(sd, buf, len, flags, to, tolen, HCI_CMND_SENDTO));
-}
-
-//*****************************************************************************
-//
-//!  c_mdns_advertiser
-//!
-//!  @param[in] mdnsEnabled         flag to enable/disable the mDNS feature
-//!  @param[in] deviceServiceName   Service name as part of the published
-//!                                 canonical domain name
-//!  @param[in] deviceServiceNameLength   Length of the service name
-//!
-//!
-//!  @return   On success, zero is returned, return SOC_ERROR if socket was not
-//!            opened successfully, or if an error occurred.
-//!
-//!  @brief    Set CC3000 in mDNS advertiser mode in order to advertise itself.
-//
-//*****************************************************************************
-int c_mdns_advertiser(uint16_t mdnsEnabled, char * deviceServiceName, uint16_t deviceServiceNameLength)
-{
-  int ret;
-  uint8_t *pArgs;
-
-  if (deviceServiceNameLength > MDNS_DEVICE_SERVICE_MAX_LENGTH) {
-    return EFAIL;
-  }
-
-  pArgs = hci_get_cmd_buffer();
-
-  // Fill in HCI packet structure
-  pArgs = UINT32_TO_STREAM(pArgs, mdnsEnabled);
-  pArgs = UINT32_TO_STREAM(pArgs, 8);
-  pArgs = UINT32_TO_STREAM(pArgs, deviceServiceNameLength);
-  ARRAY_TO_STREAM(pArgs, deviceServiceName, deviceServiceNameLength);
-
-  // Initiate a HCI command
-  hci_command_send(HCI_CMND_MDNS_ADVERTISE, SOCKET_MDNS_ADVERTISE_PARAMS_LEN + deviceServiceNameLength,
-      HCI_EVNT_MDNS_ADVERTISE, &ret);
-
-  return ret;
 }
