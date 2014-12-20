@@ -40,7 +40,6 @@ PROJECT_CSRC = \
        quantity_widget.c \
        recovery_img.c \
        sensor.c \
-       sntp.c \
        temp_control.c \
        temp_profile.c \
        thread_watchdog.c \

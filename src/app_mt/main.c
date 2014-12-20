@@ -15,7 +15,6 @@
 #include "gfx.h"
 #include "app_cfg.h"
 #include "net.h"
-#include "sntp.h"
 #include "ota_update.h"
 #include "thread_watchdog.h"
 #include "app_hdr.h"
@@ -110,7 +109,6 @@ main(void)
   ota_update_init();
   net_init();
   web_api_init();
-  sntp_init();
   gui_init();
   thread_watchdog_init();
 

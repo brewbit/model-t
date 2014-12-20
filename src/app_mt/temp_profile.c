@@ -1,6 +1,5 @@
 
 #include "temp_profile.h"
-#include "sntp.h"
 #include "message.h"
 #include "app_cfg.h"
 #include <stdio.h>

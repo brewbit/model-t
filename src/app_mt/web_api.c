@@ -18,7 +18,6 @@
 #include "temp_control.h"
 #include "app_cfg.h"
 #include "ota_update.h"
-#include "sntp.h"
 #include "sxfs.h"
 
 #ifndef WEB_API_HOST
@@ -64,6 +63,11 @@ typedef struct {
 typedef struct {
   int socket;
   api_status_t status;
+
+  bool server_time_available;
+  time_t last_server_time;
+  systime_t last_server_systime;
+
   bool new_device_settings;
   api_controller_status_t controller_status[NUM_SENSORS];
   systime_t last_sensor_report_time;
@@ -132,6 +136,9 @@ static void
 send_controller_settings(
     web_api_t* api);
 
+static time_t
+get_server_time(web_api_t* api);
+
 static void
 request_activation_token(web_api_t* api);
 
@@ -152,6 +159,9 @@ dispatch_device_settings_from_server(DeviceSettings* settings);
 
 static void
 dispatch_controller_settings_from_server(ControllerSettings* settings);
+
+static void
+dispatch_server_time(web_api_t* api, ServerTime* server_time);
 
 static bool
 socket_connect(web_api_t* api, const char* hostname, uint16_t port);
@@ -491,19 +501,25 @@ send_sensor_report(web_api_t* api)
       pr->controller_index = i;
       pr->sensor_reading = api->controller_status[i].last_sample.value;
       pr->setpoint = temp_control_get_current_setpoint(i);
-      if (sntp_time_available()) {
+      if (api->server_time_available) {
         pr->has_timestamp = true;
-        pr->timestamp = sntp_get_time();
+        pr->timestamp = get_server_time(api);
       }
     }
   }
 
   if (msg->deviceReport.controller_reports_count > 0) {
     printf("sending sensor report %d\r\n", msg->deviceReport.controller_reports_count);
-    send_api_msg(api, msg, sntp_time_available());
+    send_api_msg(api, msg, api->server_time_available);
   }
 
   free(msg);
+}
+
+static time_t
+get_server_time(web_api_t* api)
+{
+  return (api->last_server_time + ((chTimeNow() - api->last_server_systime) / CH_FREQUENCY));
 }
 
 static void
@@ -827,6 +843,10 @@ dispatch_api_msg(web_api_t* api, ApiMessage* msg)
     dispatch_controller_settings_from_server(&msg->controllerSettings);
     break;
 
+  case ApiMessage_Type_SERVER_TIME:
+    dispatch_server_time(api, &msg->serverTime);
+    break;
+
   default:
     printf("Unsupported API message: %d\r\n", msg->type);
     break;
@@ -944,4 +964,12 @@ dispatch_controller_settings_from_server(ControllerSettings* settings)
 
   app_cfg_set_controller_settings(csl->controller, SS_SERVER, csl);
   free(csl);
+}
+
+static void
+dispatch_server_time(web_api_t* api, ServerTime* server_time)
+{
+  api->last_server_systime = chTimeNow();
+  api->last_server_time = server_time->timestamp;
+  api->server_time_available = true;
 }
