@@ -40,17 +40,6 @@ prog_download = @openocd \
 	-c shutdown download.log 2>&1 && \
 	echo Download complete
 	
-clear_app_cfg:
-	@openocd \
-	-f interface/$(INTERFACE_SCRIPT).cfg \
-	-f target/$(TARGET_SCRIPT).cfg \
-	-f stm32f2x-setup.cfg \
-	-c "flash erase_sector 0 1 1" \
-	-c "reset init" \
-	-c "reset run" \
-	-c shutdown download.log 2>&1 && \
-	echo App config section has been erased
-
 clear_app_hdr:
 	@openocd \
 	-f interface/$(INTERFACE_SCRIPT).cfg \
