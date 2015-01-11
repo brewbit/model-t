@@ -78,7 +78,6 @@ CSRC = $(PORTSRC) \
        $(PLATFORMSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/evtimer.c \
-       $(CHIBIOS)/os/various/syscalls.c \
        $(CHIBIOS)/os/various/chprintf.c \
        $(CHIBIOS)/os/various/shell.c \
        $(addprefix $(AUTOGEN_DIR)/,$(PROJECT_AUTOGEN_CSRC)) \
@@ -164,7 +163,7 @@ CPPWARN = -Wall -Wextra
 #
 
 # List all default C defines here, like -D_DEBUG=1
-DDEFS = -DSTDOUT_SD=SD3 -DSTDIN_SD=SD3 -DREQUIRE_PRINTF_FLOAT -D__DYNAMIC_REENT__
+DDEFS = -DREQUIRE_PRINTF_FLOAT -D__DYNAMIC_REENT__
 
 # List all default ASM defines here, like -D_DEBUG=1
 DADEFS =
@@ -177,6 +176,10 @@ DLIBDIR =
 
 # List all default libraries here
 DLIBS = -lm
+ifeq ($(USE_SEMIHOSTING),YES)
+DLIBS += --specs=rdimon.specs -lc -lc -lrdimon
+DDEFS += -DUSE_SEMIHOSTING
+endif
 
 #
 # End of default section

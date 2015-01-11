@@ -2,6 +2,8 @@
 
 include deps.mk
 
+USE_SEMIHOSTING ?= NO
+
 ifeq ($(JTAG),jlink)
 	INTERFACE_SCRIPT=jlink
 	TARGET_SCRIPT=stm32f2x
@@ -48,10 +50,12 @@ download_bootloader: bootloader attach
 
 download: download_app_mt download_bootloader
 
-debug_app_mt: download_app_mt
+debug_app_mt:
+	@$(MAKE) download_app_mt USE_SEMIHOSTING=YES
 	@arm-none-eabi-gdb build/app_mt/app_mt.elf -ex "source scripts/gdb/startup.gdb"
 
-debug_bootloader: download_bootloader
+debug_bootloader:
+	@$(MAKE) download_app_mt USE_SEMIHOSTING=YES
 	@arm-none-eabi-gdb build/bootloader/bootloader.elf -ex "source scripts/gdb/startup.gdb"
 
 attach:
@@ -78,6 +82,9 @@ detach:
 	else \
 	  echo "Already detached" ;\
 	fi
+
+show_console:
+	@screen -r brewbit
 
 build/app_mt/app_mt.dfu: upgrade_image
 	python scripts/dfu.py \
