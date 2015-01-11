@@ -29,6 +29,7 @@ gui_init()
 {
   gui_msg_listener = msg_listener_create("gui", 2048, gui_dispatch, NULL);
   msg_listener_set_idle_timeout(gui_msg_listener, 100);
+  msg_listener_enable_watchdog(gui_msg_listener, 5000);
 
   msg_subscribe(gui_msg_listener, MSG_TOUCH_INPUT, NULL);
   msg_subscribe(gui_msg_listener, MSG_GUI_PUSH_SCREEN, NULL);
