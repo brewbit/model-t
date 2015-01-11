@@ -2,8 +2,6 @@
 
 include deps.mk
 
-JTAG ?= jlink
-
 ifeq ($(JTAG),jlink)
 	INTERFACE_SCRIPT=jlink
 	TARGET_SCRIPT=stm32f2x
@@ -22,6 +20,7 @@ endif
 all: bootloader app_mt
 
 make_prog = $(MAKE) -f src/$(1)/$(1).mk
+openocd_script = nc localhost 4444 < scripts/openocd/$(1).cfg > /dev/null
 
 app_mt:
 	$(call make_prog,app_mt) autogen
@@ -30,49 +29,49 @@ app_mt:
 bootloader:
 	$(call make_prog,bootloader)
 
-prog_download = @openocd \
-	-f interface/$(INTERFACE_SCRIPT).cfg \
-	-f target/$(TARGET_SCRIPT).cfg \
-	-f stm32f2x-setup.cfg \
-	-c "flash write_image erase build/$(1)/$(1).elf" \
-	-c "reset init" \
-	-c "reset run" \
-	-c shutdown download.log 2>&1 && \
-	echo Download complete
-	
 clear_app_hdr:
-	@openocd \
-	-f interface/$(INTERFACE_SCRIPT).cfg \
-	-f target/$(TARGET_SCRIPT).cfg \
-	-f stm32f2x-setup.cfg \
-	-c "flash erase_sector 0 2 2" \
-	-c "reset init" \
-	-c "reset run" \
-	-c shutdown download.log 2>&1 && \
-	echo App config section has been erased
+	@$(call openocd_script,clear_app_hdr)
+	@echo App config section has been erased
 
 upgrade_image: app_mt
 	arm-none-eabi-objcopy -O binary --only-section header build/app_mt/app_mt.elf build/app_mt/app_mt_hdr.bin
 	arm-none-eabi-objcopy -O binary --remove-section cfg --remove-section header build/app_mt/app_mt.elf build/app_mt/app_mt_app.bin
 	python scripts/build_app_image.py build/app_mt/app_mt_hdr.bin build/app_mt/app_mt_app.bin build/app_mt/app_mt_update.bin
 
-download_app_mt: upgrade_image
-	@openocd \
-	-f interface/$(INTERFACE_SCRIPT).cfg \
-	-f target/$(TARGET_SCRIPT).cfg \
-	-f stm32f2x-setup.cfg \
-	-c "flash erase_sector 0 2 last" \
-	-c "flash write_bank 0 build/app_mt/app_mt_app.bin 0x8200" \
-	-c "flash write_bank 0 build/app_mt/app_mt_hdr.bin 0x8000" \
-	-c "reset init" \
-	-c "reset run" \
-	-c shutdown download.log 2>&1 && \
-	echo Download complete
+download_app_mt: upgrade_image attach
+	@$(call openocd_script,download_app_mt)
+	@echo Download complete
 
 download_bootloader: bootloader
-	$(call prog_download,bootloader)
+	@$(call openocd_script,download_bootloader)
+	@echo Download complete
 
-download: download_app_mt download_bootloader 
+download: download_app_mt download_bootloader
+
+attach:
+	$(if $(JTAG),,$(error JTAG variable is not set. Supported options: jlink, stlink, olimex))
+	@if pgrep openocd > /dev/null ;\
+	then \
+	  echo "Already attached" ;\
+	else \
+	  screen -S brewbit openocd -f interface/$(INTERFACE_SCRIPT).cfg -f target/$(TARGET_SCRIPT).cfg -f scripts/openocd/startup.cfg ;\
+	  if pgrep openocd > /dev/null ;\
+	  then \
+	    echo "Attached" ;\
+	  else \
+	    echo "Attach failed!" ;\
+	  fi \
+	fi
+	@pgrep openocd > /dev/null
+
+detach:
+	@if pgrep openocd > /dev/null ;\
+	then \
+	  $(call openocd_script,shutdown) ;\
+	  echo "Detached" ;\
+	else \
+	  echo "Already detached" ;\
+	fi
 
 build/app_mt/app_mt.dfu: upgrade_image
 	python scripts/dfu.py \
