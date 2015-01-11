@@ -48,6 +48,7 @@ sensor_init(sensor_id_t sensor, onewire_bus_t* port)
   onewire_init(tp->bus);
 
   tp->thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, sensor_thread, tp);
+  thread_watchdog_enable(tp->thread, S2ST(5));
 
   return tp;
 }
@@ -61,6 +62,8 @@ sensor_thread(void* arg)
 
   while (1) {
     quantity_t sample;
+
+    thread_watchdog_kick();
 
     if (sensor_get_sample(tp, &sample)) {
       filter_sample(tp, &sample);
