@@ -35,8 +35,8 @@ clear_app_hdr:
 
 upgrade_image: app_mt
 	arm-none-eabi-objcopy -O binary --only-section header build/app_mt/app_mt.elf build/app_mt/app_mt_hdr.bin
-	arm-none-eabi-objcopy -O binary --remove-section cfg --remove-section header build/app_mt/app_mt.elf build/app_mt/app_mt_app.bin
-	python scripts/build_app_image.py build/app_mt/app_mt_hdr.bin build/app_mt/app_mt_app.bin build/app_mt/app_mt_update.bin
+	arm-none-eabi-objcopy -O binary --remove-section header build/app_mt/app_mt.elf build/app_mt/app_mt_app.bin
+	python scripts/build_app_image.py build/app_mt/app_mt_hdr.bin build/app_mt/app_mt_app.bin
 
 download_app_mt: upgrade_image attach
 	@$(call openocd_script,download_app_mt)
@@ -48,10 +48,10 @@ download_bootloader: bootloader attach
 
 download: download_app_mt download_bootloader
 
-debug_app_mt: attach
+debug_app_mt: download_app_mt
 	@arm-none-eabi-gdb build/app_mt/app_mt.elf -ex "source scripts/gdb/startup.gdb"
 
-debug_bootloader: attach
+debug_bootloader: download_bootloader
 	@arm-none-eabi-gdb build/bootloader/bootloader.elf -ex "source scripts/gdb/startup.gdb"
 
 attach:
