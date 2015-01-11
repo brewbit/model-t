@@ -48,10 +48,10 @@ download_bootloader: bootloader attach
 
 download: download_app_mt download_bootloader
 
-debug_app_mt: app_mt attach
+debug_app_mt: attach
 	@arm-none-eabi-gdb build/app_mt/app_mt.elf -ex "source scripts/gdb/startup.gdb"
 
-debug_bootloader: bootloader attach
+debug_bootloader: attach
 	@arm-none-eabi-gdb build/bootloader/bootloader.elf -ex "source scripts/gdb/startup.gdb"
 
 attach:
