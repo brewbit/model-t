@@ -42,11 +42,17 @@ download_app_mt: upgrade_image attach
 	@$(call openocd_script,download_app_mt)
 	@echo Download complete
 
-download_bootloader: bootloader
+download_bootloader: bootloader attach
 	@$(call openocd_script,download_bootloader)
 	@echo Download complete
 
 download: download_app_mt download_bootloader
+
+debug_app_mt: app_mt attach
+	@arm-none-eabi-gdb build/app_mt/app_mt.elf -ex "source scripts/gdb/startup.gdb"
+
+debug_bootloader: bootloader attach
+	@arm-none-eabi-gdb build/bootloader/bootloader.elf -ex "source scripts/gdb/startup.gdb"
 
 attach:
 	$(if $(JTAG),,$(error JTAG variable is not set. Supported options: jlink, stlink, olimex))
