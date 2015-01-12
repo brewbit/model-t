@@ -98,7 +98,6 @@
  */
 #define SD_OW1   (&SD1)
 #define SD_OW2   (&SD2)
-#define SD_STDIO ((void*)&SD3)
 
 /*
  * SPI bus assignments.
@@ -197,8 +196,8 @@
  * PB7  - Spare
  * PB8  - Spare
  * PB9  - Spare
- * PB10 - STDIO - USART3 TX             (alternate 7)
- * PB11 - STDIO - USART3 RX             (alternate 7)
+ * PB10 - Spare
+ * PB11 - Spare
  * PB12 - Flash CS                      (PP Output)
  * PB13 - SPI SCK  - SPI2               (alternate 5)
  * PB14 - SPI MISO - SPI2               (alternate 5)
@@ -214,8 +213,8 @@
                                      PIN_MODE_INPUT(7)        | \
                                      PIN_MODE_INPUT(8)        | \
                                      PIN_MODE_INPUT(9)        | \
-                                     PIN_MODE_ALTERNATE(10)   | \
-                                     PIN_MODE_ALTERNATE(11)   | \
+                                     PIN_MODE_INPUT(10)   | \
+                                     PIN_MODE_INPUT(11)   | \
                                      PIN_MODE_OUTPUT(12)      | \
                                      PIN_MODE_ALTERNATE(13)   | \
                                      PIN_MODE_ALTERNATE(14)   | \
@@ -240,9 +239,7 @@
 #define VAL_GPIOB_PUPDR             0xFFFFFFFF // all pulled-up
 #define VAL_GPIOB_ODR               0x00001000 // all low by default except flash CS
 #define VAL_GPIOB_AFRL              (PIN_AFIO_AF(6, 7))
-#define VAL_GPIOB_AFRH              (PIN_AFIO_AF(10, 7)       | \
-                                     PIN_AFIO_AF(11, 7)       | \
-                                     PIN_AFIO_AF(13, 5)       | \
+#define VAL_GPIOB_AFRH              (PIN_AFIO_AF(13, 5)       | \
                                      PIN_AFIO_AF(14, 5)       | \
                                      PIN_AFIO_AF(15, 5))
 

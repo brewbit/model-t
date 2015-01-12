@@ -25,7 +25,6 @@ PROJECT_AUTOGEN_CSRC = \
 PROJECT_CSRC = \
        app_cfg.c \
        app_hdr.c \
-       cmdline.c \
        fault.c \
        font.c \
        gfx.c \

@@ -79,7 +79,6 @@ CSRC = $(PORTSRC) \
        $(BOARDSRC) \
        $(CHIBIOS)/os/various/evtimer.c \
        $(CHIBIOS)/os/various/chprintf.c \
-       $(CHIBIOS)/os/various/shell.c \
        $(addprefix $(AUTOGEN_DIR)/,$(PROJECT_AUTOGEN_CSRC)) \
        $(addprefix $(PROJECT_SRC_DIR)/,$(PROJECT_CSRC)) \
        $(foreach dep,$(addsuffix _CSRC,$(DEPS)),$($(dep)))

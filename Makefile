@@ -1,5 +1,3 @@
-.PHONY: update_deps
-
 include deps.mk
 
 USE_SEMIHOSTING ?= NO

@@ -19,7 +19,6 @@
 #include "thread_watchdog.h"
 #include "app_hdr.h"
 #include "screen_saver.h"
-#include "cmdline.h"
 #include "xflash.h"
 #include "recovery_img.h"
 
@@ -85,13 +84,7 @@ main(void)
 
   get_device_id();
 
-  /* start stdout port */
-  sdStart(SD_STDIO, NULL);
-
   xflash_init();
-  cmdline_init();
-
-  rngStart(&RNGD);
 
   app_cfg_init();
 
@@ -126,8 +119,6 @@ main(void)
   recovery_img_init();
 
   while (TRUE) {
-    cmdline_restart();
-
     toggle_LED1();
   }
 }
