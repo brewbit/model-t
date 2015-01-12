@@ -27,14 +27,14 @@ openocd_script = nc localhost 4444 < scripts/openocd/$(1).cfg > /dev/null
 app_mt:
 	@$(call make_prog,app_mt) autogen
 	@$(call make_prog,app_mt)
-	arm-none-eabi-objcopy -O binary --only-section header build/app_mt/app_mt.elf build/app_mt/app_mt_hdr.bin
-	arm-none-eabi-objcopy -O binary --remove-section header build/app_mt/app_mt.elf build/app_mt/app_mt_app.bin
-	python scripts/build_app_image.py build/app_mt/app_mt_hdr.bin build/app_mt/app_mt_app.bin
+	@arm-none-eabi-objcopy -O binary --only-section header build/app_mt/app_mt.elf build/app_mt/app_mt_hdr.bin
+	@arm-none-eabi-objcopy -O binary --remove-section header build/app_mt/app_mt.elf build/app_mt/app_mt_app.bin
+	@python scripts/build_app_image.py build/app_mt/app_mt_hdr.bin build/app_mt/app_mt_app.bin
 	@python scripts/dfu.py -b 0x08008000:build/app_mt/app_mt_hdr.bin -b 0x08008200:build/app_mt/app_mt_app.bin build/app_mt/app_mt.dfu
 
 bootloader:
 	@$(call make_prog,bootloader)
-	python scripts/dfu.py -b 0x08000000:build/bootloader/bootloader.bin build/bootloader/bootloader.dfu
+	@python scripts/dfu.py -b 0x08000000:build/bootloader/bootloader.bin build/bootloader/bootloader.dfu
 
 clear_app_hdr:
 	@$(call openocd_script,clear_app_hdr)
@@ -87,20 +87,21 @@ show_console:
 	@screen -r brewbit
 
 download_dfu_app_mt: app_mt
-	dfu-util -a 0 -t 2048 -D build/app_mt/app_mt.dfu
+	@dfu-util -a 0 -t 2048 -D build/app_mt/app_mt.dfu
 
 download_dfu_bootloader: bootloader
-	dfu-util -a 0 -t 2048 -D build/bootloader/bootloader.dfu
+	@dfu-util -a 0 -t 2048 -D build/bootloader/bootloader.dfu
 
 factory_image: app_mt bootloader
-	python scripts/dfu.py -b 0x08000000:build/bootloader/bootloader.bin -b 0x08008000:build/app_mt/app_mt_hdr.bin -b 0x08008200:build/app_mt/app_mt_app.bin build/all.dfu
+	@python scripts/dfu.py -b 0x08000000:build/bootloader/bootloader.bin -b 0x08008000:build/app_mt/app_mt_hdr.bin -b 0x08008200:build/app_mt/app_mt_app.bin build/all.dfu
 
 download_dfu: factory_image
-	dfu-util -a 0 -t 2048 -D build/all.dfu
+	@dfu-util -a 0 -t 2048 -D build/all.dfu
 	
 autoload_dfu: factory_image
-	python scripts/autoload.py
+	@python scripts/autoload.py
 
 clean:
-	rm -rf .dep build
+	@rm -rf .dep build
+	@echo Clean complete
 

@@ -234,17 +234,17 @@ AUTOGEN_SRCS = \
 autogen: $(addprefix $(AUTOGEN_DIR)/, $(AUTOGEN_SRCS)) | $(AUTOGEN_DIR)
 
 $(AUTOGEN_DIR): | $(BUILDDIR)
-	mkdir -p $@
+	@mkdir -p $@
 
 $(AUTOGEN_DIR)/font_resources.c $(AUTOGEN_DIR)/font_resources.h: scripts/fontconv $(wildcard fonts/*.ttf) fonts/font_specs | $(AUTOGEN_DIR)
-	python scripts/fontconv fonts $(AUTOGEN_DIR)
+	@python scripts/fontconv fonts $(AUTOGEN_DIR)
 
 $(AUTOGEN_DIR)/image_resources.c $(AUTOGEN_DIR)/image_resources.h: scripts/imgconv $(wildcard images/*.png) | $(AUTOGEN_DIR)
-	python scripts/imgconv $(AUTOGEN_DIR) $(wildcard images/*.png)
+	@python scripts/imgconv $(AUTOGEN_DIR) $(wildcard images/*.png)
 
 $(AUTOGEN_DIR)/bbmt.pb: $(BBMT_MSGS)/bbmt.proto | $(AUTOGEN_DIR)
-	protoc $(BBMT_MSGS_INCLUDES) -o$@ --python_out=$(AUTOGEN_DIR) $(BBMT_MSGS)/bbmt.proto
+	@protoc $(BBMT_MSGS_INCLUDES) -o$@ --python_out=$(AUTOGEN_DIR) $(BBMT_MSGS)/bbmt.proto
 	
 $(AUTOGEN_DIR)/bbmt.pb.c $(AUTOGEN_DIR)/bbmt.pb.h: $(AUTOGEN_DIR)/bbmt.pb | $(AUTOGEN_DIR)
-	python $(NANOPB)/generator/nanopb_generator.py $(AUTOGEN_DIR)/bbmt.pb
+	@python $(NANOPB)/generator/nanopb_generator.py $(AUTOGEN_DIR)/bbmt.pb
 
