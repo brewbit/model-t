@@ -3,6 +3,7 @@
 #include "common.h"
 #include "message.h"
 #include "app_cfg.h"
+#include "thread_watchdog.h"
 #include "crc/crc8.h"
 
 #include <string.h>
