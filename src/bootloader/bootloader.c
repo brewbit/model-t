@@ -127,7 +127,7 @@ write_app_img(sxfs_part_id_t part)
       .end = APP_FLASH_START + board_get_flash_size() - BOOTLOADER_FLASH_SIZE - 1
   };
 
-  dfu_parse_result_t result = dfuse_apply_update(part, &valid_addr_range);
+  dfuse_apply_update(part, &valid_addr_range);
 }
 
 const char*
