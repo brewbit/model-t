@@ -12,7 +12,7 @@
 
 
 #define MARKER_SIZE           50
-#define NUM_SAMPLES_PER_POINT 128
+#define NUM_SAMPLES_PER_POINT 32
 
 
 typedef struct {
