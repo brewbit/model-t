@@ -125,8 +125,8 @@ dump_stack(uint32_t *pulFaultStackAddress)
   /* When the following line is hit, the variables contain the register values. */
   hfd._SCB_SHCSR = SCB->SHCSR;
 
+  __asm("BKPT #0\n");
+
   app_cfg_set_fault_data(HARD_FAULT, &hfd, sizeof(hfd));
   app_cfg_flush();
-
-  __asm("BKPT #0\n") ; // Break into the debugger
 }

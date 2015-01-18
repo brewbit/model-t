@@ -78,6 +78,8 @@ thread_watchdog_thread(void* arg)
             (unsigned int)time_since_last_kick,
             (unsigned int)twd->period);
 
+        __asm("BKPT #0\n");
+
         all_threads_responsive = false;
         break;
       }
