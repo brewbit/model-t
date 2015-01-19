@@ -62,7 +62,7 @@ AUTOGEN_DIR = $(BUILDDIR)/autogen
 
 # Imported source files and paths
 include board/board.mk
-include $(CHIBIOS)/os/hal/platforms/STM32F2xx/platform.mk
+include $(CHIBIOS)/os/hal/platforms/STM32F4xx/platform.mk
 include $(CHIBIOS)/os/hal/hal.mk
 include $(CHIBIOS)/os/ports/GCC/ARMCMx/STM32F2xx/port.mk
 include $(CHIBIOS)/os/kernel/kernel.mk
@@ -137,6 +137,7 @@ LD   = $(TRGT)gcc
 CP   = $(TRGT)objcopy
 AS   = $(TRGT)gcc -x assembler-with-cpp
 OD   = $(TRGT)objdump
+SZ   = $(TRGT)size
 HEX  = $(CP) -O ihex
 BIN  = $(CP) -O binary
 

@@ -12,6 +12,7 @@ BOARD = II-MT-CONTROLLER
 DEPS = NANOPB
 
 PROJECT_INCDIR = \
+       ch \
        gui \
        gui/controls \
        util \
@@ -45,6 +46,8 @@ PROJECT_CSRC = \
        touch.c \
        touch_calib.c \
        web_api.c \
+       ch/iwdg.c \
+       ch/iwdg_lld.c \
        gui/gui.c \
        gui/activation.c \
        gui/button_list.c \

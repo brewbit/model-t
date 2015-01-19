@@ -3,6 +3,7 @@
 #include <hal.h>
 #include <stdio.h>
 #include "types.h"
+#include "ch/iwdg.h"
 
 #include "thread_watchdog.h"
 

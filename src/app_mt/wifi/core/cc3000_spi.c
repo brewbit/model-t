@@ -66,14 +66,12 @@ static const SPIConfig wlan_spi_cfg = {
 };
 
 static const EXTConfig extcfg = {
-    {
-        [12] = {EXT_CH_MODE_FALLING_EDGE, wifi_irq_cb},
+    .channels = {
+        [12] = {
+            .mode = EXT_CH_MODE_FALLING_EDGE | EXT_MODE_GPIOD,
+            .cb = wifi_irq_cb
+        },
     },
-    EXT_MODE_EXTI(
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        EXT_MODE_GPIOD, 0, 0, 0)
 };
 
 // Static buffer for 5 bytes of SPI HEADER
