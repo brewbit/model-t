@@ -7,6 +7,7 @@
 #include "xflash.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 
 #define NO_ADDR 0xFFFFFFFF

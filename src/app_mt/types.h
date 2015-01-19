@@ -51,7 +51,7 @@ quantity_convert(quantity_t q, unit_t unit)
 }
 
 
-typedef uint16_t color_t;
+typedef int32_t color_t;
 
 
 typedef struct {

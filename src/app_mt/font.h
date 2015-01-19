@@ -3,6 +3,7 @@
 
 #include "font_resources.h"
 #include "common.h"
+#include "types.h"
 
 const glyph_t*
 font_find_glyph(const font_t* font, char ch);

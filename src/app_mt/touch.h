@@ -2,7 +2,7 @@
 #ifndef TOUCH_H
 #define TOUCH_H
 
-#include "common.h"
+#include "types.h"
 
 
 typedef struct {

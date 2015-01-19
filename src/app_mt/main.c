@@ -26,6 +26,10 @@
 #include <string.h>
 
 
+#ifdef REQUIRE_PRINTF_FLOAT
+asm (".global _printf_float");
+#endif
+
 char device_id[32];
 
 

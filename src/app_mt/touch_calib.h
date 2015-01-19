@@ -30,7 +30,7 @@
 #ifndef CALIBRATE_H
 #define CALIBRATE_H
 
-#include "common.h"
+#include "types.h"
 
 #include <math.h>
 #include <stdint.h>

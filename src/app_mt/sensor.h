@@ -2,7 +2,7 @@
 #define SENSOR_H
 
 #include "onewire.h"
-#include "common.h"
+#include "types.h"
 #include <stdint.h>
 
 

@@ -176,6 +176,7 @@ static bool
 socket_send(web_api_t* api, void* buf, uint32_t buf_len);
 
 
+extern char device_id[32];
 static web_api_t* api;
 
 

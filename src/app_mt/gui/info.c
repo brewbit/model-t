@@ -33,6 +33,9 @@ static const widget_class_t info_screen_widget_class = {
 };
 
 
+extern char device_id[32];
+
+
 widget_t*
 info_screen_create()
 {
