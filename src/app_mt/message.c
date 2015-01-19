@@ -53,6 +53,8 @@ static msg_subscription_t* subs[NUM_THREAD_MSGS];
 msg_listener_t*
 msg_listener_create(const char* name, int stack_size, thread_msg_dispatch_t dispatch, void* user_data)
 {
+  chDbgAssert(dispatch != NULL, "msg_listener_create(),#1", "");
+
   msg_listener_t* l = calloc(1, sizeof(msg_listener_t));
   l->name = name;
   l->dispatch = dispatch;
@@ -163,10 +165,7 @@ msg_send(msg_id_t id, void* msg_data)
 
   for (sub = subs[id]; sub != NULL; sub = sub->next) {
     if (sub->listener == self) {
-      if (sub->listener->dispatch != NULL)
-        sub->listener->dispatch(id, msg_data, sub->listener->user_data, sub->user_data);
-      else
-        chDbgPanic("message broadcast to self, but no dispatch method provided");
+      sub->listener->dispatch(id, msg_data, sub->listener->user_data, sub->user_data);
     }
     else {
       thread_msg_t msg = {
