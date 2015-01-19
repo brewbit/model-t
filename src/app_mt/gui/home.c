@@ -83,7 +83,7 @@ home_screen_create()
   s->sample_timestamp = chTimeNow();
 
   s->screen = widget_create(NULL, &home_widget_class, s, display_rect);
-  widget_set_background(s->screen, BLACK, FALSE);
+  widget_set_background(s->screen, BLACK);
 
   rect_t rect = {
       .x      = TILE_X(0),
@@ -92,7 +92,7 @@ home_screen_create()
       .height = TILE_SPAN(2),
   };
   s->stage_widget = widget_create(s->screen, NULL, NULL, rect);
-  widget_set_background(s->stage_widget, GREEN, false);
+  widget_set_background(s->stage_widget, GREEN);
 
   rect.x = TILE_X(3);
   rect.width = TILE_SPAN(1);
@@ -380,7 +380,7 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
       break;
   }
 
-  widget_set_background(icon, color, false);
+  widget_set_background(icon, color);
 }
 
 static void

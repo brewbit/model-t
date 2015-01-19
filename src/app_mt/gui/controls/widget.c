@@ -28,8 +28,6 @@ typedef struct widget_s {
   bool needs_paint;
   bool visible;
   bool enabled;
-
-  bool bg_transparent;
   color_t bg_color;
 } widget_t;
 
@@ -69,8 +67,7 @@ widget_create(widget_t* parent, const widget_class_t* widget_class, void* instan
   w->needs_paint = true;
   w->visible = true;
   w->enabled = true;
-  w->bg_color = BLACK;
-  w->bg_transparent = (parent != NULL);
+  w->bg_color = (parent == NULL) ? BLACK : TRANSPARENT;
 
   if (parent != NULL)
     widget_add_child(parent, w);
@@ -321,7 +318,7 @@ widget_paint_predicate(widget_t* w, widget_traversal_event_t event, void* data)
   if (event == WIDGET_TRAVERSAL_BEFORE_CHILDREN) {
     gfx_ctx_push();
 
-    if (!w->bg_transparent)
+    if (w->bg_color != TRANSPARENT)
       gfx_set_bg_color(w->bg_color);
 
     if (w->needs_paint && widget_is_visible(w)) {
@@ -425,12 +422,10 @@ widget_is_enabled(widget_t* w)
 }
 
 void
-widget_set_background(widget_t* w, color_t color, bool transparent)
+widget_set_background(widget_t* w, color_t color)
 {
-  if ((w->bg_color != color) ||
-      (w->bg_transparent != transparent)) {
+  if (w->bg_color != color) {
     w->bg_color = color;
-    w->bg_transparent = transparent;
     widget_invalidate(w);
   }
 }

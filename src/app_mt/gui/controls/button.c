@@ -14,8 +14,8 @@
 typedef struct {
   bool is_down;
   const Image_t* icon;
-  uint16_t icon_color;
-  uint16_t btn_color;
+  color_t icon_color;
+  color_t btn_color;
   systime_t next_event_time;
   char* text;
   const font_t* font;
@@ -38,7 +38,7 @@ static const widget_class_t button_widget_class = {
 };
 
 widget_t*
-button_create(widget_t* parent, rect_t rect, const Image_t* icon, uint16_t icon_color, uint16_t btn_color,
+button_create(widget_t* parent, rect_t rect, const Image_t* icon, color_t icon_color, color_t btn_color,
     button_event_handler_t evt_handler)
 {
   button_t* b = calloc(1, sizeof(button_t));
@@ -49,7 +49,7 @@ button_create(widget_t* parent, rect_t rect, const Image_t* icon, uint16_t icon_
   b->evt_handler = evt_handler;
 
   widget_t* w = widget_create(parent, &button_widget_class, b, rect);
-  widget_set_background(w, btn_color, FALSE);
+  widget_set_background(w, btn_color);
 
   return w;
 }
@@ -65,19 +65,19 @@ button_set_icon(widget_t* w, const Image_t* icon)
 }
 
 void
-button_set_color(widget_t* w, uint16_t color)
+button_set_color(widget_t* w, color_t color)
 {
   button_t* b = widget_get_instance_data(w);
   if (b->btn_color != color) {
     b->btn_color = color;
     if (!b->is_down && widget_is_enabled(w))
-      widget_set_background(w, color, FALSE);
+      widget_set_background(w, color);
     widget_invalidate(w);
   }
 }
 
 void
-button_set_icon_color(widget_t* w, uint16_t color)
+button_set_icon_color(widget_t* w, color_t color)
 {
   button_t* b = widget_get_instance_data(w);
   if (b->icon_color != color) {
@@ -155,7 +155,7 @@ button_touch(touch_event_t* event)
     if (!b->is_down) {
       b->is_down = true;
       gui_acquire_touch_capture(event->widget);
-      widget_set_background(event->widget, DARK_GRAY, FALSE);
+      widget_set_background(event->widget, DARK_GRAY);
 
       if (b->evt_handler) {
         be.id = EVT_BUTTON_DOWN;
@@ -174,7 +174,7 @@ button_touch(touch_event_t* event)
   else {
     if (b->is_down) {
       b->is_down = false;
-      widget_set_background(event->widget, b->btn_color, FALSE);
+      widget_set_background(event->widget, b->btn_color);
       gui_release_touch_capture();
 
       if (b->evt_handler) {
@@ -224,9 +224,9 @@ button_enable(enable_event_t* event)
   button_t* b = widget_get_instance_data(event->widget);
 
   if (event->enabled) {
-    widget_set_background(event->widget, b->btn_color, FALSE);
+    widget_set_background(event->widget, b->btn_color);
   }
   else {
-    widget_set_background(event->widget, DARK_GRAY, FALSE);
+    widget_set_background(event->widget, DARK_GRAY);
   }
 }

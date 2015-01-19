@@ -44,7 +44,7 @@ output_settings_screen_create(output_settings_t* settings)
   output_screen_t* s = calloc(1, sizeof(output_screen_t));
 
   s->screen = widget_create(NULL, &output_settings_widget_class, s, display_rect);
-  widget_set_background(s->screen, BLACK, FALSE);
+  widget_set_background(s->screen, BLACK);
 
   s->button_list = button_list_screen_create(s->screen, "Output Settings", back_button_clicked, s);
 

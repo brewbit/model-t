@@ -20,18 +20,18 @@ button_create(
     widget_t* parent,
     rect_t rect,
     const Image_t* icon,
-    uint16_t icon_color,
-    uint16_t btn_color,
+    color_t icon_color,
+    color_t btn_color,
     button_event_handler_t evt_handler);
 
 void
 button_set_icon(widget_t* w, const Image_t* icon);
 
 void
-button_set_color(widget_t* w, uint16_t color);
+button_set_color(widget_t* w, color_t color);
 
 void
-button_set_icon_color(widget_t* w, uint16_t color);
+button_set_icon_color(widget_t* w, color_t color);
 
 void
 button_set_text(widget_t* w, const char* text);

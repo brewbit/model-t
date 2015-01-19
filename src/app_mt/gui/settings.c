@@ -54,7 +54,7 @@ settings_screen_create()
   settings_screen_t* s = calloc(1, sizeof(settings_screen_t));
 
   s->screen = widget_create(NULL, &settings_widget_class, s, display_rect);
-  widget_set_background(s->screen, BLACK, FALSE);
+  widget_set_background(s->screen, BLACK);
 
   char* title = "Model-T Settings";
   s->button_list = button_list_screen_create(s->screen, title, back_button_clicked, s);

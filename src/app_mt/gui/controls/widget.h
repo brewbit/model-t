@@ -92,7 +92,7 @@ bool
 widget_is_enabled(widget_t* w);
 
 void
-widget_set_background(widget_t* w, color_t color, bool transparent);
+widget_set_background(widget_t* w, color_t color);
 
 void
 widget_for_each(widget_t* w, widget_predicate_t pred, void* data);

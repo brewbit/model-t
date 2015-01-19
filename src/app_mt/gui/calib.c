@@ -62,7 +62,7 @@ calib_screen_create()
   calib_screen_t* s = calloc(1, sizeof(calib_screen_t));
 
   s->widget = widget_create(NULL, &calib_widget_class, s, display_rect);
-  widget_set_background(s->widget, BLACK, FALSE);
+  widget_set_background(s->widget, BLACK);
 
   rect_t rect = {
       .x = 15,

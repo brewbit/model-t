@@ -42,7 +42,7 @@ offset_screen_create()
   offset_screen_t* s = calloc(1, sizeof(offset_screen_t));
 
   s->screen = widget_create(NULL, &offset_widget_class, s, display_rect);
-  widget_set_background(s->screen, BLACK, FALSE);
+  widget_set_background(s->screen, BLACK);
 
   char* title = "Set Probe Offset";
   s->button_list = button_list_screen_create(s->screen, title, back_button_clicked, s);

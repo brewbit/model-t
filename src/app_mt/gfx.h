@@ -16,6 +16,7 @@
                                  (((b) * 31) / 255))
 
 
+#define TRANSPARENT (-1)
 #define BLACK      COLOR24(16, 16, 16)
 #define DARK_GRAY  COLOR24(64, 64, 64)
 #define LIGHT_GRAY COLOR24(150, 150, 150)
@@ -71,10 +72,10 @@ void
 gfx_fill_rect(rect_t rect);
 
 void
-gfx_set_fg_color(uint16_t color);
+gfx_set_fg_color(color_t color);
 
 void
-gfx_set_bg_color(uint16_t color);
+gfx_set_bg_color(color_t color);
 
 void
 gfx_set_bg_img(const Image_t* img, point_t anchor);

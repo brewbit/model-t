@@ -9,7 +9,7 @@
 
 typedef struct {
   const Image_t* image;
-  uint16_t icon_color;
+  color_t icon_color;
 } icon_t;
 
 
@@ -23,7 +23,7 @@ static const widget_class_t icon_widget_class = {
 };
 
 widget_t*
-icon_create(widget_t* parent, rect_t rect, const Image_t* image, uint16_t icon_color, uint16_t bg_color)
+icon_create(widget_t* parent, rect_t rect, const Image_t* image, color_t icon_color, color_t bg_color)
 {
   icon_t* i = calloc(1, sizeof(icon_t));
 
@@ -31,7 +31,7 @@ icon_create(widget_t* parent, rect_t rect, const Image_t* image, uint16_t icon_c
   i->icon_color = icon_color;
 
   widget_t* w = widget_create(parent, &icon_widget_class, i, rect);
-  widget_set_background(w, bg_color, FALSE);
+  widget_set_background(w, bg_color);
 
   return w;
 }

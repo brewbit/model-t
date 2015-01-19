@@ -66,7 +66,7 @@ controller_settings_screen_create(temp_controller_id_t controller)
   controller_settings_screen_t* s = calloc(1, sizeof(controller_settings_screen_t));
 
   s->screen = widget_create(NULL, &controller_settings_widget_class, s, display_rect);
-  widget_set_background(s->screen, BLACK, FALSE);
+  widget_set_background(s->screen, BLACK);
 
   char* title;
   temp_controller_id_t other_controller;

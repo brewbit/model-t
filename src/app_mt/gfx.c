@@ -31,13 +31,13 @@ typedef enum {
 
 static void draw_horiz_line(int x, int y, int l);
 static void draw_vert_line(int x, int y, int l);
-static uint16_t get_tile_color(const Image_t* img, int x, int y);
-static uint16_t get_bg_color(int x, int y);
-static void fill_rect(rect_t rect, uint16_t color);
+static color_t get_tile_color(const Image_t* img, int x, int y);
+static color_t get_bg_color(int x, int y);
+static void fill_rect(rect_t rect, color_t color);
 
 typedef struct gfx_ctx_s {
-  uint16_t fcolor;
-  uint16_t bcolor;
+  color_t fcolor;
+  color_t bcolor;
   BackgroundType bg_type;
   const Image_t* bg_img;
   point_t bg_anchor;
@@ -118,7 +118,7 @@ gfx_fill_rect(rect_t rect)
 }
 
 static void
-fill_rect(rect_t rect, uint16_t color)
+fill_rect(rect_t rect, color_t color)
 {
   int i;
 
@@ -146,13 +146,13 @@ gfx_clear_rect(rect_t rect)
 }
 
 void
-gfx_set_fg_color(uint16_t color)
+gfx_set_fg_color(color_t color)
 {
   ctx->fcolor = color;
 }
 
 void
-gfx_set_bg_color(uint16_t color)
+gfx_set_bg_color(color_t color)
 {
   ctx->bcolor = color;
   ctx->bg_type = BG_COLOR;
@@ -281,7 +281,7 @@ gfx_draw_glyph(const glyph_t* g, int x, int y)
     else {
       uint16_t by = y + (j / g->width);
       uint16_t bx = x + (j % g->width);
-      uint16_t bcolor = get_bg_color(bx, by);
+      color_t bcolor = get_bg_color(bx, by);
 
       if (alpha == 0) {
         lcd_write_data(bcolor);
@@ -318,7 +318,7 @@ draw_img_rgba(int x, int y, const Image_t* img)
   int i;
   for (i = 0; i < (img->width * img->height); i++) {
     uint8_t alpha = img->alpha[i];
-    uint16_t fcolor = img->px[i];
+    color_t fcolor = img->px[i];
 
     if (alpha == 255) {
       lcd_write_data(fcolor);
@@ -327,7 +327,7 @@ draw_img_rgba(int x, int y, const Image_t* img)
       uint16_t by = y + (i / img->width);
       uint16_t bx = x + (i % img->width);
 
-      uint16_t bcolor = get_bg_color(bx, by);
+      color_t bcolor = get_bg_color(bx, by);
 
       if (alpha == 0) {
         lcd_write_data(bcolor);
@@ -353,7 +353,7 @@ draw_img_a(int x, int y, const Image_t* img)
       uint16_t by = y + (i / img->width);
       uint16_t bx = x + (i % img->width);
 
-      uint16_t bcolor = get_bg_color(bx, by);
+      color_t bcolor = get_bg_color(bx, by);
 
       if (alpha == 0) {
         lcd_write_data(bcolor);
@@ -389,16 +389,16 @@ gfx_draw_bitmap(int x, int y, const Image_t* img)
   lcd_clr_cursor();
 }
 
-static uint16_t
+static color_t
 get_tile_color(const Image_t* img, int x, int y)
 {
   uint16_t imx = x % img->width;
   uint16_t imy = y % img->height;
-  uint16_t col = img->px[imx + (imy * img->width)];
+  color_t col = img->px[imx + (imy * img->width)];
   return col;
 }
 
-static uint16_t
+static color_t
 get_bg_color(int x, int y)
 {
   if (ctx->bg_type == BG_IMAGE) {

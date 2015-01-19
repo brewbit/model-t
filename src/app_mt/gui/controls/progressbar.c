@@ -32,7 +32,7 @@ progressbar_create(widget_t* parent, rect_t rect, color_t bg_color, color_t bar_
   l->bar_color = bar_color;
 
   l->widget = widget_create(parent, &progressbar_widget_class, l, rect);
-  widget_set_background(l->widget, bg_color, false);
+  widget_set_background(l->widget, bg_color);
 
   return l->widget;
 }

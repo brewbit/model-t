@@ -151,7 +151,7 @@ textentry_screen_show(textentry_format_t format, text_handler_t text_handler, vo
   rect.y = 8;
   rect.width = 200;
   screen->text_label = label_create(screen->widget, rect, "", font_opensans_regular_22, WHITE, 2);
-  widget_set_background(screen->text_label, LIGHT_GRAY, false);
+  widget_set_background(screen->text_label, LIGHT_GRAY);
 
   gui_push_screen(screen->widget);
 }
