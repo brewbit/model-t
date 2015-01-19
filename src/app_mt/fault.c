@@ -36,11 +36,8 @@ void port_halt(void)
   printf("!!! System Halted !!!\r\n");
   if (dbg_panic_msg)
     printf("  Panic msg: %s\r\n", dbg_panic_msg);
-  else
-    printf("  Panic msg not set\r\n");
-  chThdSleepSeconds(1);
 
-  __asm("BKPT #0\n") ; // Break into the debugger
+  __asm("BKPT #0\n");
 
   port_disable();
   while (TRUE) {
