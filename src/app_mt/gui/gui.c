@@ -3,6 +3,7 @@
 #include "gui.h"
 #include "touch.h"
 #include "message.h"
+#include "screen_saver.h"
 
 
 typedef struct widget_stack_elem_s {
@@ -110,7 +111,8 @@ gui_dispatch(msg_id_t id, void* msg_data, void* listener_data, void* sub_data)
       break;
 
     case MSG_TOUCH_INPUT:
-      dispatch_touch(msg_data);
+      if (!screen_saver_is_active())
+    	dispatch_touch(msg_data);
       break;
 
     default:

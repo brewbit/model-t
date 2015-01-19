@@ -1,5 +1,5 @@
 
-#include "gui/screen_saver.h"
+#include "screen_saver.h"
 #include "button.h"
 #include "label.h"
 #include "listbox.h"
@@ -19,10 +19,11 @@ typedef struct {
   bool active;
 } screen_saver_t;
 
+static uint8_t active;
 
 static void screen_saver_destroy(widget_t* w);
 static void screen_saver_msg(msg_event_t* event);
-static void dispatch_touch_input(screen_saver_t* s);
+static void dispatch_touch_input(screen_saver_t* s, touch_msg_t* msg);
 static msg_t screen_saver_thread(void* arg);
 
 
@@ -69,6 +70,7 @@ screen_saver_thread(void* arg)
         screen_saver_timeout.value > .5f &&
         (chTimeNow() - s->last_touch_time) > S2ST(60 * screen_saver_timeout.value)) {
       s->active = true;
+      active = true;
       lcd_set_brightness(0);
       gui_push_screen(s->screen);
     }
@@ -85,7 +87,7 @@ screen_saver_msg(msg_event_t* event)
 
   switch (event->msg_id) {
     case MSG_TOUCH_INPUT:
-      dispatch_touch_input(s);
+      dispatch_touch_input(s, event->msg_data);
       break;
 
     default:
@@ -94,12 +96,20 @@ screen_saver_msg(msg_event_t* event)
 }
 
 static void
-dispatch_touch_input(screen_saver_t* s)
+dispatch_touch_input(screen_saver_t* s, touch_msg_t* msg)
 {
   s->last_touch_time = chTimeNow();
-  if (s->active) {
+  if (s->active &&
+	  !msg->touch_down) {
     gui_hide_screen();
     lcd_set_brightness(100);
     s->active = false;
+    active = false;
   }
+}
+
+uint8_t
+screen_saver_is_active()
+{
+  return active;
 }
