@@ -200,7 +200,8 @@ msg_release(thread_msg_t* msg)
 
   msg->processed = true;
 
-  if (msg->waiting_thd->msg_listener != NULL) {
+  if ((msg->waiting_thd != NULL) &&
+      (msg->waiting_thd->msg_listener != NULL)) {
     static thread_msg_t release_msg = {
         .id = MSG_RELEASE,        .msg_data = NULL,        .user_data = NULL,        .waiting_thd = NULL,        .processed = true    };
     chMBPost(&msg->waiting_thd->mb, (msg_t)&release_msg, TIME_INFINITE);
