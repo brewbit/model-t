@@ -39,6 +39,8 @@
  * 0...3        Lowest...Highest.
  */
 
+#define STM32F2xx_MCUCONF
+
 /*
  * HAL driver system settings.
  */
@@ -238,4 +240,3 @@
 #define STM32_I2C_I2C1_DMA_ERROR_HOOK()     chSysHalt()
 #define STM32_I2C_I2C2_DMA_ERROR_HOOK()     chSysHalt()
 #define STM32_I2C_I2C3_DMA_ERROR_HOOK()     chSysHalt()
-

@@ -4,17 +4,17 @@
 #include "crc/crc8.h"
 
 static const SerialConfig cfg_115k = {
-    .sc_speed = 115200,
-    .sc_cr1 = 0,
-    .sc_cr2 = USART_CR2_STOP1_BITS,
-    .sc_cr3 = USART_CR3_HDSEL,
+    .speed = 115200,
+    .cr1 = 0,
+    .cr2 = USART_CR2_STOP1_BITS,
+    .cr3 = USART_CR3_HDSEL,
 };
 
 static const SerialConfig cfg_9600 = {
-    .sc_speed = 9600,
-    .sc_cr1 = 0,
-    .sc_cr2 = USART_CR2_STOP1_BITS,
-    .sc_cr3 = USART_CR3_HDSEL,
+    .speed = 9600,
+    .cr1 = 0,
+    .cr2 = USART_CR2_STOP1_BITS,
+    .cr3 = USART_CR3_HDSEL,
 };
 
 void
