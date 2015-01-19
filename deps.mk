@@ -1,5 +1,5 @@
 
-CHIBIOS   ?= ../ChibiOS-RT
+CHIBIOS   ?= ../ChibiOS
 NANOPB    ?= ../nanopb
 BBMT_MSGS ?= ../brewbit-protobuf-messages
 
