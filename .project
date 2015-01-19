@@ -3,7 +3,7 @@
 	<name>model-t</name>
 	<comment></comment>
 	<projects>
-		<project>ChibiOS</project>
+		<project>ChibiOS-RT (whole tree)</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
