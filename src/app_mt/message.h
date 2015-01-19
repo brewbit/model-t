@@ -55,15 +55,6 @@ typedef enum {
   NUM_THREAD_MSGS
 } msg_id_t;
 
-
-typedef struct {
-  Thread* waiting_thd;
-  msg_id_t id;
-  void* user_data;
-  void* msg_data;
-  bool processed;
-} thread_msg_t;
-
 typedef enum {
   RECOVERY_IMG_CHECKING,
   RECOVERY_IMG_LOADING,
