@@ -1,3 +1,9 @@
+*** 1.5.0 ***
+- NEW: Update to ChibiOS 2.6.7.
+- FIX: Reduce required number of touch calibration points.
+- FIX: Do not generate touch events when returning from screen saver. 
+- FIX: Fix null dereference causing lockups and general instability.
+
 *** 1.4.0 ***
 - NEW: Update to CC3000 SP 1.14 (http://processors.wiki.ti.com/index.php/CC3000_Release_Notes#Version_1.14:)
 - FIX: Add support for debugging via GDB.
