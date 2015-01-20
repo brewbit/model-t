@@ -6,13 +6,15 @@
 include deps.mk
 
 # Compiler options here.
-ifeq ($(USE_OPT),)
-  USE_OPT = -Os -ggdb -fomit-frame-pointer -falign-functions=16
+ifeq ($(CONFIG),release)
+  USE_OPT = -Os -fomit-frame-pointer -falign-functions=16
+else
+  USE_OPT = -O0 -ggdb
 endif
 
 # C specific options here (added to USE_OPT).
 ifeq ($(USE_COPT),)
-  USE_COPT = 
+  USE_COPT = -MMD
 endif
 
 # C++ specific options here (added to USE_OPT).
@@ -175,7 +177,7 @@ DLIBDIR =
 
 # List all default libraries here
 DLIBS = -lm --specs=nano.specs
-ifeq ($(USE_SEMIHOSTING),YES)
+ifeq ($(CONFIG),debug)
 DLIBS += --specs=rdimon.specs -lc -lc -lrdimon
 DDEFS += -DUSE_SEMIHOSTING
 endif

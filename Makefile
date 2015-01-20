@@ -1,6 +1,6 @@
 include deps.mk
 
-USE_SEMIHOSTING ?= NO
+CONFIG ?= release
 
 ifeq ($(JTAG),jlink)
 	INTERFACE_SCRIPT=jlink
@@ -49,11 +49,11 @@ download_bootloader: bootloader attach
 download: download_app_mt download_bootloader
 
 debug_app_mt:
-	@$(MAKE) download_app_mt USE_SEMIHOSTING=YES USE_OPT=NO
+	@$(MAKE) download_app_mt CONFIG=debug
 	@arm-none-eabi-gdb build/app_mt/app_mt.elf -ex "source scripts/gdb/startup.gdb"
 
 debug_bootloader:
-	@$(MAKE) download_app_mt USE_SEMIHOSTING=YES USE_OPT=NO
+	@$(MAKE) download_app_mt CONFIG=debug
 	@arm-none-eabi-gdb build/bootloader/bootloader.elf -ex "source scripts/gdb/startup.gdb"
 
 attach:
