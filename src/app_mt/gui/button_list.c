@@ -31,6 +31,12 @@ button_list_screen_create(
   };
   widget_t* b = button_create(screen, rect, img_left, WHITE, BLACK, back_handler);
   widget_set_user_data(b, user_data);
+  button_set_up_bg_color(b, BLACK);
+  button_set_up_icon_color(b, WHITE);
+  button_set_down_bg_color(b, BLACK);
+  button_set_down_icon_color(b, LIGHT_GRAY);
+  button_set_disabled_bg_color(b, BLACK);
+  button_set_disabled_icon_color(b, DARK_GRAY);
 
   rect.x = 85;
   rect.y = 26;

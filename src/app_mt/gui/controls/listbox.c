@@ -57,8 +57,21 @@ listbox_create(widget_t* parent, rect_t rect, int item_height)
       .height = 52
   };
   l->up_button = button_create(lb, button_rect, img_up, WHITE, BLACK, up_button_event);
+  button_set_up_bg_color(l->up_button, BLACK);
+  button_set_up_icon_color(l->up_button, WHITE);
+  button_set_down_bg_color(l->up_button, BLACK);
+  button_set_down_icon_color(l->up_button, LIGHT_GRAY);
+  button_set_disabled_bg_color(l->up_button, BLACK);
+  button_set_disabled_icon_color(l->up_button, DARK_GRAY);
+
   button_rect.y += 52 + button_pad;
   l->dn_button = button_create(lb, button_rect, img_down, WHITE, BLACK, down_button_event);
+  button_set_up_bg_color(l->dn_button, BLACK);
+  button_set_up_icon_color(l->dn_button, WHITE);
+  button_set_down_bg_color(l->dn_button, BLACK);
+  button_set_down_icon_color(l->dn_button, LIGHT_GRAY);
+  button_set_disabled_bg_color(l->dn_button, BLACK);
+  button_set_disabled_icon_color(l->dn_button, DARK_GRAY);
 
   return lb;
 }

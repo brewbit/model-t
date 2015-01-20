@@ -227,9 +227,9 @@ dispatch_sensor_sample(home_screen_t* s, sensor_msg_t* msg)
     widget_enable(s->sensors[msg->sensor].button, TRUE);
 
     if (msg->sensor == SENSOR_1)
-      button_set_color(s->sensors[msg->sensor].button, AMBER);
+      button_set_up_bg_color(s->sensors[msg->sensor].button, AMBER);
     else
-      button_set_color(s->sensors[msg->sensor].button, PURPLE);
+      button_set_up_bg_color(s->sensors[msg->sensor].button, PURPLE);
 
     place_quantity_widgets(s);
   }
@@ -244,7 +244,7 @@ dispatch_sensor_timeout(home_screen_t* s, sensor_timeout_msg_t* msg)
 
   if (widget_is_enabled(s->sensors[msg->sensor].button)) {
     button_set_icon(s->sensors[msg->sensor].button, img_temp_low);
-    button_set_color(s->sensors[msg->sensor].button, STEEL);
+    button_set_up_bg_color(s->sensors[msg->sensor].button, STEEL);
     widget_disable(w);
     place_quantity_widgets(s);
   }
@@ -269,17 +269,17 @@ set_conn_status(home_screen_t* s)
 {
   if (s->net_state == NS_CONNECTED &&
       s->api_state == AS_CONNECTED) {
-      button_set_color(s->conn_button, EMERALD);
-      button_set_icon_color(s->conn_button, WHITE);
+    button_set_up_bg_color(s->conn_button, EMERALD);
+    button_set_up_icon_color(s->conn_button, WHITE);
   }
   else if (s->net_state == NS_CONNECTED ||
            s->api_state == AS_CONNECTED) {
-    button_set_color(s->conn_button, STEEL);
-    button_set_icon_color(s->conn_button, YELLOW);
+    button_set_up_bg_color(s->conn_button, STEEL);
+    button_set_up_icon_color(s->conn_button, YELLOW);
   }
   else {
-    button_set_color(s->conn_button, STEEL);
-    button_set_icon_color(s->conn_button, RED);
+    button_set_up_bg_color(s->conn_button, STEEL);
+    button_set_up_icon_color(s->conn_button, RED);
   }
 }
 

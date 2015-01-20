@@ -80,7 +80,13 @@ self_test_screen_create()
       .width = 56,
       .height = 56,
   };
-  button_create(widget, rect, img_left, WHITE, BLACK, back_button_clicked);
+  widget_t* back_btn = button_create(widget, rect, img_left, WHITE, BLACK, back_button_clicked);
+  button_set_up_bg_color(back_btn, BLACK);
+  button_set_up_icon_color(back_btn, WHITE);
+  button_set_down_bg_color(back_btn, BLACK);
+  button_set_down_icon_color(back_btn, LIGHT_GRAY);
+  button_set_disabled_bg_color(back_btn, BLACK);
+  button_set_disabled_icon_color(back_btn, DARK_GRAY);
 
   rect.x = 85;
   rect.y = 35;

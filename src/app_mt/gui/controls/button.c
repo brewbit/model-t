@@ -2,6 +2,7 @@
 #include "button.h"
 #include "gui.h"
 #include "gfx.h"
+#include "controls/icon.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -13,9 +14,13 @@
 
 typedef struct {
   bool is_down;
-  const Image_t* icon;
-  color_t icon_color;
-  color_t btn_color;
+  widget_t* icon;
+  color_t up_icon_color;
+  color_t up_btn_color;
+  color_t down_icon_color;
+  color_t down_btn_color;
+  color_t disabled_icon_color;
+  color_t disabled_btn_color;
   systime_t next_event_time;
   char* text;
   const font_t* font;
@@ -43,13 +48,19 @@ button_create(widget_t* parent, rect_t rect, const Image_t* icon, color_t icon_c
 {
   button_t* b = calloc(1, sizeof(button_t));
 
-  b->icon = icon;
-  b->icon_color = icon_color;
-  b->btn_color = btn_color;
+  b->up_icon_color = icon_color;
+  b->up_btn_color = btn_color;
+  b->down_icon_color = icon_color;
+  b->down_btn_color = DARK_GRAY;
+  b->disabled_icon_color = icon_color;
+  b->disabled_btn_color = DARK_GRAY;
+
   b->evt_handler = evt_handler;
 
   widget_t* w = widget_create(parent, &button_widget_class, b, rect);
   widget_set_background(w, btn_color);
+
+  button_set_icon(w, icon);
 
   return w;
 }
@@ -58,18 +69,34 @@ void
 button_set_icon(widget_t* w, const Image_t* icon)
 {
   button_t* b = widget_get_instance_data(w);
-  if (b->icon != icon) {
-    b->icon = icon;
-    widget_invalidate(w);
+  if (icon == NULL) {
+    if (b->icon != NULL) {
+      widget_destroy(b->icon);
+      b->icon = NULL;
+    }
+  }
+  else {
+    if (b->icon == NULL) {
+      rect_t rect = widget_get_rect(w);
+      rect_t icon_rect;
+      icon_rect.x = (rect.width - icon->width) / 2;
+      icon_rect.y = (rect.height - icon->height) / 2;
+      icon_rect.width = icon->width;
+      icon_rect.height = icon->height;
+      b->icon = icon_create(w, icon_rect, icon, b->up_icon_color, TRANSPARENT);
+    }
+    else {
+      icon_set_image(b->icon, icon);
+    }
   }
 }
 
 void
-button_set_color(widget_t* w, color_t color)
+button_set_up_bg_color(widget_t* w, color_t color)
 {
   button_t* b = widget_get_instance_data(w);
-  if (b->btn_color != color) {
-    b->btn_color = color;
+  if (b->up_btn_color != color) {
+    b->up_btn_color = color;
     if (!b->is_down && widget_is_enabled(w))
       widget_set_background(w, color);
     widget_invalidate(w);
@@ -77,12 +104,62 @@ button_set_color(widget_t* w, color_t color)
 }
 
 void
-button_set_icon_color(widget_t* w, color_t color)
+button_set_up_icon_color(widget_t* w, color_t color)
 {
   button_t* b = widget_get_instance_data(w);
-  if (b->icon_color != color) {
-    b->icon_color = color;
+  if (b->up_icon_color != color) {
+    b->up_icon_color = color;
+    if ((b->icon != NULL) && !b->is_down) {
+      icon_set_color(b->icon, color);
+    }
+  }
+}
+
+void
+button_set_down_bg_color(widget_t* w, color_t color)
+{
+  button_t* b = widget_get_instance_data(w);
+  if (b->down_btn_color != color) {
+    b->down_btn_color = color;
+    if (b->is_down && widget_is_enabled(w))
+      widget_set_background(w, color);
     widget_invalidate(w);
+  }
+}
+
+void
+button_set_down_icon_color(widget_t* w, color_t color)
+{
+  button_t* b = widget_get_instance_data(w);
+  if (b->down_icon_color != color) {
+    b->down_icon_color = color;
+    if ((b->icon != NULL) && b->is_down) {
+      icon_set_color(b->icon, color);
+    }
+  }
+}
+
+void
+button_set_disabled_bg_color(widget_t* w, color_t color)
+{
+  button_t* b = widget_get_instance_data(w);
+  if (b->disabled_btn_color != color) {
+    b->disabled_btn_color = color;
+    if (!widget_is_enabled(w))
+      widget_set_background(w, color);
+    widget_invalidate(w);
+  }
+}
+
+void
+button_set_disabled_icon_color(widget_t* w, color_t color)
+{
+  button_t* b = widget_get_instance_data(w);
+  if (b->disabled_icon_color != color) {
+    b->disabled_icon_color = color;
+    if (b->icon != NULL) {
+      icon_set_disabled_color(b->icon, color);
+    }
   }
 }
 
@@ -155,7 +232,8 @@ button_touch(touch_event_t* event)
     if (!b->is_down) {
       b->is_down = true;
       gui_acquire_touch_capture(event->widget);
-      widget_set_background(event->widget, DARK_GRAY);
+      widget_set_background(event->widget, b->down_btn_color);
+      icon_set_color(b->icon, b->down_icon_color);
 
       if (b->evt_handler) {
         be.id = EVT_BUTTON_DOWN;
@@ -174,7 +252,8 @@ button_touch(touch_event_t* event)
   else {
     if (b->is_down) {
       b->is_down = false;
-      widget_set_background(event->widget, b->btn_color);
+      widget_set_background(event->widget, b->up_btn_color);
+      icon_set_color(b->icon, b->up_icon_color);
       gui_release_touch_capture();
 
       if (b->evt_handler) {
@@ -200,14 +279,6 @@ button_paint(paint_event_t* event)
   rect_t rect = widget_get_rect(event->widget);
   point_t center = rect_center(rect);
 
-  /* draw icon */
-  if (b->icon != NULL) {
-    gfx_set_fg_color(b->icon_color);
-    gfx_draw_bitmap(
-        center.x - (b->icon->width / 2),
-        center.y - (b->icon->height / 2),
-        b->icon);
-  }
 
   if (b->text != NULL && b->font != NULL) {
     Extents_t x = font_text_extents(b->font, b->text);
@@ -224,9 +295,11 @@ button_enable(enable_event_t* event)
   button_t* b = widget_get_instance_data(event->widget);
 
   if (event->enabled) {
-    widget_set_background(event->widget, b->btn_color);
+    widget_set_background(event->widget, b->up_btn_color);
+    icon_set_color(b->icon, b->up_icon_color);
   }
   else {
-    widget_set_background(event->widget, DARK_GRAY);
+    widget_set_background(event->widget, b->disabled_btn_color);
+    icon_set_color(b->icon, b->disabled_icon_color);
   }
 }

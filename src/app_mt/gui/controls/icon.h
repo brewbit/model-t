@@ -14,4 +14,7 @@ icon_set_image(widget_t* w, const Image_t* image);
 void
 icon_set_color(widget_t* w, color_t icon_color);
 
+void
+icon_set_disabled_color(widget_t* w, color_t icon_color);
+
 #endif

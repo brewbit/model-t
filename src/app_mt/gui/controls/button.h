@@ -28,10 +28,22 @@ void
 button_set_icon(widget_t* w, const Image_t* icon);
 
 void
-button_set_color(widget_t* w, color_t color);
+button_set_up_bg_color(widget_t* w, color_t color);
 
 void
-button_set_icon_color(widget_t* w, color_t color);
+button_set_up_icon_color(widget_t* w, color_t color);
+
+void
+button_set_down_bg_color(widget_t* w, color_t color);
+
+void
+button_set_down_icon_color(widget_t* w, color_t color);
+
+void
+button_set_disabled_bg_color(widget_t* w, color_t color);
+
+void
+button_set_disabled_icon_color(widget_t* w, color_t color);
 
 void
 button_set_text(widget_t* w, const char* text);
