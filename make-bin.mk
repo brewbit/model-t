@@ -174,7 +174,7 @@ DINCDIR =
 DLIBDIR =
 
 # List all default libraries here
-DLIBS = -lm
+DLIBS = -lm --specs=nano.specs
 ifeq ($(USE_SEMIHOSTING),YES)
 DLIBS += --specs=rdimon.specs -lc -lc -lrdimon
 DDEFS += -DUSE_SEMIHOSTING
