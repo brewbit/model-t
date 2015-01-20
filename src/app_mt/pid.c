@@ -73,8 +73,6 @@ tune_gains(pid_controller_t* pid, float err_p, float err_d)
   pid->kd = LIMIT(pid->kd, 0, 5);
 
   pid_set_output_sign(pid, pid->output_sign);
-
-  printf("kp, %f\r\nki, %f\r\nkd, %f\r\n",pid->kp, pid->ki, pid->kd);
 }
 
 void
