@@ -72,11 +72,23 @@ calib_screen_create()
   };
   s->complete_button = button_create(s->widget, rect, img_left, WHITE, BLACK, complete_calib);
   widget_hide(s->complete_button);
+  button_set_up_bg_color(s->complete_button, BLACK);
+  button_set_up_icon_color(s->complete_button, WHITE);
+  button_set_down_bg_color(s->complete_button, BLACK);
+  button_set_down_icon_color(s->complete_button, LIGHT_GRAY);
+  button_set_disabled_bg_color(s->complete_button, BLACK);
+  button_set_disabled_icon_color(s->complete_button, DARK_GRAY);
 
   rect.x = 320 - 56 - 15;
   rect.y = 240 - 56 - 15;
   s->recal_button = button_create(s->widget, rect, img_update, WHITE, BLACK, restart_calib);
   widget_hide(s->recal_button);
+  button_set_up_bg_color(s->recal_button, BLACK);
+  button_set_up_icon_color(s->recal_button, WHITE);
+  button_set_down_bg_color(s->recal_button, BLACK);
+  button_set_down_icon_color(s->recal_button, LIGHT_GRAY);
+  button_set_disabled_bg_color(s->recal_button, BLACK);
+  button_set_disabled_icon_color(s->recal_button, DARK_GRAY);
 
   rect.x = 50;
   rect.y = 100;

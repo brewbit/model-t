@@ -131,6 +131,13 @@ textentry_screen_show(textentry_format_t format, text_handler_t text_handler, vo
     for (j = 0; j < NUM_BUTTONS_PER_ROW; ++j) {
       widget_t* b = button_create(screen->widget, rect, img_circle, WHITE, BLACK, char_button_clicked);
       button_set_font(b, font_opensans_regular_22);
+      button_set_up_bg_color(b, BLACK);
+      button_set_up_icon_color(b, WHITE);
+      button_set_down_bg_color(b, BLACK);
+      button_set_down_icon_color(b, LIGHT_GRAY);
+      button_set_disabled_bg_color(b, BLACK);
+      button_set_disabled_icon_color(b, DARK_GRAY);
+
       screen->buttons[i][j] = b;
       rect.x += 52;
     }
@@ -140,16 +147,40 @@ textentry_screen_show(textentry_format_t format, text_handler_t text_handler, vo
 
   rect.x = 268;
   rect.y = 5;
-  button_create(screen->widget, rect, img_check, WHITE, BLACK, ok_button_clicked);
+  widget_t* b = button_create(screen->widget, rect, img_check, WHITE, BLACK, ok_button_clicked);
+  button_set_up_bg_color(b, BLACK);
+  button_set_up_icon_color(b, WHITE);
+  button_set_down_bg_color(b, BLACK);
+  button_set_down_icon_color(b, LIGHT_GRAY);
+  button_set_disabled_bg_color(b, BLACK);
+  button_set_disabled_icon_color(b, DARK_GRAY);
 
   rect.y = 65;
-  button_create(screen->widget, rect, img_backspace, WHITE, BLACK, backspace_button_clicked);
+  b = button_create(screen->widget, rect, img_backspace, WHITE, BLACK, backspace_button_clicked);
+  button_set_up_bg_color(b, BLACK);
+  button_set_up_icon_color(b, WHITE);
+  button_set_down_bg_color(b, BLACK);
+  button_set_down_icon_color(b, LIGHT_GRAY);
+  button_set_disabled_bg_color(b, BLACK);
+  button_set_disabled_icon_color(b, DARK_GRAY);
 
   rect.y += 58;
-  button_create(screen->widget, rect, img_up, WHITE, BLACK, up_button_clicked);
+  b = button_create(screen->widget, rect, img_up, WHITE, BLACK, up_button_clicked);
+  button_set_up_bg_color(b, BLACK);
+  button_set_up_icon_color(b, WHITE);
+  button_set_down_bg_color(b, BLACK);
+  button_set_down_icon_color(b, LIGHT_GRAY);
+  button_set_disabled_bg_color(b, BLACK);
+  button_set_disabled_icon_color(b, DARK_GRAY);
 
   rect.y += 58;
-  button_create(screen->widget, rect, img_down, WHITE, BLACK, down_button_clicked);
+  b = button_create(screen->widget, rect, img_down, WHITE, BLACK, down_button_clicked);
+  button_set_up_bg_color(b, BLACK);
+  button_set_up_icon_color(b, WHITE);
+  button_set_down_bg_color(b, BLACK);
+  button_set_down_icon_color(b, LIGHT_GRAY);
+  button_set_disabled_bg_color(b, BLACK);
+  button_set_disabled_icon_color(b, DARK_GRAY);
 
   update_input_buttons(screen);
 
