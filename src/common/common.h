@@ -13,4 +13,10 @@
 #define MAX(a, b) ((a) > (b) ? (a) : (b))
 #define LIMIT(val, min, max) MIN(MAX(val, min), max)
 
+#ifdef DEBUG
+  #define BREAKPOINT() do { __asm("BKPT #0\n"); } while(0)
+#else
+  #define BREAKPOINT() do {} while(0)
+#endif
+
 #endif

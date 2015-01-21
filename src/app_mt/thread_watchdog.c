@@ -2,6 +2,7 @@
 #include <ch.h>
 #include <hal.h>
 #include <stdio.h>
+#include "common.h"
 #include "types.h"
 #include "ch/iwdg.h"
 
@@ -80,7 +81,7 @@ thread_watchdog_thread(void* arg)
             (unsigned int)time_since_last_kick,
             (unsigned int)twd->period);
 
-        __asm("BKPT #0\n");
+        BREAKPOINT();
 
         all_threads_responsive = false;
         break;

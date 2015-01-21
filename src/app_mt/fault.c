@@ -37,7 +37,7 @@ void port_halt(void)
   if (dbg_panic_msg)
     printf("  Panic msg: %s\r\n", dbg_panic_msg);
 
-  __asm("BKPT #0\n");
+  BREAKPOINT();
 
   port_disable();
   while (TRUE) {
@@ -122,7 +122,7 @@ dump_stack(uint32_t *pulFaultStackAddress)
   /* When the following line is hit, the variables contain the register values. */
   hfd._SCB_SHCSR = SCB->SHCSR;
 
-  __asm("BKPT #0\n");
+  BREAKPOINT();
 
   app_cfg_set_fault_data(HARD_FAULT, &hfd, sizeof(hfd));
   app_cfg_flush();

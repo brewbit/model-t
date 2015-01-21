@@ -179,7 +179,7 @@ DLIBDIR =
 DLIBS = -lm --specs=nano.specs
 ifeq ($(CONFIG),debug)
 DLIBS += --specs=rdimon.specs -lc -lc -lrdimon
-DDEFS += -DUSE_SEMIHOSTING
+DDEFS += -DUSE_SEMIHOSTING -DDEBUG
 endif
 
 #
