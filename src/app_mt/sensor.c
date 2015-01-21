@@ -49,7 +49,7 @@ sensor_init(sensor_id_t sensor, onewire_bus_t* port)
   onewire_init(tp->bus);
 
   tp->thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, sensor_thread, tp);
-  thread_watchdog_enable(tp->thread, S2ST(5));
+  thread_watchdog_enable(tp->thread, S2ST(30));
 
   return tp;
 }
