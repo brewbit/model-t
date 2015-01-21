@@ -1,3 +1,10 @@
+*** 1.5.1 ***
+- FIX: Simplify message passing.
+- FIX: Settings screen buttons change foreground color to indicate state instead of background color.
+- FIX: Shrink application size using newlib nano.
+- FIX: Do not include breakpoints in release build.
+- FIX: Initialize watchdog timer.
+
 *** 1.5.0 ***
 - NEW: Update to ChibiOS 2.6.7.
 - FIX: Reduce required number of touch calibration points.
