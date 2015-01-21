@@ -32,6 +32,7 @@ void
 thread_watchdog_init()
 {
   chThdCreateFromHeap(NULL, 1024, NORMALPRIO, thread_watchdog_thread, NULL);
+  iwdgInit();
   iwdgStart(&IWDGD, &iwdg_config);
 }
 
