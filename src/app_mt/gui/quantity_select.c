@@ -88,18 +88,30 @@ quantity_select_screen_create(
   rect.width = 220;
   label_create(s->widget, rect, title, font_opensans_regular_22, WHITE, 1);
 
-  rect.x = 10;
+  rect.x = 245;
   rect.y = 95;
   rect.width = 56;
   rect.height = 56;
-  s->up_button = button_create(s->widget, rect, img_up, WHITE, RED, adjust_button_evt);
+  s->up_button = button_create(s->widget, rect, img_up, WHITE, BLACK, adjust_button_evt);
+  button_set_up_bg_color(s->up_button, BLACK);
+  button_set_up_icon_color(s->up_button, WHITE);
+  button_set_down_bg_color(s->up_button, BLACK);
+  button_set_down_icon_color(s->up_button, LIGHT_GRAY);
+  button_set_disabled_bg_color(s->up_button, BLACK);
+  button_set_disabled_icon_color(s->up_button, DARK_GRAY);
 
   rect.y = 165;
-  s->down_button = button_create(s->widget, rect, img_down, WHITE, CYAN, adjust_button_evt);
+  s->down_button = button_create(s->widget, rect, img_down, WHITE, BLACK, adjust_button_evt);
+  button_set_up_bg_color(s->down_button, BLACK);
+  button_set_up_icon_color(s->down_button, WHITE);
+  button_set_down_bg_color(s->down_button, BLACK);
+  button_set_down_icon_color(s->down_button, LIGHT_GRAY);
+  button_set_disabled_bg_color(s->down_button, BLACK);
+  button_set_disabled_icon_color(s->down_button, DARK_GRAY);
 
-  rect.x = 66;
+  rect.x = 15;
   rect.y = 130;
-  rect.width = 254;
+  rect.width = 240;
   s->quantity_widget = quantity_widget_create(s->widget, rect, quantity.unit);
 
   set_quantity(s, quantity);
