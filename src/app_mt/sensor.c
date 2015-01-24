@@ -11,7 +11,6 @@
 
 #define SENSOR_TIMEOUT S2ST (2)
 #define SENSOR_SAMPLE_SIZE  (10)
-#define MAX_SAMPLE_DELTA    (40)
 
 
 typedef struct sensor_port_s {
@@ -94,24 +93,18 @@ filter_sample(sensor_port_t* tp, quantity_t* sample)
   float filtered_sample = 0;
   uint8_t i;
 
-  if ((fabs(sample->value - tp->last_sample) > MAX_SAMPLE_DELTA) &&
-      (tp->sample_size == SENSOR_SAMPLE_SIZE)) {
-    sample->value = tp->last_sample;
-  }
-  else {
-    tp->sample_filter[tp->sample_filter_index] = sample->value;
-    if (++tp->sample_filter_index >= SENSOR_SAMPLE_SIZE)
-      tp->sample_filter_index = 0;
+  tp->sample_filter[tp->sample_filter_index] = sample->value;
+  if (++tp->sample_filter_index >= SENSOR_SAMPLE_SIZE)
+    tp->sample_filter_index = 0;
 
-    if (tp->sample_size < SENSOR_SAMPLE_SIZE)
-      tp->sample_size++;
+  if (tp->sample_size < SENSOR_SAMPLE_SIZE)
+    tp->sample_size++;
 
-    for (i = 0; i < SENSOR_SAMPLE_SIZE; i++) {
-      filtered_sample += tp->sample_filter[i];
-    }
-    sample->value = filtered_sample / tp->sample_size;
-    tp->last_sample = sample->value;
+  for (i = 0; i < SENSOR_SAMPLE_SIZE; i++) {
+    filtered_sample += tp->sample_filter[i];
   }
+  sample->value = filtered_sample / tp->sample_size;
+  tp->last_sample = sample->value;
 }
 
 static void
