@@ -21,7 +21,6 @@ typedef struct sensor_port_s {
   uint8_t sample_size;
   onewire_bus_t* bus;
   Thread* thread;
-  float last_sample;
   systime_t last_sample_time;
   bool connected;
 } sensor_port_t;
@@ -104,7 +103,6 @@ filter_sample(sensor_port_t* tp, quantity_t* sample)
     filtered_sample += tp->sample_filter[i];
   }
   sample->value = filtered_sample / tp->sample_size;
-  tp->last_sample = sample->value;
 }
 
 static void
