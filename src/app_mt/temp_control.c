@@ -416,7 +416,7 @@ dispatch_controller_settings(temp_controller_t* tc, const controller_settings_t*
     if (resume_profile)
       temp_profile_resume(tpr, tc->controller);
     else
-      temp_profile_start(tpr, tc->controller, settings->temp_profile.id);
+      temp_profile_start(tpr, tc->controller, settings->temp_profile.id, settings->temp_profile.start_point);
   }
 
   tc->state = TC_SENSOR_TIMED_OUT;

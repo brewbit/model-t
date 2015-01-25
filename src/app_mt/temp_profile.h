@@ -11,7 +11,7 @@
 typedef enum {
   TPS_SEEKING_START_VALUE,
   TPS_RUNNING,
-  TPS_COMPLETE
+  TPS_HOLD_LAST
 } temp_profile_run_state_t;
 
 typedef struct {
@@ -32,7 +32,7 @@ typedef struct {
 
 
 void
-temp_profile_start(temp_profile_run_t* run, temp_controller_id_t controller, uint32_t temp_profile_id);
+temp_profile_start(temp_profile_run_t* run, temp_controller_id_t controller, uint32_t temp_profile_id, int start_point);
 
 void
 temp_profile_resume(temp_profile_run_t* run, temp_controller_id_t controller);

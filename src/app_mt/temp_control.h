@@ -44,6 +44,11 @@ typedef enum {
   STEP_RAMP
 } temp_profile_step_type_t;
 
+typedef enum {
+  TEMP_PROFILE_COMPLETION_ACTION_HOLD_LAST,
+  TEMP_PROFILE_COMPLETION_ACTION_START_OVER
+} temp_profile_completion_action_t;
+
 typedef struct {
   bool enabled;
   output_function_t function;
@@ -62,6 +67,8 @@ typedef struct {
   uint32_t num_steps;
   quantity_t start_value;
   temp_profile_step_t steps[32];
+  int start_point;
+  temp_profile_completion_action_t completion_action;
 } temp_profile_t;
 
 typedef struct {

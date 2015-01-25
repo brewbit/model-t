@@ -924,10 +924,14 @@ dispatch_controller_settings_from_server(ControllerSettings* settings)
         csl->temp_profile.num_steps = tpm->steps_count;
         csl->temp_profile.start_value.value = tpm->start_value;
         csl->temp_profile.start_value.unit = UNIT_TEMP_DEG_F;
+        csl->temp_profile.start_point = settings->temp_profile_start_point;
+        csl->temp_profile.completion_action = settings->temp_profile_completion_action;
 
         printf("    profile '%s' (%d)\r\n", csl->temp_profile.name, (int)csl->temp_profile.id);
         printf("      steps %d\r\n", (int)csl->temp_profile.num_steps);
-        printf("      start %f\r\n", csl->temp_profile.start_value.value);
+        printf("      start temp %f\r\n", csl->temp_profile.start_value.value);
+        printf("      start point %d\r\n", csl->temp_profile.start_point);
+        printf("      completion action %d\r\n", csl->temp_profile.completion_action);
 
         for (i = 0; i < (int)tpm->steps_count; ++i) {
           temp_profile_step_t* step = &csl->temp_profile.steps[i];

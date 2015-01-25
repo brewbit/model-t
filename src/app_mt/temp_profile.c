@@ -11,13 +11,23 @@ static void write_checkpoint(temp_profile_run_t* run);
 
 
 void
-temp_profile_start(temp_profile_run_t* run, temp_controller_id_t controller, uint32_t temp_profile_id)
+temp_profile_start(temp_profile_run_t* run, temp_controller_id_t controller, uint32_t temp_profile_id, int start_point)
 {
+  if ((temp_profile_id != run->temp_profile_id) ||
+      (start_point >= 0)) {
+    run->current_step = start_point;
+    run->current_step_start_time = chTimeNow();
+
+    if (run->current_step == 0) {
+      run->state = TPS_SEEKING_START_VALUE;
+    }
+    else {
+      run->state = TPS_RUNNING;
+    }
+  }
+
   run->controller = controller;
   run->temp_profile_id = temp_profile_id;
-  run->state = TPS_SEEKING_START_VALUE;
-  run->current_step = 0;
-  run->current_step_start_time = chTimeNow();
 
   write_checkpoint(run);
 
@@ -103,11 +113,17 @@ temp_profile_get_current_setpoint(temp_profile_run_t* run, float* sp)
 
   if (run->state == TPS_RUNNING) {
     if (chTimeNow() > run->current_step_start_time + S2ST(profile->steps[run->current_step].duration)) {
-      if (++run->current_step < profile->num_steps) {
-        run->current_step_start_time = chTimeNow();
+      if (++run->current_step >= profile->num_steps) {
+        if (profile->completion_action == TEMP_PROFILE_COMPLETION_ACTION_START_OVER) {
+          run->current_step = 0;
+          run->current_step_start_time = chTimeNow();
+        }
+        else {
+          run->state = TPS_HOLD_LAST;
+        }
       }
       else {
-        run->state = TPS_COMPLETE;
+        run->current_step_start_time = chTimeNow();
       }
     }
   }
@@ -136,7 +152,7 @@ temp_profile_get_current_setpoint(temp_profile_run_t* run, float* sp)
       break;
     }
 
-    case TPS_COMPLETE:
+    case TPS_HOLD_LAST:
       if (profile->num_steps > 0)
         *sp = profile->steps[profile->num_steps-1].value.value;
       else
