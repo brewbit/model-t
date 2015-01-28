@@ -109,6 +109,13 @@ set_output_settings(output_screen_t* s)
       color = CYAN;
       img = img_snowflake;
       break;
+
+    case OUTPUT_FUNC_MANUAL:
+      text = "Manual Mode";
+      subtext = "Enable output manually";
+      color = RED;
+      img = img_hand;
+      break;
   }
   add_button_spec(buttons, &num_buttons, function_button_clicked, img, color,
       text, subtext, s);
@@ -139,6 +146,8 @@ function_button_clicked(button_event_t* event)
 
     if (s->settings->function == OUTPUT_FUNC_HEATING)
       s->settings->function = OUTPUT_FUNC_COOLING;
+    else if (s->settings->function == OUTPUT_FUNC_COOLING)
+      s->settings->function = OUTPUT_FUNC_MANUAL;
     else
       s->settings->function = OUTPUT_FUNC_HEATING;
 

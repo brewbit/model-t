@@ -14,6 +14,7 @@
 #include "gui/quantity_select.h"
 #include "quantity_widget.h"
 #include "app_cfg.h"
+#include "temp_control.h"
 
 #include <string.h>
 #include <stdio.h>
@@ -35,6 +36,11 @@ typedef struct {
 } sensor_info_t;
 
 typedef struct {
+  widget_t* button;
+  bool enabled;
+} output_info_t;
+
+typedef struct {
   systime_t sample_timestamp;
 
   widget_t* screen;
@@ -43,8 +49,7 @@ typedef struct {
   net_state_t net_state;
   api_state_t api_state;
 
-  widget_t* output1_icon;
-  widget_t* output2_icon;
+  output_info_t outputs[NUM_OUTPUTS];
   widget_t* conn_button;
   widget_t* settings_button;
 } home_screen_t;
@@ -54,6 +59,7 @@ static void home_screen_destroy(widget_t* w);
 static void home_screen_msg(msg_event_t* event);
 
 static void click_sensor_button(button_event_t* event);
+static void click_output_button(button_event_t* event);
 static void click_conn_button(button_event_t* event);
 static void click_settings_button(button_event_t* event);
 
@@ -104,10 +110,10 @@ home_screen_create()
 
   rect.x = TILE_X(0);
   rect.y = TILE_Y(2);
-  s->output1_icon = icon_create(s->screen, rect, img_plug, WHITE, STEEL);
+  s->outputs[OUTPUT_1].button = button_create(s->screen, rect, img_plug, WHITE, STEEL, click_output_button);
 
   rect.x = TILE_X(1);
-  s->output2_icon = icon_create(s->screen, rect, img_plug, WHITE, STEEL);
+  s->outputs[OUTPUT_2].button = button_create(s->screen, rect, img_plug, WHITE, STEEL, click_output_button);
 
   rect.x = TILE_X(2);
   s->conn_button = button_create(s->screen, rect, img_signal, RED, STEEL, click_conn_button);
@@ -330,17 +336,18 @@ dispatch_controller_settings(home_screen_t* s, controller_settings_t* settings)
 static void
 dispatch_output_status(home_screen_t* s, output_status_t* msg)
 {
-  widget_t* icon;
-
-  if (msg->output == OUTPUT_1)
-    icon = s->output1_icon;
-  else
-    icon = s->output2_icon;
-
-  if (msg->enabled)
-    icon_set_color(icon, LIME);
-  else
-    icon_set_color(icon, WHITE);
+  if (msg->output == OUTPUT_1) {
+    if (msg->enabled)
+      button_set_up_icon_color(s->outputs[OUTPUT_1].button, LIME);
+    else
+      button_set_up_icon_color(s->outputs[OUTPUT_1].button, WHITE);
+  }
+  else {
+    if (msg->enabled)
+      button_set_up_icon_color(s->outputs[OUTPUT_2].button, LIME);
+    else
+      button_set_up_icon_color(s->outputs[OUTPUT_2].button, WHITE);
+  }
 }
 
 static void
@@ -358,9 +365,9 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
   widget_t* icon;
 
   if (output == OUTPUT_1)
-    icon = s->output1_icon;
+    icon = s->outputs[OUTPUT_1].button;
   else
-    icon = s->output2_icon;
+    icon = s->outputs[OUTPUT_2].button;
 
   color_t color = 0;
   switch (function) {
@@ -372,6 +379,18 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
       color = ORANGE;
       break;
 
+    case OUTPUT_FUNC_MANUAL:
+      color = RED;
+      if (s->outputs[output].enabled) {
+        palWritePad(GPIOC, out_gpio[output], true);
+        button_set_up_icon_color(s->outputs[output].button, LIME);
+      }
+      else {
+        palWritePad(GPIOC, out_gpio[output], false);
+        button_set_up_icon_color(s->outputs[output].button, WHITE);
+      }
+      break;
+
     case OUTPUT_FUNC_NONE:
       color = STEEL;
       break;
@@ -379,8 +398,7 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
     default:
       break;
   }
-
-  widget_set_background(icon, color);
+  button_set_up_bg_color(icon, color);
 }
 
 static void
@@ -400,6 +418,43 @@ click_sensor_button(button_event_t* event)
 
   widget_t* settings_screen = controller_settings_screen_create(sensor);
   gui_push_screen(settings_screen);
+}
+
+static void
+click_output_button(button_event_t* event)
+{
+  if (event->id != EVT_BUTTON_CLICK)
+    return;
+
+  widget_t* parent = widget_get_parent(event->widget);
+  home_screen_t* s = widget_get_instance_data(parent);
+  const controller_settings_t* controller1_settings = app_cfg_get_controller_settings(CONTROLLER_1);
+  const controller_settings_t* controller2_settings = app_cfg_get_controller_settings(CONTROLLER_2);
+
+  if (event->widget == s->outputs[OUTPUT_1].button) {
+    if (controller1_settings->output_settings[OUTPUT_1].function == OUTPUT_FUNC_MANUAL ||
+        controller2_settings->output_settings[OUTPUT_1].function == OUTPUT_FUNC_MANUAL) {
+
+      if (s->outputs[OUTPUT_1].enabled == false)
+        s->outputs[OUTPUT_1].enabled = true;
+      else
+        s->outputs[OUTPUT_1].enabled = false;
+
+      set_output_settings(s, OUTPUT_1, OUTPUT_FUNC_MANUAL);
+    }
+  }
+  else {
+    if (controller1_settings->output_settings[OUTPUT_2].function == OUTPUT_FUNC_MANUAL ||
+        controller2_settings->output_settings[OUTPUT_2].function == OUTPUT_FUNC_MANUAL) {
+
+      if (s->outputs[OUTPUT_2].enabled == false)
+        s->outputs[OUTPUT_2].enabled = true;
+      else
+        s->outputs[OUTPUT_2].enabled = false;
+
+      set_output_settings(s, OUTPUT_2, OUTPUT_FUNC_MANUAL);
+    }
+  }
 }
 
 static void

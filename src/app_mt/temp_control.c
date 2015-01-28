@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 
+
 typedef enum {
   TC_IDLE,
   TC_ACTIVE,
@@ -50,11 +51,6 @@ static void relay_control(relay_output_t* output);
 static void enable_relay(relay_output_t* output, bool enabled);
 static float get_sp(temp_controller_t* tc);
 static const output_settings_t* get_output_settings(temp_controller_t* tc, output_id_t output);
-
-static const uint32_t out_gpio[NUM_OUTPUTS] = {
-    [OUTPUT_1] = PAD_RELAY1,
-    [OUTPUT_2] = PAD_RELAY2
-};
 
 temp_controller_t* controllers[NUM_CONTROLLERS];
 
@@ -135,6 +131,9 @@ output_init(temp_controller_t* tc, output_id_t output)
 
   out->id = output;
   out->controller = tc;
+
+  if (settings->function == OUTPUT_FUNC_MANUAL)
+    return;
 
   pid_init(&out->pid_control);
   pid_set_output_limits(&out->pid_control, -20, 20);
@@ -228,41 +227,32 @@ relay_control(relay_output_t* output)
 
   switch (app_cfg_get_control_mode()) {
   case ON_OFF:
-  {
-
-
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
       if (sample <= setpoint - hysteresis)
         enable_relay(output, true);
-      else if (sample >= setpoint) {
+      else if (sample >= setpoint)
         enable_relay(output, false);
-      }
     }
     else {
       if (sample >= setpoint + hysteresis)
         enable_relay(output, true);
-      else if (sample <= setpoint) {
+      else if (sample <= setpoint)
         enable_relay(output, false);
-      }
     }
-
     break;
-  }
 
   case PID:
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
       if (sample < (setpoint + output->pid_control.out) - hysteresis)
         enable_relay(output, true);
-      else {
+      else
         enable_relay(output, false);
-      }
     }
     else {
       if (sample > (setpoint - output->pid_control.out) + hysteresis)
         enable_relay(output, true);
-      else {
+      else
         enable_relay(output, false);
-      }
     }
     break;
 

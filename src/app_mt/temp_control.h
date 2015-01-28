@@ -26,6 +26,7 @@ typedef enum {
 typedef enum {
   OUTPUT_FUNC_HEATING,
   OUTPUT_FUNC_COOLING,
+  OUTPUT_FUNC_MANUAL,
   OUTPUT_FUNC_NONE
 } output_function_t;
 
@@ -91,6 +92,10 @@ typedef struct {
   output_state_t state;
 } output_status_t;
 
+static const uint32_t out_gpio[NUM_OUTPUTS] = {
+    [OUTPUT_1] = PAD_RELAY1,
+    [OUTPUT_2] = PAD_RELAY2
+};
 
 void
 temp_control_init(temp_controller_id_t controller);
