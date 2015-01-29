@@ -51,6 +51,11 @@ typedef enum {
 } temp_profile_completion_action_t;
 
 typedef struct {
+  output_id_t output;
+  temp_controller_id_t controller;
+} output_ovrd_msg_t;
+
+typedef struct {
   bool enabled;
   output_function_t function;
   quantity_t cycle_delay;

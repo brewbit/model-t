@@ -442,6 +442,22 @@ click_output_button(button_event_t* event)
 
       set_output_settings(s, OUTPUT_1, OUTPUT_FUNC_MANUAL);
     }
+    else if (controller1_settings->output_settings[OUTPUT_1].function == OUTPUT_FUNC_HEATING ||
+             controller1_settings->output_settings[OUTPUT_1].function == OUTPUT_FUNC_COOLING) {
+      output_ovrd_msg_t msg = {
+          .output = OUTPUT_1,
+          .controller = CONTROLLER_1
+      };
+      msg_send(MSG_OUTPUT_OVRD, &msg);
+    }
+    else if (controller2_settings->output_settings[OUTPUT_1].function == OUTPUT_FUNC_HEATING ||
+             controller2_settings->output_settings[OUTPUT_1].function == OUTPUT_FUNC_COOLING) {
+      output_ovrd_msg_t msg = {
+          .output = OUTPUT_1,
+          .controller = CONTROLLER_2
+      };
+      msg_send(MSG_OUTPUT_OVRD, &msg);
+    }
   }
   else {
     if (controller1_settings->output_settings[OUTPUT_2].function == OUTPUT_FUNC_MANUAL ||
@@ -453,6 +469,22 @@ click_output_button(button_event_t* event)
         s->outputs[OUTPUT_2].enabled = false;
 
       set_output_settings(s, OUTPUT_2, OUTPUT_FUNC_MANUAL);
+    }
+    else if (controller1_settings->output_settings[OUTPUT_2].function == OUTPUT_FUNC_HEATING ||
+             controller1_settings->output_settings[OUTPUT_2].function == OUTPUT_FUNC_COOLING) {
+      output_ovrd_msg_t msg = {
+          .output = OUTPUT_2,
+          .controller = CONTROLLER_1
+      };
+      msg_send(MSG_OUTPUT_OVRD, &msg);
+    }
+    else if (controller2_settings->output_settings[OUTPUT_2].function == OUTPUT_FUNC_HEATING ||
+             controller2_settings->output_settings[OUTPUT_2].function == OUTPUT_FUNC_COOLING) {
+      output_ovrd_msg_t msg = {
+          .output = OUTPUT_2,
+          .controller = CONTROLLER_2
+      };
+      msg_send(MSG_OUTPUT_OVRD, &msg);
     }
   }
 }

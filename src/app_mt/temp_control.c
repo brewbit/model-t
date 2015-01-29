@@ -23,6 +23,7 @@ typedef struct {
   output_id_t id;
   pid_controller_t pid_control;
   output_status_t status;
+  bool output_ovrd;
   systime_t cycle_delay_start_time;
   struct temp_controller_s* controller;
   Thread* thread;
@@ -43,6 +44,7 @@ static void dispatch_controller_settings(temp_controller_t* tc, const controller
 static void dispatch_init(temp_controller_t* tc);
 static void dispatch_sensor_sample(temp_controller_t* tc, sensor_msg_t* msg);
 static void dispatch_sensor_timeout(temp_controller_t* tc, sensor_timeout_msg_t* msg);
+static void dispatch_output_ovrd(temp_controller_t* tc, output_ovrd_msg_t* msg);
 static void output_init(temp_controller_t* tc, output_id_t id);
 static msg_t output_thread(void* arg);
 static void start_cycle_delay(relay_output_t* output);
@@ -74,6 +76,7 @@ temp_control_init(temp_controller_id_t controller)
   msg_subscribe(l, MSG_SENSOR_TIMEOUT,  NULL);
   msg_subscribe(l, MSG_API_CONTROLLER_SETTINGS, NULL);
   msg_subscribe(l, MSG_CONTROLLER_SETTINGS, NULL);
+  msg_subscribe(l, MSG_OUTPUT_OVRD, NULL);
 }
 
 float
@@ -225,6 +228,12 @@ relay_control(relay_output_t* output)
 
   output->status.output = output->id;
 
+  if (output->output_ovrd) {
+    enable_relay(output, false);
+    output->pid_control.enabled = false;
+    return;
+  }
+
   switch (app_cfg_get_control_mode()) {
   case ON_OFF:
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
@@ -242,6 +251,8 @@ relay_control(relay_output_t* output)
     break;
 
   case PID:
+    output->pid_control.enabled = true;
+
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
       if (sample < (setpoint + output->pid_control.out) - hysteresis)
         enable_relay(output, true);
@@ -312,6 +323,10 @@ dispatch_temp_input_msg(msg_id_t id, void* msg_data, void* listener_data, void* 
   case MSG_CONTROLLER_SETTINGS:
   case MSG_API_CONTROLLER_SETTINGS:
     dispatch_controller_settings(listener_data, msg_data, false);
+    break;
+
+  case MSG_OUTPUT_OVRD:
+    dispatch_output_ovrd(listener_data, msg_data);
     break;
 
   default:
@@ -410,4 +425,16 @@ dispatch_controller_settings(temp_controller_t* tc, const controller_settings_t*
   }
 
   tc->state = TC_SENSOR_TIMED_OUT;
+}
+
+static void
+dispatch_output_ovrd(temp_controller_t* tc, output_ovrd_msg_t* msg)
+{
+  if (tc->controller != msg->controller)
+    return;
+
+  if (tc->outputs[msg->output].output_ovrd == false)
+    tc->outputs[msg->output].output_ovrd = true;
+  else
+    tc->outputs[msg->output].output_ovrd = false;
 }
