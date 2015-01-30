@@ -251,7 +251,8 @@ relay_control(relay_output_t* output)
     break;
 
   case PID:
-    output->pid_control.enabled = true;
+    if (output->pid_control.enabled == false)
+      output->pid_control.enabled = true;
 
     if (output_settings->function == OUTPUT_FUNC_HEATING) {
       if (sample < (setpoint + output->pid_control.out) - hysteresis)
