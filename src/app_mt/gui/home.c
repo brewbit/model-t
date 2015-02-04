@@ -419,66 +419,43 @@ click_output_button(button_event_t* event)
   const controller_settings_t* controller1_settings = app_cfg_get_controller_settings(CONTROLLER_1);
   const controller_settings_t* controller2_settings = app_cfg_get_controller_settings(CONTROLLER_2);
 
-  output_function_t con1_out1_func = controller1_settings->output_settings[OUTPUT_1].function;
-  output_function_t con1_out2_func = controller1_settings->output_settings[OUTPUT_2].function;
-  output_function_t con2_out1_func = controller2_settings->output_settings[OUTPUT_1].function;
-  output_function_t con2_out2_func = controller2_settings->output_settings[OUTPUT_2].function;
+  output_function_t controller_1_function;
+  output_function_t controller_2_function;
+  output_id_t output;
 
-  if (event->widget == s->outputs[OUTPUT_1].button) {
-    if (con1_out1_func == OUTPUT_FUNC_MANUAL ||
-        con2_out1_func == OUTPUT_FUNC_MANUAL) {
+  if (event->widget == s->outputs[OUTPUT_1].button)
+    output = OUTPUT_1;
+  else
+    output = OUTPUT_2;
 
-      if (s->outputs[OUTPUT_1].enabled == false)
-        s->outputs[OUTPUT_1].enabled = true;
-      else
-        s->outputs[OUTPUT_1].enabled = false;
+  controller_1_function = controller1_settings->output_settings[output].function;
+  controller_2_function = controller2_settings->output_settings[output].function;
 
-      set_output_settings(s, OUTPUT_1, OUTPUT_FUNC_MANUAL);
-    }
-    else if (con1_out1_func == OUTPUT_FUNC_HEATING ||
-             con1_out1_func == OUTPUT_FUNC_COOLING) {
-      output_ovrd_msg_t msg = {
-          .output = OUTPUT_1,
-          .controller = CONTROLLER_1
-      };
-      msg_send(MSG_OUTPUT_OVRD, &msg);
-    }
-    else if (con2_out1_func == OUTPUT_FUNC_HEATING ||
-             con2_out1_func == OUTPUT_FUNC_COOLING) {
-      output_ovrd_msg_t msg = {
-          .output = OUTPUT_1,
-          .controller = CONTROLLER_2
-      };
-      msg_send(MSG_OUTPUT_OVRD, &msg);
-    }
+  if (controller_1_function == OUTPUT_FUNC_MANUAL ||
+      controller_2_function == OUTPUT_FUNC_MANUAL) {
+
+    if (s->outputs[output].enabled == false)
+      s->outputs[output].enabled = true;
+    else
+      s->outputs[output].enabled = false;
+
+    set_output_settings(s, output, OUTPUT_FUNC_MANUAL);
   }
-  else {
-    if (con1_out2_func == OUTPUT_FUNC_MANUAL ||
-        con2_out2_func == OUTPUT_FUNC_MANUAL) {
-
-      if (s->outputs[OUTPUT_2].enabled == false)
-        s->outputs[OUTPUT_2].enabled = true;
-      else
-        s->outputs[OUTPUT_2].enabled = false;
-
-      set_output_settings(s, OUTPUT_2, OUTPUT_FUNC_MANUAL);
-    }
-    else if (con1_out2_func == OUTPUT_FUNC_HEATING ||
-             con1_out2_func == OUTPUT_FUNC_COOLING) {
-      output_ovrd_msg_t msg = {
-          .output = OUTPUT_2,
-          .controller = CONTROLLER_1
-      };
-      msg_send(MSG_OUTPUT_OVRD, &msg);
-    }
-    else if (con2_out2_func == OUTPUT_FUNC_HEATING ||
-             con2_out2_func == OUTPUT_FUNC_COOLING) {
-      output_ovrd_msg_t msg = {
-          .output = OUTPUT_2,
-          .controller = CONTROLLER_2
-      };
-      msg_send(MSG_OUTPUT_OVRD, &msg);
-    }
+  else if (controller_1_function == OUTPUT_FUNC_HEATING ||
+           controller_1_function == OUTPUT_FUNC_COOLING) {
+    output_ovrd_msg_t msg = {
+        .output = output,
+        .controller = CONTROLLER_1
+    };
+    msg_send(MSG_OUTPUT_OVRD, &msg);
+  }
+  else if (controller_2_function == OUTPUT_FUNC_HEATING ||
+           controller_2_function == OUTPUT_FUNC_COOLING) {
+    output_ovrd_msg_t msg = {
+        .output = output,
+        .controller = CONTROLLER_2
+    };
+    msg_send(MSG_OUTPUT_OVRD, &msg);
   }
 }
 
