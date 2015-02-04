@@ -336,18 +336,10 @@ dispatch_controller_settings(home_screen_t* s, controller_settings_t* settings)
 static void
 dispatch_output_status(home_screen_t* s, output_status_t* msg)
 {
-  if (msg->output == OUTPUT_1) {
-    if (msg->enabled)
-      button_set_up_icon_color(s->outputs[OUTPUT_1].button, LIME);
-    else
-      button_set_up_icon_color(s->outputs[OUTPUT_1].button, WHITE);
-  }
-  else {
-    if (msg->enabled)
-      button_set_up_icon_color(s->outputs[OUTPUT_2].button, LIME);
-    else
-      button_set_up_icon_color(s->outputs[OUTPUT_2].button, WHITE);
-  }
+  if (msg->enabled)
+    button_set_up_icon_color(s->outputs[msg->output].button, LIME);
+  else
+    button_set_up_icon_color(s->outputs[msg->output].button, WHITE);
 }
 
 static void
@@ -362,14 +354,9 @@ dispatch_temp_unit(home_screen_t* s, unit_t unit)
 static void
 set_output_settings(home_screen_t* s, output_id_t output, output_function_t function)
 {
-  widget_t* icon;
-
-  if (output == OUTPUT_1)
-    icon = s->outputs[OUTPUT_1].button;
-  else
-    icon = s->outputs[OUTPUT_2].button;
-
+  widget_t* icon = s->outputs[output].button;
   color_t color = 0;
+
   switch (function) {
     case OUTPUT_FUNC_COOLING:
       color = CYAN;
