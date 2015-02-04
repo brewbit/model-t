@@ -433,9 +433,9 @@ click_output_button(button_event_t* event)
   const controller_settings_t* controller2_settings = app_cfg_get_controller_settings(CONTROLLER_2);
 
   output_function_t con1_out1_func = controller1_settings->output_settings[OUTPUT_1].function;
-  output_function_t con1_out2_func = controller1_settings->output_settings[OUTPUT_1].function;
-  output_function_t con2_out1_func = controller1_settings->output_settings[OUTPUT_1].function;
-  output_function_t con2_out2_func = controller1_settings->output_settings[OUTPUT_1].function;
+  output_function_t con1_out2_func = controller1_settings->output_settings[OUTPUT_2].function;
+  output_function_t con2_out1_func = controller2_settings->output_settings[OUTPUT_1].function;
+  output_function_t con2_out2_func = controller2_settings->output_settings[OUTPUT_2].function;
 
   if (event->widget == s->outputs[OUTPUT_1].button) {
     if (con1_out1_func == OUTPUT_FUNC_MANUAL ||
