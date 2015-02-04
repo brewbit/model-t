@@ -19,6 +19,7 @@
 #include "app_cfg.h"
 #include "ota_update.h"
 #include "sxfs.h"
+#include "pid.h"
 
 #ifndef WEB_API_HOST
 #define WEB_API_HOST_STR "dg.brewbit.com"
@@ -488,6 +489,8 @@ static void
 send_sensor_report(web_api_t* api)
 {
   int i;
+  relay_output_t* output_1;
+  relay_output_t* output_2;
   ApiMessage* msg = calloc(1, sizeof(ApiMessage));
   msg->type = ApiMessage_Type_DEVICE_REPORT;
   msg->has_deviceReport = true;
@@ -502,6 +505,19 @@ send_sensor_report(web_api_t* api)
       pr->controller_index = i;
       pr->sensor_reading = api->controller_status[i].last_sample.value;
       pr->setpoint = temp_control_get_current_setpoint(i);
+
+      output_1 = temp_control_get_output_settings(i, OUTPUT_1);
+      pr->output1_status = output_1->status.enabled;
+      pr->output1_kp     = output_1->pid_control.kp;
+      pr->output1_ki     = output_1->pid_control.ki;
+      pr->output1_kd     = output_1->pid_control.kd;
+
+      output_2 = temp_control_get_output_settings(i, OUTPUT_2);
+      pr->output2_status = output_2->status.enabled;
+      pr->output2_kp     = output_2->pid_control.kp;
+      pr->output2_ki     = output_2->pid_control.ki;
+      pr->output2_kd     = output_2->pid_control.kd;
+
       if (api->server_time_available) {
         pr->has_timestamp = true;
         pr->timestamp = get_server_time(api);

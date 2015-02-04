@@ -5,7 +5,6 @@
 #include "common.h"
 #include "message.h"
 #include "app_cfg.h"
-#include "pid.h"
 #include "temp_profile.h"
 
 #include <stdlib.h>
@@ -18,16 +17,6 @@ typedef enum {
 } temp_controller_state_t;
 
 struct temp_controller_s;
-
-typedef struct {
-  output_id_t id;
-  pid_controller_t pid_control;
-  output_status_t status;
-  bool output_ovrd;
-  systime_t cycle_delay_start_time;
-  struct temp_controller_s* controller;
-  Thread* thread;
-} relay_output_t;
 
 typedef struct temp_controller_s {
   sensor_id_t sensor;
@@ -88,6 +77,17 @@ temp_control_get_current_setpoint(temp_controller_id_t controller)
   temp_controller_t* tc = controllers[controller];
 
   return get_sp(tc);
+}
+
+relay_output_t*
+temp_control_get_output_settings(temp_controller_id_t controller, output_id_t output)
+{
+  if (controller >= NUM_CONTROLLERS)
+    return NULL;
+
+  temp_controller_t* tc = controllers[controller];
+
+  return (&tc->outputs[output]);
 }
 
 temp_controller_t*

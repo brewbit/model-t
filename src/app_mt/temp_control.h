@@ -5,6 +5,7 @@
 #include "common.h"
 #include "sensor.h"
 #include "types.h"
+#include "pid.h"
 
 
 typedef enum {
@@ -97,6 +98,16 @@ typedef struct {
   output_state_t state;
 } output_status_t;
 
+typedef struct {
+  output_id_t id;
+  pid_controller_t pid_control;
+  output_status_t status;
+  bool output_ovrd;
+  systime_t cycle_delay_start_time;
+  struct temp_controller_s* controller;
+  Thread* thread;
+} relay_output_t;
+
 static const uint32_t out_gpio[NUM_OUTPUTS] = {
     [OUTPUT_1] = PAD_RELAY1,
     [OUTPUT_2] = PAD_RELAY2
@@ -113,6 +124,9 @@ temp_control_halt(temp_controller_id_t controller);
 
 float
 temp_control_get_current_setpoint(temp_controller_id_t controller);
+
+relay_output_t*
+temp_control_get_output_settings(temp_controller_id_t controller, output_id_t output);
 
 output_ctrl_t
 temp_control_get_output_function(output_id_t output);
