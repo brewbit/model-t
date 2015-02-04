@@ -122,7 +122,7 @@ temp_control_halt(temp_controller_id_t controller);
 float
 temp_control_get_current_setpoint(temp_controller_id_t controller);
 
-temp_control_status_t*
+temp_control_status_t
 temp_control_get_status(temp_controller_id_t controller, output_id_t output);
 
 output_function_t

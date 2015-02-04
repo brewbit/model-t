@@ -90,21 +90,18 @@ temp_control_get_current_setpoint(temp_controller_id_t controller)
   return get_sp(tc);
 }
 
-temp_control_status_t*
+temp_control_status_t
 temp_control_get_status(temp_controller_id_t controller, output_id_t output)
 {
-  if (controller >= NUM_CONTROLLERS)
-    return NULL;
-
-  temp_control_status_t* status;
+  temp_control_status_t status;
   temp_controller_t* tc = controllers[controller];
   const output_settings_t* output_settings = get_output_settings(tc, output);
 
-  status->function = output_settings->function;
-  status->output_enabled = tc->outputs[output].status.enabled;
-  status->kp = tc->outputs[output].pid_control.kp;
-  status->ki = tc->outputs[output].pid_control.ki;
-  status->kd = tc->outputs[output].pid_control.kd;
+  status.function = output_settings->function;
+  status.output_enabled = tc->outputs[output].status.enabled;
+  status.kp = tc->outputs[output].pid_control.kp;
+  status.ki = tc->outputs[output].pid_control.ki;
+  status.kd = tc->outputs[output].pid_control.kd;
 
   return (status);
 }
