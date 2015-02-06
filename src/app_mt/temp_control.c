@@ -447,9 +447,6 @@ dispatch_controller_settings(temp_controller_t* tc, const controller_settings_t*
 static void
 dispatch_output_ovrd(temp_controller_t* tc, output_ovrd_msg_t* msg)
 {
-  if (tc->controller != msg->controller)
-    return;
-
   if (tc->outputs[msg->output].output_ovrd == false)
     tc->outputs[msg->output].output_ovrd = true;
   else
