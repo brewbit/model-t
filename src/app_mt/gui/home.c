@@ -50,6 +50,7 @@ typedef struct {
   api_state_t api_state;
 
   output_info_t outputs[NUM_OUTPUTS];
+  bool output_ovrd[NUM_OUTPUTS];
   widget_t* conn_button;
   widget_t* settings_button;
 } home_screen_t;
@@ -336,9 +337,10 @@ dispatch_controller_settings(home_screen_t* s, controller_settings_t* settings)
 static void
 dispatch_output_status(home_screen_t* s, output_status_t* msg)
 {
-  if (msg->enabled)
+  if (msg->enabled &&
+      s->output_ovrd[msg->output] == false)
     button_set_up_icon_color(s->outputs[msg->output].button, LIME);
-  else
+  else if (s->output_ovrd[msg->output] == false)
     button_set_up_icon_color(s->outputs[msg->output].button, WHITE);
 }
 
@@ -356,6 +358,11 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
 {
   widget_t* icon = s->outputs[output].button;
   color_t color = 0;
+
+  if (s->output_ovrd[output] == true)
+    button_set_up_icon_color(icon, RED);
+  else
+    button_set_up_icon_color(icon, WHITE);
 
   switch (function) {
     case OUTPUT_FUNC_COOLING:
@@ -429,6 +436,11 @@ click_output_button(button_event_t* event)
   output_function_t controller_1_function = controller1_settings->output_settings[output].function;
   output_function_t controller_2_function = controller2_settings->output_settings[output].function;
 
+  if (s->output_ovrd[output] == true)
+    s->output_ovrd[output] = false;
+  else
+    s->output_ovrd[output] = true;
+
   if (controller_1_function == OUTPUT_FUNC_MANUAL ||
       controller_2_function == OUTPUT_FUNC_MANUAL) {
 
@@ -446,6 +458,7 @@ click_output_button(button_event_t* event)
         .controller = CONTROLLER_1
     };
     msg_send(MSG_OUTPUT_OVRD, &msg);
+    set_output_settings(s, output, controller_1_function);
   }
   else if (controller_2_function == OUTPUT_FUNC_HEATING ||
            controller_2_function == OUTPUT_FUNC_COOLING) {
@@ -454,6 +467,7 @@ click_output_button(button_event_t* event)
         .controller = CONTROLLER_2
     };
     msg_send(MSG_OUTPUT_OVRD, &msg);
+    set_output_settings(s, output, controller_2_function);
   }
 }
 
