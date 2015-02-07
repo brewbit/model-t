@@ -50,6 +50,7 @@ typedef struct {
   api_state_t api_state;
 
   output_info_t outputs[NUM_OUTPUTS];
+  bool output_ovrd[NUM_OUTPUTS];
   widget_t* conn_button;
   widget_t* settings_button;
 } home_screen_t;
@@ -72,6 +73,7 @@ static void dispatch_api_status(home_screen_t* s, api_status_t* msg);
 static void dispatch_controller_settings(home_screen_t* s, controller_settings_t* msg);
 
 static void set_output_settings(home_screen_t* s, output_id_t output, output_function_t function);
+static void set_output_icon_color(home_screen_t* s, output_id_t output);
 static void set_conn_status(home_screen_t* s);
 static void place_quantity_widgets(home_screen_t* s);
 
@@ -336,9 +338,10 @@ dispatch_controller_settings(home_screen_t* s, controller_settings_t* settings)
 static void
 dispatch_output_status(home_screen_t* s, output_status_t* msg)
 {
-  if (msg->enabled)
+  if (msg->enabled &&
+      s->output_ovrd[msg->output] == false)
     button_set_up_icon_color(s->outputs[msg->output].button, LIME);
-  else
+  else if (s->output_ovrd[msg->output] == false)
     button_set_up_icon_color(s->outputs[msg->output].button, WHITE);
 }
 
@@ -389,6 +392,16 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
 }
 
 static void
+set_output_icon_color(home_screen_t* s, output_id_t output) {
+  widget_t* icon = s->outputs[output].button;
+
+  if (s->output_ovrd[output] == true)
+    button_set_up_icon_color(icon, RED);
+  else
+    button_set_up_icon_color(icon, WHITE);
+}
+
+static void
 click_sensor_button(button_event_t* event)
 {
   if (event->id != EVT_BUTTON_CLICK)
@@ -419,8 +432,6 @@ click_output_button(button_event_t* event)
   const controller_settings_t* controller1_settings = app_cfg_get_controller_settings(CONTROLLER_1);
   const controller_settings_t* controller2_settings = app_cfg_get_controller_settings(CONTROLLER_2);
 
-  output_function_t controller_1_function;
-  output_function_t controller_2_function;
   output_id_t output;
 
   if (event->widget == s->outputs[OUTPUT_1].button)
@@ -428,12 +439,11 @@ click_output_button(button_event_t* event)
   else
     output = OUTPUT_2;
 
-  controller_1_function = controller1_settings->output_settings[output].function;
-  controller_2_function = controller2_settings->output_settings[output].function;
+  output_function_t controller_1_function = controller1_settings->output_settings[output].function;
+  output_function_t controller_2_function = controller2_settings->output_settings[output].function;
 
   if (controller_1_function == OUTPUT_FUNC_MANUAL ||
       controller_2_function == OUTPUT_FUNC_MANUAL) {
-
     if (s->outputs[output].enabled == false)
       s->outputs[output].enabled = true;
     else
@@ -443,19 +453,31 @@ click_output_button(button_event_t* event)
   }
   else if (controller_1_function == OUTPUT_FUNC_HEATING ||
            controller_1_function == OUTPUT_FUNC_COOLING) {
+    if (s->output_ovrd[output] == true)
+      s->output_ovrd[output] = false;
+    else
+      s->output_ovrd[output] = true;
+
     output_ovrd_msg_t msg = {
         .output = output,
         .controller = CONTROLLER_1
     };
     msg_send(MSG_OUTPUT_OVRD, &msg);
+    set_output_icon_color(s, output);
   }
   else if (controller_2_function == OUTPUT_FUNC_HEATING ||
            controller_2_function == OUTPUT_FUNC_COOLING) {
+    if (s->output_ovrd[output] == true)
+      s->output_ovrd[output] = false;
+    else
+      s->output_ovrd[output] = true;
+
     output_ovrd_msg_t msg = {
         .output = output,
         .controller = CONTROLLER_2
     };
     msg_send(MSG_OUTPUT_OVRD, &msg);
+    set_output_icon_color(s, output);
   }
 }
 
