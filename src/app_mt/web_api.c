@@ -486,6 +486,33 @@ socket_poll(web_api_t* api)
 }
 
 static void
+populate_output_status(ControllerReport* pr, sensor_id_t controller, output_id_t output)
+{
+  output_ctrl_t control_mode = app_cfg_get_control_mode();
+  temp_control_status_t output_status = temp_control_get_status(controller, output);
+
+  if (output_status.function != OUTPUT_FUNC_NONE) {
+    pr->output_status[pr->output_status_count].output_index = output;
+    pr->output_status[pr->output_status_count].has_output_index = true;
+
+    pr->output_status[pr->output_status_count].status = output_status.output_enabled;
+    pr->output_status[pr->output_status_count].has_status = true;
+
+    if (control_mode == PID) {
+      pr->output_status[pr->output_status_count].kp = output_status.kp;
+      pr->output_status[pr->output_status_count].has_kp = true;
+
+      pr->output_status[pr->output_status_count].ki = output_status.ki;
+      pr->output_status[pr->output_status_count].has_ki = true;
+
+      pr->output_status[pr->output_status_count].kd = output_status.kd;
+      pr->output_status[pr->output_status_count].has_kd = true;
+    }
+    pr->output_status_count++;
+  }
+}
+
+static void
 send_sensor_report(web_api_t* api)
 {
   int i;
@@ -504,37 +531,8 @@ send_sensor_report(web_api_t* api)
       pr->sensor_reading = api->controller_status[i].last_sample.value;
       pr->setpoint = temp_control_get_current_setpoint(i);
 
-      output_ctrl_t control_mode = app_cfg_get_control_mode();
-      temp_control_status_t output_1 = temp_control_get_status(i, OUTPUT_1);
-      temp_control_status_t output_2 = temp_control_get_status(i, OUTPUT_2);
-
-      if (output_1.function != OUTPUT_FUNC_NONE) {
-        pr->has_output1_status = true;
-        pr->output1_status = output_1.output_enabled;
-
-        if (control_mode == PID) {
-          pr->output1_kp     = output_1.kp;
-          pr->output1_ki     = output_1.ki;
-          pr->output1_kd     = output_1.kd;
-          pr->has_output1_kp = true;
-          pr->has_output1_ki = true;
-          pr->has_output1_kd = true;
-        }
-      }
-
-      if(output_2.function != OUTPUT_FUNC_NONE) {
-        pr->has_output2_status = true;
-        pr->output2_status = output_2.output_enabled;
-
-        if (control_mode == PID) {
-          pr->output2_kp     = output_2.kp;
-          pr->output2_ki     = output_2.ki;
-          pr->output2_kd     = output_2.kd;
-          pr->has_output2_kp = true;
-          pr->has_output2_ki = true;
-          pr->has_output2_kd = true;
-        }
-      }
+      populate_output_status(pr, i, OUTPUT_1);
+      populate_output_status(pr, i, OUTPUT_2);
 
       if (api->server_time_available) {
         pr->has_timestamp = true;
