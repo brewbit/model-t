@@ -488,10 +488,12 @@ socket_poll(web_api_t* api)
 static void
 populate_output_status(ControllerReport* pr, sensor_id_t controller, output_id_t output)
 {
-  output_ctrl_t control_mode = app_cfg_get_control_mode();
-  temp_control_status_t output_status = temp_control_get_status(controller, output);
+  const controller_settings_t* controller_settings = app_cfg_get_controller_settings(controller);
 
-  if (output_status.function != OUTPUT_FUNC_NONE) {
+  if (controller_settings->output_settings[output].enabled) {
+    output_ctrl_t control_mode = app_cfg_get_control_mode();
+    temp_control_status_t output_status = temp_control_get_status(controller, output);
+
     pr->output_status[pr->output_status_count].output_index = output;
     pr->output_status[pr->output_status_count].has_output_index = true;
 
