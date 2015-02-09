@@ -676,6 +676,9 @@ send_controller_settings(
       const controller_settings_t* ssl = app_cfg_get_controller_settings(i);
       ControllerSettings* ss = &msg->controllerSettings;
 
+      ss->has_session_action = true;
+      ss->session_action = ssl->session_action;
+
       ss->sensor_index = i;
       switch (ssl->setpoint_type) {
         case SP_STATIC:

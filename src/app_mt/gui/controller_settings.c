@@ -44,6 +44,14 @@ typedef struct {
 } controller_settings_screen_t;
 
 
+typedef struct {
+  widget_t* screen;
+  widget_t* button_list;
+
+  temp_controller_id_t controller;
+  controller_settings_t settings;
+} session_action_screen_t;
+
 static void controller_settings_screen_destroy(widget_t* w);
 static void set_controller_settings(controller_settings_screen_t* s);
 static void output_selection_button_clicked(button_event_t* event);
@@ -53,10 +61,19 @@ static void static_setpoint_button_clicked(button_event_t* event);
 static void output_settings_button_clicked(button_event_t* event);
 static void update_static_setpoint(quantity_t delay, void* user_data);
 static void back_button_clicked(button_event_t* event);
+static widget_t* session_action_screen_create(temp_controller_id_t controller);
+static void session_action_screen_destroy(widget_t* w);
+static void edit_session_button_clicked(button_event_t* event);
+static void create_session_button_clicked(button_event_t* event);
+static void back_session_action_button_clicked(button_event_t* event);
 
 
 static const widget_class_t controller_settings_widget_class = {
     .on_destroy = controller_settings_screen_destroy,
+};
+
+static const widget_class_t session_action_widget_class = {
+    .on_destroy = session_action_screen_destroy,
 };
 
 
@@ -376,13 +393,82 @@ back_button_clicked(button_event_t* event)
     controller_settings_screen_t* s = widget_get_user_data(event->widget);
 
     if (memcmp(&s->settings, app_cfg_get_controller_settings(s->controller), sizeof(controller_settings_t)) != 0) {
-
-
-
+        widget_t* session_action_screen = session_action_screen_create(s->controller);
+        gui_push_screen(session_action_screen);
     }
+    else
+      gui_pop_screen();
+  }
+}
 
+static void
+back_session_action_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK)
+    gui_pop_screen();
+}
+
+static void
+session_action_screen_destroy(widget_t* w)
+{
+  session_action_screen_t* s = widget_get_instance_data(w);
+  free(s);
+}
+
+static widget_t*
+session_action_screen_create(temp_controller_id_t controller)
+{
+  uint32_t num_buttons = 0;
+  button_spec_t buttons[2];
+
+  char* title;
+
+  session_action_screen_t* s = calloc(1, sizeof(controller_settings_screen_t));
+
+  s->screen = widget_create(NULL, &session_action_widget_class, s, display_rect);
+  widget_set_background(s->screen, BLACK);
+
+  title = "Session Action";
+  s->button_list = button_list_screen_create(s->screen, title, back_session_action_button_clicked, s);
+
+  s->controller = controller;
+  s->settings = *app_cfg_get_controller_settings(controller);
+
+  add_button_spec(buttons, &num_buttons, edit_session_button_clicked, img_hysteresis, VIOLET,
+      "Edit Session", "Update current session", s);
+
+  add_button_spec(buttons, &num_buttons, create_session_button_clicked, img_hysteresis, VIOLET,
+      "Create Session", "Start a new session", s);
+
+  button_list_set_buttons(s->button_list, buttons, num_buttons);
+
+  return s->screen;
+}
+
+static void
+edit_session_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
+    controller_settings_screen_t* s = widget_get_user_data(event->widget);
+
+    s->settings.session_action = EDIT_SESSION;
     app_cfg_set_controller_settings(s->controller, SS_DEVICE, &s->settings);
 
+    gui_pop_screen();
+    gui_pop_screen();
+  }
+}
+
+static void
+create_session_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
+    controller_settings_screen_t* s = widget_get_user_data(event->widget);
+
+    s->settings.session_action = CREATE_SESSION;
+    app_cfg_set_controller_settings(s->controller, SS_DEVICE, &s->settings);
+
+    gui_pop_screen();
     gui_pop_screen();
   }
 }

@@ -50,6 +50,11 @@ typedef enum {
   TEMP_PROFILE_COMPLETION_ACTION_START_OVER
 } temp_profile_completion_action_t;
 
+typedef enum {
+  CREATE_SESSION,
+  EDIT_SESSION
+} session_action_t;
+
 typedef struct {
   output_id_t output;
   temp_controller_id_t controller;
@@ -83,6 +88,7 @@ typedef struct {
   quantity_t static_setpoint;
   temp_profile_t temp_profile;
   output_settings_t output_settings[NUM_OUTPUTS];
+  session_action_t session_action;
 } controller_settings_t;
 
 typedef enum {
