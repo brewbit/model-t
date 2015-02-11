@@ -296,7 +296,7 @@ rebuild_screen(network_settings_screen_t* s)
     if (strlen(s->settings.passphrase) == 0)
       text = "Passphrase not set";
     else
-      text = s->settings.passphrase;
+      text = "********";
     add_button_spec(buttons, &num_buttons, passphrase_button_clicked, img_signal, ORANGE, "Passphrase", text, s);
   }
 
