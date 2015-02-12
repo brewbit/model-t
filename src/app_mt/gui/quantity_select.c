@@ -109,7 +109,7 @@ quantity_select_screen_create(
   button_set_disabled_bg_color(s->down_button, BLACK);
   button_set_disabled_icon_color(s->down_button, DARK_GRAY);
 
-  rect.x = 15;
+  rect.x = 0;
   rect.y = 130;
   rect.width = 240;
   s->quantity_widget = quantity_widget_create(s->widget, rect, quantity.unit);
