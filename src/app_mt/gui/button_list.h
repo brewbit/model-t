@@ -21,7 +21,17 @@ button_list_screen_create(
     button_event_handler_t back_handler,
     void* user_data);
 
+widget_t*
+button_list_prompt_screen_create(
+    widget_t* screen,
+    char* title,
+    button_event_handler_t back_handler,
+    void* user_data);
+
 void
 button_list_set_buttons(widget_t* button_list, button_spec_t* buttons, uint32_t num_buttons);
+
+void
+button_list_set_small_buttons(widget_t* button_list, button_spec_t* buttons, uint32_t num_buttons);
 
 #endif

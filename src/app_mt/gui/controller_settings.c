@@ -66,6 +66,7 @@ static void session_action_screen_destroy(widget_t* w);
 static void edit_session_button_clicked(button_event_t* event);
 static void create_session_button_clicked(button_event_t* event);
 static void back_session_action_button_clicked(button_event_t* event);
+static void cancel_button_clicked(button_event_t* event);
 
 
 static const widget_class_t controller_settings_widget_class = {
@@ -419,7 +420,7 @@ static widget_t*
 session_action_screen_create(temp_controller_id_t controller, controller_settings_t* settings)
 {
   uint32_t num_buttons = 0;
-  button_spec_t buttons[2];
+  button_spec_t buttons[3];
 
   char* title;
 
@@ -428,19 +429,22 @@ session_action_screen_create(temp_controller_id_t controller, controller_setting
   s->screen = widget_create(NULL, &session_action_widget_class, s, display_rect);
   widget_set_background(s->screen, BLACK);
 
-  title = "Session Action";
-  s->button_list = button_list_screen_create(s->screen, title, back_session_action_button_clicked, s);
+  title = "Would you like to update the current session or create a new one?";
+  s->button_list = button_list_prompt_screen_create(s->screen, title, back_session_action_button_clicked, s);
 
   s->controller = controller;
   s->settings = *settings;
 
-  add_button_spec(buttons, &num_buttons, edit_session_button_clicked, img_hysteresis, PINK,
-      "Edit Session", "Update current session", s);
-
   add_button_spec(buttons, &num_buttons, create_session_button_clicked, img_hysteresis, EMERALD,
-      "Create Session", "Start a new session", s);
+      "Create Session", "Starts a new session", s);
 
-  button_list_set_buttons(s->button_list, buttons, num_buttons);
+  add_button_spec(buttons, &num_buttons, edit_session_button_clicked, img_hysteresis, PINK,
+      "Update Session", "Edits current session", s);
+
+  add_button_spec(buttons, &num_buttons, cancel_button_clicked, img_hysteresis, CRIMSON,
+      "Cancel Changes", "Discards all changes", s);
+
+  button_list_set_small_buttons(s->button_list, buttons, num_buttons);
 
   return s->screen;
 }
@@ -468,6 +472,15 @@ create_session_button_clicked(button_event_t* event)
     s->settings.session_action = CREATE_SESSION;
     app_cfg_set_controller_settings(s->controller, SS_DEVICE, &s->settings);
 
+    gui_pop_screen();
+    gui_pop_screen();
+  }
+}
+
+static void
+cancel_button_clicked(button_event_t* event)
+{
+  if (event->id == EVT_BUTTON_CLICK) {
     gui_pop_screen();
     gui_pop_screen();
   }
