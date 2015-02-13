@@ -226,26 +226,6 @@ update_screen_saver(quantity_t screen_saver_time, void* user_data)
 }
 
 static void
-add_button_spec(
-    button_spec_t* buttons,
-    uint32_t* num_buttons,
-    button_event_handler_t btn_event_handler,
-    const Image_t* img,
-    color_t color,
-    const char* text,
-    const char* subtext,
-    void* user_data)
-{
-  buttons[*num_buttons].btn_event_handler = btn_event_handler;
-  buttons[*num_buttons].img = img;
-  buttons[*num_buttons].color = color;
-  buttons[*num_buttons].text = text;
-  buttons[*num_buttons].subtext = subtext;
-  buttons[*num_buttons].user_data = user_data;
-  (*num_buttons)++;
-}
-
-static void
 rebuild_settings_screen(settings_screen_t* s)
 {
   uint32_t num_buttons = 0;

@@ -62,6 +62,7 @@ PROJECT_CSRC = \
        gui/screen_saver.c \
        gui/controller_settings.c \
        gui/settings.c \
+       gui/session_action.c \
        gui/textentry.c \
        gui/update.c \
        gui/conn_status.c \
