@@ -76,13 +76,14 @@ static void display_title(session_action_screen_t* s)
 
 static void display_back_button(session_action_screen_t* s)
 {
-  rect_t rect = {
-        .x = 20,
-        .y = 20,
-        .width = 30,
-        .height = 30,
-  };
+  rect_t rect;
+
+  rect.x = 20;
+  rect.y = 20;
+  rect.width = 30;
+  rect.height = 30;
   widget_t* back_btn = button_create(s->screen, rect, img_left, WHITE, BLACK, back_button_clicked);
+
   button_set_up_bg_color(back_btn, BLACK);
   button_set_up_icon_color(back_btn, WHITE);
   button_set_down_bg_color(back_btn, BLACK);
