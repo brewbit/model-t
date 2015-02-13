@@ -64,19 +64,6 @@ typedef struct {
   int32_t y;
 } point_t;
 
-//inline float
-//point_dist_sq(point_t p1, point_t p2)
-//{
-//
-//}
-//
-//inline float
-//point_dist(point_t p1, point_t p2)
-//{
-//  sqrt(point_dist_sq());
-//}
-
-
 typedef struct {
   int32_t x;
   int32_t y;

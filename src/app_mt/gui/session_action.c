@@ -20,33 +20,67 @@ typedef struct {
   controller_settings_t settings;
 } session_action_screen_t;
 
+
 static void create_session_button_clicked(button_event_t* event);
 static void edit_session_button_clicked(button_event_t* event);
 static void back_button_clicked(button_event_t* event);
 static void cancel_button_clicked(button_event_t* event);
 static void session_action_screen_destroy(widget_t* w);
+static void display_create_session_button(session_action_screen_t* s);
+static void display_edit_session_button(session_action_screen_t* s);
+static void display_cancel_session_button(session_action_screen_t* s);
+static void display_back_button(session_action_screen_t* s);
+static void display_title(session_action_screen_t* s);
 
 static const widget_class_t session_action_widget_class = {
     .on_destroy = session_action_screen_destroy,
 };
-
 
 widget_t*
 session_action_screen_create(temp_controller_id_t controller, controller_settings_t* settings)
 {
   session_action_screen_t* s = calloc(1, sizeof(session_action_screen_t));
 
-  s->controller = controller;
-  s->settings = *settings;
-
   s->screen = widget_create(NULL, &session_action_widget_class, s, display_rect);
   widget_set_background(s->screen, BLACK);
 
+  display_title(s);
+  display_back_button(s);
+  display_create_session_button(s);
+  display_edit_session_button(s);
+  display_cancel_session_button(s);
+
+  s->controller = controller;
+  s->settings = *settings;
+
+  return s->screen;
+}
+
+static void
+session_action_screen_destroy(widget_t* w)
+{
+  session_action_screen_t* s = widget_get_instance_data(w);
+  free(s);
+}
+
+static void display_title(session_action_screen_t* s)
+{
+  rect_t rect;
+
+  rect.x = 80;
+  rect.y = 15;
+  rect.width = 220;
+  rect.height = 30;
+  label_create(s->screen, rect, "Would you like to update the current session or create a new one?", font_opensans_regular_18, WHITE, 3);
+}
+
+static void display_back_button(session_action_screen_t* s)
+{
   rect_t rect = {
-      .x = 20,
-      .y = 20,
-      .width = 30,
-      .height = 30,
+        .x = 20,
+        .y = 20,
+        .width = 30,
+        .height = 30,
   };
   widget_t* back_btn = button_create(s->screen, rect, img_left, WHITE, BLACK, back_button_clicked);
   button_set_up_bg_color(back_btn, BLACK);
@@ -55,12 +89,11 @@ session_action_screen_create(temp_controller_id_t controller, controller_setting
   button_set_down_icon_color(back_btn, LIGHT_GRAY);
   button_set_disabled_bg_color(back_btn, BLACK);
   button_set_disabled_icon_color(back_btn, DARK_GRAY);
+}
 
-  rect.x = 80;
-  rect.y = 15;
-  rect.width = 220;
-  rect.height = 30;
-  label_create(s->screen, rect, "Would you like to update the current session or create a new one?", font_opensans_regular_18, WHITE, 3);
+static void display_create_session_button(session_action_screen_t* s)
+{
+  rect_t rect;
 
   rect.x = 15;
   rect.y = 80;
@@ -78,6 +111,11 @@ session_action_screen_create(temp_controller_id_t controller, controller_setting
   rect.y = 12;
   rect.width = 235;
   label_create(create_button, rect, "Create New Session", font_opensans_regular_18, WHITE, 1);
+}
+
+static void display_edit_session_button(session_action_screen_t* s)
+{
+  rect_t rect;
 
   rect.x = 15;
   rect.y = 130;
@@ -95,6 +133,11 @@ session_action_screen_create(temp_controller_id_t controller, controller_setting
   rect.y = 12;
   rect.width = 235;
   label_create(edit_button, rect, "Update Current Session", font_opensans_regular_18, WHITE, 1);
+}
+
+static void display_cancel_session_button(session_action_screen_t* s)
+{
+  rect_t rect;
 
   rect.x = 12;
   rect.y = 185;
@@ -112,15 +155,6 @@ session_action_screen_create(temp_controller_id_t controller, controller_setting
   rect.y = 12;
   rect.width = 235;
   label_create(cancel_button, rect, "Cancel Changes", font_opensans_regular_18, WHITE, 1);
-
-  return s->screen;
-}
-
-static void
-session_action_screen_destroy(widget_t* w)
-{
-  session_action_screen_t* s = widget_get_instance_data(w);
-  free(s);
 }
 
 static void
@@ -134,7 +168,8 @@ static void
 edit_session_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    session_action_screen_t* s = widget_get_user_data(event->widget);
+    widget_t* parent = widget_get_parent(event->widget);
+    session_action_screen_t* s = widget_get_instance_data(parent);
 
     s->settings.session_action = EDIT_SESSION;
     app_cfg_set_controller_settings(s->controller, SS_DEVICE, &s->settings);
@@ -148,7 +183,8 @@ static void
 create_session_button_clicked(button_event_t* event)
 {
   if (event->id == EVT_BUTTON_CLICK) {
-    session_action_screen_t* s = widget_get_user_data(event->widget);
+    widget_t* parent = widget_get_parent(event->widget);
+    session_action_screen_t* s = widget_get_instance_data(parent);
 
     s->settings.session_action = CREATE_SESSION;
     app_cfg_set_controller_settings(s->controller, SS_DEVICE, &s->settings);
