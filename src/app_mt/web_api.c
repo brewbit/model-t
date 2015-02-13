@@ -691,6 +691,10 @@ send_controller_settings(
           ss->setpoint_type = ControllerSettings_SetpointType_TEMP_PROFILE;
           ss->has_temp_profile_id = true;
           ss->temp_profile_id = ssl->temp_profile.id;
+          ss->has_temp_profile_completion_action = true;
+          ss->temp_profile_completion_action = ControllerSettings_CompletionAction_HOLD_LAST;
+          ss->has_temp_profile_start_point = true;
+          ss->temp_profile_start_point = 0;
           break;
 
         default:
