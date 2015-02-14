@@ -28,7 +28,7 @@ static void cancel_button_clicked(button_event_t* event);
 static void session_action_screen_destroy(widget_t* w);
 static void display_create_session_button(session_action_screen_t* s);
 static void display_edit_session_button(session_action_screen_t* s);
-static void display_cancel_session_button(session_action_screen_t* s);
+static void display_cancel_button(session_action_screen_t* s);
 static void display_back_button(session_action_screen_t* s);
 static void display_title(session_action_screen_t* s);
 
@@ -48,7 +48,7 @@ session_action_screen_create(temp_controller_id_t controller, controller_setting
   display_back_button(s);
   display_create_session_button(s);
   display_edit_session_button(s);
-  display_cancel_session_button(s);
+  display_cancel_button(s);
 
   s->controller = controller;
   s->settings = *settings;
@@ -96,13 +96,13 @@ static void display_create_session_button(session_action_screen_t* s)
 {
   rect_t rect;
 
-  rect.x = 15;
+  rect.x = 5;
   rect.y = 80;
-  rect.width = 300;
+  rect.width = 310;
   rect.height = 40;
   widget_t* create_button = button_create(s->screen, rect, NULL, WHITE, BLACK, create_session_button_clicked);
 
-  rect.x = 5;
+  rect.x = 15;
   rect.y = 5;
   rect.width = 30;
   rect.height = 30;
@@ -111,24 +111,24 @@ static void display_create_session_button(session_action_screen_t* s)
   rect.x = 65;
   rect.y = 12;
   rect.width = 235;
-  label_create(create_button, rect, "Create New Session", font_opensans_regular_18, WHITE, 1);
+  label_create(create_button, rect, "Start New Session", font_opensans_regular_18, WHITE, 1);
 }
 
 static void display_edit_session_button(session_action_screen_t* s)
 {
   rect_t rect;
 
-  rect.x = 15;
-  rect.y = 130;
-  rect.width = 300;
+  rect.x = 5;
+  rect.y = 135;
+  rect.width = 310;
   rect.height = 40;
   widget_t* edit_button = button_create(s->screen, rect, NULL, WHITE, BLACK, edit_session_button_clicked);
 
-  rect.x = 5;
+  rect.x = 15;
   rect.y = 5;
   rect.width = 30;
   rect.height = 30;
-  icon_create(edit_button, rect, img_hand, COBALT, TRANSPARENT);
+  icon_create(edit_button, rect, img_edit, BROWN, TRANSPARENT);
 
   rect.x = 65;
   rect.y = 12;
@@ -136,23 +136,23 @@ static void display_edit_session_button(session_action_screen_t* s)
   label_create(edit_button, rect, "Update Current Session", font_opensans_regular_18, WHITE, 1);
 }
 
-static void display_cancel_session_button(session_action_screen_t* s)
+static void display_cancel_button(session_action_screen_t* s)
 {
   rect_t rect;
 
-  rect.x = 12;
-  rect.y = 185;
-  rect.width = 300;
-  rect.height = 50;
+  rect.x = 5;
+  rect.y = 190;
+  rect.width = 310;
+  rect.height = 40;
   widget_t* cancel_button = button_create(s->screen, rect, NULL, WHITE, BLACK, cancel_button_clicked);
 
-  rect.x = 10;
-  rect.y = 10;
+  rect.x = 15;
+  rect.y = 5;
   rect.width = 30;
   rect.height = 30;
-  icon_create(cancel_button, rect, img_cancel, RED, TRANSPARENT);
+  icon_create(cancel_button, rect, img_cancel_small, RED, TRANSPARENT);
 
-  rect.x = 68;
+  rect.x = 65;
   rect.y = 12;
   rect.width = 235;
   label_create(cancel_button, rect, "Cancel Changes", font_opensans_regular_18, WHITE, 1);

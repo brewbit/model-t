@@ -283,7 +283,7 @@ rebuild_settings_screen(settings_screen_t* s)
   add_button_spec(buttons, &num_buttons, update_button_clicked, img_update, GREEN,
       "Model-T Updates", "Check for Model-T software updates", s);
 
-  add_button_spec(buttons, &num_buttons, probe_offset_button_clicked, img_temp_med, COBALT,
+  add_button_spec(buttons, &num_buttons, probe_offset_button_clicked, img_temp_med_small, COBALT,
       "Probe Offset", "Add temperature probe offset", s);
 
   screen_saver_subtext = malloc(128);
