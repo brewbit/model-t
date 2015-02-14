@@ -267,7 +267,9 @@ setpoint_type_button_clicked(button_event_t* event)
     setpoint_type_t new_sp_type = SP_STATIC;
     switch (s->settings.setpoint_type) {
       case SP_STATIC:
-        new_sp_type = SP_TEMP_PROFILE;
+        if (strlen(s->settings.temp_profile.name) > 0) {
+          new_sp_type = SP_TEMP_PROFILE;
+        }
         break;
 
       case SP_TEMP_PROFILE:
