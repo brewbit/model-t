@@ -372,11 +372,11 @@ set_output_settings(home_screen_t* s, output_id_t output, output_function_t func
     case OUTPUT_FUNC_MANUAL:
       color = RED;
       if (s->outputs[output].enabled) {
-        palWritePad(GPIOC, out_gpio[output], true);
+        temp_control_enable_output(output, true);
         button_set_up_icon_color(s->outputs[output].button, LIME);
       }
       else {
-        palWritePad(GPIOC, out_gpio[output], false);
+        temp_control_enable_output(output, false);
         button_set_up_icon_color(s->outputs[output].button, WHITE);
       }
       break;

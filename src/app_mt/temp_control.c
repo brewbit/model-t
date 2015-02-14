@@ -54,7 +54,12 @@ static void enable_relay(relay_output_t* output, bool enabled);
 static float get_sp(temp_controller_t* tc);
 static const output_settings_t* get_output_settings(temp_controller_t* tc, output_id_t output);
 
-temp_controller_t* controllers[NUM_CONTROLLERS];
+static temp_controller_t* controllers[NUM_CONTROLLERS];
+
+static const uint32_t out_gpio[NUM_OUTPUTS] = {
+    [OUTPUT_1] = PAD_RELAY1,
+    [OUTPUT_2] = PAD_RELAY2
+};
 
 
 void
@@ -123,6 +128,14 @@ temp_control_get_controller_for(output_id_t output)
   }
 
   return NULL;
+}
+
+void
+temp_control_enable_output(output_id_t output, bool enable)
+{
+  temp_controller_t* tc = temp_control_get_controller_for(output);
+  if (tc != NULL)
+    enable_relay(&tc->outputs[output], enable);
 }
 
 output_function_t

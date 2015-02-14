@@ -111,11 +111,6 @@ typedef struct {
   output_function_t function;
 } temp_control_status_t;
 
-static const uint32_t out_gpio[NUM_OUTPUTS] = {
-    [OUTPUT_1] = PAD_RELAY1,
-    [OUTPUT_2] = PAD_RELAY2
-};
-
 void
 temp_control_init(temp_controller_id_t controller);
 
@@ -133,5 +128,8 @@ temp_control_get_status(temp_controller_id_t controller, output_id_t output);
 
 output_function_t
 temp_control_get_output_function(output_id_t output);
+
+void
+temp_control_enable_output(output_id_t output, bool enable);
 
 #endif
