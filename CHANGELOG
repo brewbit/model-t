@@ -1,3 +1,15 @@
+*** 1.6.0 ***
+- NEW: Added create/update session prompt on settings change.
+- NEW: Hide WiFi password after it has been accepted.
+- NEW: Send output status to server for display.
+- NEW: Add support for manual control of outputs using output buttons on home screen.
+- NEW: Output can be forced off while in heating/cooling mode by touching the output buttons on home screen.
+- NEW: Allow temp profiles to continue from the current position when updating settings.
+- NEW: Allow temp profile start point to be specified in server-sent settings.
+- NEW: Add temp profile completion action (hold last or repeat) to be specified.
+- FIX: Remove sensor filter which discarded readings if they change too fast.
+- FIX: Several GUI cleanups.
+
 *** 1.5.1 ***
 - FIX: Simplify message passing.
 - FIX: Settings screen buttons change foreground color to indicate state instead of background color.
