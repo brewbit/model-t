@@ -7,6 +7,7 @@
 #include "app_cfg.h"
 #include "temp_profile.h"
 #include "pid.h"
+#include "board.h"
 
 #include <stdlib.h>
 
@@ -23,6 +24,7 @@ typedef struct {
   output_id_t id;
   pid_controller_t pid_control;
   output_status_t status;
+  bool temp_ovrd;
   bool output_ovrd;
   systime_t cycle_delay_start_time;
   struct temp_controller_s* controller;
@@ -53,6 +55,7 @@ static void relay_control(relay_output_t* output);
 static void enable_relay(relay_output_t* output, bool enabled);
 static float get_sp(temp_controller_t* tc);
 static const output_settings_t* get_output_settings(temp_controller_t* tc, output_id_t output);
+static void internal_temp_ovrd_check(relay_output_t* output);
 
 static temp_controller_t* controllers[NUM_CONTROLLERS];
 
@@ -178,6 +181,20 @@ output_init(temp_controller_t* tc, output_id_t output)
   out->thread = chThdCreateFromHeap(NULL, 1024, NORMALPRIO, output_thread, out);
 }
 
+static void
+internal_temp_ovrd_check(relay_output_t* output)
+{
+  /* Check internal unit temperature and disable outputs if temperature exceeds 85C.
+   * Do no allow outputs to re-enable until temperature is below 70 C.
+   */
+  if (board_get_core_temp() < 70.0) {
+    output->temp_ovrd = false;
+  }
+  else if (board_get_core_temp() > 85.0) {
+    output->temp_ovrd = true;
+  }
+}
+
 static msg_t
 output_thread(void* arg)
 {
@@ -203,11 +220,17 @@ output_thread(void* arg)
 
   while (!chThdShouldTerminate()) {
 
-    /* If the probe associated with this output is not active or if the output is set
+    /* Check internal unit temperature and disable outputs if temperature exceeds 85C.
+     * Do no allow outputs to re-enable until temperature is below 70 C.
+     */
+	internal_temp_ovrd_check(output);
+
+	/* If the probe associated with this output is not active or if the output is set
      * to disabled turn OFF the output
      */
     if (output->controller->state != TC_ACTIVE ||
-        !output_settings->enabled)
+        !output_settings->enabled ||
+        output->temp_ovrd)
       set_output_state(output, OUTPUT_CONTROL_DISABLED);
 
     switch (output->status.state) {
