@@ -579,6 +579,9 @@ request_auth(web_api_t* api)
   strncpy(msg->authRequest.device_id, device_id, sizeof(msg->authRequest.device_id));
   strncpy(msg->authRequest.auth_token, app_cfg_get_auth_token(), sizeof(msg->authRequest.auth_token));
 
+  msg->authRequest.has_firmware_version = true;
+  strncpy(msg->authRequest.firmware_version, VERSION_STR, sizeof(msg->authRequest.firmware_version));
+
   send_api_msg(api, msg, false);
 
   free(msg);
