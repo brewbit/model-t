@@ -219,15 +219,8 @@ output_thread(void* arg)
   output->status.output = output->id;
 
   while (!chThdShouldTerminate()) {
+    //internal_temp_ovrd_check(output);
 
-    /* Check internal unit temperature and disable outputs if temperature exceeds 85C.
-     * Do no allow outputs to re-enable until temperature is below 70 C.
-     */
-	//internal_temp_ovrd_check(output);
-
-	/* If the probe associated with this output is not active or if the output is set
-     * to disabled turn OFF the output
-     */
     if (output->controller->state != TC_ACTIVE ||
         !output_settings->enabled ||
         output->temp_ovrd)
@@ -253,7 +246,6 @@ output_thread(void* arg)
         }
 
         if ((chTimeNow() - output->cycle_delay_start_time) > cycle_delay) {
-          /* Restart PID after cycle delay */
           if (output->pid_control.enabled == false)
             output->pid_control.enabled = true;
 
