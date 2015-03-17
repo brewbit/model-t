@@ -223,7 +223,7 @@ output_thread(void* arg)
     /* Check internal unit temperature and disable outputs if temperature exceeds 85C.
      * Do no allow outputs to re-enable until temperature is below 70 C.
      */
-	internal_temp_ovrd_check(output);
+	//internal_temp_ovrd_check(output);
 
 	/* If the probe associated with this output is not active or if the output is set
      * to disabled turn OFF the output
