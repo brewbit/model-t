@@ -519,7 +519,7 @@ connect(long sd, const sockaddr *addr, long addrlen)
 
 //*****************************************************************************
 //
-//! select
+//! wfd_select
 //!
 //!  @param[in]   nfds       the highest-numbered file descriptor in any of the
 //!                           three sets, plus 1.
@@ -527,7 +527,7 @@ connect(long sd, const sockaddr *addr, long addrlen)
 //!  @param[out]   readsds    socket descriptors list for read monitoring
 //!  @param[out]   exceptsds  socket descriptors list for exception monitoring
 //!  @param[in]   timeout     is an upper bound on the amount of time elapsed
-//!                           before select() returns. Null means infinity
+//!                           before wfd_select() returns. Null means infinity
 //!                           timeout. The minimum timeout is 5 milliseconds,
 //!                          less than 5 milliseconds will be set
 //!                           automatically to 5 milliseconds.
@@ -555,7 +555,7 @@ connect(long sd, const sockaddr *addr, long addrlen)
 //
 //*****************************************************************************
 int
-select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *exceptsds, struct timeval *timeout)
+wfd_select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *exceptsds, struct timeval *timeout)
 {
     int ret;
 
@@ -1001,7 +1001,7 @@ socket_io_thread(void *arg)
       }
     }
 
-    ret = select(maxFD, &readsds, NULL, NULL, &timeout); /* Polling instead of blocking here\
+    ret = wfd_select(maxFD, &readsds, NULL, NULL, &timeout); /* Polling instead of blocking here\
                                                               to process "accept" below */
 
     if (ret>0) {

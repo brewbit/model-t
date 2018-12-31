@@ -287,7 +287,7 @@ extern long connect(long sd, const sockaddr *addr, long addrlen);
 
 //*****************************************************************************
 //
-//! select
+//! wfd_select
 //!
 //!  @param[in]   nfds       the highest-numbered file descriptor in any of the
 //!                           three sets, plus 1.
@@ -322,7 +322,7 @@ extern long connect(long sd, const sockaddr *addr, long addrlen);
 //!  @sa socket
 //
 //*****************************************************************************
-extern int select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *exceptsds, struct timeval *timeout);
+extern int wfd_select(long nfds, wfd_set *readsds, wfd_set *writesds, wfd_set *exceptsds, struct timeval *timeout);
 
 //*****************************************************************************
 //
