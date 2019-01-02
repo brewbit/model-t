@@ -45,6 +45,7 @@
 #include <errno.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <sys/time.h>
 
 //*****************************************************************************
 //
@@ -141,16 +142,8 @@ extern "C" {
 //*****************************************************************************
 //                  Compound Types
 //*****************************************************************************
-typedef long time_t;
 typedef uint32_t clock_t;
 typedef long suseconds_t;
-
-typedef struct timeval timeval;
-
-struct timeval {
-  time_t tv_sec;       /* seconds */
-  suseconds_t tv_usec; /* microseconds */
-};
 
 //*************************************************************************************
 //@@@ Socket Common Header - Start
